@@ -1,0 +1,26 @@
+# private planning notes
+internal/
+
+# OS / editor
+.DS_Store
+*.log
+.env
+.idea/
+.vscode/
+
+# Xcode
+DerivedData/
+xcuserdata/
+*.xcuserstate
+Configs/Local.xcconfig
+
+# Android / Gradle
+.gradle/
+build/
+local.properties
+*.apk
+*.aab
+
+# misc
+node_modules/
+dist/
