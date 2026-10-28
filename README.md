@@ -13,7 +13,7 @@ bitchat's protocol, code and whitepaper are in the public domain. openchat does 
 - **Built for people who have never seen IRC.** bitchat describes itself as "IRC vibes". The people who install it during an outage are not IRC people. Three taps from install to first message, with the phone offline, is the bar.
 - **Positioned for infrastructure failure, not politics.** Earthquakes, typhoons, carrier outages, stadium and festival congestion, hiking and sailing. Preset channels and copy for those situations.
 - **Protocol compatible, always.** An openchat phone must be a working relay for every bitchat phone and vice versa. Interop with upstream is a release gate, not a feature.
-- **Honest about security.** The upstream protocol has no completed third-party audit and documents its own metadata weaknesses. openchat will say the same thing in the app, not just in a README.
+- **Honest about security.** The upstream protocol has had one third-party audit (Cure53, 2025-11) with findings still open, and documents its own metadata weaknesses. openchat will say the same thing in the app, not just in a README.
 
 ## What this is not
 
@@ -27,6 +27,7 @@ bitchat's protocol, code and whitepaper are in the public domain. openchat does 
 docs/
   bitchat-protocol-notes.md   # what the upstream protocol actually does, with numbers
   roadmap.md                  # phases, exit criteria and kill conditions
+  phase0-findings.md          # Phase 0 review and issue analysis, go/no-go
 internal/                     # private planning notes, git-ignored
 ```
 

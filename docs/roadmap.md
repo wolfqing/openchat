@@ -31,6 +31,12 @@ Phase 1 starts until Phase 0 says the premise holds.
 **Exit**: a written one-page finding with the complaint share, the tap
 count, and a go/no-go.
 
+**Status 2026-10-28**: review and issue analysis done, see
+[phase0-findings.md](phase0-findings.md). UX is about 19% of complaints in
+both sources, so the first kill condition is met on that data. The field
+test, the Android licence decision and the name are still open; the field
+test decides whether the project stops or changes its premise.
+
 **Kill**: UX complaints are a minority of feedback, or upstream ships a
 rebuilt onboarding for non-technical users during this phase.
 
