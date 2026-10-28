@@ -324,7 +324,7 @@ class BleTransport(
             val gatt = centrals[address]; val ch = centralChars[address]
             if (gatt == null || ch == null) false
             else if (Build.VERSION.SDK_INT >= 33) {
-                gatt.writeCharacteristic(ch, chunk, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) == BluetoothGatt.GATT_SUCCESS
+                gatt.writeCharacteristic(ch, chunk, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) == android.bluetooth.BluetoothStatusCodes.SUCCESS
             } else @Suppress("DEPRECATION") run {
                 ch.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
                 ch.value = chunk
@@ -334,7 +334,7 @@ class BleTransport(
             val device = subscribers[address]; val ch = characteristic; val s = server
             if (device == null || ch == null || s == null) false
             else if (Build.VERSION.SDK_INT >= 33) {
-                s.notifyCharacteristicChanged(device, ch, false, chunk) == BluetoothGatt.GATT_SUCCESS
+                s.notifyCharacteristicChanged(device, ch, false, chunk) == android.bluetooth.BluetoothStatusCodes.SUCCESS
             } else @Suppress("DEPRECATION") run {
                 ch.value = chunk
                 s.notifyCharacteristicChanged(device, ch, false)

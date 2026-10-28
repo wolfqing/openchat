@@ -1,6 +1,6 @@
 # openchat for Android
 
-Status: **v0.1.0 preview.** Builds and passes its unit tests. Not yet tested
+Status: **v0.1.1 preview.** Builds and passes its unit tests. Not yet tested
 on physical devices, and not yet tested against a stock bitchat phone.
 
 Written from scratch in Kotlin. No bitchat source code is used. The wire
@@ -57,6 +57,6 @@ The APK lands in `app/build/outputs/apk/debug/app-debug.apk`. minSdk 26
   (zlib level 5, raw DEFLATE) and iOS output must match byte for byte.
 - **BLE layer only compiles.** Connection limits, MTU handling and
   background behaviour need real devices, especially across vendors.
-- **Android lint** was started but had not finished when v0.1.0 was cut.
+- **Android lint**: no errors; warnings remain (dependency versions, obsolete SDK checks, monochrome icon).
 - The debug APK is signed with a local debug key, so a later release build
   will not install over it.
