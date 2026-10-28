@@ -1,0 +1,4 @@
+relays.csv: Nostr relay URLs with approximate coordinates, from
+permissionlesstech/bitchat relays/online_relays_gps.csv at tag v1.8.0
+(public domain, Unlicense). Used so geohash channels pick the same
+relays as bitchat clients.
