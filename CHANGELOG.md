@@ -1,5 +1,18 @@
 # Changelog
 
+## UI direction and prototype — 2026-10-28
+
+- Set the UI direction in [docs/design/ui-direction.md](docs/design/ui-direction.md).
+  The distinctive part is that the mesh is visible: a signal band, a
+  delivery path on each message, hop counts, identity emblems and a
+  designed "nobody nearby" screen. Message text stays plain and readable.
+- Added a clickable three-screen prototype,
+  [docs/design/ui-prototype.html](docs/design/ui-prototype.html), with
+  light and dark themes. It is published privately at
+  <https://claude.ai/artifact/QBFVpgvNTgxqF1RhRwDG18>.
+- No app code changed. Only the signal band, delivery path and empty
+  state are planned before device testing.
+
 ## Android v0.1.1 (preview) — 2026-10-28
 
 - Fix the API 33+ checks on BLE write and notify results. They compared

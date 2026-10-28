@@ -1,0 +1,501 @@
+<title>openchat 界面原型</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: a short brief, then three phone screens side by side (stacked on narrow).
+   Two layers: content stays quiet and readable; only the mesh layer (signal band,
+   delivery path, hops, emblems) uses the signal color and the mono face. */
+:root {
+  --bg: #EEF0EC;          /* page ground, slight green-grey field neutral */
+  --screen: #F8F9F6;      /* phone screen */
+  --surface: #FFFFFF;     /* raised: composer, sheets */
+  --ink: #14191A;
+  --muted: #586264;
+  --line: #D6DCD8;
+  --signal: #E2531A;      /* mesh layer only: safety orange */
+  --signal-soft: #FBE3D8;
+  --lock: #24527F;        /* encrypted / private */
+  --lock-soft: #DCE7F2;
+  --warn: #A3300F;
+  --em-l: 42%;            /* emblem lightness */
+  --frame: #1B2021;
+  --font-body: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B0D0D; --screen: #000000; --surface: #121616; --ink: #EDF1EF; --muted: #9AA4A3;
+    --line: #262D2D; --signal: #FF7840; --signal-soft: #3A1A0C; --lock: #93BCE8; --lock-soft: #13263A;
+    --warn: #FF9A7A; --em-l: 66%; --frame: #2A3132; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B0D0D; --screen: #000000; --surface: #121616; --ink: #EDF1EF; --muted: #9AA4A3;
+  --line: #262D2D; --signal: #FF7840; --signal-soft: #3A1A0C; --lock: #93BCE8; --lock-soft: #13263A;
+  --warn: #FF9A7A; --em-l: 66%; --frame: #2A3132; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body);
+  font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ---------- brief ---------- */
+.brief { max-width: 1140px; margin: 0 auto 28px; display: grid; gap: 18px; }
+.brief h1 { font-size: 26px; line-height: 1.25; margin: 0; text-wrap: balance; }
+.brief p { margin: 0; max-width: 64ch; color: var(--muted); }
+.brief-row { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; justify-content: space-between; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; cursor: pointer; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+/* ---------- stage ---------- */
+.stage { max-width: 1140px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 32px 24px; justify-content: center; }
+.shot { display: grid; gap: 10px; width: min(360px, 100%); }
+.shot figcaption { font-size: 13px; color: var(--muted); }
+.shot figcaption b { color: var(--ink); font-weight: 500; }
+figure { margin: 0; }
+
+.phone {
+  width: 100%; height: 740px; background: var(--screen); border: 8px solid var(--frame);
+  border-radius: 34px; overflow: hidden; display: flex; flex-direction: column; position: relative;
+}
+.sysbar { display: flex; justify-content: space-between; padding: 8px 20px 4px; font-size: 12px; font-family: var(--font-mono); color: var(--ink); }
+
+/* signal band: the one place the network shows itself */
+.band {
+  display: flex; align-items: center; gap: 10px; padding: 8px 16px; font-size: 12.5px;
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+.band .pulse { width: 9px; height: 9px; border-radius: 50%; background: var(--signal); position: relative; flex: none; }
+.band .pulse::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 1.5px solid var(--signal); animation: ping 2s ease-out infinite; }
+.band.idle .pulse { background: transparent; border: 1.5px solid var(--signal); }
+.band b { font-weight: 600; color: var(--signal); }
+.band .sep { color: var(--line); }
+.band .ago { margin-left: auto; color: var(--muted); }
+@keyframes ping { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+
+.apphead { display: flex; align-items: center; gap: 10px; padding: 12px 16px 10px; }
+.apphead h2 { margin: 0; font-size: 19px; line-height: 1.3; cursor: default; user-select: none; }
+.apphead .sub { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.apphead .grow { flex: 1; min-width: 0; }
+.iconbtn { border: 0; background: transparent; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; cursor: pointer; flex: none; }
+.iconbtn:hover { background: var(--line); }
+.scope {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+}
+.scope.lock { color: var(--lock); border-color: var(--lock); }
+
+.feed { flex: 1; overflow-y: auto; padding: 4px 0 12px; scrollbar-width: thin; }
+
+/* public channel: full-width rows, no bubbles (a bulletin, not a chat) */
+.post { display: grid; grid-template-columns: 28px 1fr; gap: 0 10px; padding: 9px 16px; }
+.post + .post { border-top: 1px solid var(--line); }
+.post .who { display: flex; align-items: baseline; gap: 6px; font-size: 13.5px; min-width: 0; }
+.post .name { font-weight: 700; }
+.post .tag { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.post .time { margin-left: auto; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.post .text { grid-column: 2; font-size: 16px; line-height: 1.55; overflow-wrap: anywhere; }
+.post .hops { grid-column: 2; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.post.mine .name { color: var(--ink); }
+.emblem { width: 28px; height: 28px; display: block; border-radius: 6px; background: var(--surface); border: 1px solid var(--line); }
+.emblem-btn { padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; }
+.dayline { text-align: center; font-size: 11.5px; color: var(--muted); padding: 8px 0 4px; font-family: var(--font-mono); }
+
+/* private chat: bubbles, lock tint */
+.dm { display: flex; flex-direction: column; gap: 10px; padding: 8px 14px; }
+.msg { max-width: 82%; display: grid; gap: 3px; }
+.msg.in { align-self: flex-start; }
+.msg.out { align-self: flex-end; justify-items: end; }
+.bubble { padding: 8px 12px; border-radius: 16px; font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; }
+.msg.in .bubble { background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+.msg.out .bubble { background: var(--lock-soft); color: var(--ink); border-bottom-right-radius: 5px; }
+.meta { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+
+/* delivery path: sent → relayed → delivered → read. Filled vs hollow, plus words. */
+.path { display: inline-flex; align-items: center; }
+.path i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--muted); display: block; transition: background .25s, border-color .25s; }
+.path s { width: 10px; height: 1.5px; background: var(--line); display: block; transition: background .25s; }
+.path i.on { background: var(--signal); border-color: var(--signal); }
+.path s.on { background: var(--signal); }
+.path.fail i.on { background: var(--warn); border-color: var(--warn); }
+.state { color: var(--ink); }
+.state.fail { color: var(--warn); }
+.retry { border: 0; background: none; padding: 0; color: var(--signal); font: inherit; text-decoration: underline; cursor: pointer; }
+
+.composer { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px 12px; background: var(--surface); border-top: 1px solid var(--line); }
+.composer .chip { font-size: 12px; padding: 3px 8px; border-radius: 999px; white-space: nowrap; margin-bottom: 9px; border: 1px solid var(--line); color: var(--muted); }
+.composer .chip.lock { color: var(--lock); border-color: var(--lock); }
+.composer textarea {
+  flex: 1; min-width: 0; resize: none; border: 1px solid var(--line); border-radius: 18px; padding: 8px 14px;
+  background: var(--screen); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.4; height: 40px; max-height: 96px;
+}
+.composer textarea::placeholder { color: var(--muted); }
+.send { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--ink); color: var(--screen); display: grid; place-items: center; cursor: pointer; flex: none; }
+
+.nav { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--surface); padding: 6px 0 10px; }
+.nav span { display: grid; justify-items: center; gap: 2px; font-size: 11.5px; color: var(--muted); position: relative; }
+.nav span.on { color: var(--ink); font-weight: 500; }
+.nav svg { width: 22px; height: 22px; }
+.nav .badge { position: absolute; top: -2px; left: calc(50% + 6px); background: var(--signal); color: #fff; font-size: 10px; font-family: var(--font-mono); padding: 0 5px; border-radius: 8px; line-height: 15px; }
+
+/* fingerprint sheet */
+.sheet { position: absolute; inset: 0; background: color-mix(in srgb, var(--ink) 40%, transparent); display: flex; align-items: flex-end; }
+.sheet-card { background: var(--surface); width: 100%; border-radius: 20px 20px 0 0; padding: 20px 20px 24px; display: grid; gap: 14px; justify-items: center; text-align: center; }
+.sheet-card .emblem { width: 112px; height: 112px; border-radius: 14px; }
+.sheet-card h3 { margin: 0; font-size: 17px; }
+.sheet-card p { margin: 0; font-size: 14px; color: var(--muted); max-width: 30ch; }
+.fp { font-family: var(--font-mono); font-size: 15px; letter-spacing: .04em; display: grid; grid-template-columns: repeat(4, auto); gap: 4px 14px; }
+.btnrow { display: flex; gap: 10px; width: 100%; }
+.btn { flex: 1; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-size: 15px; }
+.btn.primary { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+/* empty state: radar */
+.empty { flex: 1; display: grid; align-content: start; gap: 16px; padding: 8px 20px 16px; overflow-y: auto; }
+.radar { width: 100%; max-width: 240px; aspect-ratio: 1; justify-self: center; position: relative; }
+.radar svg { width: 100%; height: 100%; display: block; }
+.radar .sweep { transform-origin: 120px 120px; animation: sweep 3.2s linear infinite; }
+@keyframes sweep { to { transform: rotate(360deg); } }
+.blip { opacity: 0; transition: opacity .4s; }
+.blip.show { opacity: 1; }
+.empty h3 { margin: 0; font-size: 20px; text-align: center; }
+.empty .lede { margin: -8px 0 0; font-size: 14px; color: var(--muted); text-align: center; }
+.tips { display: grid; gap: 8px; }
+.tip { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-align: left; font-size: 14.5px; line-height: 1.45; }
+.tip small { display: block; color: var(--muted); font-size: 12.5px; }
+.tip .n { font-family: var(--font-mono); font-size: 12px; color: var(--signal); border: 1.5px solid var(--signal); border-radius: 50%; width: 22px; height: 22px; display: grid; place-items: center; }
+.tip.action { cursor: pointer; }
+.tip.action:hover { border-color: var(--ink); }
+.sim { justify-self: center; font-size: 12.5px; color: var(--muted); border: 1px dashed var(--line); background: transparent; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+
+.toast { position: absolute; left: 12px; right: 12px; top: 100px; background: var(--ink); color: var(--screen); border-radius: 12px; padding: 10px 14px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+.toast .emblem { width: 24px; height: 24px; }
+
+.notes { max-width: 1140px; margin: 36px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px 32px; }
+.notes h4 { margin: 0 0 4px; font-size: 14px; }
+.notes p { margin: 0; font-size: 13.5px; color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .band .pulse::after, .radar .sweep { animation: none; }
+}
+</style>
+
+<header class="brief">
+  <h1>openchat 界面原型</h1>
+  <p>原则是两层分开：消息内容保持安静、好读；网络状态（信号带、送达路径、跳数、身份徽记）统一用信号橙和等宽数字表达，只出现在固定位置。界面的特色来自让这张网看得见。</p>
+  <div class="brief-row">
+    <div class="legend" aria-label="网络层图例">
+      <span><span class="path"><i class="on"></i><s class="on"></s><i class="on"></i><s></s><i></i></span>送达路径</span>
+      <span class="mono">经 2 跳</span>
+      <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 16 0M8 12a4 4 0 0 1 8 0"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>公开广播</span>
+      <span style="color:var(--lock)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>加密私信</span>
+    </div>
+    <div class="seg" role="group" aria-label="主题">
+      <button id="th-sys" aria-pressed="true" data-t="">跟随系统</button>
+      <button id="th-light" aria-pressed="false" data-t="light">亮色</button>
+      <button id="th-dark" aria-pressed="false" data-t="dark">暗色</button>
+    </div>
+  </div>
+</header>
+
+<main class="stage">
+  <!-- 1. nearby public channel -->
+  <figure class="shot">
+    <div class="phone" id="p-public">
+      <div class="sysbar"><span>14:32</span><span>无服务 · 73%</span></div>
+      <div class="apphead">
+        <div class="grow">
+          <h2>附近</h2>
+          <div class="sub">范围内所有人都能看到</div>
+        </div>
+        <span class="scope"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 16 0M8 12a4 4 0 0 1 8 0"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>公开</span>
+      </div>
+      <div class="band"><span class="pulse"></span><span>直连 <b>3</b></span><span class="sep">|</span><span>可达 <b>11</b></span><span class="ago">12 秒前</span></div>
+      <div class="feed" id="pub-feed"></div>
+      <div class="composer">
+        <span class="chip">公开</span>
+        <textarea id="pub-input" rows="1" placeholder="对附近所有人说…"></textarea>
+        <button class="send" id="pub-send" aria-label="发送"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5 21 12 3 3.5v6.6L15 12 3 13.9z"/></svg></button>
+      </div>
+      <nav class="nav" aria-hidden="true"></nav>
+    </div>
+    <figcaption><b>附近频道</b>：像公告板，不用气泡。每条消息前是发言人的徽记，下方小字写经过几跳。</figcaption>
+  </figure>
+
+  <!-- 2. private chat -->
+  <figure class="shot">
+    <div class="phone" id="p-dm">
+      <div class="sysbar"><span>14:33</span><span>无服务 · 73%</span></div>
+      <div class="apphead">
+        <button class="iconbtn" aria-label="返回"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button class="emblem-btn" id="dm-emblem" aria-label="核对小林的身份"></button>
+        <div class="grow">
+          <h2>小林</h2>
+          <div class="sub">在附近 · 经 1 台手机转达</div>
+        </div>
+        <span class="scope lock"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>加密</span>
+      </div>
+      <div class="band"><span class="pulse"></span><span>到小林 <b>2</b> 跳</span><span class="sep">|</span><span>直连 <b>3</b></span><span class="ago">4 秒前</span></div>
+      <div class="feed"><div class="dm" id="dm-feed"></div></div>
+      <div class="composer">
+        <span class="chip lock">加密</span>
+        <textarea id="dm-input" rows="1" placeholder="写给小林…"></textarea>
+        <button class="send" id="dm-send" aria-label="发送"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5 21 12 3 3.5v6.6L15 12 3 13.9z"/></svg></button>
+      </div>
+      <div class="sheet" id="fp-sheet" hidden>
+        <div class="sheet-card" role="dialog" aria-labelledby="fp-title">
+          <span id="fp-emblem"></span>
+          <h3 id="fp-title">核对小林的身份</h3>
+          <p>当面对比两台手机上的图案和数字。一样，就说明中间没有人冒充。</p>
+          <div class="fp" id="fp-digits"></div>
+          <div class="btnrow">
+            <button class="btn" id="fp-close">稍后</button>
+            <button class="btn primary" id="fp-ok">一致，标为已核对</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>私信</b>：发出的消息下面是送达路径。发一条试试，看它一步步走完。点头像核对指纹。</figcaption>
+  </figure>
+
+  <!-- 3. nobody nearby -->
+  <figure class="shot">
+    <div class="phone" id="p-empty">
+      <div class="sysbar"><span>14:30</span><span>无服务 · 74%</span></div>
+      <div class="apphead">
+        <div class="grow">
+          <h2>附近</h2>
+          <div class="sub">范围内所有人都能看到</div>
+        </div>
+        <span class="scope">公开</span>
+      </div>
+      <div class="band idle" id="empty-band"><span class="pulse"></span><span id="empty-band-text">正在扫描 · <b>0</b> 人</span><span class="ago" id="scan-time">已扫 3:12</span></div>
+      <div class="empty">
+        <div class="radar" aria-hidden="true">
+          <svg viewBox="0 0 240 240">
+            <defs>
+              <linearGradient id="sw" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="var(--signal)" stop-opacity="0"/>
+                <stop offset="1" stop-color="var(--signal)" stop-opacity=".35"/>
+              </linearGradient>
+            </defs>
+            <circle cx="120" cy="120" r="110" fill="none" stroke="var(--line)" stroke-width="1"/>
+            <circle cx="120" cy="120" r="74" fill="none" stroke="var(--line)" stroke-width="1"/>
+            <circle cx="120" cy="120" r="38" fill="none" stroke="var(--line)" stroke-width="1"/>
+            <text x="124" y="80" font-size="9" fill="var(--muted)" font-family="IBM Plex Mono, monospace">10 m</text>
+            <text x="124" y="44" font-size="9" fill="var(--muted)" font-family="IBM Plex Mono, monospace">30 m</text>
+            <text x="124" y="14" font-size="9" fill="var(--muted)" font-family="IBM Plex Mono, monospace">50 m+</text>
+            <path class="sweep" d="M120 120 L230 120 A110 110 0 0 0 197.8 42.2 Z" fill="url(#sw)"/>
+            <circle cx="120" cy="120" r="5" fill="var(--ink)"/>
+            <g class="blip" id="blip"><circle cx="168" cy="86" r="6" fill="var(--signal)"/><circle cx="168" cy="86" r="11" fill="none" stroke="var(--signal)" stroke-width="1.5"/></g>
+          </svg>
+        </div>
+        <h3 id="empty-title">附近还没有人</h3>
+        <p class="lede" id="empty-lede">蓝牙正常。有人进入几十米内，会自动连上。</p>
+        <div class="tips" id="tips">
+          <div class="tip"><span class="n">1</span><div>让对方也打开 openchat<small>手机锁屏后也能收发，但 App 不能被划掉</small></div></div>
+          <div class="tip"><span class="n">2</span><div>走到开阔处，离窗户近一点<small>墙和人群会挡住蓝牙，室内通常只有 10 米左右</small></div></div>
+          <button class="tip action" type="button"><span class="n">3</span><div>把 App 发给身边的人<small>用快传或蓝牙发送安装包，不需要网络</small></div></button>
+        </div>
+        <button class="sim" id="sim-join" type="button">原型演示：模拟有人进入范围</button>
+      </div>
+      <nav class="nav" aria-hidden="true"></nav>
+    </div>
+    <figcaption><b>附近没人</b>：这是最常见的状态，所以最用心。雷达说明 App 在工作，下面每条都是能马上做的事。</figcaption>
+  </figure>
+</main>
+
+<section class="notes">
+  <div><h4>信号带</h4><p>每个页面顶部同一位置。实心点在呼吸表示网是活的，空心点表示还在找。数字用等宽字体，和正文明显不同。</p></div>
+  <div><h4>送达路径</h4><p>四个点：发出、被转发、送达、已读。实心和空心区分状态，旁边总有文字，不只靠颜色。失败时变红并给出重发。</p></div>
+  <div><h4>身份徽记</h4><p>由公钥算出颜色和对称图案。昵称可以重名，徽记不行。点开就是指纹核对页。</p></div>
+  <div><h4>公开与私密</h4><p>公开频道是通栏公告，输入框前写“公开”；私信是气泡，带锁的蓝色。两者一眼能分开，避免发错地方。</p></div>
+</section>
+
+<script>
+(() => {
+  // ---------- theme switch ----------
+  const segBtns = document.querySelectorAll('.seg button');
+  segBtns.forEach(b => b.addEventListener('click', () => {
+    const t = b.dataset.t;
+    if (t) document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme');
+    segBtns.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+
+  // ---------- emblems: deterministic symmetric 5x5 pattern + hue from key ----------
+  function hash(str) {
+    let h = 2166136261 >>> 0; const out = [];
+    for (let r = 0; r < 8; r++) {
+      for (const c of str + r) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+      out.push(h);
+    }
+    return out;
+  }
+  function emblem(key, size = 28) {
+    const hs = hash(key), hue = hs[0] % 360, cells = [];
+    let bits = hs[1] ^ hs[2];
+    for (let y = 0; y < 5; y++) for (let x = 0; x < 3; x++) {
+      if (bits & 1) { cells.push([x, y]); if (x < 2) cells.push([4 - x, y]); }
+      bits >>>= 1;
+    }
+    const rects = cells.map(([x, y]) => `<rect x="${2 + x * 4}" y="${2 + y * 4}" width="4" height="4"/>`).join('');
+    return `<svg class="emblem" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><g style="fill:hsl(${hue} 62% var(--em-l))">${rects}</g></svg>`;
+  }
+  const hueOf = key => hash(key)[0] % 360;
+  const fingerprint = key => hash(key).map(n => n.toString(16).toUpperCase().padStart(8, '0').slice(0, 4));
+
+  // ---------- nav ----------
+  const navIcons = {
+    附近: '<path d="M4 12a8 8 0 0 1 16 0M8 12a4 4 0 0 1 8 0" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>',
+    私信: '<rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/>',
+    位置频道: '<path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2" fill="currentColor"/>',
+    我: '<circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2"/>',
+  };
+  document.querySelectorAll('.nav').forEach(nav => {
+    nav.innerHTML = Object.entries(navIcons).map(([k, p], i) =>
+      `<span class="${i === 0 ? 'on' : ''}"><svg viewBox="0 0 24 24">${p}</svg>${k}${k === '私信' ? '<em class="badge">2</em>' : ''}</span>`).join('');
+  });
+
+  const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const now = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+
+  // ---------- public channel ----------
+  const people = {
+    xl: { name: '小林', key: 'a1f4c09e77b2' },
+    ah: { name: '阿禾', key: '5d02be91c3aa' },
+    zm: { name: '周敏', key: 'e88713f0b45c' },
+    zm2: { name: '周敏', key: '0c3b9e21d7f8' },   // same nickname, different person
+    me: { name: '我', key: '9b17aa30e6d1' },
+  };
+  const pubFeed = document.getElementById('pub-feed');
+  const posts = [
+    ['ah', '14:18', '2 号楼停电了，一楼大厅有应急灯，可以来这边。', 0],
+    ['zm', '14:21', '有人知道社区卫生站开着吗？家里老人需要量血压。', 2],
+    ['xl', '14:24', '卫生站开着，在发瓶装水。我刚从那边回来。', 1],
+    ['zm2', '14:27', '东门那条路积水到膝盖，别走东门。', 3],
+    ['ah', '14:30', '收到。西门能走，我们在西门口集合。', 0],
+  ];
+  function postHTML(p, who, time, text, hops) {
+    return `<article class="post${who === 'me' ? ' mine' : ''}">
+      ${emblem(p.key)}
+      <div class="who"><span class="name" style="color:${who === 'me' ? 'var(--ink)' : `hsl(${hueOf(p.key)} 62% var(--em-l))`}">${p.name}</span><span class="tag">#${p.key.slice(0, 4)}</span><span class="time">${time}</span></div>
+      <div class="text">${esc(text)}</div>
+      <div class="hops">${who === 'me' ? '已广播给 3 台直连手机' : hops === 0 ? '直连' : `经 ${hops} 跳`}</div>
+    </article>`;
+  }
+  pubFeed.innerHTML = '<div class="dayline">今天</div>' + posts.map(([w, t, x, h]) => postHTML(people[w], w, t, x, h)).join('');
+  const pubInput = document.getElementById('pub-input');
+  function sendPublic() {
+    const t = pubInput.value.trim(); if (!t) return;
+    pubFeed.insertAdjacentHTML('beforeend', postHTML(people.me, 'me', now(), t, 0));
+    pubInput.value = ''; pubFeed.scrollTop = pubFeed.scrollHeight;
+  }
+  document.getElementById('pub-send').addEventListener('click', sendPublic);
+  pubInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendPublic(); } });
+
+  // ---------- private chat ----------
+  const dmFeed = document.getElementById('dm-feed');
+  const STATES = ['发送中', '已转发', '已送达', '已读'];
+  function pathHTML(step, fail) {
+    let h = '';
+    for (let i = 0; i < 4; i++) {
+      h += `<i class="${i <= step ? 'on' : ''}"></i>`;
+      if (i < 3) h += `<s class="${i < step ? 'on' : ''}"></s>`;
+    }
+    return `<span class="path${fail ? ' fail' : ''}" aria-hidden="true">${h}</span>`;
+  }
+  function outMsg(text, time, step, fail) {
+    const el = document.createElement('div');
+    el.className = 'msg out';
+    el.innerHTML = `<div class="bubble">${esc(text)}</div><div class="meta"><span>${time}</span>${pathHTML(step, fail)}<span class="state${fail ? ' fail' : ''}">${fail ? '没送到 · ' : STATES[step]}${fail ? '<button class="retry" type="button">重发</button>' : step >= 2 ? ' · 经 2 跳' : ''}</span></div>`;
+    return el;
+  }
+  function inMsg(text, time, hops) {
+    return `<div class="msg in"><div class="bubble">${esc(text)}</div><div class="meta"><span>${time}</span><span>经 ${hops} 跳</span></div></div>`;
+  }
+  dmFeed.innerHTML = '<div class="dayline">今天 · 端到端加密，转发的手机看不到内容</div>'
+    + inMsg('你在哪？我在卫生站门口。', '14:25', 2);
+  dmFeed.append(outMsg('我在西门，带着充电宝，过去找你。', '14:26', 3));
+  dmFeed.insertAdjacentHTML('beforeend', inMsg('好，我穿红色外套。', '14:27', 2));
+  dmFeed.append(outMsg('我妈电话打不通，你那边有信号吗？', '14:29', 0, true));
+  const scrollDm = () => { const f = dmFeed.parentElement; f.scrollTop = f.scrollHeight; };
+  dmFeed.addEventListener('click', e => {
+    if (!e.target.classList.contains('retry')) return;
+    const old = e.target.closest('.msg'), text = old.querySelector('.bubble').textContent;
+    old.remove(); deliver(text);
+  });
+  function deliver(text) {
+    let step = 0, el = outMsg(text, now(), 0);
+    dmFeed.append(el); scrollDm();
+    const tick = () => {
+      step++;
+      const next = outMsg(text, now(), step);
+      el.replaceWith(next); el = next;
+      if (step < 3) setTimeout(tick, step === 2 ? 1800 : 1100);
+    };
+    setTimeout(tick, 900);
+  }
+  const dmInput = document.getElementById('dm-input');
+  function sendDm() { const t = dmInput.value.trim(); if (!t) return; dmInput.value = ''; deliver(t); }
+  document.getElementById('dm-send').addEventListener('click', sendDm);
+  dmInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendDm(); } });
+  scrollDm();
+
+  // fingerprint sheet
+  const sheet = document.getElementById('fp-sheet');
+  document.getElementById('dm-emblem').innerHTML = emblem(people.xl.key, 36);
+  document.getElementById('fp-emblem').innerHTML = emblem(people.xl.key, 112);
+  document.getElementById('fp-digits').innerHTML = fingerprint(people.xl.key).map(g => `<span>${g}</span>`).join('');
+  document.getElementById('dm-emblem').addEventListener('click', () => { sheet.hidden = false; document.getElementById('fp-ok').focus(); });
+  document.getElementById('fp-close').addEventListener('click', () => { sheet.hidden = true; });
+  document.getElementById('fp-ok').addEventListener('click', () => {
+    sheet.hidden = true;
+    document.querySelector('#p-dm .apphead .sub').textContent = '在附近 · 已当面核对';
+  });
+
+  // ---------- nobody nearby ----------
+  let secs = 192;
+  const scanEl = document.getElementById('scan-time');
+  let scanning = setInterval(() => { secs++; scanEl.textContent = `已扫 ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`; }, 1000);
+  const phoneEmpty = document.getElementById('p-empty');
+  document.getElementById('sim-join').addEventListener('click', e => {
+    const btn = e.currentTarget;
+    if (btn.dataset.joined) { // reset the demo
+      delete btn.dataset.joined; btn.textContent = '原型演示：模拟有人进入范围';
+      document.getElementById('blip').classList.remove('show');
+      document.getElementById('empty-band').classList.add('idle');
+      document.getElementById('empty-band-text').innerHTML = '正在扫描 · <b>0</b> 人';
+      document.getElementById('empty-title').textContent = '附近还没有人';
+      document.getElementById('empty-lede').textContent = '蓝牙正常。有人进入几十米内，会自动连上。';
+      secs = 0; scanning = setInterval(() => { secs++; scanEl.textContent = `已扫 ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`; }, 1000);
+      return;
+    }
+    btn.dataset.joined = '1'; btn.textContent = '重置演示';
+    clearInterval(scanning); scanEl.textContent = '刚刚';
+    document.getElementById('blip').classList.add('show');
+    document.getElementById('empty-band').classList.remove('idle');
+    document.getElementById('empty-band-text').innerHTML = '直连 <b>1</b>';
+    document.getElementById('empty-title').textContent = '连上了 1 个人';
+    document.getElementById('empty-lede').textContent = '现在发的话，阿禾能看到。离得越多人，消息能传得越远。';
+    const t = document.createElement('div');
+    t.className = 'toast'; t.setAttribute('role', 'status');
+    t.innerHTML = `${emblem(people.ah.key, 24)}<span><b>阿禾</b> 进入范围 · 直连</span>`;
+    phoneEmpty.append(t); setTimeout(() => t.remove(), 2600);
+  });
+})();
+</script>
