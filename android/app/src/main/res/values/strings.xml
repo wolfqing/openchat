@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">openchat</string>
+    <string name="channel_status">网络状态</string>
+    <string name="channel_messages">私信</string>
+    <string name="status_running">正在通过蓝牙连接附近的手机</string>
+</resources>

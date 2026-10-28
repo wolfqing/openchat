@@ -163,9 +163,16 @@ does not follow drops out of the network. Track that document.
 ## 11. Security history
 
 - 2025-07: Alex Radocea demonstrated impersonation against the Favorites
-  system shortly after the TestFlight release. Upstream added the "no
-  external security review, do not rely on it" warning that remains in the
-  README. No completed third-party audit exists as of 2026-10-27.
+  system shortly after the TestFlight release. Upstream added a "no
+  external security review, do not rely on it" warning to the README. That
+  warning is gone from the iOS README as of 2026-10-28.
+- 2025-11: Cure53 audit "BCH-01". The report itself is not in either repo;
+  the Android maintainer filed nine findings from it on 2026-01-14
+  (bitchat-android #587–#595), three rated High. Still open on 2026-10-28:
+  #589 nickname impersonation (High; the iOS side refuses ambiguous
+  nicknames since v1.8.0, the Android fix is PR #911) and #593 announce
+  replay within a ±1 h window (Medium). An earlier version of these notes
+  said no third-party audit existed; that was wrong.
 - v1.8.0 (2026-10-23) hardening: session rekey on absolute age, fail-closed
   on unverifiable handshake peer IDs, timestamp sanity windows for QR codes,
   Nostr DM rumors and sync replies, per-type payload caps, byte-bounded sync
@@ -200,3 +207,33 @@ Upstream iOS source layout worth keeping untouched in a fork: `Noise/`,
 Other compatible clients that prove the protocol is implementable outside
 Swift: bitchat-terminal and bitchat-tui (Rust), bitchat-python, and bitle, an
 ESP32-C3 solar relay node.
+
+## 13. Upstream changes since these notes were written
+
+Checked 2026-10-28 against the GitHub API. Nothing below changes the wire
+protocol; `docs/PEER-ID-ROTATION.md` is still "Draft for cross-platform
+review", implemented in `BitFoundation` and not emitted by any client.
+
+**iOS** (latest release still v1.8.0, 2026-10-23): one post-release commit,
+"Port the Android globe geohash picker to iOS" (#1807, 2026-10-25). Source
+tree confirmed: `bitchat/{Identity,Noise,Nostr,Protocols,Services,Sync}` and
+`localPackages/{Arti,BitFoundation,BitLogger}` exist as the roadmap assumes.
+
+**Android**: three releases in six days.
+
+| Tag | Date | What changed |
+|---|---|---|
+| v2.0.3 | 2026-10-22 | (release notes not retrieved) |
+| v2.1.0 | 2026-10-26 | Spam filtering on by default for public mesh and geohash chats; "improved onboarding layouts"; Basque; app data excluded from backup/device transfer; fragment and QR-timestamp validation; recipient-less Nostr envelopes no longer leak the mesh identity; updated bundled relays. Physical-device and cross-client tests were explicitly waived for this release. |
+| v2.2.0 | 2026-10-28 | Redesigned globe for discovering geohash channels, participant counts, smoother map; Wear OS 0.1.7 screen refresh. |
+
+**Reading for openchat**: upstream's current UX energy is going into
+geohash discovery (the globe, on both platforms) and Wear OS, not into
+first-run onboarding for the offline mesh case. "Improved onboarding
+layouts" in v2.1.0 is a layout pass, not the rebuild that the roadmap's
+kill condition describes. The spam filter being default-on in public
+channels is new behaviour a compatible client should match or users will
+see different timelines on different phones.
+
+**Article correction**: the 深潮 TechFlow piece that circulated on
+2026-10-27 says the Android licence is MIT. It is GPL-3.0 (see §12).

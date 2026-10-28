@@ -31,6 +31,12 @@ Phase 1 starts until Phase 0 says the premise holds.
 **Exit**: a written one-page finding with the complaint share, the tap
 count, and a go/no-go.
 
+**Status 2026-10-28**: review and issue analysis done, see
+[phase0-findings.md](phase0-findings.md). UX is about 19% of complaints in
+both sources, so the first kill condition is met on that data. The field
+test, the Android licence decision and the name are still open; the field
+test decides whether the project stops or changes its premise.
+
 **Kill**: UX complaints are a minority of feedback, or upstream ships a
 rebuilt onboarding for non-technical users during this phase.
 
@@ -79,3 +85,26 @@ wire protocol (peer ID rotation) faster than this fork can follow.
 - Developed-country carrier outages (the France 2026-10 pattern) do not
   recur; the infrastructure-failure positioning then rests on disasters
   alone.
+
+## Decision 2026-10-28: build anyway, Android first, clean room
+
+After the Phase 0 finding the owner decided to continue. This replaces the
+Phase 1 and Phase 2 plans above:
+
+- Everything is written from scratch. No bitchat code is forked or copied.
+- Interop with bitchat stays a goal. The wire format is documented in
+  [protocol-spec.md](protocol-spec.md), written by reading the
+  public-domain iOS source. The GPL-3.0 Android source is not read, so the
+  repository stays MIT.
+- Android ships first, then iOS.
+
+**Status**: Android v0.1.0 preview (see [../android/README.md](../android/README.md))
+implements every feature in the 2026-10-27 TechFlow article: BLE mesh relay,
+no accounts, public nearby channel, Noise private messages, Nostr geohash
+channels, triple-tap panic wipe, offline APK sharing. Unit tests pass,
+including the Noise and BIP-340 official vectors.
+
+**Next gate**: field test with two Android phones and one iPhone running
+stock bitchat, airplane mode on. Pass = public and private messages both
+ways, and a relay through the iPhone. This is the first real evidence of
+interop.
