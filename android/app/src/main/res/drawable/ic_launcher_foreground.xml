@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- "OPEN / CHAT" in a 5x7 pixel face, two rows, inside the 66dp safe zone. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <group android:translateX="30" android:translateY="30">
-        <path android:strokeColor="#FFFFFFFF" android:strokeWidth="3" android:pathData="M10,12L38,12M10,12L24,38M38,12L24,38" />
-        <path android:fillColor="#FFFFFFFF" android:pathData="M10,5a7,7 0,1 1,0 14a7,7 0,1 1,0 -14zM38,5a7,7 0,1 1,0 14a7,7 0,1 1,0 -14zM24,31a7,7 0,1 1,0 14a7,7 0,1 1,0 -14z" />
-    </group>
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/signal"
+        android:pathData="M29.85,35.6h6.9v2.3h-6.9zM27.55,37.9h2.3v2.3h-2.3zM36.75,37.9h2.3v2.3h-2.3zM27.55,40.2h2.3v2.3h-2.3zM36.75,40.2h2.3v2.3h-2.3zM27.55,42.5h2.3v2.3h-2.3zM36.75,42.5h2.3v2.3h-2.3zM27.55,44.8h2.3v2.3h-2.3zM36.75,44.8h2.3v2.3h-2.3zM27.55,47.1h2.3v2.3h-2.3zM36.75,47.1h2.3v2.3h-2.3zM29.85,49.4h6.9v2.3h-6.9zM41.35,35.6h9.2v2.3h-9.2zM41.35,37.9h2.3v2.3h-2.3zM50.55,37.9h2.3v2.3h-2.3zM41.35,40.2h2.3v2.3h-2.3zM50.55,40.2h2.3v2.3h-2.3zM41.35,42.5h9.2v2.3h-9.2zM41.35,44.8h2.3v2.3h-2.3zM41.35,47.1h2.3v2.3h-2.3zM41.35,49.4h2.3v2.3h-2.3zM55.15,35.6h11.5v2.3h-11.5zM55.15,37.9h2.3v2.3h-2.3zM55.15,40.2h2.3v2.3h-2.3zM55.15,42.5h9.2v2.3h-9.2zM55.15,44.8h2.3v2.3h-2.3zM55.15,47.1h2.3v2.3h-2.3zM55.15,49.4h11.5v2.3h-11.5zM68.95,35.6h2.3v2.3h-2.3zM78.15,35.6h2.3v2.3h-2.3zM68.95,37.9h2.3v2.3h-2.3zM78.15,37.9h2.3v2.3h-2.3zM68.95,40.2h4.6v2.3h-4.6zM78.15,40.2h2.3v2.3h-2.3zM68.95,42.5h2.3v2.3h-2.3zM73.55,42.5h2.3v2.3h-2.3zM78.15,42.5h2.3v2.3h-2.3zM68.95,44.8h2.3v2.3h-2.3zM75.85,44.8h4.6v2.3h-4.6zM68.95,47.1h2.3v2.3h-2.3zM78.15,47.1h2.3v2.3h-2.3zM68.95,49.4h2.3v2.3h-2.3zM78.15,49.4h2.3v2.3h-2.3zM29.85,56.3h6.9v2.3h-6.9zM27.55,58.6h2.3v2.3h-2.3zM36.75,58.6h2.3v2.3h-2.3zM27.55,60.9h2.3v2.3h-2.3zM27.55,63.2h2.3v2.3h-2.3zM27.55,65.5h2.3v2.3h-2.3zM27.55,67.8h2.3v2.3h-2.3zM36.75,67.8h2.3v2.3h-2.3zM29.85,70.1h6.9v2.3h-6.9zM41.35,56.3h2.3v2.3h-2.3zM50.55,56.3h2.3v2.3h-2.3zM41.35,58.6h2.3v2.3h-2.3zM50.55,58.6h2.3v2.3h-2.3zM41.35,60.9h2.3v2.3h-2.3zM50.55,60.9h2.3v2.3h-2.3zM41.35,63.2h11.5v2.3h-11.5zM41.35,65.5h2.3v2.3h-2.3zM50.55,65.5h2.3v2.3h-2.3zM41.35,67.8h2.3v2.3h-2.3zM50.55,67.8h2.3v2.3h-2.3zM41.35,70.1h2.3v2.3h-2.3zM50.55,70.1h2.3v2.3h-2.3zM57.45,56.3h6.9v2.3h-6.9zM55.15,58.6h2.3v2.3h-2.3zM64.35,58.6h2.3v2.3h-2.3zM55.15,60.9h2.3v2.3h-2.3zM64.35,60.9h2.3v2.3h-2.3zM55.15,63.2h11.5v2.3h-11.5zM55.15,65.5h2.3v2.3h-2.3zM64.35,65.5h2.3v2.3h-2.3zM55.15,67.8h2.3v2.3h-2.3zM64.35,67.8h2.3v2.3h-2.3zM55.15,70.1h2.3v2.3h-2.3zM64.35,70.1h2.3v2.3h-2.3zM68.95,56.3h11.5v2.3h-11.5zM73.55,58.6h2.3v2.3h-2.3zM73.55,60.9h2.3v2.3h-2.3zM73.55,63.2h2.3v2.3h-2.3zM73.55,65.5h2.3v2.3h-2.3zM73.55,67.8h2.3v2.3h-2.3zM73.55,70.1h2.3v2.3h-2.3z" />
 </vector>

@@ -5,6 +5,12 @@
 - The app now starts in English and in the dark theme. Chinese is still
   one tap away in the language picker, which keeps a "System default"
   option. The dark theme no longer follows the system setting.
+- The main colour is now signal orange (`#FF7840`) on near-black, the
+  dark palette of the prototype. It replaces the green from v0.1.
+- New launcher icon: "OPEN" over "CHAT" in a 5x7 pixel face, orange on
+  black, drawn as a vector so it stays sharp. It also serves as the
+  Android 13 themed icon. Preview:
+  [docs/design/app-icon-preview.png](docs/design/app-icon-preview.png).
 
 ## Android v0.2.0 (preview) — 2026-10-28
 
