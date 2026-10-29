@@ -5,7 +5,6 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,7 +57,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -97,14 +95,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val Accent = Color(0xFF1F7A4D)
-
+/** Dark by default, whatever the system setting. */
 @Composable
 fun OpenChatTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
-    val scheme = if (dark) darkColorScheme(primary = Color(0xFF6FD3A0), secondary = Color(0xFF6FD3A0))
-    else lightColorScheme(primary = Accent, secondary = Accent)
-    MaterialTheme(colorScheme = scheme, content = content)
+    MaterialTheme(colorScheme = darkColorScheme(primary = Color(0xFF6FD3A0), secondary = Color(0xFF6FD3A0)), content = content)
 }
 
 @Composable

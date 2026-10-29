@@ -1,5 +1,11 @@
 # Changelog
 
+## Android, unreleased
+
+- The app now starts in English and in the dark theme. Chinese is still
+  one tap away in the language picker, which keeps a "System default"
+  option. The dark theme no longer follows the system setting.
+
 ## Android v0.2.0 (preview) — 2026-10-28
 
 - Every nickname now carries a `#xxxx` suffix: the first four hex digits
