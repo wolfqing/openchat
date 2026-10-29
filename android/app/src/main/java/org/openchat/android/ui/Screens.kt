@@ -32,10 +32,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -94,6 +94,7 @@ import org.openchat.android.app.Conversation
 import org.openchat.android.app.DeliveryState
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.nostr.Geohash
+import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -211,6 +212,7 @@ fun MainScreen(
 
     val onPanic = {
         ChatRepository.controller?.panic()
+        drafts.clear()
         openChat = null
         tab = Tab.NEARBY
         wiped = true
@@ -254,7 +256,7 @@ fun MainScreen(
                         icon = {
                             BadgedBox(badge = { if (count > 0) Badge { Text("$count") } }) {
                                 Icon(
-                                    when (t) { Tab.NEARBY -> Icons.Filled.Home; Tab.PRIVATE -> Icons.Filled.Email; Tab.LOCATION -> Icons.Filled.LocationOn; Tab.ME -> Icons.Filled.Person },
+                                    when (t) { Tab.NEARBY -> Icons.Filled.Share; Tab.PRIVATE -> Icons.Filled.Lock; Tab.LOCATION -> Icons.Filled.LocationOn; Tab.ME -> Icons.Filled.Person },
                                     contentDescription = stringResource(t.label),
                                 )
                             }
@@ -377,17 +379,17 @@ fun ChatPane(
                 }
             }
         }
-        Composer(placeholder, onSend)
+        Composer(conversation, placeholder, onSend)
     }
 }
 
 @Composable
 private fun Bubble(m: ChatMessage, onSenderClick: ((String) -> Unit)?) {
-    val time = remember(m.timestamp) { SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(m.timestamp)) }
+    val time = remember(m.timestamp) { stampText(m.timestamp) }
     Column(Modifier.fillMaxWidth(), horizontalAlignment = if (m.mine) Alignment.End else Alignment.Start) {
         if (!m.mine) {
             Text(
-                labelText(PeerLabel.of(m), m.teleported), fontSize = 12.sp, color = MaterialTheme.colorScheme.primary,
+                labelText(PeerLabel.of(m), m.teleported), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.let { if (onSenderClick != null) it.clickable { onSenderClick(m.senderKey) } else it },
             )
         }
@@ -408,14 +410,27 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((String) -> Unit)?) {
     }
 }
 
+/** "HH:mm" today, otherwise the short local date as well. */
+private fun stampText(ts: Long): String {
+    val locale = Locale.getDefault()
+    val clock = SimpleDateFormat("HH:mm", locale).format(Date(ts))
+    val day = SimpleDateFormat("yyyyDDD", locale)
+    return if (day.format(Date(ts)) == day.format(Date())) clock
+    else DateFormat.getDateInstance(DateFormat.SHORT, locale).format(Date(ts)) + " " + clock
+}
+
+/** Unsent text per conversation, kept while the user switches tabs. Cleared by the panic wipe. */
+private val drafts = HashMap<String, String>()
+
 @Composable
-private fun Composer(placeholder: String, onSend: (String) -> Unit) {
-    var text by rememberSaveable { mutableStateOf("") }
-    val send = { val t = text.trim(); if (t.isNotEmpty()) { onSend(t); text = "" } }
+private fun Composer(conversation: String, placeholder: String, onSend: (String) -> Unit) {
+    var text by remember(conversation) { mutableStateOf(drafts[conversation].orEmpty()) }
+    fun set(t: String) { text = t; if (t.isEmpty()) drafts.remove(conversation) else drafts[conversation] = t }
+    val send = { val t = text.trim(); if (t.isNotEmpty()) { onSend(t); set("") } }
     HorizontalDivider()
     Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(
-            value = text, onValueChange = { if (it.length <= 1000) text = it },
+            value = text, onValueChange = { if (it.length <= 1000) set(it) },
             placeholder = { Text(placeholder) },
             modifier = Modifier.weight(1f),
             maxLines = 4,

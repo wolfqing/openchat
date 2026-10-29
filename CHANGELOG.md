@@ -1,5 +1,20 @@
 # Changelog
 
+## Android v0.3.1 (preview) — 2026-10-28
+
+- Bottom bar icons: Nearby is now a three-node mesh, Private a lock. They
+  were a house and an envelope.
+- Messages from another day show the short local date before the time.
+- An unsent draft survives switching between tabs. The panic wipe clears
+  drafts too.
+- Sender names in chat are plain ink, semibold. Orange is kept for the
+  network layer, as the design direction says.
+- versionCode 5, versionName 0.3.1. Installs over v0.3.0. 39 unit tests
+  pass.
+- Release: <https://github.com/wolfqing/openchat/releases/tag/v0.3.1>,
+  APK SHA-256 `bccc1cee71f54f28add9d5c55ac03896abd3130e09936a0d20cb40c99e505c40`.
+- Not yet checked on a device.
+
 ## Android v0.3.0 (preview) — 2026-10-28
 
 - The app now starts in English and in the dark theme. Chinese is still

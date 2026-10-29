@@ -12,8 +12,8 @@ android {
         applicationId = "org.openchat.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.3.0"
+        versionCode = 5
+        versionName = "0.3.1"
     }
 
     buildTypes {
