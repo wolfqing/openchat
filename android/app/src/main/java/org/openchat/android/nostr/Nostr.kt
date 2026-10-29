@@ -14,9 +14,9 @@ import kotlin.math.sqrt
 object Geohash {
     private const val BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz"
 
-    /** Channel levels from docs/protocol-spec.md §9. */
-    enum class Level(val precision: Int, val label: String) {
-        BLOCK(7, "街区"), NEIGHBORHOOD(6, "社区"), CITY(5, "城市"), PROVINCE(4, "省"), REGION(2, "区域")
+    /** Channel levels from docs/protocol-spec.md §9. The UI names them from string resources. */
+    enum class Level(val precision: Int) {
+        BLOCK(7), NEIGHBORHOOD(6), CITY(5), PROVINCE(4), REGION(2)
     }
 
     fun encode(lat: Double, lon: Double, precision: Int): String {

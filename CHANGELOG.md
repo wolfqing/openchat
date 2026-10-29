@@ -1,5 +1,18 @@
 # Changelog
 
+## Android, unreleased
+
+- Every nickname now carries a `#xxxx` suffix: the first four hex digits
+  of the peer ID on the mesh, or the last four of the Nostr pubkey in
+  location channels. The suffix is monospaced and muted. A `#xxxx` typed
+  at the end of a nickname is stripped, so nobody can pass for another
+  peer's suffix.
+- English version. English is the fallback language, and devices set to
+  Chinese get Chinese. A language picker (System default, 中文, English)
+  is on the first screen and in the Me tab. All UI text moved to string
+  resources. Notification text follows the choice from the next start of
+  the background service.
+
 ## UI direction and prototype — 2026-10-28
 
 - Set the UI direction in [docs/design/ui-direction.md](docs/design/ui-direction.md).
