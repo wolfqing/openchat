@@ -37,6 +37,8 @@
   --warn: #FF9A7A; --em-l: 66%; --frame: #2A3132; color-scheme: dark;
 }
 
+/* Noto Sans SC sets curly quotes full-width; use a Latin-first stack in English. */
+html[lang="en"] { --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body {
@@ -57,6 +59,7 @@ button { font: inherit; color: inherit; }
 .brief-row { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; justify-content: space-between; }
 .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; cursor: pointer; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
@@ -195,19 +198,25 @@ figure { margin: 0; }
 </style>
 
 <header class="brief">
-  <h1>openchat 界面原型</h1>
-  <p>原则是两层分开：消息内容保持安静、好读；网络状态（信号带、送达路径、跳数、身份徽记）统一用信号橙和等宽数字表达，只出现在固定位置。界面的特色来自让这张网看得见。</p>
+  <h1 data-i18n="h1">openchat 界面原型</h1>
+  <p data-i18n="intro">原则是两层分开：消息内容保持安静、好读；网络状态（信号带、送达路径、跳数、身份徽记）统一用信号橙和等宽数字表达，只出现在固定位置。界面的特色来自让这张网看得见。示例昵称都用历史人物。</p>
   <div class="brief-row">
     <div class="legend" aria-label="网络层图例">
-      <span><span class="path"><i class="on"></i><s class="on"></s><i class="on"></i><s></s><i></i></span>送达路径</span>
-      <span class="mono">经 2 跳</span>
-      <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 16 0M8 12a4 4 0 0 1 8 0"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>公开广播</span>
-      <span style="color:var(--lock)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>加密私信</span>
+      <span><span class="path"><i class="on"></i><s class="on"></s><i class="on"></i><s></s><i></i></span><span data-i18n="lgPath">送达路径</span></span>
+      <span class="mono" data-i18n="lgHops">经 2 跳</span>
+      <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 16 0M8 12a4 4 0 0 1 8 0"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg><span data-i18n="lgPublic">公开广播</span></span>
+      <span style="color:var(--lock)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span data-i18n="lgDm">加密私信</span></span>
     </div>
-    <div class="seg" role="group" aria-label="主题">
-      <button id="th-sys" aria-pressed="true" data-t="">跟随系统</button>
-      <button id="th-light" aria-pressed="false" data-t="light">亮色</button>
-      <button id="th-dark" aria-pressed="false" data-t="dark">暗色</button>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Language">
+        <button id="lang-zh" aria-pressed="true" data-l="zh">中文</button>
+        <button id="lang-en" aria-pressed="false" data-l="en">English</button>
+      </div>
+      <div class="seg" role="group" aria-label="Theme" id="theme-seg">
+        <button id="th-sys" aria-pressed="true" data-t="" data-i18n="thSys">跟随系统</button>
+        <button id="th-light" aria-pressed="false" data-t="light" data-i18n="thLight">亮色</button>
+        <button id="th-dark" aria-pressed="false" data-t="dark" data-i18n="thDark">暗色</button>
+      </div>
     </div>
   </div>
 </header>
@@ -216,72 +225,72 @@ figure { margin: 0; }
   <!-- 1. nearby public channel -->
   <figure class="shot">
     <div class="phone" id="p-public">
-      <div class="sysbar"><span>14:32</span><span>无服务 · 73%</span></div>
+      <div class="sysbar"><span>14:32</span><span data-i18n="noSvc73">无服务 · 73%</span></div>
       <div class="apphead">
         <div class="grow">
-          <h2>附近</h2>
-          <div class="sub">范围内所有人都能看到</div>
+          <h2 data-i18n="nearby">附近</h2>
+          <div class="sub" data-i18n="nearbySub">范围内所有人都能看到</div>
         </div>
-        <span class="scope"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 16 0M8 12a4 4 0 0 1 8 0"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>公开</span>
+        <span class="scope"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 16 0M8 12a4 4 0 0 1 8 0"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg><span data-i18n="public">公开</span></span>
       </div>
-      <div class="band"><span class="pulse"></span><span>直连 <b>3</b></span><span class="sep">|</span><span>可达 <b>11</b></span><span class="ago">12 秒前</span></div>
+      <div class="band" data-i18n-html="bandPub"><span class="pulse"></span><span>直连 <b>3</b></span><span class="sep">|</span><span>可达 <b>11</b></span><span class="ago">12 秒前</span></div>
       <div class="feed" id="pub-feed"></div>
       <div class="composer">
-        <span class="chip">公开</span>
-        <textarea id="pub-input" rows="1" placeholder="对附近所有人说…"></textarea>
+        <span class="chip" data-i18n="public">公开</span>
+        <textarea id="pub-input" rows="1" placeholder="对附近所有人说…" data-i18n-ph="pubPh"></textarea>
         <button class="send" id="pub-send" aria-label="发送"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5 21 12 3 3.5v6.6L15 12 3 13.9z"/></svg></button>
       </div>
       <nav class="nav" aria-hidden="true"></nav>
     </div>
-    <figcaption><b>附近频道</b>：像公告板，不用气泡。每条消息前是发言人的徽记，下方小字写经过几跳。</figcaption>
+    <figcaption data-i18n-html="cap1"><b>附近频道</b>：像公告板，不用气泡。每条消息前是发言人的徽记，下方小字写经过几跳。两个“苏轼”重名，徽记不同。</figcaption>
   </figure>
 
   <!-- 2. private chat -->
   <figure class="shot">
     <div class="phone" id="p-dm">
-      <div class="sysbar"><span>14:33</span><span>无服务 · 73%</span></div>
+      <div class="sysbar"><span>14:33</span><span data-i18n="noSvc73">无服务 · 73%</span></div>
       <div class="apphead">
         <button class="iconbtn" aria-label="返回"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg></button>
-        <button class="emblem-btn" id="dm-emblem" aria-label="核对小林的身份"></button>
+        <button class="emblem-btn" id="dm-emblem" aria-label="核对身份"></button>
         <div class="grow">
-          <h2>小林</h2>
-          <div class="sub">在附近 · 经 1 台手机转达</div>
+          <h2 id="dm-name">张衡</h2>
+          <div class="sub" id="dm-sub">在附近 · 经 1 台手机转达</div>
         </div>
-        <span class="scope lock"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>加密</span>
+        <span class="scope lock"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span data-i18n="enc">加密</span></span>
       </div>
-      <div class="band"><span class="pulse"></span><span>到小林 <b>2</b> 跳</span><span class="sep">|</span><span>直连 <b>3</b></span><span class="ago">4 秒前</span></div>
+      <div class="band" id="dm-band"><span class="pulse"></span><span>到张衡 <b>2</b> 跳</span><span class="sep">|</span><span>直连 <b>3</b></span><span class="ago">4 秒前</span></div>
       <div class="feed"><div class="dm" id="dm-feed"></div></div>
       <div class="composer">
-        <span class="chip lock">加密</span>
-        <textarea id="dm-input" rows="1" placeholder="写给小林…"></textarea>
+        <span class="chip lock" data-i18n="enc">加密</span>
+        <textarea id="dm-input" rows="1" placeholder="写给张衡…"></textarea>
         <button class="send" id="dm-send" aria-label="发送"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5 21 12 3 3.5v6.6L15 12 3 13.9z"/></svg></button>
       </div>
       <div class="sheet" id="fp-sheet" hidden>
         <div class="sheet-card" role="dialog" aria-labelledby="fp-title">
           <span id="fp-emblem"></span>
-          <h3 id="fp-title">核对小林的身份</h3>
-          <p>当面对比两台手机上的图案和数字。一样，就说明中间没有人冒充。</p>
+          <h3 id="fp-title">核对张衡的身份</h3>
+          <p data-i18n="fpBody">当面对比两台手机上的图案和数字。一样，就说明中间没有人冒充。</p>
           <div class="fp" id="fp-digits"></div>
           <div class="btnrow">
-            <button class="btn" id="fp-close">稍后</button>
-            <button class="btn primary" id="fp-ok">一致，标为已核对</button>
+            <button class="btn" id="fp-close" data-i18n="later">稍后</button>
+            <button class="btn primary" id="fp-ok" data-i18n="match">一致，标为已核对</button>
           </div>
         </div>
       </div>
     </div>
-    <figcaption><b>私信</b>：发出的消息下面是送达路径。发一条试试，看它一步步走完。点头像核对指纹。</figcaption>
+    <figcaption data-i18n-html="cap2"><b>私信</b>：发出的消息下面是送达路径。发一条试试，看它一步步走完。点头像核对指纹。</figcaption>
   </figure>
 
   <!-- 3. nobody nearby -->
   <figure class="shot">
     <div class="phone" id="p-empty">
-      <div class="sysbar"><span>14:30</span><span>无服务 · 74%</span></div>
+      <div class="sysbar"><span>14:30</span><span data-i18n="noSvc74">无服务 · 74%</span></div>
       <div class="apphead">
         <div class="grow">
-          <h2>附近</h2>
-          <div class="sub">范围内所有人都能看到</div>
+          <h2 data-i18n="nearby">附近</h2>
+          <div class="sub" data-i18n="nearbySub">范围内所有人都能看到</div>
         </div>
-        <span class="scope">公开</span>
+        <span class="scope" data-i18n="public">公开</span>
       </div>
       <div class="band idle" id="empty-band"><span class="pulse"></span><span id="empty-band-text">正在扫描 · <b>0</b> 人</span><span class="ago" id="scan-time">已扫 3:12</span></div>
       <div class="empty">
@@ -306,35 +315,129 @@ figure { margin: 0; }
         </div>
         <h3 id="empty-title">附近还没有人</h3>
         <p class="lede" id="empty-lede">蓝牙正常。有人进入几十米内，会自动连上。</p>
-        <div class="tips" id="tips">
-          <div class="tip"><span class="n">1</span><div>让对方也打开 openchat<small>手机锁屏后也能收发，但 App 不能被划掉</small></div></div>
-          <div class="tip"><span class="n">2</span><div>走到开阔处，离窗户近一点<small>墙和人群会挡住蓝牙，室内通常只有 10 米左右</small></div></div>
-          <button class="tip action" type="button"><span class="n">3</span><div>把 App 发给身边的人<small>用快传或蓝牙发送安装包，不需要网络</small></div></button>
+        <div class="tips">
+          <div class="tip"><span class="n">1</span><div data-i18n-html="tip1">让对方也打开 openchat<small>手机锁屏后也能收发，但 App 不能被划掉</small></div></div>
+          <div class="tip"><span class="n">2</span><div data-i18n-html="tip2">走到开阔处，离窗户近一点<small>墙和人群会挡住蓝牙，室内通常只有 10 米左右</small></div></div>
+          <button class="tip action" type="button"><span class="n">3</span><div data-i18n-html="tip3">把 App 发给身边的人<small>用快传或蓝牙发送安装包，不需要网络</small></div></button>
         </div>
         <button class="sim" id="sim-join" type="button">原型演示：模拟有人进入范围</button>
       </div>
       <nav class="nav" aria-hidden="true"></nav>
     </div>
-    <figcaption><b>附近没人</b>：这是最常见的状态，所以最用心。雷达说明 App 在工作，下面每条都是能马上做的事。</figcaption>
+    <figcaption data-i18n-html="cap3"><b>附近没人</b>：这是最常见的状态，所以最用心。雷达说明 App 在工作，下面每条都是能马上做的事。</figcaption>
   </figure>
 </main>
 
 <section class="notes">
-  <div><h4>信号带</h4><p>每个页面顶部同一位置。实心点在呼吸表示网是活的，空心点表示还在找。数字用等宽字体，和正文明显不同。</p></div>
-  <div><h4>送达路径</h4><p>四个点：发出、被转发、送达、已读。实心和空心区分状态，旁边总有文字，不只靠颜色。失败时变红并给出重发。</p></div>
-  <div><h4>身份徽记</h4><p>由公钥算出颜色和对称图案。昵称可以重名，徽记不行。点开就是指纹核对页。</p></div>
-  <div><h4>公开与私密</h4><p>公开频道是通栏公告，输入框前写“公开”；私信是气泡，带锁的蓝色。两者一眼能分开，避免发错地方。</p></div>
+  <div><h4 data-i18n="n1h">信号带</h4><p data-i18n="n1">每个页面顶部同一位置。实心点在呼吸表示网是活的，空心点表示还在找。数字用等宽字体，和正文明显不同。</p></div>
+  <div><h4 data-i18n="n2h">送达路径</h4><p data-i18n="n2">四个点：发出、被转发、送达、已读。实心和空心区分状态，旁边总有文字，不只靠颜色。失败时变红并给出重发。</p></div>
+  <div><h4 data-i18n="n3h">身份徽记</h4><p data-i18n="n3">由公钥算出颜色和对称图案。昵称可以重名，徽记不行。点开就是指纹核对页。</p></div>
+  <div><h4 data-i18n="n4h">公开与私密</h4><p data-i18n="n4">公开频道是通栏公告，输入框前写“公开”；私信是气泡，带锁的蓝色。两者一眼能分开，避免发错地方。</p></div>
 </section>
 
 <script>
 (() => {
+  // ---------- strings ----------
+  // Sample nicknames are historical figures so nothing reads as a real user.
+  const STR = {
+    zh: {
+      h1: 'openchat 界面原型',
+      intro: '原则是两层分开：消息内容保持安静、好读；网络状态（信号带、送达路径、跳数、身份徽记）统一用信号橙和等宽数字表达，只出现在固定位置。界面的特色来自让这张网看得见。示例昵称都用历史人物。',
+      lgPath: '送达路径', lgHops: '经 2 跳', lgPublic: '公开广播', lgDm: '加密私信',
+      thSys: '跟随系统', thLight: '亮色', thDark: '暗色',
+      noSvc73: '无服务 · 73%', noSvc74: '无服务 · 74%',
+      nearby: '附近', nearbySub: '范围内所有人都能看到', public: '公开', enc: '加密',
+      bandPub: '<span class="pulse"></span><span>直连 <b>3</b></span><span class="sep">|</span><span>可达 <b>11</b></span><span class="ago">12 秒前</span>',
+      pubPh: '对附近所有人说…',
+      cap1: '<b>附近频道</b>：像公告板，不用气泡。每条消息前是发言人的徽记，下方小字写经过几跳。两个“苏轼”重名，徽记不同。',
+      cap2: '<b>私信</b>：发出的消息下面是送达路径。发一条试试，看它一步步走完。点头像核对指纹。',
+      cap3: '<b>附近没人</b>：这是最常见的状态，所以最用心。雷达说明 App 在工作，下面每条都是能马上做的事。',
+      fpBody: '当面对比两台手机上的图案和数字。一样，就说明中间没有人冒充。',
+      later: '稍后', match: '一致，标为已核对',
+      tip1: '让对方也打开 openchat<small>手机锁屏后也能收发，但 App 不能被划掉</small>',
+      tip2: '走到开阔处，离窗户近一点<small>墙和人群会挡住蓝牙，室内通常只有 10 米左右</small>',
+      tip3: '把 App 发给身边的人<small>用快传或蓝牙发送安装包，不需要网络</small>',
+      n1h: '信号带', n1: '每个页面顶部同一位置。实心点在呼吸表示网是活的，空心点表示还在找。数字用等宽字体，和正文明显不同。',
+      n2h: '送达路径', n2: '四个点：发出、被转发、送达、已读。实心和空心区分状态，旁边总有文字，不只靠颜色。失败时变红并给出重发。',
+      n3h: '身份徽记', n3: '由公钥算出颜色和对称图案。昵称可以重名，徽记不行。点开就是指纹核对页。',
+      n4h: '公开与私密', n4: '公开频道是通栏公告，输入框前写“公开”；私信是气泡，带锁的蓝色。两者一眼能分开，避免发错地方。',
+      nav: ['附近', '私信', '位置频道', '我'],
+      names: { zh: '张衡', lb: '李白', ss: '苏轼', me: '我' },
+      today: '今天', direct: '直连', hops: n => `经 ${n} 跳`, broadcast: '已广播给 3 台直连手机',
+      posts: [
+        ['lb', '14:18', '2 号楼停电了，一楼大厅有应急灯，可以来这边。', 0],
+        ['ss', '14:21', '有人知道社区卫生站开着吗？家里老人需要量血压。', 2],
+        ['zh', '14:24', '卫生站开着，在发瓶装水。我刚从那边回来。', 1],
+        ['ss2', '14:27', '东门那条路积水到膝盖，别走东门。', 3],
+        ['lb', '14:30', '收到。西门能走，我们在西门口集合。', 0],
+      ],
+      dmDay: '今天 · 端到端加密，转发的手机看不到内容',
+      dm: ['你在哪？我在卫生站门口。', '我在西门，带着充电宝，过去找你。', '好，我穿红色外套。', '我妈电话打不通，你那边有信号吗？'],
+      states: ['发送中', '已转发', '已送达', '已读'], failed: '没送到 · ', retry: '重发', viaHops: ' · 经 2 跳',
+      dmSub: '在附近 · 经 1 台手机转达', dmVerified: '在附近 · 已当面核对',
+      dmBand: n => `<span class="pulse"></span><span>到${n} <b>2</b> 跳</span><span class="sep">|</span><span>直连 <b>3</b></span><span class="ago">4 秒前</span>`,
+      dmPh: n => `写给${n}…`, fpTitle: n => `核对${n}的身份`,
+      scanning: '正在扫描 · <b>0</b> 人', scanned: t => `已扫 ${t}`, justNow: '刚刚', direct1: '直连 <b>1</b>',
+      emptyTitle: '附近还没有人', emptyLede: '蓝牙正常。有人进入几十米内，会自动连上。',
+      joinedTitle: '连上了 1 个人', joinedLede: n => `现在发的话，${n}能看到。附近的人越多，消息传得越远。`,
+      toast: n => `<b>${n}</b> 进入范围 · 直连`,
+      sim: '原型演示：模拟有人进入范围', reset: '重置演示',
+    },
+    en: {
+      h1: 'openchat UI prototype',
+      intro: 'Two layers, kept apart. Message text stays plain and readable. Network state (signal band, delivery path, hop count, identity emblems) always uses signal orange and monospaced digits, in fixed places. What sets the app apart is that you can see the mesh. Sample nicknames are historical figures.',
+      lgPath: 'Delivery path', lgHops: '2 hops', lgPublic: 'Public broadcast', lgDm: 'Encrypted DM',
+      thSys: 'System', thLight: 'Light', thDark: 'Dark',
+      noSvc73: 'No service · 73%', noSvc74: 'No service · 74%',
+      nearby: 'Nearby', nearbySub: 'Everyone in range can see this', public: 'Public', enc: 'Encrypted',
+      bandPub: '<span class="pulse"></span><span>Direct <b>3</b></span><span class="sep">|</span><span>Reach <b>11</b></span><span class="ago">12s ago</span>',
+      pubPh: 'Say something to everyone nearby…',
+      cap1: '<b>Nearby channel</b>: a bulletin board, not chat bubbles. Each post starts with the sender’s emblem, and the small line under it shows the hop count. Two people are both called “Curie”, and their emblems differ.',
+      cap2: '<b>Private chat</b>: each sent message shows its delivery path. Send one and watch it go step by step. Tap the avatar to verify the fingerprint.',
+      cap3: '<b>Nobody nearby</b>: the most common state, so it gets the most care. The radar shows the app is working, and every line below is something you can do right now.',
+      fpBody: 'Compare the pattern and the numbers on both phones in person. If they match, nobody in between is pretending to be them.',
+      later: 'Later', match: 'They match',
+      tip1: 'Ask them to open openchat too<small>It works with the screen locked, but don’t swipe the app away</small>',
+      tip2: 'Move into the open, near a window<small>Walls and crowds block Bluetooth. Indoors the range is often about 10 m</small>',
+      tip3: 'Send the app to people near you<small>Share the installer by Quick Share or Bluetooth. No internet needed</small>',
+      n1h: 'Signal band', n1: 'Same place at the top of every screen. A breathing solid dot means the mesh is live; a hollow dot means it is still looking. Digits are monospaced, clearly apart from message text.',
+      n2h: 'Delivery path', n2: 'Four dots: sent, relayed, delivered, read. Solid and hollow show the state, and words always sit beside it, so color is never the only cue. A failure turns red and offers a retry.',
+      n3h: 'Identity emblem', n3: 'Color and a symmetric pattern derived from the public key. Nicknames can collide; emblems can’t. Tapping one opens fingerprint verification.',
+      n4h: 'Public vs private', n4: 'The public channel is full-width posts with “Public” before the input. Private chat uses bubbles in lock blue. You can tell them apart at a glance, so nothing goes to the wrong place.',
+      nav: ['Nearby', 'Private', 'Places', 'Me'],
+      names: { zh: 'Lovelace', lb: 'Darwin', ss: 'Curie', me: 'Me' },
+      today: 'Today', direct: 'direct', hops: n => `${n} hops`, broadcast: 'Broadcast to 3 direct phones',
+      posts: [
+        ['lb', '14:18', 'Building 2 has lost power. The lobby has emergency lights, come over here.', 0],
+        ['ss', '14:21', 'Does anyone know if the community clinic is open? My grandmother needs her blood pressure checked.', 2],
+        ['zh', '14:24', 'The clinic is open and handing out bottled water. I just came back from there.', 1],
+        ['ss2', '14:27', 'The road by the east gate is knee-deep in water. Don’t use the east gate.', 3],
+        ['lb', '14:30', 'Got it. The west gate is clear, let’s meet there.', 0],
+      ],
+      dmDay: 'Today · end-to-end encrypted, relaying phones can’t read it',
+      dm: ['Where are you? I’m at the clinic entrance.', 'I’m at the west gate with a power bank. Coming to you.', 'OK, I’m wearing a red jacket.', 'I can’t reach my mom by phone. Do you have signal?'],
+      states: ['Sending', 'Relayed', 'Delivered', 'Read'], failed: 'Not delivered · ', retry: 'Retry', viaHops: ' · 2 hops',
+      dmSub: 'Nearby · relayed by 1 phone', dmVerified: 'Nearby · verified in person',
+      dmBand: n => `<span class="pulse"></span><span><b>2</b> hops to ${n}</span><span class="sep">|</span><span>Direct <b>3</b></span><span class="ago">4s ago</span>`,
+      dmPh: n => `Message ${n}…`, fpTitle: n => `Verify ${n}`,
+      scanning: 'Scanning · <b>0</b> people', scanned: t => `for ${t}`, justNow: 'just now', direct1: 'Direct <b>1</b>',
+      emptyTitle: 'Nobody nearby yet', emptyLede: 'Bluetooth is on. Anyone within a few dozen meters connects automatically.',
+      joinedTitle: 'Connected to 1 person', joinedLede: n => `${n} can now see what you send. The more people nearby, the farther messages travel.`,
+      toast: n => `<b>${n}</b> is in range · direct`,
+      sim: 'Prototype demo: simulate someone in range', reset: 'Reset demo',
+    },
+  };
+  let lang = 'zh';
+  try { if (localStorage.getItem('oc-proto-lang') === 'en') lang = 'en'; } catch (e) {}
+  const S = () => STR[lang];
+
   // ---------- theme switch ----------
-  const segBtns = document.querySelectorAll('.seg button');
-  segBtns.forEach(b => b.addEventListener('click', () => {
+  const themeBtns = document.querySelectorAll('#theme-seg button');
+  themeBtns.forEach(b => b.addEventListener('click', () => {
     const t = b.dataset.t;
     if (t) document.documentElement.setAttribute('data-theme', t);
     else document.documentElement.removeAttribute('data-theme');
-    segBtns.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    themeBtns.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
   }));
 
   // ---------- emblems: deterministic symmetric 5x5 pattern + hue from key ----------
@@ -359,50 +462,45 @@ figure { margin: 0; }
   const hueOf = key => hash(key)[0] % 360;
   const fingerprint = key => hash(key).map(n => n.toString(16).toUpperCase().padStart(8, '0').slice(0, 4));
 
-  // ---------- nav ----------
-  const navIcons = {
-    附近: '<path d="M4 12a8 8 0 0 1 16 0M8 12a4 4 0 0 1 8 0" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>',
-    私信: '<rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/>',
-    位置频道: '<path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2" fill="currentColor"/>',
-    我: '<circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2"/>',
-  };
-  document.querySelectorAll('.nav').forEach(nav => {
-    nav.innerHTML = Object.entries(navIcons).map(([k, p], i) =>
-      `<span class="${i === 0 ? 'on' : ''}"><svg viewBox="0 0 24 24">${p}</svg>${k}${k === '私信' ? '<em class="badge">2</em>' : ''}</span>`).join('');
-  });
-
   const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const now = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 
-  // ---------- public channel ----------
-  const people = {
-    xl: { name: '小林', key: 'a1f4c09e77b2' },
-    ah: { name: '阿禾', key: '5d02be91c3aa' },
-    zm: { name: '周敏', key: 'e88713f0b45c' },
-    zm2: { name: '周敏', key: '0c3b9e21d7f8' },   // same nickname, different person
-    me: { name: '我', key: '9b17aa30e6d1' },
-  };
-  const pubFeed = document.getElementById('pub-feed');
-  const posts = [
-    ['ah', '14:18', '2 号楼停电了，一楼大厅有应急灯，可以来这边。', 0],
-    ['zm', '14:21', '有人知道社区卫生站开着吗？家里老人需要量血压。', 2],
-    ['xl', '14:24', '卫生站开着，在发瓶装水。我刚从那边回来。', 1],
-    ['zm2', '14:27', '东门那条路积水到膝盖，别走东门。', 3],
-    ['ah', '14:30', '收到。西门能走，我们在西门口集合。', 0],
+  // Keys stay fixed across languages, so each person keeps the same emblem.
+  const keys = { zh: 'a1f4c09e77b2', lb: '5d02be91c3aa', ss: 'e88713f0b45c', ss2: '0c3b9e21d7f8', me: '9b17aa30e6d1' };
+  const nameOf = who => S().names[who === 'ss2' ? 'ss' : who];
+
+  // ---------- nav ----------
+  const navIcons = [
+    '<path d="M4 12a8 8 0 0 1 16 0M8 12a4 4 0 0 1 8 0" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>',
+    '<rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/>',
+    '<path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2" fill="currentColor"/>',
+    '<circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2"/>',
   ];
-  function postHTML(p, who, time, text, hops) {
-    return `<article class="post${who === 'me' ? ' mine' : ''}">
-      ${emblem(p.key)}
-      <div class="who"><span class="name" style="color:${who === 'me' ? 'var(--ink)' : `hsl(${hueOf(p.key)} 62% var(--em-l))`}">${p.name}</span><span class="tag">#${p.key.slice(0, 4)}</span><span class="time">${time}</span></div>
+  function renderNav() {
+    document.querySelectorAll('.nav').forEach(nav => {
+      nav.innerHTML = S().nav.map((k, i) =>
+        `<span class="${i === 0 ? 'on' : ''}"><svg viewBox="0 0 24 24">${navIcons[i]}</svg>${k}${i === 1 ? '<em class="badge">2</em>' : ''}</span>`).join('');
+    });
+  }
+
+  // ---------- public channel ----------
+  const pubFeed = document.getElementById('pub-feed');
+  function postHTML(who, time, text, hops) {
+    const key = keys[who], mine = who === 'me';
+    return `<article class="post${mine ? ' mine' : ''}">
+      ${emblem(key)}
+      <div class="who"><span class="name" style="color:${mine ? 'var(--ink)' : `hsl(${hueOf(key)} 62% var(--em-l))`}">${nameOf(who)}</span><span class="tag">#${key.slice(0, 4)}</span><span class="time">${time}</span></div>
       <div class="text">${esc(text)}</div>
-      <div class="hops">${who === 'me' ? '已广播给 3 台直连手机' : hops === 0 ? '直连' : `经 ${hops} 跳`}</div>
+      <div class="hops">${mine ? S().broadcast : hops === 0 ? S().direct : S().hops(hops)}</div>
     </article>`;
   }
-  pubFeed.innerHTML = '<div class="dayline">今天</div>' + posts.map(([w, t, x, h]) => postHTML(people[w], w, t, x, h)).join('');
+  function renderPublic() {
+    pubFeed.innerHTML = `<div class="dayline">${S().today}</div>` + S().posts.map(([w, t, x, h]) => postHTML(w, t, x, h)).join('');
+  }
   const pubInput = document.getElementById('pub-input');
   function sendPublic() {
     const t = pubInput.value.trim(); if (!t) return;
-    pubFeed.insertAdjacentHTML('beforeend', postHTML(people.me, 'me', now(), t, 0));
+    pubFeed.insertAdjacentHTML('beforeend', postHTML('me', now(), t, 0));
     pubInput.value = ''; pubFeed.scrollTop = pubFeed.scrollHeight;
   }
   document.getElementById('pub-send').addEventListener('click', sendPublic);
@@ -410,7 +508,7 @@ figure { margin: 0; }
 
   // ---------- private chat ----------
   const dmFeed = document.getElementById('dm-feed');
-  const STATES = ['发送中', '已转发', '已送达', '已读'];
+  let verified = false;
   function pathHTML(step, fail) {
     let h = '';
     for (let i = 0; i < 4; i++) {
@@ -422,18 +520,26 @@ figure { margin: 0; }
   function outMsg(text, time, step, fail) {
     const el = document.createElement('div');
     el.className = 'msg out';
-    el.innerHTML = `<div class="bubble">${esc(text)}</div><div class="meta"><span>${time}</span>${pathHTML(step, fail)}<span class="state${fail ? ' fail' : ''}">${fail ? '没送到 · ' : STATES[step]}${fail ? '<button class="retry" type="button">重发</button>' : step >= 2 ? ' · 经 2 跳' : ''}</span></div>`;
+    const s = S();
+    el.innerHTML = `<div class="bubble">${esc(text)}</div><div class="meta"><span>${time}</span>${pathHTML(step, fail)}<span class="state${fail ? ' fail' : ''}">${fail ? s.failed : s.states[step]}${fail ? `<button class="retry" type="button">${s.retry}</button>` : step >= 2 ? s.viaHops : ''}</span></div>`;
     return el;
   }
-  function inMsg(text, time, hops) {
-    return `<div class="msg in"><div class="bubble">${esc(text)}</div><div class="meta"><span>${time}</span><span>经 ${hops} 跳</span></div></div>`;
-  }
-  dmFeed.innerHTML = '<div class="dayline">今天 · 端到端加密，转发的手机看不到内容</div>'
-    + inMsg('你在哪？我在卫生站门口。', '14:25', 2);
-  dmFeed.append(outMsg('我在西门，带着充电宝，过去找你。', '14:26', 3));
-  dmFeed.insertAdjacentHTML('beforeend', inMsg('好，我穿红色外套。', '14:27', 2));
-  dmFeed.append(outMsg('我妈电话打不通，你那边有信号吗？', '14:29', 0, true));
+  const inMsg = (text, time, hops) => `<div class="msg in"><div class="bubble">${esc(text)}</div><div class="meta"><span>${time}</span><span>${S().hops(hops)}</span></div></div>`;
   const scrollDm = () => { const f = dmFeed.parentElement; f.scrollTop = f.scrollHeight; };
+  function renderDm() {
+    const s = S(), n = s.names.zh;
+    document.getElementById('dm-name').textContent = n;
+    document.getElementById('dm-sub').textContent = verified ? s.dmVerified : s.dmSub;
+    document.getElementById('dm-band').innerHTML = s.dmBand(n);
+    document.getElementById('dm-input').placeholder = s.dmPh(n);
+    document.getElementById('fp-title').textContent = s.fpTitle(n);
+    document.getElementById('dm-emblem').setAttribute('aria-label', s.fpTitle(n));
+    dmFeed.innerHTML = `<div class="dayline">${s.dmDay}</div>` + inMsg(s.dm[0], '14:25', 2);
+    dmFeed.append(outMsg(s.dm[1], '14:26', 3));
+    dmFeed.insertAdjacentHTML('beforeend', inMsg(s.dm[2], '14:27', 2));
+    dmFeed.append(outMsg(s.dm[3], '14:29', 0, true));
+    scrollDm();
+  }
   dmFeed.addEventListener('click', e => {
     if (!e.target.classList.contains('retry')) return;
     const old = e.target.closest('.msg'), text = old.querySelector('.bubble').textContent;
@@ -443,6 +549,7 @@ figure { margin: 0; }
     let step = 0, el = outMsg(text, now(), 0);
     dmFeed.append(el); scrollDm();
     const tick = () => {
+      if (!el.isConnected) return; // feed was re-rendered (language switch)
       step++;
       const next = outMsg(text, now(), step);
       el.replaceWith(next); el = next;
@@ -454,48 +561,69 @@ figure { margin: 0; }
   function sendDm() { const t = dmInput.value.trim(); if (!t) return; dmInput.value = ''; deliver(t); }
   document.getElementById('dm-send').addEventListener('click', sendDm);
   dmInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendDm(); } });
-  scrollDm();
 
   // fingerprint sheet
   const sheet = document.getElementById('fp-sheet');
-  document.getElementById('dm-emblem').innerHTML = emblem(people.xl.key, 36);
-  document.getElementById('fp-emblem').innerHTML = emblem(people.xl.key, 112);
-  document.getElementById('fp-digits').innerHTML = fingerprint(people.xl.key).map(g => `<span>${g}</span>`).join('');
+  document.getElementById('dm-emblem').innerHTML = emblem(keys.zh, 36);
+  document.getElementById('fp-emblem').innerHTML = emblem(keys.zh, 112);
+  document.getElementById('fp-digits').innerHTML = fingerprint(keys.zh).map(g => `<span>${g}</span>`).join('');
   document.getElementById('dm-emblem').addEventListener('click', () => { sheet.hidden = false; document.getElementById('fp-ok').focus(); });
   document.getElementById('fp-close').addEventListener('click', () => { sheet.hidden = true; });
   document.getElementById('fp-ok').addEventListener('click', () => {
-    sheet.hidden = true;
-    document.querySelector('#p-dm .apphead .sub').textContent = '在附近 · 已当面核对';
+    sheet.hidden = true; verified = true;
+    document.getElementById('dm-sub').textContent = S().dmVerified;
   });
 
   // ---------- nobody nearby ----------
-  let secs = 192;
-  const scanEl = document.getElementById('scan-time');
-  let scanning = setInterval(() => { secs++; scanEl.textContent = `已扫 ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`; }, 1000);
   const phoneEmpty = document.getElementById('p-empty');
-  document.getElementById('sim-join').addEventListener('click', e => {
-    const btn = e.currentTarget;
-    if (btn.dataset.joined) { // reset the demo
-      delete btn.dataset.joined; btn.textContent = '原型演示：模拟有人进入范围';
-      document.getElementById('blip').classList.remove('show');
-      document.getElementById('empty-band').classList.add('idle');
-      document.getElementById('empty-band-text').innerHTML = '正在扫描 · <b>0</b> 人';
-      document.getElementById('empty-title').textContent = '附近还没有人';
-      document.getElementById('empty-lede').textContent = '蓝牙正常。有人进入几十米内，会自动连上。';
-      secs = 0; scanning = setInterval(() => { secs++; scanEl.textContent = `已扫 ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`; }, 1000);
-      return;
-    }
-    btn.dataset.joined = '1'; btn.textContent = '重置演示';
-    clearInterval(scanning); scanEl.textContent = '刚刚';
-    document.getElementById('blip').classList.add('show');
-    document.getElementById('empty-band').classList.remove('idle');
-    document.getElementById('empty-band-text').innerHTML = '直连 <b>1</b>';
-    document.getElementById('empty-title').textContent = '连上了 1 个人';
-    document.getElementById('empty-lede').textContent = '现在发的话，阿禾能看到。离得越多人，消息能传得越远。';
-    const t = document.createElement('div');
-    t.className = 'toast'; t.setAttribute('role', 'status');
-    t.innerHTML = `${emblem(people.ah.key, 24)}<span><b>阿禾</b> 进入范围 · 直连</span>`;
-    phoneEmpty.append(t); setTimeout(() => t.remove(), 2600);
+  const simBtn = document.getElementById('sim-join');
+  const scanEl = document.getElementById('scan-time');
+  let secs = 192, joined = false, scanning = null;
+  const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  function startScan() {
+    clearInterval(scanning);
+    scanning = setInterval(() => { secs++; scanEl.textContent = S().scanned(fmt(secs)); }, 1000);
+  }
+  function renderEmpty() {
+    const s = S();
+    document.getElementById('blip').classList.toggle('show', joined);
+    document.getElementById('empty-band').classList.toggle('idle', !joined);
+    document.getElementById('empty-band-text').innerHTML = joined ? s.direct1 : s.scanning;
+    scanEl.textContent = joined ? s.justNow : s.scanned(fmt(secs));
+    document.getElementById('empty-title').textContent = joined ? s.joinedTitle : s.emptyTitle;
+    document.getElementById('empty-lede').textContent = joined ? s.joinedLede(s.names.lb) : s.emptyLede;
+    simBtn.textContent = joined ? s.reset : s.sim;
+  }
+  simBtn.addEventListener('click', () => {
+    joined = !joined;
+    if (joined) {
+      clearInterval(scanning);
+      const t = document.createElement('div');
+      t.className = 'toast'; t.setAttribute('role', 'status');
+      t.innerHTML = `${emblem(keys.lb, 24)}<span>${S().toast(S().names.lb)}</span>`;
+      phoneEmpty.append(t); setTimeout(() => t.remove(), 2600);
+    } else { secs = 0; startScan(); }
+    renderEmpty();
   });
+
+  // ---------- language ----------
+  const langBtns = document.querySelectorAll('[data-l]');
+  function applyLang() {
+    const s = S();
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = s[el.dataset.i18n]; });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = s[el.dataset.i18nHtml]; });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = s[el.dataset.i18nPh]; });
+    langBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.l === lang)));
+    renderNav(); renderPublic(); renderDm(); renderEmpty();
+  }
+  langBtns.forEach(b => b.addEventListener('click', () => {
+    lang = b.dataset.l;
+    try { localStorage.setItem('oc-proto-lang', lang); } catch (e) {}
+    applyLang();
+  }));
+
+  applyLang();
+  startScan();
 })();
 </script>
