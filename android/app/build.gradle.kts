@@ -14,13 +14,21 @@ android {
         targetSdk = 35
         versionCode = 6
         versionName = "0.4.0"
-        // Tor ships native code per ABI; phones are ARM, x86_64 is for the emulator.
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
     }
 
     buildTypes {
+        // Tor ships native code per ABI. Phones are ARM; x86_64 is only for the emulator.
+        debug {
+            ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
+        }
+        // The published preview: shrunk by R8, ARM only, still signed with the local debug key
+        // so it installs over earlier previews.
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
+            ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         }
     }
     compileOptions {
@@ -34,6 +42,9 @@ android {
         compose = true
     }
     packaging {
+        // Compress native libraries inside the APK: much smaller to pass phone to phone over
+        // Bluetooth, at the cost of unpacking them once on install.
+        jniLibs.useLegacyPackaging = true
         resources.excludes += setOf("META-INF/versions/9/OSGI-INF/MANIFEST.MF", "META-INF/DEPENDENCIES")
     }
     testOptions {

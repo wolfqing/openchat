@@ -83,6 +83,12 @@
   openchat phone invisible to every bitchat phone. 4 new tests.
 - 92 unit tests in all. New dependencies: zxing core and
   zxing-android-embedded (Apache-2.0), tor-android and jtorctl (BSD-3).
+- Smaller download. Previews are now the release build: R8-shrunk
+  (classes 11 MB → 1.4 MB), ARM only (the x86_64 Tor library was for the
+  emulator), native libraries compressed in the APK (Tor 7.6 MB → 3.1 MB
+  per ABI). 36 MB → 9.5 MB. Still signed with the local debug key, so it
+  installs over earlier previews. The shrunk build has not been run on a
+  device yet.
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.4.0 (preview) — 2026-10-29
