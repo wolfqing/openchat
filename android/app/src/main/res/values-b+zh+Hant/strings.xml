@@ -118,4 +118,12 @@
     <string name="cmd_unfavorited">已取消收藏 %1$s</string>
     <string name="cmd_mesh_only">這個指令只能在「附近」和私聊裡用</string>
     <string name="cmd_geo_only">這個指令只能在地區頻道裡用</string>
+    <string name="peer_fav_add">加入收藏</string>
+    <string name="peer_fav_remove">取消收藏</string>
+    <string name="fav_mutual_note">你們互相收藏了。不在附近時，私訊會經網際網路端對端加密送達。</string>
+    <string name="fav_waiting_note">對方也收藏你之後，不在附近時也能經網際網路私聊。</string>
+    <string name="fav_they_note">對方收藏了你。回收藏一下，不在附近時也能經網際網路私聊。</string>
+    <string name="fav_they_on">%1$s 收藏了你</string>
+    <string name="fav_they_off">%1$s 取消了對你的收藏</string>
+    <string name="dm_status_internet">不在附近 · 經網際網路加密送達</string>
 </resources>

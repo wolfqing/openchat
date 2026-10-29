@@ -269,6 +269,9 @@ class MeshEngine(
         MeshPeer(hex, s.nickname, s.noiseKey, s.signingKey, s.lastSeen, s.directLinks.isNotEmpty())
     }.sortedBy { it.nickname.lowercase() }
 
+    /** Heard from recently, directly or through relays: mesh delivery is worth trying. */
+    fun isReachable(peerHex: String) = peers.containsKey(peerHex)
+
     fun hasSession(peerHex: String) = sessions[peerHex]?.established == true
 
     // ---------------------------------------------------------------- presence

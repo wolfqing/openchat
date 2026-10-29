@@ -126,4 +126,12 @@
     <string name="cmd_unfavorited">%1$s retiré des favoris</string>
     <string name="cmd_mesh_only">cette commande ne marche que dans « À proximité » et les discussions privées</string>
     <string name="cmd_geo_only">cette commande ne marche que dans un canal de zone</string>
+    <string name="peer_fav_add">Ajouter aux favoris</string>
+    <string name="peer_fav_remove">Retirer des favoris</string>
+    <string name="fav_mutual_note">Vous êtes favoris l\'un de l\'autre. Loin l\'un de l\'autre, les messages privés passent par internet, chiffrés de bout en bout.</string>
+    <string name="fav_waiting_note">Dès qu\'il vous ajoute aussi, vous pourrez vous écrire par internet même à distance.</string>
+    <string name="fav_they_note">Il vous a ajouté aux favoris. Ajoutez-le aussi pour vous écrire par internet à distance.</string>
+    <string name="fav_they_on">%1$s vous a ajouté aux favoris</string>
+    <string name="fav_they_off">%1$s vous a retiré des favoris</string>
+    <string name="dm_status_internet">Absent · par internet, chiffré</string>
 </resources>

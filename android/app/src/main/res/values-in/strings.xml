@@ -118,4 +118,12 @@
     <string name="cmd_unfavorited">%1$s dihapus dari favorit</string>
     <string name="cmd_mesh_only">perintah ini hanya untuk Sekitar dan obrolan pribadi</string>
     <string name="cmd_geo_only">perintah ini hanya untuk kanal wilayah</string>
+    <string name="peer_fav_add">Tambah ke favorit</string>
+    <string name="peer_fav_remove">Hapus dari favorit</string>
+    <string name="fav_mutual_note">Kalian saling memfavoritkan. Saat berjauhan, pesan pribadi lewat internet dengan enkripsi ujung ke ujung.</string>
+    <string name="fav_waiting_note">Setelah ia memfavoritkan Anda juga, kalian bisa berkirim pesan lewat internet saat berjauhan.</string>
+    <string name="fav_they_note">Ia memfavoritkan Anda. Favoritkan balik untuk berkirim pesan lewat internet saat berjauhan.</string>
+    <string name="fav_they_on">%1$s memfavoritkan Anda</string>
+    <string name="fav_they_off">%1$s menghapus Anda dari favorit</string>
+    <string name="dm_status_internet">Jauh · lewat internet, terenkripsi</string>
 </resources>

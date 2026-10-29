@@ -118,4 +118,12 @@
     <string name="cmd_unfavorited">đã bỏ %1$s khỏi yêu thích</string>
     <string name="cmd_mesh_only">lệnh này chỉ dùng trong Gần đây và trò chuyện riêng</string>
     <string name="cmd_geo_only">lệnh này chỉ dùng trong kênh khu vực</string>
+    <string name="peer_fav_add">Thêm vào yêu thích</string>
+    <string name="peer_fav_remove">Bỏ khỏi yêu thích</string>
+    <string name="fav_mutual_note">Hai bạn đã thêm nhau vào yêu thích. Khi ở xa, tin nhắn riêng sẽ đi qua internet, mã hóa đầu cuối.</string>
+    <string name="fav_waiting_note">Khi họ cũng thêm bạn, hai bạn có thể nhắn qua internet cả khi ở xa.</string>
+    <string name="fav_they_note">Họ đã thêm bạn vào yêu thích. Thêm lại họ để nhắn qua internet khi ở xa.</string>
+    <string name="fav_they_on">%1$s đã thêm bạn vào yêu thích</string>
+    <string name="fav_they_off">%1$s đã bỏ bạn khỏi yêu thích</string>
+    <string name="dm_status_internet">Ở xa · qua internet, đã mã hóa</string>
 </resources>

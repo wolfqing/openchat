@@ -122,4 +122,12 @@
     <string name="cmd_unfavorited">%1$s पसंदीदा से हटाया गया</string>
     <string name="cmd_mesh_only">यह कमांड केवल आस-पास और निजी चैट में काम करता है</string>
     <string name="cmd_geo_only">यह कमांड केवल क्षेत्र चैनल में काम करता है</string>
+    <string name="peer_fav_add">पसंदीदा में जोड़ें</string>
+    <string name="peer_fav_remove">पसंदीदा से हटाएँ</string>
+    <string name="fav_mutual_note">आप दोनों ने एक-दूसरे को पसंदीदा बनाया है। दूर होने पर निजी संदेश इंटरनेट से एंड-टू-एंड एन्क्रिप्टेड जाते हैं।</string>
+    <string name="fav_waiting_note">जब वे भी आपको पसंदीदा बनाएँगे, दूर रहकर भी इंटरनेट से संदेश भेज सकेंगे।</string>
+    <string name="fav_they_note">उन्होंने आपको पसंदीदा बनाया है। दूर रहकर इंटरनेट से बात करने के लिए आप भी उन्हें जोड़ें।</string>
+    <string name="fav_they_on">%1$s ने आपको पसंदीदा में जोड़ा</string>
+    <string name="fav_they_off">%1$s ने आपको पसंदीदा से हटाया</string>
+    <string name="dm_status_internet">दूर · इंटरनेट से, एन्क्रिप्टेड</string>
 </resources>

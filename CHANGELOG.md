@@ -46,6 +46,15 @@
   bitchat users see the same line), `/block`, `/unblock`, `/fav`, `/unfav`
   and `/help`. Replies are local lines in that chat and are never sent.
   3 new tests.
+- Favorites, and private messages over the internet between mutual
+  favorites, wire-compatible with bitchat ([spec §15](docs/protocol-spec.md)).
+  Favoriting sends a `[FAVORITED]:npub` notice; once both sides have
+  favorited each other, a private message to someone out of Bluetooth range
+  goes over Nostr relays in bitchat's private envelope (kind 1059/13/14,
+  `v2:` XChaCha20-Poly1305). Receipts come back the same way. The envelope
+  code opens both recorded bitchat envelopes from upstream's test fixtures.
+  Favorites show ★ in the private list; the chat title says "over the
+  internet". 7 new tests.
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.4.0 (preview) — 2026-10-29

@@ -83,6 +83,7 @@ interface ChatController {
     /** Checks a scanned QR; on success marks that identity verified and returns its nickname. */
     fun verifyScanned(url: String): String?
     fun setFavorite(peerHex: String, nickname: String, on: Boolean)
+    fun myNpub(): String
     fun setNickname(name: String)
     fun joinGeo(geohash: String, teleported: Boolean)
     fun leaveGeo(geohash: String)

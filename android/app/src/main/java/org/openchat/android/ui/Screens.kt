@@ -594,7 +594,14 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
                 Column {
                     PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex)), onPanic)
                     Text(
-                        stringResource(if (social.isBlockedPeer(peerHex)) R.string.peer_blocked_short else if (peer != null) R.string.dm_status_here else R.string.dm_status_away),
+                        stringResource(
+                            when {
+                                social.isBlockedPeer(peerHex) -> R.string.peer_blocked_short
+                                peer != null -> R.string.dm_status_here
+                                social.favoriteOf(peerHex)?.let { it.mine && it.theyFavorited && it.theirNpub != null } == true -> R.string.dm_status_internet
+                                else -> R.string.dm_status_away
+                            },
+                        ),
                         fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -641,7 +648,14 @@ private fun PrivateList(onOpen: (String) -> Unit) {
                 Box(Modifier.size(10.dp).background(if (peer != null) Color(0xFF2EB872) else Color.Gray, CircleShape))
                 Spacer(Modifier.size(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex), verified = social.isVerifiedPeer(hex)), fontWeight = FontWeight.SemiBold)
+                    val fav = social.favoriteOf(hex)
+                    Text(
+                        buildAnnotatedString {
+                            append(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex), verified = social.isVerifiedPeer(hex)))
+                            if (fav?.mine == true) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" ★") }
+                        },
+                        fontWeight = FontWeight.SemiBold,
+                    )
                     Text(
                         last?.text ?: stringResource(if (peer?.direct == true) R.string.dm_direct else if (peer != null) R.string.dm_relayed else R.string.dm_away),
                         fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,

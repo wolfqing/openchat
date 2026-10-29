@@ -118,4 +118,12 @@
     <string name="cmd_unfavorited">%1$s ကို အကြိုက်ဆုံးမှ ဖယ်ပြီး</string>
     <string name="cmd_mesh_only">ဤအမိန့်ကို အနီးအနားနှင့် သီးသန့်ချက်တင်တွင်သာ သုံးနိုင်သည်</string>
     <string name="cmd_geo_only">ဤအမိန့်ကို ဒေသချန်နယ်တွင်သာ သုံးနိုင်သည်</string>
+    <string name="peer_fav_add">အကြိုက်ဆုံးထဲ ထည့်ရန်</string>
+    <string name="peer_fav_remove">အကြိုက်ဆုံးမှ ဖယ်ရန်</string>
+    <string name="fav_mutual_note">တစ်ဦးကိုတစ်ဦး အကြိုက်ဆုံးထားကြပြီ။ ဝေးနေချိန်တွင် သီးသန့်စာများကို အင်တာနက်မှ အဆုံးမှအဆုံး ကုဒ်ဝှက်ပြီး ပို့မည်။</string>
+    <string name="fav_waiting_note">၎င်းကလည်း သင့်ကို အကြိုက်ဆုံးထားပြီးနောက် ဝေးနေလည်း အင်တာနက်မှ စာပို့နိုင်မည်။</string>
+    <string name="fav_they_note">၎င်းက သင့်ကို အကြိုက်ဆုံးထားသည်။ ပြန်ထည့်ပါက ဝေးနေလည်း အင်တာနက်မှ စာပို့နိုင်မည်။</string>
+    <string name="fav_they_on">%1$s က သင့်ကို အကြိုက်ဆုံးထဲ ထည့်ခဲ့သည်</string>
+    <string name="fav_they_off">%1$s က သင့်ကို အကြိုက်ဆုံးမှ ဖယ်ခဲ့သည်</string>
+    <string name="dm_status_internet">အနီးတွင်မရှိ · အင်တာနက်မှ၊ ကုဒ်ဝှက်ထား</string>
 </resources>

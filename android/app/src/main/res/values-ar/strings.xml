@@ -138,4 +138,12 @@
     <string name="cmd_unfavorited">تمت إزالة %1$s من المفضلة</string>
     <string name="cmd_mesh_only">هذا الأمر يعمل فقط في «القريبون» والمحادثات الخاصة</string>
     <string name="cmd_geo_only">هذا الأمر يعمل فقط في قناة موقع</string>
+    <string name="peer_fav_add">أضف إلى المفضلة</string>
+    <string name="peer_fav_remove">إزالة من المفضلة</string>
+    <string name="fav_mutual_note">أضاف كل منكما الآخر إلى المفضلة. عندما تبتعدان تُرسل الرسائل الخاصة عبر الإنترنت مشفرة طرفيًا.</string>
+    <string name="fav_waiting_note">عندما يضيفك بدوره، يمكنكما المراسلة عبر الإنترنت عند الابتعاد.</string>
+    <string name="fav_they_note">أضافك إلى المفضلة. أضفه بدورك لتتراسلا عبر الإنترنت عند الابتعاد.</string>
+    <string name="fav_they_on">أضافك %1$s إلى المفضلة</string>
+    <string name="fav_they_off">أزالك %1$s من المفضلة</string>
+    <string name="dm_status_internet">بعيد · عبر الإنترنت، مشفّر</string>
 </resources>

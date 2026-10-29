@@ -126,4 +126,12 @@
     <string name="cmd_unfavorited">%1$s quitado de favoritos</string>
     <string name="cmd_mesh_only">este comando solo funciona en Cerca y chats privados</string>
     <string name="cmd_geo_only">este comando solo funciona en un canal de zona</string>
+    <string name="peer_fav_add">Añadir a favoritos</string>
+    <string name="peer_fav_remove">Quitar de favoritos</string>
+    <string name="fav_mutual_note">Son favoritos mutuos. Cuando estén lejos, los mensajes privados irán por internet, cifrados de extremo a extremo.</string>
+    <string name="fav_waiting_note">Cuando te añada también, podrán escribirse por internet aunque estén lejos.</string>
+    <string name="fav_they_note">Te añadió a favoritos. Añádele también para escribiros por internet a distancia.</string>
+    <string name="fav_they_on">%1$s te añadió a favoritos</string>
+    <string name="fav_they_off">%1$s te quitó de favoritos</string>
+    <string name="dm_status_internet">Lejos · por internet, cifrado</string>
 </resources>

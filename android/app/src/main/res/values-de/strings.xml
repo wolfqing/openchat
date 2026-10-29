@@ -122,4 +122,12 @@
     <string name="cmd_unfavorited">%1$s aus Favoriten entfernt</string>
     <string name="cmd_mesh_only">dieser Befehl geht nur in „In der Nähe“ und privaten Chats</string>
     <string name="cmd_geo_only">dieser Befehl geht nur in einem Ortskanal</string>
+    <string name="peer_fav_add">Zu Favoriten</string>
+    <string name="peer_fav_remove">Aus Favoriten entfernen</string>
+    <string name="fav_mutual_note">Ihr habt euch gegenseitig als Favoriten. Wenn ihr getrennt seid, gehen private Nachrichten Ende-zu-Ende-verschlüsselt übers Internet.</string>
+    <string name="fav_waiting_note">Sobald sie dich auch favorisieren, könnt ihr euch auch getrennt übers Internet schreiben.</string>
+    <string name="fav_they_note">Du bist ihr Favorit. Favorisiere zurück, um getrennt übers Internet zu schreiben.</string>
+    <string name="fav_they_on">%1$s hat dich als Favorit hinzugefügt</string>
+    <string name="fav_they_off">%1$s hat dich aus den Favoriten entfernt</string>
+    <string name="dm_status_internet">Nicht in der Nähe · übers Internet, verschlüsselt</string>
 </resources>

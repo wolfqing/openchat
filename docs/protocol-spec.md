@@ -381,8 +381,6 @@ ID) and keeps running. This is local behaviour and needs no wire support.
 - courier envelope v2 (sealed to a one-time prekey, TLV `0x05`): openchat
   carries and hands over such envelopes but cannot open one addressed to it
 - the bridge courier drop (envelopes parked on Nostr relays)
-- the Nostr private envelope for mutual favorites (kind 14/13/1059,
-  `v2:` XChaCha20-Poly1305), not NIP-17/44/59 compatible
 - files, images, voice, groups, boards, prekeys, ping/pong, source-route
   origination, peer ID rotation (`announceV2`, still a draft upstream)
 
@@ -569,6 +567,58 @@ of itself. The store is persisted with the §13.7 state and restored on
 start, minus what aged out. The first request to a neighbour goes 5 s after
 its announce identifies the link; afterwards one request per direct
 neighbour every 15 s. A panic wipe clears the store.
+
+## 15. Favorites and private messages over Nostr (v0.5)
+
+### 15.1 Favorite notice
+
+Favoriting someone sends them a private message (§8.3, over the mesh
+when reachable, else over Nostr if their npub is known, else by courier)
+whose content is `[FAVORITED]:<my npub>` or `[UNFAVORITED]:<my npub>`. It
+is not shown as a message. The receiver records the npub against the
+sender's Noise key. Two people who have both favorited each other and hold
+each other's npub are mutual favorites. The npub is the account key: one
+secp256k1 key per device, derived from the identity seed (openchat:
+`HMAC-SHA256(seed, "openchat-nostr-account")` through the §9 derivation),
+replaced by a panic wipe.
+
+### 15.2 Embedded packet
+
+Over Nostr a private message, receipt or notice is a §2 packet of type
+`noiseEncrypted` (TTL 7, sender = my peer ID, recipient = theirs) whose
+payload is the plaintext §8.3 Noise payload, not Noise-encrypted. The
+event content is `bitchat1:` followed by the packet in unpadded base64url.
+
+### 15.3 Private envelope
+
+Three nested events, all with bitchat's own cipher rather than NIP-44:
+
+- rumor: kind 14, unsigned (no `sig`), pubkey = sender account key,
+  tags `[]` (a `[["p", recipient]]` tag is also accepted), content = §15.2.
+- seal: kind 13, tags `[]`, signed by the sender account key,
+  `created_at` = now ± up to 900 s, content = encrypt(rumor JSON).
+- wrap: kind 1059, signed by a one-time key, tags exactly
+  `[["p", recipient hex]]`, `created_at` = now ± 900 s, content =
+  encrypt(seal JSON).
+
+encrypt: `v2:` + base64url(nonce24 ‖ ciphertext ‖ tag16), XChaCha20-Poly1305
+(HChaCha20 over the first 16 nonce bytes, then ChaCha20-Poly1305 with
+`00000000` ‖ the last 8). Key = HKDF-SHA256(IKM = the 33-byte compressed
+ECDH point, salt empty, info `"nip44-v2"`, 32 bytes). Senders' x-only keys
+are tried with even then odd Y. A receiver rejects any layer whose kind,
+tags, signature or size (64 KiB) differ, and a rumor whose pubkey is not
+the seal signer. Checked against two envelopes recorded from bitchat builds.
+
+### 15.4 Relays and delivery
+
+Account envelopes use `wss://relay.damus.io`, `wss://nos.lol`,
+`wss://relay.primal.net` and `wss://offchain.pub`, subscribing to kind
+1059 with `#p` = my key since two days ago. openchat sends over Nostr only
+to a mutual favorite who is not reachable on the mesh while a relay is
+connected; otherwise §13 applies. It accepts Nostr messages only from
+favorites' npubs, and favorite notices only from the npub they announce
+and from a peer ID it has met. A received message is answered with
+`delivered` and, when shown, `readReceipt`, one envelope per 1.2 s.
 
 ## 16. In-person verification (v0.5)
 

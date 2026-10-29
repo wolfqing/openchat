@@ -86,6 +86,19 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                         }
                         if (!blocked) {
                             FilledTonalButton(onClick = { onDismiss(); onMessage(person.peerHex) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.peer_message)) }
+                            val fav = fp?.let { social.favorites[it] }
+                            val mine = fav?.mine == true
+                            OutlinedButton(
+                                onClick = { ChatRepository.controller?.setFavorite(person.peerHex, person.nickname ?: person.peerHex.take(8), !mine) },
+                                enabled = fp != null, modifier = Modifier.fillMaxWidth(),
+                            ) { Text(stringResource(if (mine) R.string.peer_fav_remove else R.string.peer_fav_add)) }
+                            val note = when {
+                                mine && fav?.theyFavorited == true -> R.string.fav_mutual_note
+                                mine -> R.string.fav_waiting_note
+                                fav?.theyFavorited == true -> R.string.fav_they_note
+                                else -> null
+                            }
+                            note?.let { Text(stringResource(it), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         }
                         if (fp != null) {
                             OutlinedButton(

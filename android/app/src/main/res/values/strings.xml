@@ -135,4 +135,12 @@
     <string name="cmd_unfavorited">removed %1$s from favorites</string>
     <string name="cmd_mesh_only">this command only works in Nearby and private chats</string>
     <string name="cmd_geo_only">this command only works in a location channel</string>
+    <string name="peer_fav_add">Add to favorites</string>
+    <string name="peer_fav_remove">Remove from favorites</string>
+    <string name="fav_mutual_note">You favorited each other. When you are apart, private messages go over the internet, end-to-end encrypted.</string>
+    <string name="fav_waiting_note">Once they favorite you back, you can also message each other over the internet when apart.</string>
+    <string name="fav_they_note">They added you to favorites. Add them back to message over the internet when apart.</string>
+    <string name="fav_they_on">%1$s added you to favorites</string>
+    <string name="fav_they_off">%1$s removed you from favorites</string>
+    <string name="dm_status_internet">Away · over the internet, encrypted</string>
 </resources>

@@ -130,4 +130,12 @@
     <string name="cmd_unfavorited">%1$s удалён из избранного</string>
     <string name="cmd_mesh_only">эта команда работает только в «Рядом» и личных чатах</string>
     <string name="cmd_geo_only">эта команда работает только в канале местности</string>
+    <string name="peer_fav_add">В избранное</string>
+    <string name="peer_fav_remove">Убрать из избранного</string>
+    <string name="fav_mutual_note">Вы в избранном друг у друга. Когда вы далеко, личные сообщения идут через интернет со сквозным шифрованием.</string>
+    <string name="fav_waiting_note">Когда вас добавят в ответ, вы сможете переписываться через интернет и на расстоянии.</string>
+    <string name="fav_they_note">Вас добавили в избранное. Добавьте в ответ, чтобы переписываться через интернет на расстоянии.</string>
+    <string name="fav_they_on">%1$s добавил(а) вас в избранное</string>
+    <string name="fav_they_off">%1$s убрал(а) вас из избранного</string>
+    <string name="dm_status_internet">Не рядом · через интернет, зашифровано</string>
 </resources>

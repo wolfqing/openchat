@@ -122,4 +122,12 @@
     <string name="cmd_unfavorited">%1$s favorilerden çıkarıldı</string>
     <string name="cmd_mesh_only">bu komut yalnızca Yakında ve özel sohbetlerde çalışır</string>
     <string name="cmd_geo_only">bu komut yalnızca konum kanalında çalışır</string>
+    <string name="peer_fav_add">Favorilere ekle</string>
+    <string name="peer_fav_remove">Favorilerden çıkar</string>
+    <string name="fav_mutual_note">Birbirinizi favorilere eklediniz. Uzaktayken özel mesajlar internet üzerinden uçtan uca şifreli gider.</string>
+    <string name="fav_waiting_note">O da sizi favorilere eklediğinde uzaktayken de internet üzerinden yazışabilirsiniz.</string>
+    <string name="fav_they_note">Sizi favorilere ekledi. Uzaktayken internetten yazışmak için siz de ekleyin.</string>
+    <string name="fav_they_on">%1$s sizi favorilere ekledi</string>
+    <string name="fav_they_off">%1$s sizi favorilerden çıkardı</string>
+    <string name="dm_status_internet">Uzakta · internet üzerinden, şifreli</string>
 </resources>

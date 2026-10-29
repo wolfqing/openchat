@@ -122,4 +122,12 @@
     <string name="cmd_unfavorited">%1$s از علاقه‌مندی‌ها حذف شد</string>
     <string name="cmd_mesh_only">این دستور فقط در «نزدیک» و گفتگوهای خصوصی کار می‌کند</string>
     <string name="cmd_geo_only">این دستور فقط در کانال منطقه کار می‌کند</string>
+    <string name="peer_fav_add">افزودن به علاقه‌مندی‌ها</string>
+    <string name="peer_fav_remove">حذف از علاقه‌مندی‌ها</string>
+    <string name="fav_mutual_note">یکدیگر را به علاقه‌مندی‌ها افزوده‌اید. وقتی دور هستید، پیام‌های خصوصی رمزگذاری‌شده از طریق اینترنت می‌روند.</string>
+    <string name="fav_waiting_note">وقتی او هم شما را بیفزاید، در دوری هم می‌توانید از طریق اینترنت پیام دهید.</string>
+    <string name="fav_they_note">او شما را به علاقه‌مندی‌ها افزوده. شما هم او را بیفزایید تا در دوری از طریق اینترنت پیام دهید.</string>
+    <string name="fav_they_on">%1$s شما را به علاقه‌مندی‌ها افزود</string>
+    <string name="fav_they_off">%1$s شما را از علاقه‌مندی‌ها حذف کرد</string>
+    <string name="dm_status_internet">دور · از طریق اینترنت، رمزگذاری‌شده</string>
 </resources>

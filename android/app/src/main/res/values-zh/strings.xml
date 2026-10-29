@@ -129,4 +129,12 @@
     <string name="cmd_unfavorited">已取消收藏 %1$s</string>
     <string name="cmd_mesh_only">这个命令只能在「附近」和私聊里用</string>
     <string name="cmd_geo_only">这个命令只能在地区频道里用</string>
+    <string name="peer_fav_add">收藏</string>
+    <string name="peer_fav_remove">取消收藏</string>
+    <string name="fav_mutual_note">你们互相收藏了。不在附近时，私信会经互联网端到端加密送达。</string>
+    <string name="fav_waiting_note">对方也收藏你之后，不在附近时也能经互联网私聊。</string>
+    <string name="fav_they_note">对方收藏了你。回收藏一下，不在附近时也能经互联网私聊。</string>
+    <string name="fav_they_on">%1$s 收藏了你</string>
+    <string name="fav_they_off">%1$s 取消了对你的收藏</string>
+    <string name="dm_status_internet">不在附近 · 经互联网加密送达</string>
 </resources>
