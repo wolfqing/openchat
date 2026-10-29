@@ -130,4 +130,10 @@
     <string name="fav_they_on">%1$s sizi favorilere ekledi</string>
     <string name="fav_they_off">%1$s sizi favorilerden çıkardı</string>
     <string name="dm_status_internet">Uzakta · internet üzerinden, şifreli</string>
+    <string name="notes_title">Burada bırakılan notlar</string>
+    <string name="notes_hint">Önümüzdeki 24 saatte yaklaşık 40 m yakına gelen herkes notu okuyabilir. İnternet gerekir.</string>
+    <string name="notes_placeholder">Buraya not bırak…</string>
+    <string name="notes_empty">Son 24 saatte burada not yok.</string>
+    <string name="note_dropped">📍 not bırakıldı — 24 saatte kaybolur</string>
+    <string name="note_no_location">not bırakmak için konumunuz gerekir — önce Konum sekmesinde açın</string>
 </resources>

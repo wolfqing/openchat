@@ -146,4 +146,10 @@
     <string name="fav_they_on">أضافك %1$s إلى المفضلة</string>
     <string name="fav_they_off">أزالك %1$s من المفضلة</string>
     <string name="dm_status_internet">بعيد · عبر الإنترنت، مشفّر</string>
+    <string name="notes_title">ملاحظات تُركت هنا</string>
+    <string name="notes_hint">يمكن لأي شخص يقترب لمسافة 40 م تقريبًا خلال 24 ساعة قراءة الملاحظة. يتطلب الإنترنت.</string>
+    <string name="notes_placeholder">اترك ملاحظة هنا…</string>
+    <string name="notes_empty">لا توجد ملاحظات هنا خلال آخر 24 ساعة.</string>
+    <string name="note_dropped">📍 تُركت الملاحظة هنا — تختفي بعد 24 ساعة</string>
+    <string name="note_no_location">ترك ملاحظة يتطلب موقعك — فعّله في تبويب الموقع أولًا</string>
 </resources>

@@ -64,11 +64,16 @@ data class MeshStatus(
     val carriedCount: Int = 0, // sealed envelopes held for others (§13.4)
 )
 
+/** A note left at a place (§17), visible to anyone nearby for 24 hours. */
+data class LocationNote(val id: String, val pubkey: String, val nickname: String, val text: String, val createdAt: Long, val geohash: String, val mine: Boolean)
+
 data class GeoStatus(
     val locationGeohash: String? = null, // full-precision cell of the device, if known
     val relaysConnected: Int = 0,
     val joined: Set<String> = emptySet(),
     val participants: Map<String, Int> = emptyMap(),
+    val notesCell: String? = null,          // building-level cell whose notes are listed
+    val notes: List<LocationNote> = emptyList(),
 )
 
 /** UI-facing actions; the running MeshService installs itself here. */
@@ -88,6 +93,9 @@ interface ChatController {
     fun joinGeo(geohash: String, teleported: Boolean)
     fun leaveGeo(geohash: String)
     fun sendGeo(geohash: String, text: String)
+    /** Leaves a note at the device's building-level cell; false when the place is unknown. */
+    fun dropNote(text: String): Boolean
+    fun watchNotes(cell: String?)
     fun refreshLocation()
     fun panic()
 }

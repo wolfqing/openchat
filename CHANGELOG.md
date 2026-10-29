@@ -55,6 +55,11 @@
   code opens both recorded bitchat envelopes from upstream's test fixtures.
   Favorites show ★ in the private list; the chat title says "over the
   internet". 7 new tests.
+- Location notes, as bitchat leaves them ([spec §17](docs/protocol-spec.md)):
+  the Location tab lists notes left in the last 24 hours at this building
+  and the eight cells around it, and has a box to leave one. `/drop` does
+  the same from a location channel. Notes are Nostr kind 1 events with a
+  24-hour NIP-40 expiry. 3 new tests.
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.4.0 (preview) — 2026-10-29

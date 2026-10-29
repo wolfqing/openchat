@@ -45,4 +45,12 @@ class CommandsTest {
         assertFalse(Commands.isCommand("/"))
         assertFalse(Commands.isCommand("// not a command"))
     }
+
+    @Test
+    fun dropLeavesANoteFromLocationChannels() {
+        assertEquals(Outcome.Drop("water at the north gate"), run("/drop water at the north gate", conv = "geo:wtw3sjq"))
+        assertEquals(Outcome.Local(Note.USAGE, "/drop message"), run("/drop", conv = "geo:wtw3sjq"))
+        assertTrue("/drop" in Commands.available("geo:wtw3s"))
+        assertFalse("/drop" in Commands.available("mesh"))
+    }
 }

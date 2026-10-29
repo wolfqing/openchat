@@ -3,6 +3,7 @@ package org.openchat.android.app
 import org.json.JSONArray
 import org.json.JSONObject
 import org.openchat.android.core.Mentions
+import org.openchat.android.nostr.Geohash
 import org.openchat.android.nostr.NostrEvent
 import org.openchat.android.nostr.NostrKey
 import org.openchat.android.nostr.RelayDirectory
@@ -56,6 +57,55 @@ class GeoChannels(
         )
     }
 
+    // ------------------------------------------------------------------ location notes (§17)
+
+    @Volatile private var notesCell: String? = null
+    private val notes = ConcurrentHashMap<String, LocationNote>()
+
+    /** Lists notes at [cell] and its eight neighbours; null stops watching. */
+    fun watchNotes(cell: String?) {
+        if (cell == notesCell) return
+        pool.unsubscribe(NOTES_SUB)
+        notes.clear()
+        notesCell = cell
+        if (cell != null) {
+            val cells = listOf(cell) + Geohash.neighbors(cell)
+            val filter = JSONObject()
+                .put("kinds", JSONArray().put(NostrEvent.KIND_TEXT_NOTE))
+                .put("#g", JSONArray(cells))
+                .put("limit", 200)
+            pool.subscribe(NOTES_SUB, directory.closest(cell, 5), filter)
+        }
+        publishNotes()
+    }
+
+    fun dropNote(cell: String, text: String) {
+        val relays = directory.closest(cell, 5)
+        if (relays.isEmpty()) return
+        val key = NostrKey.forGeohash(seed, cell)
+        val ev = NostrEvent.locationNote(key, cell, nickname(), text, System.currentTimeMillis() / 1000)
+        pool.publish(relays, ev)
+        if (cell == notesCell || Geohash.neighbors(cell).contains(notesCell)) onNote(ev)
+    }
+
+    private fun onNote(ev: NostrEvent) {
+        val cell = notesCell ?: return
+        val g = ev.tags.firstOrNull { it.size >= 2 && it[0] == "g" }?.get(1)?.lowercase() ?: return
+        if (g != cell && g !in Geohash.neighbors(cell)) return
+        val nowS = System.currentTimeMillis() / 1000
+        val expires = ev.tag("expiration")?.toLongOrNull()
+        if (expires != null && expires <= nowS) return
+        if (ev.pubkey in Social.state.value.geoBlocked || ev.content.isBlank()) return
+        notes[ev.id] = LocationNote(ev.id, ev.pubkey, ev.tag("n")?.take(32).orEmpty(), ev.content.take(1000), minOf(ev.createdAt, nowS) * 1000, g, ev.pubkey == NostrKey.forGeohash(seed, g).publicKeyHex)
+        while (notes.size > 500) notes.values.minByOrNull { it.createdAt }?.let { notes.remove(it.id) }
+        publishNotes()
+    }
+
+    private fun publishNotes() {
+        val nowS = System.currentTimeMillis() / 1000
+        ChatRepository.updateGeo { s -> s.copy(notesCell = notesCell, notes = notes.values.filter { it.createdAt / 1000 > nowS - 86_400 }.sortedByDescending { it.createdAt }) }
+    }
+
     /** Presence heartbeat, only from people physically in the cell. Called periodically by the service. */
     fun heartbeatAll() = joined.forEach { (g, j) -> if (!j.teleported) heartbeat(g) }
 
@@ -68,6 +118,7 @@ class GeoChannels(
     fun reset(newSeed: ByteArray) {
         joined.keys.toList().forEach { pool.unsubscribe(subId(it)) }
         joined.clear(); presence.clear()
+        pool.unsubscribe(NOTES_SUB); notes.clear(); notesCell = null
         pool.closeAll()
         seed = newSeed
         publishStatus()
@@ -77,7 +128,10 @@ class GeoChannels(
 
     private fun subId(geohash: String) = "geo-$geohash"
 
+    private companion object { const val NOTES_SUB = "notes" }
+
     private fun onEvent(relay: String, ev: NostrEvent) {
+        if (ev.kind == NostrEvent.KIND_TEXT_NOTE) return onNote(ev)
         val g = ev.tag("g") ?: return
         val j = joined[g] ?: return
         val nowS = System.currentTimeMillis() / 1000

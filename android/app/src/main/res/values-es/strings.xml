@@ -134,4 +134,10 @@
     <string name="fav_they_on">%1$s te añadió a favoritos</string>
     <string name="fav_they_off">%1$s te quitó de favoritos</string>
     <string name="dm_status_internet">Lejos · por internet, cifrado</string>
+    <string name="notes_title">Notas dejadas aquí</string>
+    <string name="notes_hint">Cualquiera que pase a unos 40 m en las próximas 24 horas puede leerla. Necesita internet.</string>
+    <string name="notes_placeholder">Deja una nota aquí…</string>
+    <string name="notes_empty">No hay notas aquí en las últimas 24 horas.</string>
+    <string name="note_dropped">📍 nota dejada aquí — desaparece en 24 h</string>
+    <string name="note_no_location">dejar una nota requiere tu ubicación — actívala primero en la pestaña Zona</string>
 </resources>

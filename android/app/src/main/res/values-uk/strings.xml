@@ -138,4 +138,10 @@
     <string name="fav_they_on">%1$s додав(ла) вас до обраного</string>
     <string name="fav_they_off">%1$s прибрав(ла) вас з обраного</string>
     <string name="dm_status_internet">Не поруч · через інтернет, зашифровано</string>
+    <string name="notes_title">Нотатки, залишені тут</string>
+    <string name="notes_hint">Її прочитає кожен, хто опиниться в межах ~40 м протягом 24 годин. Потрібен інтернет.</string>
+    <string name="notes_placeholder">Залишити нотатку тут…</string>
+    <string name="notes_empty">За останні 24 години тут нотаток немає.</string>
+    <string name="note_dropped">📍 нотатку залишено — зникне за 24 год</string>
+    <string name="note_no_location">для нотатки потрібне місцеположення — спершу увімкніть його на вкладці «Місцевість»</string>
 </resources>

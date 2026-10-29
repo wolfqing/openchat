@@ -134,4 +134,10 @@
     <string name="fav_they_on">%1$s adicionou você aos favoritos</string>
     <string name="fav_they_off">%1$s removeu você dos favoritos</string>
     <string name="dm_status_internet">Longe · pela internet, criptografado</string>
+    <string name="notes_title">Recados deixados aqui</string>
+    <string name="notes_hint">Quem chegar a uns 40 m nas próximas 24 horas pode ler o recado. Precisa de internet.</string>
+    <string name="notes_placeholder">Deixe um recado aqui…</string>
+    <string name="notes_empty">Nenhum recado aqui nas últimas 24 horas.</string>
+    <string name="note_dropped">📍 recado deixado aqui — some em 24 h</string>
+    <string name="note_no_location">deixar um recado precisa da sua localização — ative primeiro na aba Região</string>
 </resources>

@@ -55,6 +55,26 @@ object Geohash {
     }
 
     fun isValid(hash: String) = hash.isNotEmpty() && hash.length <= 12 && hash.all { it.lowercaseChar() in BASE32 }
+
+    /** The eight cells around [hash] at the same precision (fewer at the poles). */
+    fun neighbors(hash: String): List<String> {
+        val (lat, lon) = center(hash) ?: return emptyList()
+        // Cell size from the precision: bits split between longitude (ceil) and latitude (floor).
+        val bits = hash.length * 5
+        val dLon = 360.0 / (1L shl ((bits + 1) / 2)).toDouble()
+        val dLat = 180.0 / (1L shl (bits / 2)).toDouble()
+        val out = LinkedHashSet<String>()
+        for (dy in -1..1) for (dx in -1..1) {
+            if (dx == 0 && dy == 0) continue
+            val la = lat + dy * dLat
+            if (la <= -90 || la >= 90) continue
+            var lo = lon + dx * dLon
+            if (lo >= 180) lo -= 360; if (lo < -180) lo += 360
+            out.add(encode(la, lo, hash.length))
+        }
+        out.remove(hash)
+        return out.toList()
+    }
 }
 
 /** Nostr keypair: 32-byte secret, x-only public key. */
@@ -104,6 +124,7 @@ data class NostrEvent(
     }
 
     companion object {
+        const val KIND_TEXT_NOTE = 1
         const val KIND_GEOHASH_MESSAGE = 20000
         const val KIND_GEOHASH_PRESENCE = 20001
 
@@ -118,6 +139,14 @@ data class NostrEvent(
             if (!nickname.isNullOrBlank()) tags.add(listOf("n", nickname))
             if (teleported) tags.add(listOf("t", "teleport"))
             return create(key, KIND_GEOHASH_MESSAGE, tags, text)
+        }
+
+        /** A location note (§17): kind 1, at building precision, fading after [ttlS]. */
+        fun locationNote(key: NostrKey, geohash: String, nickname: String?, text: String, nowS: Long, ttlS: Long = 86_400): NostrEvent {
+            val tags = mutableListOf(listOf("g", geohash))
+            if (!nickname.isNullOrBlank()) tags.add(listOf("n", nickname))
+            tags.add(listOf("expiration", (nowS + ttlS).toString()))
+            return create(key, KIND_TEXT_NOTE, tags, text, nowS)
         }
 
         fun geohashPresence(key: NostrKey, geohash: String) =

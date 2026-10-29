@@ -489,6 +489,7 @@ private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conv
             ChatRepository.controller?.setFavorite(o.person.key, o.person.label.name, o.on)
             local(ctx.getString(if (o.on) R.string.cmd_favorited else R.string.cmd_unfavorited, o.person.label.toString()))
         }
+        is Commands.Outcome.Drop -> local(ctx.getString(if (ChatRepository.controller?.dropNote(o.text) == true) R.string.note_dropped else R.string.note_no_location))
         is Commands.Outcome.Local -> local(
             when (o.note) {
                 Commands.Note.HELP -> ctx.getString(R.string.cmd_help)
@@ -693,6 +694,7 @@ private fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Unit
                 }
             }
             TextButton(onClick = onRequestLocation) { Text(stringResource(R.string.geo_refresh)) }
+            NotesSection(here)
         }
         Spacer(Modifier.height(16.dp))
         Text(stringResource(R.string.geo_elsewhere), fontWeight = FontWeight.SemiBold)
@@ -708,6 +710,41 @@ private fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Unit
             Spacer(Modifier.height(16.dp))
             Text(stringResource(R.string.geo_joined), fontWeight = FontWeight.SemiBold)
             geo.joined.sorted().forEach { g -> TextButton(onClick = { onOpen(g) }) { Text("#$g") } }
+        }
+    }
+}
+
+/** Notes left at this building-level cell and the ones around it (§17). */
+@Composable
+private fun NotesSection(here: String) {
+    val geo by ChatRepository.geo.collectAsState()
+    var draft by rememberSaveable { mutableStateOf("") }
+    DisposableEffect(here) {
+        ChatRepository.controller?.watchNotes(here)
+        onDispose { ChatRepository.controller?.watchNotes(null) }
+    }
+    Spacer(Modifier.height(16.dp))
+    Text(stringResource(R.string.notes_title), fontWeight = FontWeight.SemiBold)
+    Text(stringResource(R.string.notes_hint), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(draft, { if (it.length <= 500) draft = it }, placeholder = { Text(stringResource(R.string.notes_placeholder)) }, modifier = Modifier.weight(1f), maxLines = 3)
+        IconButton(enabled = draft.isNotBlank(), onClick = { if (ChatRepository.controller?.dropNote(draft.trim()) == true) draft = "" }) {
+            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.send), tint = MaterialTheme.colorScheme.primary)
+        }
+    }
+    if (geo.notes.isEmpty()) {
+        Text(stringResource(R.string.notes_empty), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
+    }
+    geo.notes.take(50).forEach { n ->
+        Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+            Text(
+                buildAnnotatedString {
+                    append(labelText(PeerLabel.nostr(n.nickname, n.pubkey)))
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Normal)) { append("  " + stampText(n.createdAt)) }
+                },
+                fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+            )
+            Text(withMentions(n.text), fontSize = 15.sp)
         }
     }
 }

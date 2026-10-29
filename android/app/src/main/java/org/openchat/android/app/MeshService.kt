@@ -48,6 +48,7 @@ class MeshService : Service(), ChatController {
         private const val CHANNEL_STATUS = "mesh-status"
         private const val CHANNEL_MESSAGES = "messages"
         private const val NOTIFICATION_ID = 1
+        private const val NOTE_PRECISION = 8 // building level, as bitchat
 
         fun start(context: Context) {
             val i = Intent(context, MeshService::class.java)
@@ -369,6 +370,14 @@ class MeshService : Service(), ChatController {
     override fun joinGeo(geohash: String, teleported: Boolean) = geo.join(geohash.lowercase(), teleported)
     override fun leaveGeo(geohash: String) = geo.leave(geohash)
     override fun sendGeo(geohash: String, text: String) = geo.send(geohash, text)
+
+    override fun dropNote(text: String): Boolean {
+        val cell = ChatRepository.geo.value.locationGeohash?.take(NOTE_PRECISION) ?: return false
+        geo.dropNote(cell, text)
+        return true
+    }
+
+    override fun watchNotes(cell: String?) = geo.watchNotes(cell?.take(NOTE_PRECISION))
 
     @SuppressLint("MissingPermission")
     override fun refreshLocation() {

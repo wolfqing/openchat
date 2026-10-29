@@ -126,4 +126,10 @@
     <string name="fav_they_on">%1$s memfavoritkan Anda</string>
     <string name="fav_they_off">%1$s menghapus Anda dari favorit</string>
     <string name="dm_status_internet">Jauh · lewat internet, terenkripsi</string>
+    <string name="notes_title">Catatan di sini</string>
+    <string name="notes_hint">Siapa pun yang datang dalam jarak sekitar 40 m dalam 24 jam ke depan bisa membacanya. Perlu internet.</string>
+    <string name="notes_placeholder">Tinggalkan catatan di sini…</string>
+    <string name="notes_empty">Tidak ada catatan di sini dalam 24 jam terakhir.</string>
+    <string name="note_dropped">📍 catatan ditinggalkan — hilang dalam 24 jam</string>
+    <string name="note_no_location">meninggalkan catatan perlu lokasi Anda — aktifkan dulu di tab Wilayah</string>
 </resources>

@@ -21,13 +21,14 @@ object Commands {
         data class Block(val person: Person) : Outcome()
         data class Unblock(val name: String) : Outcome()
         data class Favorite(val person: Person, val on: Boolean) : Outcome()
+        data class Drop(val text: String) : Outcome()
     }
 
     /** Commands offered as suggestions, by context. */
     fun available(conversation: String): List<String> {
         val base = listOf("/msg", "/who", "/clear", "/hug", "/slap", "/block", "/unblock", "/help")
         return when {
-            conversation.startsWith("geo:") -> base
+            conversation.startsWith("geo:") -> base + "/drop"
             else -> base + listOf("/fav", "/unfav")
         }
     }
@@ -73,6 +74,7 @@ object Commands {
                     ?: return if (targetName.isEmpty()) Outcome.Local(Note.USAGE, "$cmd @name") else Outcome.Local(Note.NOT_FOUND, targetName)
                 Outcome.Favorite(p, cmd == "/fav")
             }
+            "/drop" -> if (args.isEmpty()) Outcome.Local(Note.USAGE, "/drop message") else Outcome.Drop(args)
             else -> Outcome.Local(Note.UNKNOWN, cmd)
         }
     }

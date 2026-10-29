@@ -130,4 +130,10 @@
     <string name="fav_they_on">%1$s hat dich als Favorit hinzugefügt</string>
     <string name="fav_they_off">%1$s hat dich aus den Favoriten entfernt</string>
     <string name="dm_status_internet">Nicht in der Nähe · übers Internet, verschlüsselt</string>
+    <string name="notes_title">Hier hinterlassene Notizen</string>
+    <string name="notes_hint">Wer in den nächsten 24 Stunden bis etwa 40 m herankommt, kann die Notiz lesen. Braucht Internet.</string>
+    <string name="notes_placeholder">Hier eine Notiz hinterlassen…</string>
+    <string name="notes_empty">Keine Notizen in den letzten 24 Stunden.</string>
+    <string name="note_dropped">📍 Notiz hinterlassen — sie verschwindet nach 24 h</string>
+    <string name="note_no_location">Für eine Notiz brauchst du deinen Standort — zuerst im Tab „Ort“ freigeben</string>
 </resources>

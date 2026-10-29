@@ -126,4 +126,10 @@
     <string name="fav_they_on">%1$s 收藏了你</string>
     <string name="fav_they_off">%1$s 取消了對你的收藏</string>
     <string name="dm_status_internet">不在附近 · 經網際網路加密送達</string>
+    <string name="notes_title">這裡的留言</string>
+    <string name="notes_hint">未來 24 小時內到附近約 40 公尺範圍的人都能看到。需要連網。</string>
+    <string name="notes_placeholder">在這裡留言…</string>
+    <string name="notes_empty">過去 24 小時這裡沒有留言。</string>
+    <string name="note_dropped">📍 已在這裡留言，24 小時後消失</string>
+    <string name="note_no_location">留言需要你的位置，請先在「地區」頁使用位置</string>
 </resources>

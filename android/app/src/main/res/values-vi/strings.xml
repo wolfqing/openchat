@@ -126,4 +126,10 @@
     <string name="fav_they_on">%1$s đã thêm bạn vào yêu thích</string>
     <string name="fav_they_off">%1$s đã bỏ bạn khỏi yêu thích</string>
     <string name="dm_status_internet">Ở xa · qua internet, đã mã hóa</string>
+    <string name="notes_title">Ghi chú để lại ở đây</string>
+    <string name="notes_hint">Ai đến trong bán kính khoảng 40 m trong 24 giờ tới đều đọc được. Cần internet.</string>
+    <string name="notes_placeholder">Để lại ghi chú ở đây…</string>
+    <string name="notes_empty">Không có ghi chú nào ở đây trong 24 giờ qua.</string>
+    <string name="note_dropped">📍 đã để lại ghi chú — biến mất sau 24 giờ</string>
+    <string name="note_no_location">để lại ghi chú cần vị trí của bạn — hãy bật ở tab Khu vực trước</string>
 </resources>

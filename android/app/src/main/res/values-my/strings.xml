@@ -126,4 +126,10 @@
     <string name="fav_they_on">%1$s က သင့်ကို အကြိုက်ဆုံးထဲ ထည့်ခဲ့သည်</string>
     <string name="fav_they_off">%1$s က သင့်ကို အကြိုက်ဆုံးမှ ဖယ်ခဲ့သည်</string>
     <string name="dm_status_internet">အနီးတွင်မရှိ · အင်တာနက်မှ၊ ကုဒ်ဝှက်ထား</string>
+    <string name="notes_title">ဒီမှာ ထားခဲ့သော မှတ်စုများ</string>
+    <string name="notes_hint">နောက် ၂၄ နာရီအတွင်း မီတာ ၄၀ ခန့်အတွင်း ရောက်လာသူတိုင်း ဖတ်နိုင်သည်။ အင်တာနက် လိုသည်။</string>
+    <string name="notes_placeholder">ဒီမှာ မှတ်စုထားခဲ့ရန်…</string>
+    <string name="notes_empty">လွန်ခဲ့သော ၂၄ နာရီအတွင်း ဒီမှာ မှတ်စုမရှိပါ။</string>
+    <string name="note_dropped">📍 ဒီမှာ မှတ်စုထားခဲ့ပြီ — ၂၄ နာရီတွင် ပျောက်မည်</string>
+    <string name="note_no_location">မှတ်စုထားရန် သင့်တည်နေရာ လိုသည် — ဒေသ တဘ်တွင် အရင်ဖွင့်ပါ</string>
 </resources>

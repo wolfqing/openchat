@@ -126,4 +126,10 @@
     <string name="fav_they_on">%1$s があなたをお気に入りに追加しました</string>
     <string name="fav_they_off">%1$s があなたをお気に入りから外しました</string>
     <string name="dm_status_internet">近くにいません · インターネット経由・暗号化</string>
+    <string name="notes_title">ここに残されたメモ</string>
+    <string name="notes_hint">今後24時間以内に約40m以内に来た人なら誰でも読めます。インターネットが必要です。</string>
+    <string name="notes_placeholder">ここにメモを残す…</string>
+    <string name="notes_empty">過去24時間、ここにメモはありません。</string>
+    <string name="note_dropped">📍 ここにメモを残しました。24時間で消えます</string>
+    <string name="note_no_location">メモを残すには位置情報が必要です。先に「地域」タブで使ってください</string>
 </resources>

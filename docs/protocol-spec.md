@@ -648,3 +648,13 @@ Verification state is local and never sent. Blocking (also local) drops a
 sender's public and private messages, including courier mail, without a
 delivery receipt; the phone still relays their packets.
 
+## 17. Location notes (v0.5)
+
+A note is a Nostr kind 1 event signed by the per-cell key (§9) of a
+building-level cell (geohash precision 8), with tags `["g", cell]`,
+`["n", nickname]` (optional) and the NIP-40 `["expiration", created_at +
+86400]`. A reader subscribes, on the cell's nearest relays, to kind 1 with
+`#g` = the cell and its eight neighbours, limit 200, and drops expired
+notes itself since relays need not. In a location channel `/drop <text>`
+leaves a note at the device's own building cell.
+

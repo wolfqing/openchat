@@ -143,4 +143,10 @@
     <string name="fav_they_on">%1$s added you to favorites</string>
     <string name="fav_they_off">%1$s removed you from favorites</string>
     <string name="dm_status_internet">Away · over the internet, encrypted</string>
+    <string name="notes_title">Notes left here</string>
+    <string name="notes_hint">Anyone who comes within about 40 m in the next 24 hours can read a note. Needs the internet.</string>
+    <string name="notes_placeholder">Leave a note here…</string>
+    <string name="notes_empty">No notes here in the last 24 hours.</string>
+    <string name="note_dropped">📍 note left here — it fades in 24 h</string>
+    <string name="note_no_location">leaving a note needs your location — use it on the Location tab first</string>
 </resources>
