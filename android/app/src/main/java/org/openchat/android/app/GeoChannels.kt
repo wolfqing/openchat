@@ -81,14 +81,13 @@ class GeoChannels(
         val nowS = System.currentTimeMillis() / 1000
         presence.getOrPut(g) { ConcurrentHashMap() }[ev.pubkey] = ev.createdAt
         if (ev.kind == NostrEvent.KIND_GEOHASH_MESSAGE && ev.content.isNotBlank()) {
-            val name = ev.tag("n")?.take(32) ?: ("anon#" + ev.pubkey.takeLast(4))
             val teleported = ev.tags.any { it.size >= 2 && it[0] == "t" && it[1] == "teleport" }
             ChatRepository.add(
                 ChatMessage(
                     id = ev.id, conversation = Conversation.Geo(g).key,
-                    senderName = if (teleported) "$name ✈" else name, senderKey = ev.pubkey,
+                    senderName = ev.tag("n")?.take(32).orEmpty(), senderKey = ev.pubkey,
                     text = ev.content.take(2000), timestamp = minOf(ev.createdAt, nowS) * 1000,
-                    mine = ev.pubkey == j.key.publicKeyHex,
+                    mine = ev.pubkey == j.key.publicKeyHex, teleported = teleported,
                 ),
             )
         }

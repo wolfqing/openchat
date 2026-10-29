@@ -69,16 +69,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import org.openchat.android.app.ChatMessage
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.DeliveryState
+import org.openchat.android.app.PeerLabel
 import org.openchat.android.nostr.Geohash
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -171,7 +177,7 @@ fun MainScreen(
         AlertDialog(
             onDismissRequest = { wiped = false },
             confirmButton = { TextButton(onClick = { wiped = false }) { Text("好") } },
-            text = { Text("已清空。你现在是一个新身份：${mesh.myNickname}") },
+            text = { Text("已清空。你现在是一个新身份：${PeerLabel.mesh(mesh.myNickname, mesh.myPeerHex)}") },
         )
     }
 
@@ -233,9 +239,22 @@ fun MainScreen(
     }
 }
 
+/** Name with its #xxxx suffix set smaller, monospaced and muted, so the name itself leads. */
+@Composable
+fun labelText(label: PeerLabel, teleported: Boolean = false): AnnotatedString = buildAnnotatedString {
+    append(label.name)
+    withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal, fontSize = 0.8.em, color = MaterialTheme.colorScheme.onSurfaceVariant)) {
+        append(label.suffix)
+    }
+    if (teleported) append(" ✈")
+}
+
 /** Title that wipes everything on a triple tap, with no confirmation (docs/protocol-spec.md §10). */
 @Composable
-fun PanicTitle(text: String, onPanic: () -> Unit) {
+fun PanicTitle(text: String, onPanic: () -> Unit) = PanicTitle(AnnotatedString(text), onPanic)
+
+@Composable
+fun PanicTitle(text: AnnotatedString, onPanic: () -> Unit) {
     var taps by remember { mutableStateOf(0) }
     var firstTap by remember { mutableLongStateOf(0L) }
     Text(
@@ -316,7 +335,7 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((String) -> Unit)?) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = if (m.mine) Alignment.End else Alignment.Start) {
         if (!m.mine) {
             Text(
-                m.senderName, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary,
+                labelText(PeerLabel.of(m), m.teleported), fontSize = 12.sp, color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.let { if (onSenderClick != null) it.clickable { onSenderClick(m.senderKey) } else it },
             )
         }
@@ -359,14 +378,15 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
     val names by ChatRepository.names.collectAsState()
     val peers by ChatRepository.peers.collectAsState()
     val peer = peers.firstOrNull { it.peerIdHex == peerHex }
-    val name = peer?.nickname ?: names[peerHex] ?: peerHex.take(8)
+    val label = PeerLabel.mesh(peer?.nickname ?: names[peerHex], peerHex)
+    val name = label.toString()
     val readSent = remember { HashSet<String>() }
     Scaffold(topBar = {
         TopAppBar(
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } },
             title = {
                 Column {
-                    PanicTitle(name, onPanic)
+                    PanicTitle(labelText(label), onPanic)
                     Text(if (peer != null) "在附近 · 加密私信" else "不在附近 · 消息会在对方回来后送达", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
@@ -410,7 +430,7 @@ private fun PrivateList(onOpen: (String) -> Unit) {
                 Box(Modifier.size(10.dp).background(if (peer != null) Color(0xFF2EB872) else Color.Gray, CircleShape))
                 Spacer(Modifier.size(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(peer?.nickname ?: names[hex] ?: hex.take(8), fontWeight = FontWeight.SemiBold)
+                    Text(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex)), fontWeight = FontWeight.SemiBold)
                     Text(
                         last?.text ?: if (peer?.direct == true) "就在身边" else if (peer != null) "经其他手机转发可达" else "不在附近",
                         fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
@@ -508,6 +528,11 @@ private fun MePane(onShareApp: () -> Unit) {
             Spacer(Modifier.size(8.dp))
             Button(enabled = nick.isNotBlank() && nick != mesh.myNickname, onClick = { ChatRepository.controller?.setNickname(nick) }) { Text("保存") }
         }
+        Text(
+            buildAnnotatedString { append("附近的人看到的是 "); append(labelText(PeerLabel.mesh(mesh.myNickname, mesh.myPeerHex))) },
+            fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text("名字可以重名，# 后面的四位是你的设备 ID，用来区分同名的人。", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(24.dp))
         Text("把 openchat 传给身边的人", fontWeight = FontWeight.SemiBold)
         Text("不需要应用商店，也不需要网络。可以用蓝牙、快速分享（附近分享）或其他方式直接发送安装包。", fontSize = 14.sp, lineHeight = 21.sp)

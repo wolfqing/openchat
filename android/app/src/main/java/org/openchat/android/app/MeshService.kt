@@ -160,7 +160,7 @@ class MeshService : Service(), ChatController {
             ChatRepository.rememberName(senderHex, nickname)
             ChatRepository.add(ChatMessage(messageId, conv, nickname, senderHex, text, timestamp, mine = false))
             if (ChatRepository.openConversation == conv) engine.sendReadReceipt(senderHex, messageId)
-            else notifyPrivate(nickname, text)
+            else notifyPrivate(PeerLabel.mesh(nickname, senderHex).toString(), text)
         }
 
         override fun onDelivered(peerHex: String, messageId: String) =
