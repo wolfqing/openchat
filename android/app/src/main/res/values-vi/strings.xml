@@ -34,6 +34,8 @@
     <string name="state_delivered">Đã nhận</string>
     <string name="state_read">Đã xem</string>
     <string name="state_failed">Chưa gửi được</string>
+    <string name="state_queued">Đang chờ người nhận</string>
+    <string name="state_carried">Người khác đang mang</string>
     <string name="send">Gửi</string>
     <string name="back">Quay lại</string>
     <string name="dm_status_here">Ở gần · đã mã hóa</string>
@@ -79,5 +81,6 @@
     <string name="me_fp_title">Dấu vân tay danh tính</string>
     <string name="me_fp_body">So sánh trực tiếp chuỗi ký tự này để chắc chắn người kia đúng là người bạn quen.</string>
     <string name="me_device_id">ID thiết bị: %1$s</string>
+    <string name="me_carrying">Thư niêm phong đang mang hộ người khác: %1$d</string>
     <string name="me_about">openchat hoạt động với mạng bitchat. Mã nguồn mở, giấy phép MIT.</string>
 </resources>

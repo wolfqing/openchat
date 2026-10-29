@@ -50,6 +50,8 @@ class MeshService : Service(), ChatController {
     private lateinit var thread: HandlerThread
     private lateinit var handler: Handler
     private lateinit var store: IdentityStore
+    private lateinit var stateStore: MeshStateStore
+    private val saveState = Runnable { stateStore.save(engine.exportState()) }
     private lateinit var engine: MeshEngine
     private lateinit var ble: BleTransport
     private lateinit var geo: GeoChannels
@@ -77,8 +79,10 @@ class MeshService : Service(), ChatController {
         thread = HandlerThread("mesh").apply { start() }
         handler = Handler(thread.looper)
         store = IdentityStore(this)
+        stateStore = MeshStateStore(this)
         val identity = store.loadOrCreate()
         engine = MeshEngine(identity, scheduler, { link, bytes -> ble.write(link, bytes) }, listener)
+        stateStore.load()?.let { engine.importState(it) }
         ble = BleTransport(this, handler) { engine }
         geo = GeoChannels(RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText()), identity.nostrSeed) { engine.identity.nickname }
         ChatRepository.controller = this
@@ -129,7 +133,7 @@ class MeshService : Service(), ChatController {
     private fun publishStatus() {
         val id = engine.identity
         ChatRepository.updateMesh {
-            it.copy(bluetoothOn = ble.isEnabled, running = bleStarted, links = engine.linkCount, myNickname = id.nickname, myPeerHex = id.peerIdHex, fingerprint = id.fingerprint)
+            it.copy(bluetoothOn = ble.isEnabled, running = bleStarted, links = engine.linkCount, myNickname = id.nickname, myPeerHex = id.peerIdHex, fingerprint = id.fingerprint, carriedCount = engine.carriedCount)
         }
         val now = System.currentTimeMillis()
         if (now - lastHeartbeat > 5 * 60_000) { lastHeartbeat = now; geo.heartbeatAll() }
@@ -171,6 +175,15 @@ class MeshService : Service(), ChatController {
 
         override fun onRead(peerHex: String, messageId: String) =
             ChatRepository.setState(Conversation.Private(peerHex).key, messageId, DeliveryState.READ)
+
+        override fun onQueued(peerHex: String, messageId: String) =
+            ChatRepository.setState(Conversation.Private(peerHex).key, messageId, DeliveryState.QUEUED)
+
+        override fun onCarried(peerHex: String, messageId: String) =
+            ChatRepository.setState(Conversation.Private(peerHex).key, messageId, DeliveryState.CARRIED)
+
+        // Coalesce bursts of changes into one write.
+        override fun onStateChanged() { handler.removeCallbacks(saveState); handler.postDelayed(saveState, 500) }
     }
 
     // ------------------------------------------------------------------ ChatController
@@ -189,7 +202,8 @@ class MeshService : Service(), ChatController {
             val parts = org.openchat.android.core.splitUtf8(text, org.openchat.android.core.PrivateMessage.MAX_CONTENT_BYTES)
             val now = System.currentTimeMillis()
             ids.zip(parts).forEachIndexed { i, (mid, part) ->
-                ChatRepository.add(ChatMessage(mid, Conversation.Private(peerHex).key, id.nickname, id.peerIdHex, part, now + i, mine = true, state = DeliveryState.SENT))
+                val state = when (engine.outboxState(mid)) { 2 -> DeliveryState.CARRIED; 1 -> DeliveryState.QUEUED; else -> DeliveryState.SENT }
+                ChatRepository.add(ChatMessage(mid, Conversation.Private(peerHex).key, id.nickname, id.peerIdHex, part, now + i, mine = true, state = state))
             }
         }
     }
@@ -239,6 +253,8 @@ class MeshService : Service(), ChatController {
         nm.cancelAll()
         startInForeground()
         handler.post {
+            handler.removeCallbacks(saveState)
+            stateStore.destroy()
             store.destroy()
             val fresh = Identity.generate()
             store.save(fresh)

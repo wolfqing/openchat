@@ -38,6 +38,8 @@
     <string name="state_delivered">Distribué</string>
     <string name="state_read">Lu</string>
     <string name="state_failed">Non envoyé</string>
+    <string name="state_queued">En attente du destinataire</string>
+    <string name="state_carried">Transporté par d\'autres</string>
     <string name="send">Envoyer</string>
     <string name="back">Retour</string>
     <string name="dm_status_here">À proximité · chiffré</string>
@@ -87,5 +89,6 @@
     <string name="me_fp_title">Empreinte d\'identité</string>
     <string name="me_fp_body">Comparez ces caractères en personne pour vérifier que quelqu\'un est bien la personne que vous connaissez.</string>
     <string name="me_device_id">Identifiant de l\'appareil : %1$s</string>
+    <string name="me_carrying">Courrier scellé transporté pour d\'autres : %1$d</string>
     <string name="me_about">openchat fonctionne avec le réseau bitchat. Open source, licence MIT.</string>
 </resources>

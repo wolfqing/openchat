@@ -1,6 +1,7 @@
 package org.openchat.android.mesh
 
 import org.openchat.android.core.Announcement
+import org.openchat.android.core.CourierEnvelope
 import org.openchat.android.core.Deduplicator
 import org.openchat.android.core.FragmentAssembler
 import org.openchat.android.core.Fragmenter
@@ -18,6 +19,7 @@ import org.openchat.android.core.toHex
 import org.openchat.android.crypto.CipherState
 import org.openchat.android.crypto.Crypto
 import org.openchat.android.crypto.HandshakeXX
+import org.openchat.android.crypto.NoiseX
 import java.util.UUID
 import kotlin.random.Random
 
@@ -51,6 +53,12 @@ interface MeshListener {
     fun onDelivered(peerHex: String, messageId: String) {}
     fun onRead(peerHex: String, messageId: String) {}
     fun onSessionEstablished(peerHex: String) {}
+    /** A private message is waiting in the outbox because the peer is out of reach (§13.1). */
+    fun onQueued(peerHex: String, messageId: String) {}
+    /** A sealed copy of the message was handed to a courier (§13.1). */
+    fun onCarried(peerHex: String, messageId: String) {}
+    /** Outbox, carried mail or remembered keys changed; the owner should persist [MeshEngine.exportState]. */
+    fun onStateChanged() {}
 }
 
 /**
@@ -96,11 +104,33 @@ class MeshEngine(
     private val dedup = Deduplicator(clock = scheduler::now)
     private var assembler = FragmentAssembler(clock = scheduler::now)
     private val pendingRelays = HashMap<String, Cancellable>()
+    // Store-and-forward (§13).
+    private val known = HashMap<String, KnownPeer>()
+    private val outbox = LinkedHashMap<String, QueuedMessage>()
+    private val carried = ArrayList<CarriedEnvelope>()
+    private val seenIds = LinkedHashSet<String>()   // private message IDs already delivered to the listener
+    private val acked = LinkedHashMap<String, Int>() // message ID -> best receipt seen (1 delivered, 2 read)
+    private val pendingAcks = HashMap<String, MutableSet<String>>()
+    private var lastPrune = 0L
     private var lastAnnounce = 0L
     private var nextAnnounceDue = 0L
     private var running = false
 
     val myPeerHex get() = identity.peerIdHex
+    val carriedCount get() = carried.size
+    val outboxCount get() = outbox.size
+
+    fun exportState() = MeshState(HashMap(known), outbox.values.toList(), carried.toList())
+
+    fun importState(s: MeshState) {
+        known.putAll(s.known)
+        s.outbox.forEach { outbox[it.messageId] = it }
+        carried.addAll(s.carried)
+        prune(scheduler.now())
+    }
+
+    /** 0 = not queued, 1 = waiting for the peer, 2 = at least one courier holds a copy. */
+    fun outboxState(messageId: String): Int = outbox[messageId]?.let { if (it.couriers.isEmpty()) 1 else 2 } ?: 0
 
     // ---------------------------------------------------------------- lifecycle
 
@@ -119,6 +149,7 @@ class MeshEngine(
     fun resetIdentity(newIdentity: Identity) {
         identity = newIdentity
         peers.clear(); sessions.clear(); pendingNoise.clear(); lastHandshakeStart.clear(); earlyCiphertexts.clear()
+        known.clear(); outbox.clear(); carried.clear(); seenIds.clear(); acked.clear(); pendingAcks.clear()
         pendingRelays.values.forEach { it.cancel() }; pendingRelays.clear()
         dedup.clear()
         assembler = FragmentAssembler(clock = scheduler::now)
@@ -139,6 +170,7 @@ class MeshEngine(
         if (now >= nextAnnounceDue) sendAnnounce(force = false)
         expirePeers(now)
         rekeyOldSessions(now)
+        if (now - lastPrune > 30_000) { lastPrune = now; prune(now) }
         scheduler.schedule(1000) { tick() }
     }
 
@@ -176,15 +208,26 @@ class MeshEngine(
         broadcast(p, exclude = null)
     }
 
-    /** Sends a private message; returns the message IDs used (one per 255-byte chunk). */
+    /**
+     * Sends a private message; returns the message IDs used (one per 255-byte chunk).
+     * Each chunk stays in the outbox until a receipt arrives (§13.1). A peer out of
+     * reach gets the message by courier.
+     */
     fun sendPrivate(peerHex: String, text: String): List<String> {
         val ids = ArrayList<String>()
+        val now = scheduler.now()
+        val reachable = peers.containsKey(peerHex)
         for (chunk in splitUtf8(text, PrivateMessage.MAX_CONTENT_BYTES)) {
             val id = UUID.randomUUID().toString().uppercase()
             val body = PrivateMessage(id, chunk).encode() ?: continue
-            sendNoise(peerHex, NoisePayload(NoisePayloadType.PRIVATE_MESSAGE, body).encode())
+            val plain = NoisePayload(NoisePayloadType.PRIVATE_MESSAGE, body).encode()
+            val q = QueuedMessage(id, peerHex, plain, now)
+            outbox[id] = q
+            while (outbox.size > OUTBOX_CAP) outbox.remove(outbox.keys.first())
+            if (reachable) sendNoise(peerHex, plain) else { listener.onQueued(peerHex, id); deposit(q) }
             ids.add(id)
         }
+        listener.onStateChanged()
         return ids
     }
 
@@ -230,12 +273,12 @@ class MeshEngine(
 
     // ---------------------------------------------------------------- receive pipeline
 
-    private fun receive(p: Packet, linkId: String?) {
+    private fun receive(p: Packet, linkId: String?, relayable: Boolean = true) {
         if (p.type == MessageType.FRAGMENT) {
             // Relay fragments independently, and try to reassemble locally.
             if (!dedup.markIfNew(Deduplicator.key(p))) { pendingRelays.remove(Deduplicator.key(p))?.cancel(); return }
             val addressedToMe = p.recipientId?.toHex() == myPeerHex
-            if (p.isBroadcast || addressedToMe) assembler.accept(p)?.let { receive(it, null) }
+            if (p.isBroadcast || addressedToMe) assembler.accept(p)?.let { receive(it, linkId, relayable = false) }
             maybeRelay(p, linkId)
             return
         }
@@ -252,9 +295,10 @@ class MeshEngine(
             MessageType.MESSAGE -> if (!handlePublic(p)) return
             MessageType.NOISE_HANDSHAKE -> if (forMe) { handleHandshake(senderHex, p.payload); return }
             MessageType.NOISE_ENCRYPTED -> if (forMe) { handleEncrypted(senderHex, p.payload); return }
+            MessageType.COURIER_ENVELOPE -> if (forMe) { handleCourier(p, linkId); return }
         }
-        // Reassembled packets (linkId == null) were already relayed as fragments.
-        if (linkId != null) maybeRelay(p, linkId)
+        // Reassembled packets were already relayed as fragments.
+        if (relayable && linkId != null) maybeRelay(p, linkId)
     }
 
     private fun maybeRelay(p: Packet, ingress: String?) {
@@ -286,16 +330,23 @@ class MeshEngine(
         state.nickname = a.nickname
         state.lastSeen = now
         // An announce at full TTL straight off a link came from that link's device.
+        var newlyDirect = false
         if (linkId != null && p.ttl >= Packet.DEFAULT_TTL) {
             val link = links[linkId]
             if (link != null && link.peerHex != hex) {
                 link.peerHex = hex
                 state.directLinks.add(linkId)
+                newlyDirect = true
                 publishPeers()
             }
         }
         if (changed) publishPeers()
         flushIfPossible(hex)
+        remember(hex, a.noisePublicKey, a.signingPublicKey, a.nickname, now)
+        if (existing == null || newlyDirect) { flushOutboxTo(hex); flushAcksTo(hex) }
+        val direct = state.directLinks.any { links.containsKey(it) }
+        handoverTo(hex, a.noisePublicKey, direct)
+        if (direct) { sprayTo(hex, a.noisePublicKey); depositWith(hex, a.noisePublicKey) }
         return true
     }
 
@@ -427,13 +478,185 @@ class MeshEngine(
         when (payload.type) {
             NoisePayloadType.PRIVATE_MESSAGE -> {
                 val pm = PrivateMessage.decode(payload.body) ?: return
-                listener.onPrivateMessage(peerHex, nickname, pm.messageId, pm.content, scheduler.now())
+                // Resends and courier copies share an ID: deliver once, but always answer so the sender can settle.
+                if (markSeen(pm.messageId)) listener.onPrivateMessage(peerHex, nickname, pm.messageId, pm.content, scheduler.now())
                 sendNoise(peerHex, NoisePayload(NoisePayloadType.DELIVERED, pm.messageId.toByteArray(Charsets.UTF_8)).encode())
             }
-            NoisePayloadType.DELIVERED -> listener.onDelivered(peerHex, String(payload.body, Charsets.UTF_8))
-            NoisePayloadType.READ_RECEIPT -> listener.onRead(peerHex, String(payload.body, Charsets.UTF_8))
-            else -> Unit // other payload types are not implemented in v0.1
+            NoisePayloadType.DELIVERED -> { val id = String(payload.body, Charsets.UTF_8); if (settle(id, 1)) listener.onDelivered(peerHex, id) }
+            NoisePayloadType.READ_RECEIPT -> { val id = String(payload.body, Charsets.UTF_8); if (settle(id, 2)) listener.onRead(peerHex, id) }
+            else -> Unit // other payload types are not implemented
         }
+    }
+
+    // ---------------------------------------------------------------- store-and-forward (§13)
+
+    private fun remember(hex: String, noiseKey: ByteArray, signingKey: ByteArray?, nickname: String, now: Long) {
+        val k = known[hex]
+        if (k == null) {
+            if (known.size >= KNOWN_CAP) known.entries.minByOrNull { it.value.lastSeen }?.let { known.remove(it.key) }
+            known[hex] = KnownPeer(noiseKey, signingKey, nickname, now)
+        } else { k.nickname = nickname; k.lastSeen = now }
+        listener.onStateChanged()
+    }
+
+    private fun noiseKeyOf(hex: String): ByteArray? = peers[hex]?.noiseKey ?: known[hex]?.noiseKey
+
+    /** Clears the outbox copy; true when this receipt advances what the listener already heard. */
+    private fun settle(messageId: String, level: Int): Boolean {
+        if (outbox.remove(messageId) != null) listener.onStateChanged()
+        if ((acked[messageId] ?: 0) >= level) return false
+        acked[messageId] = level
+        while (acked.size > OPENED_CAP) acked.remove(acked.keys.first())
+        return true
+    }
+
+    private fun markSeen(messageId: String): Boolean {
+        if (!seenIds.add(messageId)) return false
+        while (seenIds.size > OPENED_CAP) seenIds.remove(seenIds.first())
+        return true
+    }
+
+    /** The peer is back: resend everything still waiting for it on the session. */
+    private fun flushOutboxTo(hex: String) {
+        outbox.values.filter { it.peerHex == hex }.forEach { sendNoise(hex, it.plaintext) }
+    }
+
+    private fun flushAcksTo(hex: String) {
+        pendingAcks.remove(hex)?.forEach { id -> sendNoise(hex, NoisePayload(NoisePayloadType.DELIVERED, id.toByteArray(Charsets.UTF_8)).encode()) }
+    }
+
+    private fun seal(q: QueuedMessage, recipientKey: ByteArray, now: Long, copies: Int): ByteArray? {
+        val ct = try { NoiseX.seal(identity.noise, recipientKey, COURIER_PROLOGUE, q.plaintext) } catch (e: Exception) { return null }
+        val env = CourierEnvelope(CourierEnvelope.recipientTag(recipientKey, CourierEnvelope.epochDay(now)), now + CourierEnvelope.LIFETIME_MS, ct, copies)
+        return env.encode()
+    }
+
+    private fun courierPacket(payload: ByteArray, toHex: String): Packet? =
+        sign(Packet(type = MessageType.COURIER_ENVELOPE, senderId = identity.peerId, recipientId = toHex.hexToBytes(), timestamp = scheduler.now(), payload = payload))
+
+    /** Sends only over the peer's own link, never relayed (§13.4 step 3 on the far side). */
+    private fun sendOnDirectLink(hex: String, p: Packet): Boolean {
+        val link = peers[hex]?.directLinks?.firstOrNull { links.containsKey(it) } ?: return false
+        dedup.markIfNew(Deduplicator.key(p))
+        sendOn(listOf(link), p)
+        return true
+    }
+
+    /** Hands [q] to connected verified peers until [MAX_COURIERS] hold a copy (§13.1). */
+    private fun deposit(q: QueuedMessage) {
+        val recipientKey = noiseKeyOf(q.peerHex) ?: return
+        val now = scheduler.now()
+        val candidates = peers.entries.filter { (hex, s) ->
+            hex != q.peerHex && s.directLinks.any { links.containsKey(it) } && s.noiseKey.keyHex() !in q.couriers && !s.noiseKey.contentEquals(recipientKey)
+        }.take(MAX_COURIERS - q.couriers.size)
+        if (candidates.isEmpty()) return
+        val payload = seal(q, recipientKey, now, CourierEnvelope.INITIAL_COPIES) ?: return
+        for ((hex, s) in candidates) {
+            val p = courierPacket(payload, hex) ?: continue
+            if (sendOnDirectLink(hex, p)) { q.couriers.add(s.noiseKey.keyHex()); listener.onCarried(q.peerHex, q.messageId) }
+        }
+    }
+
+    /** A verified peer just connected: give it any outbox mail it is not carrying yet (§13.6 deposit). */
+    private fun depositWith(courierHex: String, courierKey: ByteArray) {
+        val keyHex = courierKey.keyHex()
+        val now = scheduler.now()
+        var changed = false
+        for (q in outbox.values) {
+            if (q.peerHex == courierHex || q.couriers.size >= MAX_COURIERS || keyHex in q.couriers) continue
+            if (now - q.createdAt > CourierEnvelope.LIFETIME_MS) continue
+            val recipientKey = noiseKeyOf(q.peerHex) ?: continue
+            if (recipientKey.contentEquals(courierKey)) continue
+            val payload = seal(q, recipientKey, now, CourierEnvelope.INITIAL_COPIES) ?: continue
+            val p = courierPacket(payload, courierHex) ?: continue
+            if (sendOnDirectLink(courierHex, p)) { q.couriers.add(keyHex); listener.onCarried(q.peerHex, q.messageId); changed = true }
+        }
+        if (changed) listener.onStateChanged()
+    }
+
+    /** An envelope addressed to us: open it, or carry it for someone else (§13.4). */
+    private fun handleCourier(p: Packet, linkId: String?) {
+        val env = CourierEnvelope.decode(p.payload) ?: return
+        val now = scheduler.now()
+        if (env.isExpired(now)) return
+        if (env.recipientTag.toHex() in CourierEnvelope.candidateTags(identity.noise.publicKey, now)) { open(env); return }
+        val link = linkId?.let { links[it] } ?: return
+        val senderHex = p.senderId.toHex()
+        if (link.peerHex != senderHex) return
+        val depositor = peers[senderHex] ?: return
+        if (!verify(p, depositor.signingKey)) return
+        if (env.expiry > now + CourierEnvelope.LIFETIME_MS + EXPIRY_SLACK_MS) return
+        val depositorHex = depositor.noiseKey.keyHex()
+        carried.firstOrNull { it.envelope.ciphertext.contentEquals(env.ciphertext) }?.let { c ->
+            if (c.sprayedTo.isEmpty()) c.copies = maxOf(c.copies, env.copies)
+            return
+        }
+        if (carried.count { it.depositorKeyHex == depositorHex } >= PER_DEPOSITOR) return
+        while (carried.size >= CARRY_CAP) carried.removeAt(0)
+        carried.add(CarriedEnvelope(env, depositorHex, now, env.copies))
+        listener.onStateChanged()
+    }
+
+    private fun open(env: CourierEnvelope) {
+        if (env.prekeyId != null) return // envelope v2: sealed to a prekey we do not have
+        val opened = try { NoiseX.open(identity.noise, COURIER_PROLOGUE, env.ciphertext) } catch (e: Exception) { return }
+        val payload = NoisePayload.decode(opened.payload) ?: return
+        if (payload.type != NoisePayloadType.PRIVATE_MESSAGE) return
+        val pm = PrivateMessage.decode(payload.body) ?: return
+        if (!markSeen(pm.messageId)) return
+        val senderHex = Identity.peerIdFor(opened.senderStatic).toHex()
+        val now = scheduler.now()
+        if (known[senderHex] == null) remember(senderHex, opened.senderStatic, null, senderHex.take(8), now)
+        val nickname = peers[senderHex]?.nickname ?: known[senderHex]?.nickname ?: senderHex.take(8)
+        listener.onPrivateMessage(senderHex, nickname, pm.messageId, pm.content, now)
+        if (peers.containsKey(senderHex)) sendNoise(senderHex, NoisePayload(NoisePayloadType.DELIVERED, pm.messageId.toByteArray(Charsets.UTF_8)).encode())
+        else pendingAcks.getOrPut(senderHex) { LinkedHashSet() }.let { if (it.size < 64) it.add(pm.messageId) }
+    }
+
+    /** Carried mail for a peer we just heard from (§13.6). */
+    private fun handoverTo(hex: String, noiseKey: ByteArray, direct: Boolean) {
+        if (carried.isEmpty()) return
+        val now = scheduler.now()
+        val tags = CourierEnvelope.candidateTags(noiseKey, now)
+        val mine = carried.filter { it.envelope.recipientTag.toHex() in tags }
+        if (mine.isEmpty()) return
+        var changed = false
+        for (c in mine) {
+            val payload = c.envelope.withCopies(1).encode() ?: continue
+            val p = courierPacket(payload, hex) ?: continue
+            if (direct) {
+                if (sendOnDirectLink(hex, p)) { carried.remove(c); changed = true }
+            } else if (now - c.lastRemoteHandover > REMOTE_HANDOVER_COOLDOWN_MS) {
+                c.lastRemoteHandover = now
+                dedup.markIfNew(Deduplicator.key(p))
+                broadcast(p, exclude = null)
+                changed = true
+            }
+        }
+        if (changed) listener.onStateChanged()
+    }
+
+    /** Spray-and-wait: split copy budgets with another courier (§13.6). */
+    private fun sprayTo(hex: String, noiseKey: ByteArray) {
+        if (carried.isEmpty()) return
+        val keyHex = noiseKey.keyHex()
+        val tags = CourierEnvelope.candidateTags(noiseKey, scheduler.now())
+        var changed = false
+        for (c in carried) {
+            if (c.copies <= 1 || c.depositorKeyHex == keyHex || keyHex in c.sprayedTo) continue
+            if (c.envelope.recipientTag.toHex() in tags) continue
+            val give = c.copies / 2
+            val payload = c.envelope.withCopies(give).encode() ?: continue
+            val p = courierPacket(payload, hex) ?: continue
+            if (sendOnDirectLink(hex, p)) { c.copies -= give; c.sprayedTo.add(keyHex); changed = true }
+        }
+        if (changed) listener.onStateChanged()
+    }
+
+    private fun prune(now: Long) {
+        var changed = outbox.values.removeAll { now - it.createdAt > CourierEnvelope.LIFETIME_MS }
+        changed = carried.removeAll { it.envelope.isExpired(now) } || changed
+        if (changed) listener.onStateChanged()
     }
 
     private fun rekeyOldSessions(now: Long) {
@@ -445,6 +668,18 @@ class MeshEngine(
     }
 
     // ---------------------------------------------------------------- signing
+
+    companion object {
+        private val COURIER_PROLOGUE = "bitchat-courier-v1".toByteArray(Charsets.US_ASCII)
+        private const val MAX_COURIERS = 3
+        private const val OUTBOX_CAP = 200
+        private const val KNOWN_CAP = 500
+        private const val CARRY_CAP = 40
+        private const val PER_DEPOSITOR = 2
+        private const val OPENED_CAP = 512
+        private const val EXPIRY_SLACK_MS = 60 * 60 * 1000L
+        private const val REMOTE_HANDOVER_COOLDOWN_MS = 10 * 60 * 1000L
+    }
 
     private fun sign(p: Packet): Packet? {
         val bytes = PacketCodec.signingBytes(p) ?: return null

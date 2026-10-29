@@ -44,6 +44,8 @@
     <string name="state_delivered">وصلت</string>
     <string name="state_read">قُرئت</string>
     <string name="state_failed">لم تُرسل</string>
+    <string name="state_queued">بانتظار المستلم</string>
+    <string name="state_carried">يحمله آخرون</string>
     <string name="send">إرسال</string>
     <string name="back">رجوع</string>
     <string name="dm_status_here">بالقرب · مشفّرة</string>
@@ -99,5 +101,6 @@
     <string name="me_fp_title">بصمة الهوية</string>
     <string name="me_fp_body">قارن هذه الأحرف وجهًا لوجه للتأكد من أن الشخص هو فعلًا من تعرفه.</string>
     <string name="me_device_id">معرّف الجهاز: %1$s</string>
+    <string name="me_carrying">رسائل مختومة نحملها للآخرين: %1$d</string>
     <string name="me_about">يعمل openchat مع شبكة bitchat. مفتوح المصدر، برخصة MIT.</string>
 </resources>

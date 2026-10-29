@@ -34,6 +34,8 @@
     <string name="state_delivered">전달됨</string>
     <string name="state_read">읽음</string>
     <string name="state_failed">보내지 못함</string>
+    <string name="state_queued">상대 접속 대기 중</string>
+    <string name="state_carried">다른 사람이 전달 중</string>
     <string name="send">보내기</string>
     <string name="back">뒤로</string>
     <string name="dm_status_here">근처 · 암호화됨</string>
@@ -79,5 +81,6 @@
     <string name="me_fp_title">신원 지문</string>
     <string name="me_fp_body">직접 만나 이 문자를 비교해 상대가 정말 아는 사람인지 확인하세요.</string>
     <string name="me_device_id">기기 ID: %1$s</string>
+    <string name="me_carrying">다른 사람을 위해 운반 중인 봉인 편지: %1$d통</string>
     <string name="me_about">openchat은 bitchat 네트워크와 호환됩니다. 오픈 소스, MIT 라이선스.</string>
 </resources>

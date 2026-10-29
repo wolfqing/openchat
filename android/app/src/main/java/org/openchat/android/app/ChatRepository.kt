@@ -13,7 +13,8 @@ sealed class Conversation(val key: String) {
     data class Geo(val geohash: String) : Conversation("geo:$geohash")
 }
 
-enum class DeliveryState { SENDING, SENT, DELIVERED, READ, FAILED }
+/** Order matters: a state only ever moves forward. QUEUED and CARRIED come from the outbox (§13). */
+enum class DeliveryState { SENDING, SENT, QUEUED, CARRIED, DELIVERED, READ, FAILED }
 
 data class ChatMessage(
     val id: String,
@@ -58,6 +59,7 @@ data class MeshStatus(
     val myNickname: String = "",
     val myPeerHex: String = "",
     val fingerprint: String = "",
+    val carriedCount: Int = 0, // sealed envelopes held for others (§13.4)
 )
 
 data class GeoStatus(

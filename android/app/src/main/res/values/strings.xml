@@ -43,6 +43,8 @@
     <string name="state_delivered">Delivered</string>
     <string name="state_read">Read</string>
     <string name="state_failed">Not sent</string>
+    <string name="state_queued">Waiting for them</string>
+    <string name="state_carried">Carried by others</string>
     <string name="send">Send</string>
     <string name="back">Back</string>
 
@@ -96,5 +98,6 @@
     <string name="me_fp_title">Identity fingerprint</string>
     <string name="me_fp_body">Compare these characters in person to confirm someone really is the person you know.</string>
     <string name="me_device_id">Device ID: %1$s</string>
+    <string name="me_carrying">Carrying sealed mail for others: %1$d</string>
     <string name="me_about">openchat works with the bitchat network. Open source, MIT license.</string>
 </resources>

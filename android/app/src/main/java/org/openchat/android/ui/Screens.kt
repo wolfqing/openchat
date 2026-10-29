@@ -403,6 +403,7 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((String) -> Unit)?) {
         val status = if (m.mine) " · " + stringResource(
             when (m.state) {
                 DeliveryState.SENDING -> R.string.state_sending; DeliveryState.SENT -> R.string.state_sent; DeliveryState.DELIVERED -> R.string.state_delivered
+                DeliveryState.QUEUED -> R.string.state_queued; DeliveryState.CARRIED -> R.string.state_carried
                 DeliveryState.READ -> R.string.state_read; DeliveryState.FAILED -> R.string.state_failed
             },
         ) else ""
@@ -630,6 +631,10 @@ private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> U
         Text(mesh.fingerprint.chunked(4).joinToString(" "), fontFamily = FontFamily.Monospace, fontSize = 13.sp, lineHeight = 20.sp)
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.me_device_id, mesh.myPeerHex), fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (mesh.carriedCount > 0) {
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.me_carrying, mesh.carriedCount), fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
+        }
         Spacer(Modifier.height(24.dp))
         Text(stringResource(R.string.me_about), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }

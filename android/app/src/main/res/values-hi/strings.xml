@@ -36,6 +36,8 @@
     <string name="state_delivered">पहुँच गया</string>
     <string name="state_read">पढ़ लिया</string>
     <string name="state_failed">नहीं भेजा जा सका</string>
+    <string name="state_queued">प्राप्तकर्ता की प्रतीक्षा</string>
+    <string name="state_carried">दूसरे ले जा रहे हैं</string>
     <string name="send">भेजें</string>
     <string name="back">वापस</string>
     <string name="dm_status_here">आस-पास · एन्क्रिप्टेड</string>
@@ -83,5 +85,6 @@
     <string name="me_fp_title">पहचान फ़िंगरप्रिंट</string>
     <string name="me_fp_body">आमने-सामने इन अक्षरों का मिलान करें, ताकि पक्का हो सके कि सामने वाला सच में वही व्यक्ति है जिसे आप जानते हैं।</string>
     <string name="me_device_id">डिवाइस ID: %1$s</string>
+    <string name="me_carrying">दूसरों के लिए ले जाई जा रही सीलबंद डाक: %1$d</string>
     <string name="me_about">openchat, bitchat नेटवर्क के साथ काम करता है। ओपन सोर्स, MIT लाइसेंस।</string>
 </resources>

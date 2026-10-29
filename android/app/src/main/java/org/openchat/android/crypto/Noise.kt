@@ -214,3 +214,47 @@ class HandshakeXX(
         return if (initiator) c1 to c2 else c2 to c1
     }
 }
+
+/**
+ * One-way Noise X message to a known static key (docs/protocol-spec.md §13.2):
+ *   <- s (pre-message)
+ *   -> e, es, s, ss, payload
+ * Used for courier envelopes. No forward secrecy: a later compromise of the
+ * recipient's static key opens every envelope captured in transit.
+ */
+object NoiseX {
+    const val PROTOCOL_NAME = "Noise_X_25519_ChaChaPoly_SHA256"
+    const val OVERHEAD = 32 + 48 + 16
+
+    class Opened(val payload: ByteArray, val senderStatic: ByteArray)
+
+    fun seal(local: Crypto.X25519KeyPair, remoteStatic: ByteArray, prologue: ByteArray, payload: ByteArray): ByteArray {
+        if (remoteStatic.size != 32 || remoteStatic.all { it == 0.toByte() }) throw NoiseException("bad recipient key")
+        val ss = SymmetricState(PROTOCOL_NAME)
+        ss.mixHash(prologue)
+        ss.mixHash(remoteStatic)
+        val e = Crypto.x25519Generate()
+        val out = java.io.ByteArrayOutputStream()
+        ss.mixHash(e.publicKey); out.write(e.publicKey)
+        ss.mixKey(Crypto.x25519(e.privateKey, remoteStatic))
+        out.write(ss.encryptAndHash(local.publicKey))
+        ss.mixKey(Crypto.x25519(local.privateKey, remoteStatic))
+        out.write(ss.encryptAndHash(payload))
+        e.privateKey.fill(0)
+        return out.toByteArray()
+    }
+
+    fun open(local: Crypto.X25519KeyPair, prologue: ByteArray, message: ByteArray): Opened {
+        if (message.size < OVERHEAD) throw NoiseException("short envelope")
+        val ss = SymmetricState(PROTOCOL_NAME)
+        ss.mixHash(prologue)
+        ss.mixHash(local.publicKey)
+        val re = message.copyOfRange(0, 32)
+        ss.mixHash(re)
+        ss.mixKey(Crypto.x25519(local.privateKey, re))
+        val rs = ss.decryptAndHash(message.copyOfRange(32, 80))
+        ss.mixKey(Crypto.x25519(local.privateKey, rs))
+        val payload = ss.decryptAndHash(message.copyOfRange(80, message.size))
+        return Opened(payload, rs)
+    }
+}

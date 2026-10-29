@@ -38,6 +38,8 @@
     <string name="state_delivered">Entregado</string>
     <string name="state_read">Leído</string>
     <string name="state_failed">No enviado</string>
+    <string name="state_queued">Esperando al destinatario</string>
+    <string name="state_carried">Lo llevan otros</string>
     <string name="send">Enviar</string>
     <string name="back">Atrás</string>
     <string name="dm_status_here">Cerca · cifrado</string>
@@ -87,5 +89,6 @@
     <string name="me_fp_title">Huella de identidad</string>
     <string name="me_fp_body">Compara estos caracteres en persona para confirmar que alguien es realmente quien conoces.</string>
     <string name="me_device_id">ID del dispositivo: %1$s</string>
+    <string name="me_carrying">Correo sellado que llevamos para otros: %1$d</string>
     <string name="me_about">openchat funciona con la red bitchat. Código abierto, licencia MIT.</string>
 </resources>

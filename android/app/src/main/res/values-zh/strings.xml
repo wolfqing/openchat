@@ -39,6 +39,8 @@
     <string name="state_delivered">已送达</string>
     <string name="state_read">已读</string>
     <string name="state_failed">发送失败</string>
+    <string name="state_queued">等对方上线</string>
+    <string name="state_carried">已托人转交</string>
     <string name="send">发送</string>
     <string name="back">返回</string>
 
@@ -90,5 +92,6 @@
     <string name="me_fp_title">身份指纹</string>
     <string name="me_fp_body">当面核对这串字符，可以确认对方真的是你认识的人。</string>
     <string name="me_device_id">设备 ID：%1$s</string>
+    <string name="me_carrying">正在替别人携带的密封信件：%1$d 封</string>
     <string name="me_about">openchat 兼容 bitchat 网络。开源，MIT 许可证。</string>
 </resources>

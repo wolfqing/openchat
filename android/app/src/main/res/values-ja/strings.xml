@@ -34,6 +34,8 @@
     <string name="state_delivered">配信済み</string>
     <string name="state_read">既読</string>
     <string name="state_failed">未送信</string>
+    <string name="state_queued">相手を待機中</string>
+    <string name="state_carried">他の人が運搬中</string>
     <string name="send">送信</string>
     <string name="back">戻る</string>
     <string name="dm_status_here">近くにいます · 暗号化</string>
@@ -79,5 +81,6 @@
     <string name="me_fp_title">IDフィンガープリント</string>
     <string name="me_fp_body">会ったときにこの文字列を見比べて、相手が本当に知っている人か確認しましょう。</string>
     <string name="me_device_id">端末ID: %1$s</string>
+    <string name="me_carrying">他の人のために運んでいる封書: %1$d 通</string>
     <string name="me_about">openchatはbitchatネットワークと互換性があります。オープンソース、MITライセンス。</string>
 </resources>

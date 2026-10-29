@@ -34,6 +34,8 @@
     <string name="state_delivered">已送達</string>
     <string name="state_read">已讀</string>
     <string name="state_failed">傳送失敗</string>
+    <string name="state_queued">等對方上線</string>
+    <string name="state_carried">已託人轉交</string>
     <string name="send">傳送</string>
     <string name="back">返回</string>
     <string name="dm_status_here">在附近 · 加密私訊</string>
@@ -79,5 +81,6 @@
     <string name="me_fp_title">身分指紋</string>
     <string name="me_fp_body">當面核對這串字元，可以確認對方真的是你認識的人。</string>
     <string name="me_device_id">裝置 ID：%1$s</string>
+    <string name="me_carrying">正在替別人攜帶的密封信件：%1$d 封</string>
     <string name="me_about">openchat 相容 bitchat 網路。開源，MIT 授權。</string>
 </resources>

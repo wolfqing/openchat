@@ -36,6 +36,8 @@
     <string name="state_delivered">تحویل شد</string>
     <string name="state_read">خوانده شد</string>
     <string name="state_failed">ارسال نشد</string>
+    <string name="state_queued">در انتظار گیرنده</string>
+    <string name="state_carried">دیگران حمل می‌کنند</string>
     <string name="send">ارسال</string>
     <string name="back">بازگشت</string>
     <string name="dm_status_here">نزدیک · رمزگذاری‌شده</string>
@@ -83,5 +85,6 @@
     <string name="me_fp_title">اثر انگشت هویت</string>
     <string name="me_fp_body">این نویسه‌ها را حضوری مقایسه کن تا مطمئن شوی طرف مقابل واقعاً همان کسی است که می‌شناسی.</string>
     <string name="me_device_id">شناسهٔ دستگاه: %1$s</string>
+    <string name="me_carrying">نامه‌های مهروموم که برای دیگران حمل می‌کنیم: %1$d</string>
     <string name="me_about">openchat با شبکهٔ bitchat کار می‌کند. متن‌باز، با مجوز MIT.</string>
 </resources>

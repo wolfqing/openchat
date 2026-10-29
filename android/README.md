@@ -20,9 +20,10 @@ bitchat-android source was never read.
 | Triple-tap the title: instant wipe, new identity, no confirmation | `ui/Screens.kt` `PanicTitle`, `app/MeshService.kt` `panic()` |
 | Share the APK offline by Bluetooth or Quick Share, no app store | `app/ApkShare.kt` |
 | Mesh keeps running with the screen off (foreground service) | `app/MeshService.kt` |
+| Store-and-forward: outbox plus courier envelopes carried by nearby phones (spec §13) | `core/Courier.kt`, `crypto/Noise.kt` `NoiseX`, `mesh/StoreAndForward.kt`, `mesh/MeshEngine.kt` |
 
-Not in v0.1: gossip sync of public history, courier store-and-forward,
-Nostr private messages, files, images, voice, groups. See spec §12.
+Not yet: gossip sync of public history, Nostr private messages, files,
+images, voice, groups. See spec §12.
 
 ## Build
 
@@ -44,7 +45,8 @@ The APK lands in `app/build/outputs/apk/debug/app-debug.apk`. minSdk 26
 | `CodecTest` | header layout, flags, v2 routes, raw-DEFLATE compression, Noise-only padding, signing bytes, TLVs, stream framing, fragments, relay policy |
 | `NoiseTest` | Noise_XX_25519_ChaChaPoly_SHA256 against the cacophony test vector, bitchat's 4-byte nonce prefix, replay window |
 | `NostrTest` | all BIP-340 official vectors, NIP-01 event IDs, geohash, per-cell keys, relay choice |
-| `MeshEngineTest` | three simulated phones in a line: announces over two hops, relayed public and fragmented messages, private messages with receipts across a relay, crossed handshakes, panic reset, peer expiry |
+| `MeshEngineTest` | three simulated phones in a line: announces over two hops, relayed public and fragmented messages, private messages with receipts across a relay, crossed handshakes, panic reset, peer expiry, courier carry and handover, outbox persistence |
+| `CourierTest` | upstream's golden courier vectors (envelope TLV, recipient tag, signing pre-image), Noise X seal and open |
 
 ## Known risks
 

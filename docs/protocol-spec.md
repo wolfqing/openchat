@@ -370,11 +370,120 @@ ID) and keeps running. This is local behaviour and needs no wire support.
 | Max central links (upstream) | 6 |
 | Scan duty cycle | 5 s on / 10 s off; dense 3 s / 15 s |
 
-## 12. Not in v0.1
+## 12. Not yet implemented
 
 - `requestSync` gossip sync with GCS filters (public history for late joiners)
-- courier envelopes and the sender outbox (store-and-forward)
+- courier envelope v2 (sealed to a one-time prekey, TLV `0x05`): openchat
+  carries and hands over such envelopes but cannot open one addressed to it
+- the bridge courier drop (envelopes parked on Nostr relays)
 - the Nostr private envelope for mutual favorites (kind 14/13/1059,
   `v2:` XChaCha20-Poly1305), not NIP-17/44/59 compatible
 - files, images, voice, groups, boards, prekeys, ping/pong, source-route
   origination, peer ID rotation (`announceV2`, still a draft upstream)
+
+## 13. Store-and-forward (v0.4)
+
+Private messages for a peer who is not reachable are kept in a sender
+outbox and, sealed, handed to nearby phones ("couriers") that may meet
+the recipient later. The courier never learns sender, recipient or
+content. Everything here matches upstream's courier path so bitchat
+phones can carry openchat mail and the reverse.
+
+### 13.1 Outbox (sender)
+
+- Every private message stays in the outbox until a `delivered` or `read`
+  payload for its message ID arrives, or 24 h after it was written.
+- When the recipient is reachable (a verified announce was heard and a
+  Noise session exists or can be started), the message is sent on the
+  session as in §8. The outbox copy is kept: a session can be stale after
+  the peer restarts, and receivers dedup by message ID.
+- When a verified announce from the recipient arrives and the outbox has
+  mail for them, every entry is resent on the session.
+- When the recipient is not reachable, the message is also sealed into a
+  courier envelope (§13.2) and deposited with up to 3 distinct connected
+  verified peers, excluding the recipient. As new verified peers connect,
+  deposits continue until 3 couriers hold the message or it expires.
+- The outbox needs the recipient's Noise static key. Keys from verified
+  announces are remembered after the peer leaves (bounded, wiped by §10).
+
+### 13.2 Courier envelope (`0x04` payload)
+
+TLV with a 1-byte type and a **2-byte big-endian** length (unlike §4.2):
+
+| Type | Length | Value |
+|---|---|---|
+| `0x01` | 16 | recipient tag |
+| `0x02` | 8 | expiry, milliseconds since the epoch, big-endian |
+| `0x03` | 1–16384 | ciphertext |
+| `0x04` | 1 | remaining copies, 1–8; omitted when 1 |
+| `0x05` | 4 | prekey ID (envelope v2); never produced by openchat |
+
+Lengths are exact, unknown types are skipped by length, and the three
+required fields must all be present. `copies` is clamped to 1..8, never
+rejected. An envelope is expired once `now_ms >= expiry`.
+
+- **Recipient tag** = first 16 bytes of HMAC-SHA256(key = recipient Noise
+  static key, message = `"bitchat-courier-tag-v1"` ‖ BE32(day)), where
+  day = ⌊unix seconds / 86400⌋. A receiver matches day−1, day and day+1.
+- **Ciphertext** is one Noise `X` message, `Noise_X_25519_ChaChaPoly_SHA256`,
+  prologue `"bitchat-courier-v1"`, pre-message `<- s` (the recipient's static
+  key is mixed into the hash), tokens `-> e, es, s, ss`, then the payload
+  encrypted with the handshake cipher. Wire: 32 bytes `e`, 48 bytes
+  encrypted `s`, then the encrypted payload (16-byte tag). The handshake
+  cipher uses plain 8-byte little-endian nonces, as in §8.1, not the
+  4-byte prefix of §8.2.
+- **Payload** is a §8.3 plaintext: `0x01` (privateMessage) then the
+  message-ID/content TLV. Only that type is accepted on open.
+- **Expiry** = seal time + 24 h. Initial copies = 4.
+
+### 13.3 Packet
+
+Type `0x04`, TTL 7, `recipientID` = the courier (on deposit) or the
+recipient (on handover), signed by the sender per §2.6. Payload cap
+64 KiB (§2.7). Relays treat it as a directed packet (§7).
+
+### 13.4 Receiving an envelope addressed to us
+
+1. Decode; drop if expired.
+2. If the tag matches our static key for day±1: open (§13.5).
+3. Otherwise it is a deposit. Accept only if the packet's sender is the
+   peer bound to the ingress link (a relayed deposit is refused), the
+   signature verifies against that peer's announced signing key, and
+   expiry ≤ now + 25 h. Store it with the depositor's Noise key.
+4. Identical ciphertext is the same envelope: keep the larger copy budget
+   unless we have already sprayed it. Quotas: 40 envelopes, 2 per
+   depositor (openchat has no favorites, so every verified peer gets
+   upstream's "verified" tier). When full, evict the oldest.
+5. Carried envelopes expire with their `expiry` and are wiped by §10.
+
+### 13.5 Opening
+
+Open the `X` message with our static key. The sender's static key comes
+out of the handshake; their peer ID is derived from it (§4.1). Require
+payload type `0x01`; dedup on the inner message ID (last 512 kept); then
+deliver as a private message and queue a `delivered` payload to the
+sender on the normal session path, which goes out when they are next
+reachable.
+
+### 13.6 Handover and spread (courier)
+
+On a verified announce from peer P with Noise key K:
+
+- **Direct handover.** If the announce came straight off a link (§4.2
+  direct rule), send every carried envelope whose tag matches K for day±1
+  as a `0x04` packet addressed to P on that link, and drop the carried
+  copy.
+- **Remote handover.** If the announce was relayed, broadcast those
+  envelopes addressed to P instead, keep the copies, and do not repeat
+  for the same envelope within 10 min.
+- **Spray.** For every other carried envelope with copies > 1 that P did
+  not deposit and that was not already sprayed to P, send P a copy with
+  ⌊copies/2⌋ and keep the rest. Only for announces straight off a link.
+- **Deposit.** Hand P any outbox mail for other recipients that P is not
+  yet carrying (§13.1).
+
+### 13.7 Persistence
+
+The outbox, the carried envelopes and the remembered keys are stored in
+app-private storage sealed like the identity, and restored on start.
+

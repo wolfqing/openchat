@@ -1,5 +1,24 @@
 # Changelog
 
+## Android, unreleased
+
+- Store-and-forward, wire-compatible with bitchat's courier path
+  ([docs/protocol-spec.md §13](docs/protocol-spec.md)). A private message
+  for someone out of reach waits in an outbox for 24 h and is also sealed
+  (one-way Noise X to their static key) and handed to up to three nearby
+  phones, which carry it and hand it over when they meet the recipient.
+  Carried mail spreads by spray-and-wait and is opaque to the carrier.
+  openchat also carries mail deposited by others (40 envelopes, 2 per
+  depositor). Receipts clear the outbox; resends and courier copies are
+  delivered once. Outbox, carried mail and remembered peer keys are
+  sealed on disk like the identity and wiped by the triple tap.
+- Message states "Waiting for them" and "Carried by others" in every
+  language; the Me tab shows how many sealed envelopes the phone carries.
+- 11 new unit tests: upstream's golden courier vectors (TLV, recipient
+  tag, signing pre-image), the Noise X seal, a three-phone carry-and-
+  handover run, and outbox persistence. 50 tests in all.
+- Not yet checked on a device or against a bitchat phone.
+
 ## Android v0.3.1 (preview) — 2026-10-28
 
 - Bottom bar icons: Nearby is now a three-node mesh, Private a lock. They

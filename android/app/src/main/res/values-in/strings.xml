@@ -34,6 +34,8 @@
     <string name="state_delivered">Diterima</string>
     <string name="state_read">Dibaca</string>
     <string name="state_failed">Gagal terkirim</string>
+    <string name="state_queued">Menunggu penerima</string>
+    <string name="state_carried">Dibawa orang lain</string>
     <string name="send">Kirim</string>
     <string name="back">Kembali</string>
     <string name="dm_status_here">Di sekitar · terenkripsi</string>
@@ -79,5 +81,6 @@
     <string name="me_fp_title">Sidik jari identitas</string>
     <string name="me_fp_body">Cocokkan karakter ini secara langsung untuk memastikan seseorang benar-benar orang yang kamu kenal.</string>
     <string name="me_device_id">ID perangkat: %1$s</string>
+    <string name="me_carrying">Surat tersegel yang dibawa untuk orang lain: %1$d</string>
     <string name="me_about">openchat bekerja dengan jaringan bitchat. Sumber terbuka, lisensi MIT.</string>
 </resources>

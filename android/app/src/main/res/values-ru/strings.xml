@@ -40,6 +40,8 @@
     <string name="state_delivered">Доставлено</string>
     <string name="state_read">Прочитано</string>
     <string name="state_failed">Не отправлено</string>
+    <string name="state_queued">Ждём адресата</string>
+    <string name="state_carried">Передано с попутчиком</string>
     <string name="send">Отправить</string>
     <string name="back">Назад</string>
     <string name="dm_status_here">Рядом · зашифровано</string>
@@ -91,5 +93,6 @@
     <string name="me_fp_title">Отпечаток личности</string>
     <string name="me_fp_body">Сравните эти символы при встрече, чтобы убедиться, что это действительно знакомый вам человек.</string>
     <string name="me_device_id">ID устройства: %1$s</string>
+    <string name="me_carrying">Несём запечатанных писем для других: %1$d</string>
     <string name="me_about">openchat совместим с сетью bitchat. Открытый исходный код, лицензия MIT.</string>
 </resources>

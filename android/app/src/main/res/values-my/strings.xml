@@ -34,6 +34,8 @@
     <string name="state_delivered">ရောက်ပြီ</string>
     <string name="state_read">ဖတ်ပြီး</string>
     <string name="state_failed">မပို့ရသေး</string>
+    <string name="state_queued">လက်ခံသူကို စောင့်နေသည်</string>
+    <string name="state_carried">အခြားသူများ သယ်ဆောင်နေသည်</string>
     <string name="send">ပို့ရန်</string>
     <string name="back">နောက်သို့</string>
     <string name="dm_status_here">အနီးတွင် · ကုဒ်ဝှက်ထားသည်</string>
@@ -79,5 +81,6 @@
     <string name="me_fp_title">အမှတ်အသား လက်ဗွေ</string>
     <string name="me_fp_body">တစ်ဖက်လူသည် သင်သိသောသူ အမှန်ဖြစ်ကြောင်း သေချာစေရန် ဤစာလုံးများကို မျက်နှာချင်းဆိုင် တိုက်ကြည့်ပါ။</string>
     <string name="me_device_id">စက်ပစ္စည်း ID: %1$s</string>
+    <string name="me_carrying">အခြားသူများအတွက် သယ်ဆောင်နေသော ချိပ်ပိတ်စာများ: %1$d</string>
     <string name="me_about">openchat သည် bitchat ကွန်ရက်နှင့် တွဲသုံးနိုင်သည်။ open source၊ MIT လိုင်စင်။</string>
 </resources>
