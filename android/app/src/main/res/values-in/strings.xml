@@ -105,4 +105,17 @@
     <string name="verify_badge_off">Belum terverifikasi. Cocokkan sidik jari ini secara langsung:</string>
     <string name="verify_mark">Cocok, tandai terverifikasi</string>
     <string name="verify_unmark">Hapus verifikasi</string>
+    <string name="cmd_help">/msg @nama [pesan] — obrolan pribadi\n/who — siapa di sini\n/clear — kosongkan obrolan ini\n/hug @nama · /slap @nama\n/block @nama · /unblock @nama\n/fav @nama · /unfav @nama — favorit (hanya sekitar)\n/help — daftar ini</string>
+    <string name="cmd_who">di sini: %1$s</string>
+    <string name="cmd_who_none">saat ini tidak ada orang lain di sini</string>
+    <string name="cmd_not_found">%1$s tidak ada di sini</string>
+    <string name="cmd_usage">cara pakai: %1$s</string>
+    <string name="cmd_unknown">perintah %1$s tidak dikenal, coba /help</string>
+    <string name="cmd_blocked">%1$s diblokir</string>
+    <string name="cmd_unblocked">blokir %1$s dibuka</string>
+    <string name="cmd_not_blocked">%1$s tidak diblokir</string>
+    <string name="cmd_favorited">%1$s ditambahkan ke favorit</string>
+    <string name="cmd_unfavorited">%1$s dihapus dari favorit</string>
+    <string name="cmd_mesh_only">perintah ini hanya untuk Sekitar dan obrolan pribadi</string>
+    <string name="cmd_geo_only">perintah ini hanya untuk kanal wilayah</string>
 </resources>

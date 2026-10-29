@@ -105,4 +105,17 @@
     <string name="verify_badge_off">未驗證。當面核對下面的指紋：</string>
     <string name="verify_mark">一致，標記為已驗證</string>
     <string name="verify_unmark">取消驗證</string>
+    <string name="cmd_help">/msg @名字 [訊息] — 私聊\n/who — 誰在這裡\n/clear — 清空本聊天\n/hug @名字 · /slap @名字\n/block @名字 · /unblock @名字\n/fav @名字 · /unfav @名字 — 收藏（僅附近）\n/help — 本列表</string>
+    <string name="cmd_who">在這裡：%1$s</string>
+    <string name="cmd_who_none">現在這裡沒有別人</string>
+    <string name="cmd_not_found">找不到 %1$s</string>
+    <string name="cmd_usage">用法：%1$s</string>
+    <string name="cmd_unknown">沒有 %1$s 這個指令，試試 /help</string>
+    <string name="cmd_blocked">已封鎖 %1$s</string>
+    <string name="cmd_unblocked">已解除封鎖 %1$s</string>
+    <string name="cmd_not_blocked">%1$s 沒有被封鎖</string>
+    <string name="cmd_favorited">已收藏 %1$s</string>
+    <string name="cmd_unfavorited">已取消收藏 %1$s</string>
+    <string name="cmd_mesh_only">這個指令只能在「附近」和私聊裡用</string>
+    <string name="cmd_geo_only">這個指令只能在地區頻道裡用</string>
 </resources>

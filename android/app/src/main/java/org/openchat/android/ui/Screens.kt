@@ -93,6 +93,7 @@ import org.openchat.android.R
 import org.openchat.android.app.AppLanguage
 import org.openchat.android.app.ChatMessage
 import org.openchat.android.app.ChatRepository
+import org.openchat.android.app.Commands
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.DeliveryState
 import org.openchat.android.app.PeerLabel
@@ -242,6 +243,8 @@ fun MainScreen(
             text = { Text(if (scanResult.isEmpty()) stringResource(R.string.verify_scan_bad) else stringResource(R.string.verify_scan_ok, scanResult)) },
         )
     }
+    val openRequest by ChatRepository.openRequest.collectAsState()
+    LaunchedEffect(openRequest) { openRequest?.let { openChat = it; ChatRepository.requestOpen(null) } }
     person?.let { p -> PersonSheet(p, onDismiss = { person = null }, onMessage = { openChat = Conversation.Private(it).key }) }
 
     val chat = openChat
@@ -406,15 +409,29 @@ fun ChatPane(
             }
         }
         val peers by ChatRepository.peers.collectAsState()
-        val people = if (conversation.startsWith("geo:")) {
-            list.filter { !it.mine }.distinctBy { it.senderKey }.map { PeerLabel.of(it) }
-        } else peers.map { PeerLabel.mesh(it.nickname, it.peerIdHex) }
-        Composer(conversation, placeholder, people, onSend)
+        val mesh by ChatRepository.mesh.collectAsState()
+        val names by ChatRepository.names.collectAsState()
+        val persons = if (conversation.startsWith("geo:")) {
+            list.filter { !it.mine && !it.system }.distinctBy { it.senderKey }.map { Commands.Person(PeerLabel.of(it), it.senderKey) }
+        } else peers.filter { it.peerIdHex != mesh.myPeerHex }.map { Commands.Person(PeerLabel.mesh(it.nickname, it.peerIdHex), it.peerIdHex) }
+        val dmPeer = conversation.takeIf { it.startsWith("dm:") }?.removePrefix("dm:")?.let { Commands.Person(PeerLabel.mesh(names[it], it), it) }
+        val ctx = LocalContext.current
+        Composer(conversation, placeholder, persons.map { it.label }) { text ->
+            if (!Commands.isCommand(text)) onSend(text)
+            else applyCommand(ctx, Commands.run(text, conversation, mesh.myNickname, persons, dmPeer), conversation, onSend)
+        }
     }
 }
 
 @Composable
 private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
+    if (m.system) {
+        Text(
+            m.text, Modifier.fillMaxWidth().padding(horizontal = 8.dp), fontSize = 13.sp, lineHeight = 19.sp,
+            fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
     val time = remember(m.timestamp) { stampText(m.timestamp) }
     Column(Modifier.fillMaxWidth(), horizontalAlignment = if (m.mine) Alignment.End else Alignment.Start) {
         if (!m.mine) {
@@ -439,6 +456,52 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
             },
         ) else ""
         Text(time + status, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Carries out a command outcome; local lines go into this chat only. */
+private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conversation: String, onSend: (String) -> Unit) {
+    fun local(text: String) = ChatRepository.addLocal(conversation, text)
+    when (o) {
+        is Commands.Outcome.Send -> onSend(o.text)
+        is Commands.Outcome.Clear -> ChatRepository.clear(conversation)
+        is Commands.Outcome.OpenPrivate -> {
+            o.text?.let { ChatRepository.controller?.sendPrivate(o.peerHex, it) }
+            ChatRepository.requestOpen(Conversation.Private(o.peerHex).key)
+        }
+        is Commands.Outcome.Block -> {
+            if (conversation.startsWith("geo:")) Social.blockGeo(o.person.key, o.person.label.name)
+            else meshFingerprint(o.person.key)?.let { Social.block(it, o.person.label.name) }
+            local(ctx.getString(R.string.cmd_blocked, o.person.label.toString()))
+        }
+        is Commands.Outcome.Unblock -> {
+            val s = Social.state.value
+            val n = o.name.lowercase()
+            val mesh = s.blocked.entries.firstOrNull { (fp, name) -> name.lowercase() == n || PeerLabel.mesh(name, fp.take(16)).toString().lowercase() == n }
+            val geo = s.geoBlocked.entries.firstOrNull { (pk, name) -> name.lowercase() == n || PeerLabel.nostr(name, pk).toString().lowercase() == n }
+            when {
+                mesh != null -> { Social.unblock(mesh.key); local(ctx.getString(R.string.cmd_unblocked, o.name)) }
+                geo != null -> { Social.unblockGeo(geo.key); local(ctx.getString(R.string.cmd_unblocked, o.name)) }
+                else -> local(ctx.getString(R.string.cmd_not_blocked, o.name))
+            }
+        }
+        is Commands.Outcome.Favorite -> {
+            ChatRepository.controller?.setFavorite(o.person.key, o.person.label.name, o.on)
+            local(ctx.getString(if (o.on) R.string.cmd_favorited else R.string.cmd_unfavorited, o.person.label.toString()))
+        }
+        is Commands.Outcome.Local -> local(
+            when (o.note) {
+                Commands.Note.HELP -> ctx.getString(R.string.cmd_help)
+                Commands.Note.WHO -> ctx.getString(R.string.cmd_who, o.arg)
+                Commands.Note.WHO_NONE -> ctx.getString(R.string.cmd_who_none)
+                Commands.Note.NOT_FOUND -> ctx.getString(R.string.cmd_not_found, o.arg)
+                Commands.Note.USAGE -> ctx.getString(R.string.cmd_usage, o.arg)
+                Commands.Note.UNKNOWN -> ctx.getString(R.string.cmd_unknown, o.arg)
+                Commands.Note.MESH_ONLY -> ctx.getString(R.string.cmd_mesh_only)
+                Commands.Note.NO_LOCATION -> ctx.getString(R.string.cmd_geo_only)
+                else -> o.arg
+            },
+        )
     }
 }
 
@@ -477,6 +540,14 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
     fun set(t: String) { text = t; if (t.isEmpty()) drafts.remove(conversation) else drafts[conversation] = t }
     val send = { val t = text.trim(); if (t.isNotEmpty()) { onSend(t); set("") } }
     HorizontalDivider()
+    if (text.startsWith("/") && !text.contains(' ')) {
+        val cmds = Commands.available(conversation).filter { it.startsWith(text.lowercase()) }
+        if (cmds.isNotEmpty()) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp)) {
+                cmds.forEach { c -> TextButton(onClick = { set("$c ") }) { Text(c, fontFamily = FontFamily.Monospace) } }
+            }
+        }
+    }
     val typing = Mentions.typing(text)
     if (typing != null) {
         val matches = people.filter { it.toString().lowercase().startsWith(typing.lowercase()) }.take(6)

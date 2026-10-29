@@ -125,4 +125,17 @@
     <string name="verify_badge_off">لم يتم التحقق. قارن هذه البصمة مع بصمته وجهًا لوجه:</string>
     <string name="verify_mark">متطابقة، علّمه كموثَّق</string>
     <string name="verify_unmark">إزالة التحقق</string>
+    <string name="cmd_help">/msg @name [message] — محادثة خاصة\n/who — من هنا\n/clear — مسح هذه المحادثة\n/hug @name · /slap @name\n/block @name · /unblock @name\n/fav @name · /unfav @name — المفضلة (القريبون فقط)\n/help — هذه القائمة</string>
+    <string name="cmd_who">الموجودون: %1$s</string>
+    <string name="cmd_who_none">لا أحد غيرك هنا الآن</string>
+    <string name="cmd_not_found">%1$s غير موجود هنا</string>
+    <string name="cmd_usage">الاستخدام: %1$s</string>
+    <string name="cmd_unknown">أمر غير معروف %1$s، جرّب /help</string>
+    <string name="cmd_blocked">تم حظر %1$s</string>
+    <string name="cmd_unblocked">تم إلغاء حظر %1$s</string>
+    <string name="cmd_not_blocked">%1$s غير محظور</string>
+    <string name="cmd_favorited">تمت إضافة %1$s إلى المفضلة</string>
+    <string name="cmd_unfavorited">تمت إزالة %1$s من المفضلة</string>
+    <string name="cmd_mesh_only">هذا الأمر يعمل فقط في «القريبون» والمحادثات الخاصة</string>
+    <string name="cmd_geo_only">هذا الأمر يعمل فقط في قناة موقع</string>
 </resources>

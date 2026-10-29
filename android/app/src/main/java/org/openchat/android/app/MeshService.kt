@@ -252,6 +252,13 @@ class MeshService : Service(), ChatController {
         return VerifyQr.build(id.noise.publicKey, id.signing, id.nickname, null, System.currentTimeMillis() / 1000).toUrl()
     }
 
+    override fun setFavorite(peerHex: String, nickname: String, on: Boolean) {
+        val key = noiseKeys[peerHex] ?: return
+        val fp = sha256(key).toHex()
+        val old = Social.state.value.favorites[fp]
+        Social.putFavorite(fp, if (on) (old ?: Favorite(key.toHex(), nickname)).copy(mine = true) else old?.takeIf { it.theyFavorited }?.copy(mine = false))
+    }
+
     override fun verifyScanned(url: String): String? {
         val qr = VerifyQr.verify(url.trim(), System.currentTimeMillis() / 1000) ?: return null
         val key = qr.noiseKeyHex.hexToBytes() ?: return null

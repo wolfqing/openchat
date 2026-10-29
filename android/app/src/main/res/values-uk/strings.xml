@@ -117,4 +117,17 @@
     <string name="verify_badge_off">Не перевірено. Порівняйте цей відбиток при зустрічі:</string>
     <string name="verify_mark">Збігається, позначити перевіреним</string>
     <string name="verify_unmark">Зняти позначку</string>
+    <string name="cmd_help">/msg @ім\'я [текст] — особистий чат\n/who — хто тут\n/clear — очистити цей чат\n/hug @ім\'я · /slap @ім\'я\n/block @ім\'я · /unblock @ім\'я\n/fav @ім\'я · /unfav @ім\'я — обране (лише поруч)\n/help — цей список</string>
+    <string name="cmd_who">тут: %1$s</string>
+    <string name="cmd_who_none">зараз тут більше нікого немає</string>
+    <string name="cmd_not_found">%1$s тут немає</string>
+    <string name="cmd_usage">використання: %1$s</string>
+    <string name="cmd_unknown">невідома команда %1$s, спробуйте /help</string>
+    <string name="cmd_blocked">%1$s заблоковано</string>
+    <string name="cmd_unblocked">%1$s розблоковано</string>
+    <string name="cmd_not_blocked">%1$s не заблоковано</string>
+    <string name="cmd_favorited">%1$s додано до обраного</string>
+    <string name="cmd_unfavorited">%1$s прибрано з обраного</string>
+    <string name="cmd_mesh_only">ця команда працює лише в «Поруч» та особистих чатах</string>
+    <string name="cmd_geo_only">ця команда працює лише в каналі місцевості</string>
 </resources>

@@ -109,4 +109,17 @@
     <string name="verify_badge_off">सत्यापित नहीं। यह फ़िंगरप्रिंट आमने-सामने मिलाएँ:</string>
     <string name="verify_mark">मेल खाते हैं, सत्यापित चिह्नित करें</string>
     <string name="verify_unmark">सत्यापन हटाएँ</string>
+    <string name="cmd_help">/msg @name [message] — निजी चैट\n/who — यहाँ कौन है\n/clear — यह चैट साफ़ करें\n/hug @name · /slap @name\n/block @name · /unblock @name\n/fav @name · /unfav @name — पसंदीदा (केवल आस-पास)\n/help — यह सूची</string>
+    <string name="cmd_who">यहाँ: %1$s</string>
+    <string name="cmd_who_none">अभी यहाँ कोई और नहीं है</string>
+    <string name="cmd_not_found">%1$s यहाँ नहीं है</string>
+    <string name="cmd_usage">उपयोग: %1$s</string>
+    <string name="cmd_unknown">अज्ञात कमांड %1$s, /help आज़माएँ</string>
+    <string name="cmd_blocked">%1$s ब्लॉक किया गया</string>
+    <string name="cmd_unblocked">%1$s अनब्लॉक किया गया</string>
+    <string name="cmd_not_blocked">%1$s ब्लॉक नहीं है</string>
+    <string name="cmd_favorited">%1$s पसंदीदा में जोड़ा गया</string>
+    <string name="cmd_unfavorited">%1$s पसंदीदा से हटाया गया</string>
+    <string name="cmd_mesh_only">यह कमांड केवल आस-पास और निजी चैट में काम करता है</string>
+    <string name="cmd_geo_only">यह कमांड केवल क्षेत्र चैनल में काम करता है</string>
 </resources>

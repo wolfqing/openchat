@@ -109,4 +109,17 @@
     <string name="verify_badge_off">Doğrulanmadı. Bu parmak izini yüz yüze karşılaştırın:</string>
     <string name="verify_mark">Eşleşiyor, doğrulandı olarak işaretle</string>
     <string name="verify_unmark">Doğrulamayı kaldır</string>
+    <string name="cmd_help">/msg @ad [mesaj] — özel sohbet\n/who — burada kimler var\n/clear — bu sohbeti temizle\n/hug @ad · /slap @ad\n/block @ad · /unblock @ad\n/fav @ad · /unfav @ad — favoriler (yalnızca yakında)\n/help — bu liste</string>
+    <string name="cmd_who">burada: %1$s</string>
+    <string name="cmd_who_none">şu an burada başka kimse yok</string>
+    <string name="cmd_not_found">%1$s burada değil</string>
+    <string name="cmd_usage">kullanım: %1$s</string>
+    <string name="cmd_unknown">bilinmeyen komut %1$s, /help deneyin</string>
+    <string name="cmd_blocked">%1$s engellendi</string>
+    <string name="cmd_unblocked">%1$s engeli kaldırıldı</string>
+    <string name="cmd_not_blocked">%1$s engelli değil</string>
+    <string name="cmd_favorited">%1$s favorilere eklendi</string>
+    <string name="cmd_unfavorited">%1$s favorilerden çıkarıldı</string>
+    <string name="cmd_mesh_only">bu komut yalnızca Yakında ve özel sohbetlerde çalışır</string>
+    <string name="cmd_geo_only">bu komut yalnızca konum kanalında çalışır</string>
 </resources>

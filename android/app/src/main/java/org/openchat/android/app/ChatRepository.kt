@@ -27,6 +27,7 @@ data class ChatMessage(
     val state: DeliveryState = DeliveryState.SENT,
     val teleported: Boolean = false, // geohash sender says it is not in the cell
     val mentionsMe: Boolean = false,
+    val system: Boolean = false, // a local line (command output), never sent
 )
 
 /**
@@ -81,6 +82,7 @@ interface ChatController {
     fun myVerifyUrl(): String
     /** Checks a scanned QR; on success marks that identity verified and returns its nickname. */
     fun verifyScanned(url: String): String?
+    fun setFavorite(peerHex: String, nickname: String, on: Boolean)
     fun setNickname(name: String)
     fun joinGeo(geohash: String, teleported: Boolean)
     fun leaveGeo(geohash: String)
@@ -134,6 +136,18 @@ object ChatRepository {
     }
 
     fun clearUnread(conversation: String) = _unread.update { it - conversation }
+
+    fun addLocal(conversation: String, text: String) {
+        val now = System.currentTimeMillis()
+        add(ChatMessage("local-$now-${text.hashCode()}", conversation, "", "", text, now, mine = true, system = true))
+    }
+
+    fun clear(conversation: String) = _messages.update { it - conversation }
+
+    /** A chat the UI should open next (from /msg); consumed by the main screen. */
+    private val _openRequest = MutableStateFlow<String?>(null)
+    val openRequest: StateFlow<String?> = _openRequest.asStateFlow()
+    fun requestOpen(conversation: String?) { _openRequest.value = conversation }
 
     fun rememberName(peerHex: String, name: String) = _names.update { it + (peerHex to name) }
 

@@ -117,4 +117,17 @@
     <string name="verify_badge_off">Не проверен. Сравните этот отпечаток при встрече:</string>
     <string name="verify_mark">Совпадает, отметить как проверенного</string>
     <string name="verify_unmark">Снять отметку</string>
+    <string name="cmd_help">/msg @имя [текст] — личный чат\n/who — кто здесь\n/clear — очистить этот чат\n/hug @имя · /slap @имя\n/block @имя · /unblock @имя\n/fav @имя · /unfav @имя — избранное (только рядом)\n/help — этот список</string>
+    <string name="cmd_who">здесь: %1$s</string>
+    <string name="cmd_who_none">сейчас здесь больше никого нет</string>
+    <string name="cmd_not_found">%1$s здесь нет</string>
+    <string name="cmd_usage">использование: %1$s</string>
+    <string name="cmd_unknown">неизвестная команда %1$s, попробуйте /help</string>
+    <string name="cmd_blocked">%1$s заблокирован</string>
+    <string name="cmd_unblocked">%1$s разблокирован</string>
+    <string name="cmd_not_blocked">%1$s не заблокирован</string>
+    <string name="cmd_favorited">%1$s добавлен в избранное</string>
+    <string name="cmd_unfavorited">%1$s удалён из избранного</string>
+    <string name="cmd_mesh_only">эта команда работает только в «Рядом» и личных чатах</string>
+    <string name="cmd_geo_only">эта команда работает только в канале местности</string>
 </resources>

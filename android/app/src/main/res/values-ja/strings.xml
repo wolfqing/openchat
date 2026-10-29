@@ -105,4 +105,17 @@
     <string name="verify_badge_off">未確認です。対面でこの指紋を照合してください：</string>
     <string name="verify_mark">一致したので確認済みにする</string>
     <string name="verify_unmark">確認を取り消す</string>
+    <string name="cmd_help">/msg @名前 [本文] — 個別チャット\n/who — ここにいる人\n/clear — このチャットを消去\n/hug @名前 · /slap @名前\n/block @名前 · /unblock @名前\n/fav @名前 · /unfav @名前 — お気に入り（近くのみ）\n/help — この一覧</string>
+    <string name="cmd_who">ここにいる人: %1$s</string>
+    <string name="cmd_who_none">今ここには他に誰もいません</string>
+    <string name="cmd_not_found">%1$s は見つかりません</string>
+    <string name="cmd_usage">使い方: %1$s</string>
+    <string name="cmd_unknown">%1$s というコマンドはありません。/help をどうぞ</string>
+    <string name="cmd_blocked">%1$s をブロックしました</string>
+    <string name="cmd_unblocked">%1$s のブロックを解除しました</string>
+    <string name="cmd_not_blocked">%1$s はブロックしていません</string>
+    <string name="cmd_favorited">%1$s をお気に入りに追加しました</string>
+    <string name="cmd_unfavorited">%1$s をお気に入りから外しました</string>
+    <string name="cmd_mesh_only">このコマンドは「近く」と個別チャットでのみ使えます</string>
+    <string name="cmd_geo_only">このコマンドは地域チャンネルでのみ使えます</string>
 </resources>

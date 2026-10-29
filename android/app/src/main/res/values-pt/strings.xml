@@ -113,4 +113,17 @@
     <string name="verify_badge_off">Não verificado. Compare esta impressão pessoalmente:</string>
     <string name="verify_mark">Conferem, marcar como verificado</string>
     <string name="verify_unmark">Remover verificação</string>
+    <string name="cmd_help">/msg @nome [mensagem] — conversa privada\n/who — quem está aqui\n/clear — limpar esta conversa\n/hug @nome · /slap @nome\n/block @nome · /unblock @nome\n/fav @nome · /unfav @nome — favoritos (só por perto)\n/help — esta lista</string>
+    <string name="cmd_who">aqui: %1$s</string>
+    <string name="cmd_who_none">ninguém mais aqui agora</string>
+    <string name="cmd_not_found">%1$s não está aqui</string>
+    <string name="cmd_usage">uso: %1$s</string>
+    <string name="cmd_unknown">comando desconhecido %1$s, tente /help</string>
+    <string name="cmd_blocked">%1$s bloqueado</string>
+    <string name="cmd_unblocked">%1$s desbloqueado</string>
+    <string name="cmd_not_blocked">%1$s não está bloqueado</string>
+    <string name="cmd_favorited">%1$s adicionado aos favoritos</string>
+    <string name="cmd_unfavorited">%1$s removido dos favoritos</string>
+    <string name="cmd_mesh_only">este comando só funciona em Por perto e conversas privadas</string>
+    <string name="cmd_geo_only">este comando só funciona num canal de região</string>
 </resources>

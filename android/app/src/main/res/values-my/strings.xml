@@ -105,4 +105,17 @@
     <string name="verify_badge_off">အတည်မပြုရသေးပါ။ ဤလက်ဗွေကို မျက်နှာချင်းဆိုင် တိုက်စစ်ပါ-</string>
     <string name="verify_mark">ကိုက်ညီသည်၊ အတည်ပြုပြီးဟု မှတ်ရန်</string>
     <string name="verify_unmark">အတည်ပြုချက် ဖယ်ရန်</string>
+    <string name="cmd_help">/msg @name [message] — သီးသန့်ချက်တင်\n/who — ဒီမှာ ဘယ်သူရှိလဲ\n/clear — ဤချက်တင်ကို ရှင်းရန်\n/hug @name · /slap @name\n/block @name · /unblock @name\n/fav @name · /unfav @name — အကြိုက်ဆုံး (အနီးအနားသာ)\n/help — ဤစာရင်း</string>
+    <string name="cmd_who">ဒီမှာ- %1$s</string>
+    <string name="cmd_who_none">ယခု ဒီမှာ အခြားသူ မရှိပါ</string>
+    <string name="cmd_not_found">%1$s ဒီမှာ မရှိပါ</string>
+    <string name="cmd_usage">အသုံးပြုပုံ- %1$s</string>
+    <string name="cmd_unknown">မသိသော အမိန့် %1$s၊ /help ကို စမ်းပါ</string>
+    <string name="cmd_blocked">%1$s ကို ပိတ်ဆို့ပြီး</string>
+    <string name="cmd_unblocked">%1$s ကို ပိတ်ဆို့မှု ဖြုတ်ပြီး</string>
+    <string name="cmd_not_blocked">%1$s ကို ပိတ်ဆို့မထားပါ</string>
+    <string name="cmd_favorited">%1$s ကို အကြိုက်ဆုံးထဲ ထည့်ပြီး</string>
+    <string name="cmd_unfavorited">%1$s ကို အကြိုက်ဆုံးမှ ဖယ်ပြီး</string>
+    <string name="cmd_mesh_only">ဤအမိန့်ကို အနီးအနားနှင့် သီးသန့်ချက်တင်တွင်သာ သုံးနိုင်သည်</string>
+    <string name="cmd_geo_only">ဤအမိန့်ကို ဒေသချန်နယ်တွင်သာ သုံးနိုင်သည်</string>
 </resources>

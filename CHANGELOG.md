@@ -41,6 +41,11 @@
   prove they hold the key. Verified names show ✓. The person card shows the
   full fingerprint with "They match, mark as verified" for a manual check.
   5 new tests.
+- IRC-style commands in every composer, with suggestions as you type "/":
+  `/msg`, `/who`, `/clear`, `/hug`, `/slap` (same wording as bitchat, so
+  bitchat users see the same line), `/block`, `/unblock`, `/fav`, `/unfav`
+  and `/help`. Replies are local lines in that chat and are never sent.
+  3 new tests.
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.4.0 (preview) — 2026-10-29

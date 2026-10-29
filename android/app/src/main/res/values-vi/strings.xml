@@ -105,4 +105,17 @@
     <string name="verify_badge_off">Chưa xác minh. Hãy so khớp dấu vân tay này trực tiếp:</string>
     <string name="verify_mark">Khớp, đánh dấu đã xác minh</string>
     <string name="verify_unmark">Bỏ xác minh</string>
+    <string name="cmd_help">/msg @tên [tin] — trò chuyện riêng\n/who — ai đang ở đây\n/clear — xóa cuộc trò chuyện này\n/hug @tên · /slap @tên\n/block @tên · /unblock @tên\n/fav @tên · /unfav @tên — yêu thích (chỉ gần đây)\n/help — danh sách này</string>
+    <string name="cmd_who">đang ở đây: %1$s</string>
+    <string name="cmd_who_none">hiện không có ai khác ở đây</string>
+    <string name="cmd_not_found">%1$s không có ở đây</string>
+    <string name="cmd_usage">cách dùng: %1$s</string>
+    <string name="cmd_unknown">không có lệnh %1$s, thử /help</string>
+    <string name="cmd_blocked">đã chặn %1$s</string>
+    <string name="cmd_unblocked">đã bỏ chặn %1$s</string>
+    <string name="cmd_not_blocked">%1$s không bị chặn</string>
+    <string name="cmd_favorited">đã thêm %1$s vào yêu thích</string>
+    <string name="cmd_unfavorited">đã bỏ %1$s khỏi yêu thích</string>
+    <string name="cmd_mesh_only">lệnh này chỉ dùng trong Gần đây và trò chuyện riêng</string>
+    <string name="cmd_geo_only">lệnh này chỉ dùng trong kênh khu vực</string>
 </resources>
