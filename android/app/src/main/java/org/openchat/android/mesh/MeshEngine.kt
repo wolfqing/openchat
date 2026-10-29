@@ -127,6 +127,9 @@ class MeshEngine(
     private var nextAnnounceDue = 0L
     private var running = false
 
+    /** Local block list, by Noise static key: messages from these senders are dropped unanswered. */
+    @Volatile var isBlocked: (noiseKey: ByteArray) -> Boolean = { false }
+
     val myPeerHex get() = identity.peerIdHex
     val carriedCount get() = carried.size
     val outboxCount get() = outbox.size
@@ -389,6 +392,7 @@ class MeshEngine(
         val signingKey = peer?.signingKey ?: known[hex]?.signingKey ?: return false
         if (!verify(p, signingKey)) return false
         if (!isFresh(p, scheduler.now())) return false
+        (peer?.noiseKey ?: known[hex]?.noiseKey)?.let { if (isBlocked(it)) return true } // relayed and synced, never shown
         val text = try { String(p.payload, Charsets.UTF_8) } catch (e: Exception) { return false }
         if (peer != null && !p.isRsr) peer.lastSeen = scheduler.now()
         if (p.isBroadcast) storeHistory(p)
@@ -583,6 +587,7 @@ class MeshEngine(
         when (payload.type) {
             NoisePayloadType.PRIVATE_MESSAGE -> {
                 val pm = PrivateMessage.decode(payload.body) ?: return
+                if (noiseKeyOf(peerHex)?.let(isBlocked) == true) return
                 // Resends and courier copies share an ID: deliver once, but always answer so the sender can settle.
                 if (markSeen(pm.messageId)) listener.onPrivateMessage(peerHex, nickname, pm.messageId, pm.content, scheduler.now())
                 sendNoise(peerHex, NoisePayload(NoisePayloadType.DELIVERED, pm.messageId.toByteArray(Charsets.UTF_8)).encode())
@@ -604,7 +609,7 @@ class MeshEngine(
         listener.onStateChanged()
     }
 
-    private fun noiseKeyOf(hex: String): ByteArray? = peers[hex]?.noiseKey ?: known[hex]?.noiseKey
+    fun noiseKeyOf(hex: String): ByteArray? = peers[hex]?.noiseKey ?: known[hex]?.noiseKey
 
     /** Clears the outbox copy; true when this receipt advances what the listener already heard. */
     private fun settle(messageId: String, level: Int): Boolean {
@@ -708,6 +713,7 @@ class MeshEngine(
         val payload = NoisePayload.decode(opened.payload) ?: return
         if (payload.type != NoisePayloadType.PRIVATE_MESSAGE) return
         val pm = PrivateMessage.decode(payload.body) ?: return
+        if (isBlocked(opened.senderStatic)) return
         if (!markSeen(pm.messageId)) return
         val senderHex = Identity.peerIdFor(opened.senderStatic).toHex()
         val now = scheduler.now()

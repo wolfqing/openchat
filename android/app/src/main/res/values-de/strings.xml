@@ -87,4 +87,13 @@
     <string name="me_device_id">Geräte-ID: %1$s</string>
     <string name="me_carrying">Versiegelte Post für andere unterwegs: %1$d</string>
     <string name="me_about">openchat funktioniert mit dem bitchat-Netzwerk. Open Source, MIT-Lizenz.</string>
+    <string name="close">Schließen</string>
+    <string name="peer_message">Private Nachricht</string>
+    <string name="peer_block">Blockieren</string>
+    <string name="peer_unblock">Freigeben</string>
+    <string name="peer_blocked_note">Blockiert. Ihre Nachrichten sind auf diesem Telefon ausgeblendet. Sie erfahren davon nichts.</string>
+    <string name="peer_blocked_short">Blockiert</string>
+    <string name="peer_geo_note">Blockieren hier blendet diesen Namen in Ortskanälen aus. Jedes Gebiet nutzt einen anderen Schlüssel, daher gilt es nicht anderswo.</string>
+    <string name="peer_more">Mehr</string>
+    <string name="me_blocked_title">Blockiert</string>
 </resources>

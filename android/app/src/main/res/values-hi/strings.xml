@@ -87,4 +87,13 @@
     <string name="me_device_id">डिवाइस ID: %1$s</string>
     <string name="me_carrying">दूसरों के लिए ले जाई जा रही सीलबंद डाक: %1$d</string>
     <string name="me_about">openchat, bitchat नेटवर्क के साथ काम करता है। ओपन सोर्स, MIT लाइसेंस।</string>
+    <string name="close">बंद करें</string>
+    <string name="peer_message">निजी संदेश</string>
+    <string name="peer_block">ब्लॉक करें</string>
+    <string name="peer_unblock">अनब्लॉक करें</string>
+    <string name="peer_blocked_note">ब्लॉक किया गया। इस फ़ोन पर उनके संदेश छिपे रहेंगे। उन्हें बताया नहीं जाता।</string>
+    <string name="peer_blocked_short">ब्लॉक किया गया</string>
+    <string name="peer_geo_note">यहाँ ब्लॉक करने से यह नाम क्षेत्र चैनलों में छिप जाता है। हर क्षेत्र की अलग कुंजी होती है, इसलिए यह दूसरी जगह लागू नहीं होता।</string>
+    <string name="peer_more">और</string>
+    <string name="me_blocked_title">ब्लॉक किए गए</string>
 </resources>

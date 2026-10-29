@@ -83,4 +83,13 @@
     <string name="me_device_id">ID thiết bị: %1$s</string>
     <string name="me_carrying">Thư niêm phong đang mang hộ người khác: %1$d</string>
     <string name="me_about">openchat hoạt động với mạng bitchat. Mã nguồn mở, giấy phép MIT.</string>
+    <string name="close">Đóng</string>
+    <string name="peer_message">Nhắn riêng</string>
+    <string name="peer_block">Chặn</string>
+    <string name="peer_unblock">Bỏ chặn</string>
+    <string name="peer_blocked_note">Đã chặn. Tin nhắn của họ bị ẩn trên điện thoại này. Họ không được báo.</string>
+    <string name="peer_blocked_short">Đã chặn</string>
+    <string name="peer_geo_note">Chặn ở đây sẽ ẩn tên này trong kênh khu vực. Mỗi khu vực dùng khóa khác nhau nên không áp dụng ở nơi khác.</string>
+    <string name="peer_more">Thêm</string>
+    <string name="me_blocked_title">Đã chặn</string>
 </resources>

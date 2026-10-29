@@ -95,4 +95,13 @@
     <string name="me_device_id">ID пристрою: %1$s</string>
     <string name="me_carrying">Несемо запечатаних листів для інших: %1$d</string>
     <string name="me_about">openchat сумісний з мережею bitchat. Відкритий код, ліцензія MIT.</string>
+    <string name="close">Закрити</string>
+    <string name="peer_message">Особисте повідомлення</string>
+    <string name="peer_block">Заблокувати</string>
+    <string name="peer_unblock">Розблокувати</string>
+    <string name="peer_blocked_note">Заблоковано. Його повідомлення приховано на цьому телефоні. Йому про це не повідомляють.</string>
+    <string name="peer_blocked_short">Заблоковано</string>
+    <string name="peer_geo_note">Блокування тут приховує це ім\'я в каналах місцевості. Кожна місцевість має свій ключ, тож деінде воно не діє.</string>
+    <string name="peer_more">Більше</string>
+    <string name="me_blocked_title">Заблоковані</string>
 </resources>

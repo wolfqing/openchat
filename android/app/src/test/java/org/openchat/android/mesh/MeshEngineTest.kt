@@ -310,4 +310,22 @@ class MeshEngineTest {
         assertEquals("remember me", String(restored.history[0].payload))
         assertTrue(restored.history[0].signature != null)
     }
+
+    @Test
+    fun blockedSenderIsHiddenButStillRelayed() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!; val carol = net.engines["carol"]!!
+        val aliceKey = alice.identity.noise.publicKey
+        bob.isBlocked = { it.contentEquals(aliceKey) }
+        alice.sendPublic("hello all")
+        alice.sendPrivate(bob.myPeerHex, "hello bob")
+        net.scheduler.advance(10_000)
+        assertEquals(emptyList<String>(), net.recorders["bob"]!!.publics)
+        assertEquals(0, net.recorders["bob"]!!.privates.size)
+        assertEquals(0, net.recorders["alice"]!!.delivered.size) // no receipt tells alice she is blocked
+        assertEquals(listOf("alice:hello all"), net.recorders["carol"]!!.publics) // bob still relays
+        carol.sendPublic("hi")
+        net.scheduler.advance(2_000)
+        assertEquals(listOf("carol:hi"), net.recorders["bob"]!!.publics)
+    }
 }

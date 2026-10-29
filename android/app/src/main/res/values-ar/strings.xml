@@ -103,4 +103,13 @@
     <string name="me_device_id">معرّف الجهاز: %1$s</string>
     <string name="me_carrying">رسائل مختومة نحملها للآخرين: %1$d</string>
     <string name="me_about">يعمل openchat مع شبكة bitchat. مفتوح المصدر، برخصة MIT.</string>
+    <string name="close">إغلاق</string>
+    <string name="peer_message">رسالة خاصة</string>
+    <string name="peer_block">حظر</string>
+    <string name="peer_unblock">إلغاء الحظر</string>
+    <string name="peer_blocked_note">محظور. رسائله مخفية على هذا الهاتف، ولن يُبلَّغ بذلك.</string>
+    <string name="peer_blocked_short">محظور</string>
+    <string name="peer_geo_note">الحظر هنا يُخفي هذا الاسم في قنوات المواقع. كل منطقة تستخدم مفتاحًا مختلفًا، لذا لا يتبعه إلى مناطق أخرى.</string>
+    <string name="peer_more">المزيد</string>
+    <string name="me_blocked_title">المحظورون</string>
 </resources>

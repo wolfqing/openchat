@@ -80,6 +80,7 @@ class GeoChannels(
         val j = joined[g] ?: return
         val nowS = System.currentTimeMillis() / 1000
         presence.getOrPut(g) { ConcurrentHashMap() }[ev.pubkey] = ev.createdAt
+        if (ev.pubkey in Social.state.value.geoBlocked) return publishStatus()
         if (ev.kind == NostrEvent.KIND_GEOHASH_MESSAGE && ev.content.isNotBlank()) {
             val teleported = ev.tags.any { it.size >= 2 && it[0] == "t" && it[1] == "teleport" }
             ChatRepository.add(

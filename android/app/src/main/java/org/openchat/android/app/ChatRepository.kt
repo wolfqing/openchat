@@ -74,6 +74,8 @@ interface ChatController {
     fun sendPublic(text: String)
     fun sendPrivate(peerHex: String, text: String)
     fun markRead(peerHex: String, messageIds: List<String>)
+    /** Noise static key of a mesh peer we have heard from, if known. */
+    fun noiseKey(peerHex: String): ByteArray?
     fun setNickname(name: String)
     fun joinGeo(geohash: String, teleported: Boolean)
     fun leaveGeo(geohash: String)

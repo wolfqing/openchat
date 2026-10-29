@@ -100,4 +100,13 @@
     <string name="me_device_id">Device ID: %1$s</string>
     <string name="me_carrying">Carrying sealed mail for others: %1$d</string>
     <string name="me_about">openchat works with the bitchat network. Open source, MIT license.</string>
+    <string name="close">Close</string>
+    <string name="peer_message">Private message</string>
+    <string name="peer_block">Block</string>
+    <string name="peer_unblock">Unblock</string>
+    <string name="peer_blocked_note">Blocked. Their messages are hidden on this phone. They are not told.</string>
+    <string name="peer_blocked_short">Blocked</string>
+    <string name="peer_geo_note">Blocking here hides this name in location channels. Each area uses a different key, so it does not follow them elsewhere.</string>
+    <string name="peer_more">More</string>
+    <string name="me_blocked_title">Blocked</string>
 </resources>

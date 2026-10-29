@@ -83,4 +83,13 @@
     <string name="me_device_id">裝置 ID：%1$s</string>
     <string name="me_carrying">正在替別人攜帶的密封信件：%1$d 封</string>
     <string name="me_about">openchat 相容 bitchat 網路。開源，MIT 授權。</string>
+    <string name="close">關閉</string>
+    <string name="peer_message">傳私訊</string>
+    <string name="peer_block">封鎖</string>
+    <string name="peer_unblock">解除封鎖</string>
+    <string name="peer_blocked_note">已封鎖。這支手機上不再顯示對方的訊息，對方不會收到通知。</string>
+    <string name="peer_blocked_short">已封鎖</string>
+    <string name="peer_geo_note">在這裡封鎖，會在地區頻道中隱藏這個人。每個地區用不同的金鑰，所以不會跟到別的地區。</string>
+    <string name="peer_more">更多</string>
+    <string name="me_blocked_title">已封鎖的人</string>
 </resources>

@@ -83,4 +83,13 @@
     <string name="me_device_id">ID perangkat: %1$s</string>
     <string name="me_carrying">Surat tersegel yang dibawa untuk orang lain: %1$d</string>
     <string name="me_about">openchat bekerja dengan jaringan bitchat. Sumber terbuka, lisensi MIT.</string>
+    <string name="close">Tutup</string>
+    <string name="peer_message">Pesan pribadi</string>
+    <string name="peer_block">Blokir</string>
+    <string name="peer_unblock">Buka blokir</string>
+    <string name="peer_blocked_note">Diblokir. Pesannya disembunyikan di ponsel ini. Ia tidak diberi tahu.</string>
+    <string name="peer_blocked_short">Diblokir</string>
+    <string name="peer_geo_note">Memblokir di sini menyembunyikan nama ini di kanal wilayah. Tiap wilayah memakai kunci berbeda, jadi tidak berlaku di tempat lain.</string>
+    <string name="peer_more">Lainnya</string>
+    <string name="me_blocked_title">Diblokir</string>
 </resources>

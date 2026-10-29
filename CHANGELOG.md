@@ -22,6 +22,13 @@
   tolerance, type flags, a late joiner receiving history one hop from the
   author, an unsolicited reply being dropped, and history persistence.
   60 tests in all.
+- Block. Tap a name in a chat for a person card: private message or
+  block. A blocked mesh peer's public and private messages, including
+  courier mail, are dropped without a receipt, so they are not told; the
+  phone still relays their packets for others. In location channels the
+  block applies to that sender's key in that area only. Blocked people are
+  listed on the Me tab with Unblock. The list is sealed on disk and wiped by
+  the triple tap. 1 new test.
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.4.0 (preview) — 2026-10-29

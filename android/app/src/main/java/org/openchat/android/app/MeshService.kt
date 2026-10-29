@@ -20,6 +20,8 @@ import android.os.HandlerThread
 import android.os.IBinder
 import android.os.SystemClock
 import org.openchat.android.R
+import org.openchat.android.core.sha256
+import org.openchat.android.core.toHex
 import org.openchat.android.mesh.BleTransport
 import org.openchat.android.mesh.Cancellable
 import org.openchat.android.mesh.Identity
@@ -51,6 +53,9 @@ class MeshService : Service(), ChatController {
     private lateinit var handler: Handler
     private lateinit var store: IdentityStore
     private lateinit var stateStore: MeshStateStore
+    private lateinit var socialStore: SealedFile
+    // Noise static keys by peer ID, readable from the UI thread (the engine's maps are not).
+    private val noiseKeys = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
     private val saveState = Runnable { stateStore.save(engine.exportState()) }
     private lateinit var engine: MeshEngine
     private lateinit var ble: BleTransport
@@ -82,7 +87,11 @@ class MeshService : Service(), ChatController {
         stateStore = MeshStateStore(this)
         val identity = store.loadOrCreate()
         engine = MeshEngine(identity, scheduler, { link, bytes -> ble.write(link, bytes) }, listener)
-        stateStore.load()?.let { engine.importState(it) }
+        stateStore.load()?.let { s -> engine.importState(s); s.known.forEach { (hex, k) -> noiseKeys[hex] = k.noiseKey } }
+        socialStore = SealedFile(this, "social.bin")
+        socialStore.read()?.let { Social.deserialize(it) }?.let { Social.load(it) }
+        Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)) } }
+        engine.isBlocked = { key -> sha256(key).toHex() in Social.state.value.blocked }
         ble = BleTransport(this, handler) { engine }
         geo = GeoChannels(RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText()), identity.nostrSeed) { engine.identity.nickname }
         ChatRepository.controller = this
@@ -154,6 +163,7 @@ class MeshService : Service(), ChatController {
 
     private val listener = object : MeshListener {
         override fun onPeersChanged(peers: List<MeshPeer>) {
+            peers.forEach { noiseKeys[it.peerIdHex] = it.noisePublicKey }
             ChatRepository.setPeers(peers)
             ChatRepository.updateMesh { it.copy(links = engine.linkCount) }
         }
@@ -164,6 +174,7 @@ class MeshService : Service(), ChatController {
 
         override fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) {
             val conv = Conversation.Private(senderHex).key
+            engine.noiseKeyOf(senderHex)?.let { noiseKeys[senderHex] = it }
             ChatRepository.rememberName(senderHex, nickname)
             ChatRepository.add(ChatMessage(messageId, conv, nickname, senderHex, text, timestamp, mine = false))
             if (ChatRepository.openConversation == conv) engine.sendReadReceipt(senderHex, messageId)
@@ -221,6 +232,8 @@ class MeshService : Service(), ChatController {
         }
     }
 
+    override fun noiseKey(peerHex: String): ByteArray? = noiseKeys[peerHex]
+
     override fun joinGeo(geohash: String, teleported: Boolean) = geo.join(geohash.lowercase(), teleported)
     override fun leaveGeo(geohash: String) = geo.leave(geohash)
     override fun sendGeo(geohash: String, text: String) = geo.send(geohash, text)
@@ -249,12 +262,15 @@ class MeshService : Service(), ChatController {
      */
     override fun panic() {
         ChatRepository.wipe()
+        Social.wipe()
+        noiseKeys.clear()
         val nm = getSystemService(NotificationManager::class.java)
         nm.cancelAll()
         startInForeground()
         handler.post {
             handler.removeCallbacks(saveState)
             stateStore.destroy()
+            socialStore.delete()
             store.destroy()
             val fresh = Identity.generate()
             store.save(fresh)

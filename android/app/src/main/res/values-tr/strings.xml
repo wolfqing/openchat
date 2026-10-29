@@ -87,4 +87,13 @@
     <string name="me_device_id">Cihaz kimliği: %1$s</string>
     <string name="me_carrying">Başkaları için taşınan mühürlü posta: %1$d</string>
     <string name="me_about">openchat, bitchat ağıyla çalışır. Açık kaynak, MIT lisansı.</string>
+    <string name="close">Kapat</string>
+    <string name="peer_message">Özel mesaj</string>
+    <string name="peer_block">Engelle</string>
+    <string name="peer_unblock">Engeli kaldır</string>
+    <string name="peer_blocked_note">Engellendi. Mesajları bu telefonda gizlenir. Kendisine bildirilmez.</string>
+    <string name="peer_blocked_short">Engellendi</string>
+    <string name="peer_geo_note">Burada engellemek bu adı konum kanallarında gizler. Her bölge farklı anahtar kullandığından başka yerde geçerli olmaz.</string>
+    <string name="peer_more">Daha fazla</string>
+    <string name="me_blocked_title">Engellenenler</string>
 </resources>

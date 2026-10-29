@@ -83,4 +83,13 @@
     <string name="me_device_id">端末ID: %1$s</string>
     <string name="me_carrying">他の人のために運んでいる封書: %1$d 通</string>
     <string name="me_about">openchatはbitchatネットワークと互換性があります。オープンソース、MITライセンス。</string>
+    <string name="close">閉じる</string>
+    <string name="peer_message">プライベートメッセージ</string>
+    <string name="peer_block">ブロック</string>
+    <string name="peer_unblock">ブロック解除</string>
+    <string name="peer_blocked_note">ブロックしました。この端末では相手のメッセージを表示しません。相手には通知されません。</string>
+    <string name="peer_blocked_short">ブロック中</string>
+    <string name="peer_geo_note">ここでブロックすると地域チャンネルでこの名前を隠します。地域ごとに鍵が違うため、他の地域には及びません。</string>
+    <string name="peer_more">その他</string>
+    <string name="me_blocked_title">ブロック中の人</string>
 </resources>

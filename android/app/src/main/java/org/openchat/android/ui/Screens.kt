@@ -33,6 +33,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
@@ -93,6 +94,7 @@ import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.DeliveryState
 import org.openchat.android.app.PeerLabel
+import org.openchat.android.app.Social
 import org.openchat.android.nostr.Geohash
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -206,6 +208,7 @@ fun MainScreen(
     var tab by rememberSaveable { mutableStateOf(Tab.NEARBY) }
     var openChat by rememberSaveable { mutableStateOf<String?>(null) } // conversation key
     var wiped by remember { mutableStateOf(false) }
+    var person by remember { mutableStateOf<PersonRef?>(null) }
     val unread by ChatRepository.unread.collectAsState()
     val mesh by ChatRepository.mesh.collectAsState()
     val peers by ChatRepository.peers.collectAsState()
@@ -225,6 +228,8 @@ fun MainScreen(
             text = { Text(stringResource(R.string.wiped, PeerLabel.mesh(mesh.myNickname, mesh.myPeerHex).toString())) },
         )
     }
+
+    person?.let { p -> PersonSheet(p, onDismiss = { person = null }, onMessage = { openChat = Conversation.Private(it).key }) }
 
     val chat = openChat
     if (chat != null && chat.startsWith("dm:")) {
@@ -274,7 +279,7 @@ fun MainScreen(
                     emptyText = if (peers.isEmpty()) stringResource(R.string.nearby_empty_alone) else plural(R.plurals.nearby_empty_peers, peers.size),
                     placeholder = stringResource(R.string.nearby_placeholder),
                     onSend = { ChatRepository.controller?.sendPublic(it) },
-                    onSenderClick = { key -> if (key != mesh.myPeerHex) openChat = Conversation.Private(key).key },
+                    onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) person = PersonRef.Mesh(m.senderKey, m.senderName) },
                 )
                 Tab.PRIVATE -> PrivateList(onOpen = { openChat = Conversation.Private(it).key })
                 Tab.LOCATION -> LocationPane(onRequestLocation, onOpen = { openChat = Conversation.Geo(it).key })
@@ -351,11 +356,18 @@ fun ChatPane(
     emptyText: String,
     placeholder: String,
     onSend: (String) -> Unit,
-    onSenderClick: ((String) -> Unit)? = null,
+    onSenderClick: ((ChatMessage) -> Unit)? = null,
     onVisible: (List<ChatMessage>) -> Unit = {},
 ) {
     val all by ChatRepository.messages.collectAsState()
-    val list = all[conversation].orEmpty()
+    val social by Social.state.collectAsState()
+    val list = all[conversation].orEmpty().filter { m ->
+        when {
+            m.mine -> true
+            conversation.startsWith("geo:") -> m.senderKey !in social.geoBlocked
+            else -> !social.isBlockedPeer(m.senderKey)
+        }
+    }
     val state = rememberLazyListState()
 
     DisposableEffect(conversation) {
@@ -384,13 +396,13 @@ fun ChatPane(
 }
 
 @Composable
-private fun Bubble(m: ChatMessage, onSenderClick: ((String) -> Unit)?) {
+private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
     val time = remember(m.timestamp) { stampText(m.timestamp) }
     Column(Modifier.fillMaxWidth(), horizontalAlignment = if (m.mine) Alignment.End else Alignment.Start) {
         if (!m.mine) {
             Text(
                 labelText(PeerLabel.of(m), m.teleported), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.let { if (onSenderClick != null) it.clickable { onSenderClick(m.senderKey) } else it },
+                modifier = Modifier.let { if (onSenderClick != null) it.clickable { onSenderClick(m) } else it },
             )
         }
         Surface(
@@ -451,16 +463,23 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
     val label = PeerLabel.mesh(peer?.nickname ?: names[peerHex], peerHex)
     val name = label.toString()
     val readSent = remember { HashSet<String>() }
+    var sheet by remember { mutableStateOf(false) }
+    val social by Social.state.collectAsState()
     BackHandler(onBack = onBack)
+    if (sheet) PersonSheet(PersonRef.Mesh(peerHex, peer?.nickname ?: names[peerHex]), onDismiss = { sheet = false }, onMessage = {})
     Scaffold(topBar = {
         TopAppBar(
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
             title = {
                 Column {
                     PanicTitle(labelText(label), onPanic)
-                    Text(stringResource(if (peer != null) R.string.dm_status_here else R.string.dm_status_away), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(if (social.isBlockedPeer(peerHex)) R.string.peer_blocked_short else if (peer != null) R.string.dm_status_here else R.string.dm_status_away),
+                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             },
+            actions = { IconButton(onClick = { sheet = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.peer_more)) } },
         )
     }) { padding ->
         Box(Modifier.padding(padding)) {
@@ -571,7 +590,9 @@ private fun levelLabel(level: Geohash.Level): Int = when (level) {
 @Composable
 fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
     val geo by ChatRepository.geo.collectAsState()
+    var person by remember { mutableStateOf<PersonRef?>(null) }
     BackHandler(onBack = onBack)
+    person?.let { PersonSheet(it, onDismiss = { person = null }, onMessage = {}) }
     Scaffold(topBar = {
         TopAppBar(
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
@@ -591,6 +612,7 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
                 emptyText = stringResource(R.string.geo_empty, geohash),
                 placeholder = stringResource(R.string.geo_placeholder, geohash),
                 onSend = { ChatRepository.controller?.sendGeo(geohash, it) },
+                onSenderClick = { m -> person = PersonRef.Geo(m.senderKey, m.senderName) },
             )
         }
     }
@@ -635,6 +657,7 @@ private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> U
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.me_carrying, mesh.carriedCount), fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
         }
+        BlockedList()
         Spacer(Modifier.height(24.dp))
         Text(stringResource(R.string.me_about), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }

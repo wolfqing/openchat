@@ -83,4 +83,13 @@
     <string name="me_device_id">စက်ပစ္စည်း ID: %1$s</string>
     <string name="me_carrying">အခြားသူများအတွက် သယ်ဆောင်နေသော ချိပ်ပိတ်စာများ: %1$d</string>
     <string name="me_about">openchat သည် bitchat ကွန်ရက်နှင့် တွဲသုံးနိုင်သည်။ open source၊ MIT လိုင်စင်။</string>
+    <string name="close">ပိတ်ရန်</string>
+    <string name="peer_message">သီးသန့်စာ</string>
+    <string name="peer_block">ပိတ်ဆို့ရန်</string>
+    <string name="peer_unblock">ပိတ်ဆို့မှု ဖြုတ်ရန်</string>
+    <string name="peer_blocked_note">ပိတ်ဆို့ထားသည်။ ဤဖုန်းတွင် ၎င်း၏စာများ မပြတော့ပါ။ ၎င်းကို အသိမပေးပါ။</string>
+    <string name="peer_blocked_short">ပိတ်ဆို့ထားသည်</string>
+    <string name="peer_geo_note">ဤနေရာတွင် ပိတ်ဆို့ပါက ဒေသချန်နယ်များတွင် ဤအမည်ကို ဖျောက်ထားမည်။ ဒေသတစ်ခုစီ သော့ကွဲပြားသဖြင့် အခြားနေရာတွင် မသက်ရောက်ပါ။</string>
+    <string name="peer_more">နောက်ထပ်</string>
+    <string name="me_blocked_title">ပိတ်ဆို့ထားသူများ</string>
 </resources>

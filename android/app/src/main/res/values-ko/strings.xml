@@ -83,4 +83,13 @@
     <string name="me_device_id">기기 ID: %1$s</string>
     <string name="me_carrying">다른 사람을 위해 운반 중인 봉인 편지: %1$d통</string>
     <string name="me_about">openchat은 bitchat 네트워크와 호환됩니다. 오픈 소스, MIT 라이선스.</string>
+    <string name="close">닫기</string>
+    <string name="peer_message">개인 메시지</string>
+    <string name="peer_block">차단</string>
+    <string name="peer_unblock">차단 해제</string>
+    <string name="peer_blocked_note">차단했습니다. 이 휴대폰에서 상대의 메시지가 숨겨지며, 상대에게는 알리지 않습니다.</string>
+    <string name="peer_blocked_short">차단됨</string>
+    <string name="peer_geo_note">여기서 차단하면 지역 채널에서 이 이름이 숨겨집니다. 지역마다 키가 달라 다른 지역에는 적용되지 않습니다.</string>
+    <string name="peer_more">더보기</string>
+    <string name="me_blocked_title">차단한 사람</string>
 </resources>

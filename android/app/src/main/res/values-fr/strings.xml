@@ -91,4 +91,13 @@
     <string name="me_device_id">Identifiant de l\'appareil : %1$s</string>
     <string name="me_carrying">Courrier scellé transporté pour d\'autres : %1$d</string>
     <string name="me_about">openchat fonctionne avec le réseau bitchat. Open source, licence MIT.</string>
+    <string name="close">Fermer</string>
+    <string name="peer_message">Message privé</string>
+    <string name="peer_block">Bloquer</string>
+    <string name="peer_unblock">Débloquer</string>
+    <string name="peer_blocked_note">Bloqué. Ses messages sont masqués sur ce téléphone. La personne n\'est pas prévenue.</string>
+    <string name="peer_blocked_short">Bloqué</string>
+    <string name="peer_geo_note">Bloquer ici masque ce nom dans les canaux de zone. Chaque zone utilise une autre clé : le blocage ne le suit pas ailleurs.</string>
+    <string name="peer_more">Plus</string>
+    <string name="me_blocked_title">Bloqués</string>
 </resources>

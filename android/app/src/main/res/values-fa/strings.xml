@@ -87,4 +87,13 @@
     <string name="me_device_id">شناسهٔ دستگاه: %1$s</string>
     <string name="me_carrying">نامه‌های مهروموم که برای دیگران حمل می‌کنیم: %1$d</string>
     <string name="me_about">openchat با شبکهٔ bitchat کار می‌کند. متن‌باز، با مجوز MIT.</string>
+    <string name="close">بستن</string>
+    <string name="peer_message">پیام خصوصی</string>
+    <string name="peer_block">مسدود کردن</string>
+    <string name="peer_unblock">رفع مسدودی</string>
+    <string name="peer_blocked_note">مسدود شد. پیام‌هایش در این گوشی پنهان است و به او اطلاع داده نمی‌شود.</string>
+    <string name="peer_blocked_short">مسدود</string>
+    <string name="peer_geo_note">مسدود کردن در اینجا این نام را در کانال‌های منطقه پنهان می‌کند. هر منطقه کلید متفاوتی دارد، پس در جای دیگر اعمال نمی‌شود.</string>
+    <string name="peer_more">بیشتر</string>
+    <string name="me_blocked_title">مسدودشده‌ها</string>
 </resources>
