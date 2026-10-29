@@ -1,6 +1,6 @@
 # Changelog
 
-## Android, unreleased
+## Android v0.3.0 (preview) — 2026-10-28
 
 - The app now starts in English and in the dark theme. Chinese is still
   one tap away in the language picker, which keeps a "System default"
@@ -26,6 +26,12 @@
   welcome headline; the status band is quiet grey, with the connected
   count in monospaced signal orange, and keeps the red warning colours
   only for missing permission or Bluetooth off.
+- versionCode 4, versionName 0.3.0. Installs over v0.2.0. 39 unit tests
+  pass.
+- Release: <https://github.com/wolfqing/openchat/releases/tag/v0.3.0>,
+  APK SHA-256
+  `1913787eb285fc41cb60f00713e83ba9db25353d26a4a614aa2ef634cdc74c21`.
+- Not yet checked on a device.
 
 ## Android v0.2.0 (preview) — 2026-10-28
 
