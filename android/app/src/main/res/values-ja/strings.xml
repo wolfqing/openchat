@@ -93,4 +93,16 @@
     <string name="peer_more">その他</string>
     <string name="me_blocked_title">ブロック中の人</string>
     <string name="mention_notify">%1$sがあなたをメンションしました</string>
+    <string name="verify_title">対面で確認</string>
+    <string name="verify_body">会ったときにお互いのコードを読み取ります。以後、相手の名前に ✓ が付きます。bitchat とも使えます。</string>
+    <string name="verify_show">自分のコード</string>
+    <string name="verify_scan">コードを読む</string>
+    <string name="verify_my_qr">確認用コード</string>
+    <string name="verify_my_qr_note">有効期限は5分です。目の前の相手にだけ見せてください。</string>
+    <string name="verify_scan_ok">%1$s を確認しました。名前に ✓ が付きます。</string>
+    <string name="verify_scan_bad">有効な確認コードではないか、期限切れです。もう一度表示してもらってください。</string>
+    <string name="verify_badge_on">✓ 対面で確認済み</string>
+    <string name="verify_badge_off">未確認です。対面でこの指紋を照合してください：</string>
+    <string name="verify_mark">一致したので確認済みにする</string>
+    <string name="verify_unmark">確認を取り消す</string>
 </resources>

@@ -113,4 +113,16 @@
     <string name="peer_more">المزيد</string>
     <string name="me_blocked_title">المحظورون</string>
     <string name="mention_notify">ذكرك %1$s</string>
+    <string name="verify_title">التحقق وجهًا لوجه</string>
+    <string name="verify_body">امسحا رمزَي بعضكما عند اللقاء، وستظهر ✓ بجانب اسمه على هذا الهاتف. يعمل مع bitchat أيضًا.</string>
+    <string name="verify_show">اعرض رمزي</string>
+    <string name="verify_scan">امسح رمزًا</string>
+    <string name="verify_my_qr">رمز التحقق الخاص بي</string>
+    <string name="verify_my_qr_note">صالح لمدة 5 دقائق. اعرضه فقط على الشخص الذي أمامك.</string>
+    <string name="verify_scan_ok">تم التحقق من %1$s. يظهر الآن ✓ بجانب اسمه.</string>
+    <string name="verify_scan_bad">هذا ليس رمز تحقق صالحًا أو انتهت صلاحيته. اطلب منه عرضه مجددًا.</string>
+    <string name="verify_badge_on">✓ تم التحقق وجهًا لوجه</string>
+    <string name="verify_badge_off">لم يتم التحقق. قارن هذه البصمة مع بصمته وجهًا لوجه:</string>
+    <string name="verify_mark">متطابقة، علّمه كموثَّق</string>
+    <string name="verify_unmark">إزالة التحقق</string>
 </resources>

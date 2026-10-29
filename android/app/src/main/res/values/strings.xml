@@ -110,4 +110,16 @@
     <string name="peer_more">More</string>
     <string name="me_blocked_title">Blocked</string>
     <string name="mention_notify">%1$s mentioned you</string>
+    <string name="verify_title">Verify in person</string>
+    <string name="verify_body">Scan each other\'s code when you meet. Their name then shows ✓ on this phone. It works with bitchat too.</string>
+    <string name="verify_show">Show my code</string>
+    <string name="verify_scan">Scan a code</string>
+    <string name="verify_my_qr">My verification code</string>
+    <string name="verify_my_qr_note">Valid for 5 minutes. Only show it to the person in front of you.</string>
+    <string name="verify_scan_ok">Verified %1$s. Their name now shows ✓.</string>
+    <string name="verify_scan_bad">This is not a valid verification code, or it has expired. Ask them to show it again.</string>
+    <string name="verify_badge_on">✓ Verified in person</string>
+    <string name="verify_badge_off">Not verified. Compare this fingerprint with theirs in person:</string>
+    <string name="verify_mark">They match, mark as verified</string>
+    <string name="verify_unmark">Remove verification</string>
 </resources>

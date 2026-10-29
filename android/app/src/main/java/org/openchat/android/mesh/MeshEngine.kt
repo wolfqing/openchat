@@ -10,6 +10,7 @@ import org.openchat.android.core.MessageType
 import org.openchat.android.core.PacketId
 import org.openchat.android.core.SyncRequest
 import org.openchat.android.core.SyncTypes
+import org.openchat.android.core.VerifyQr
 import org.openchat.android.core.NoisePayload
 import org.openchat.android.core.NoisePayloadType
 import org.openchat.android.core.Packet
@@ -63,6 +64,8 @@ interface MeshListener {
     fun onCarried(peerHex: String, messageId: String) {}
     /** Outbox, carried mail or remembered keys changed; the owner should persist [MeshEngine.exportState]. */
     fun onStateChanged() {}
+    /** The peer proved it holds the keys from the verification QR we scanned (§16.2). */
+    fun onVerified(peerHex: String) {}
 }
 
 /**
@@ -116,6 +119,7 @@ class MeshEngine(
     private val seenIds = LinkedHashSet<String>()   // private message IDs already delivered to the listener
     private val acked = LinkedHashMap<String, Int>() // message ID -> best receipt seen (1 delivered, 2 read)
     private val pendingAcks = HashMap<String, MutableSet<String>>()
+    private val pendingVerify = HashMap<String, ByteArray>() // peer hex -> challenge nonce
     // History sync (§14).
     private val history = LinkedHashMap<String, Packet>() // packet ID hex -> verified public message
     private var myAnnounce: Packet? = null
@@ -166,7 +170,7 @@ class MeshEngine(
         identity = newIdentity
         peers.clear(); sessions.clear(); pendingNoise.clear(); lastHandshakeStart.clear(); earlyCiphertexts.clear()
         known.clear(); outbox.clear(); carried.clear(); seenIds.clear(); acked.clear(); pendingAcks.clear()
-        history.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
+        history.clear(); pendingVerify.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
         pendingRelays.values.forEach { it.cancel() }; pendingRelays.clear()
         dedup.clear()
         assembler = FragmentAssembler(clock = scheduler::now)
@@ -248,6 +252,14 @@ class MeshEngine(
         }
         listener.onStateChanged()
         return ids
+    }
+
+    /** Asks a peer to prove it holds its Noise key, after we scanned its QR (§16.2). */
+    fun sendVerifyChallenge(peerHex: String) {
+        val key = noiseKeyOf(peerHex) ?: return
+        val nonce = random.nextBytes(16)
+        pendingVerify[peerHex] = nonce
+        sendNoise(peerHex, NoisePayload(NoisePayloadType.VERIFY_CHALLENGE, VerifyQr.challenge(key.toHex(), nonce)).encode())
     }
 
     fun sendReadReceipt(peerHex: String, messageId: String) =
@@ -594,6 +606,19 @@ class MeshEngine(
             }
             NoisePayloadType.DELIVERED -> { val id = String(payload.body, Charsets.UTF_8); if (settle(id, 1)) listener.onDelivered(peerHex, id) }
             NoisePayloadType.READ_RECEIPT -> { val id = String(payload.body, Charsets.UTF_8); if (settle(id, 2)) listener.onRead(peerHex, id) }
+            NoisePayloadType.VERIFY_CHALLENGE -> {
+                val (keyHex, nonce) = VerifyQr.parseChallenge(payload.body) ?: return
+                if (!keyHex.equals(identity.noise.publicKey.toHex(), ignoreCase = true)) return
+                sendNoise(peerHex, NoisePayload(NoisePayloadType.VERIFY_RESPONSE, VerifyQr.response(keyHex, nonce, identity.signing)).encode())
+            }
+            NoisePayloadType.VERIFY_RESPONSE -> {
+                val nonce = pendingVerify[peerHex] ?: return
+                val peer = peers[peerHex] ?: return
+                if (VerifyQr.checkResponse(payload.body, peer.noiseKey.toHex(), nonce, peer.signingKey)) {
+                    pendingVerify.remove(peerHex)
+                    listener.onVerified(peerHex)
+                }
+            }
             else -> Unit // other payload types are not implemented
         }
     }

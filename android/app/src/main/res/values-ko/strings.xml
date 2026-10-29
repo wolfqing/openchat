@@ -93,4 +93,16 @@
     <string name="peer_more">더보기</string>
     <string name="me_blocked_title">차단한 사람</string>
     <string name="mention_notify">%1$s님이 회원님을 언급했습니다</string>
+    <string name="verify_title">직접 만나 확인</string>
+    <string name="verify_body">만났을 때 서로의 코드를 스캔하세요. 이후 이름 옆에 ✓가 표시됩니다. bitchat과도 됩니다.</string>
+    <string name="verify_show">내 코드 보기</string>
+    <string name="verify_scan">코드 스캔</string>
+    <string name="verify_my_qr">내 확인 코드</string>
+    <string name="verify_my_qr_note">5분간 유효합니다. 눈앞의 사람에게만 보여 주세요.</string>
+    <string name="verify_scan_ok">%1$s 님을 확인했습니다. 이제 이름에 ✓가 표시됩니다.</string>
+    <string name="verify_scan_bad">올바른 확인 코드가 아니거나 만료되었습니다. 다시 보여 달라고 하세요.</string>
+    <string name="verify_badge_on">✓ 직접 확인함</string>
+    <string name="verify_badge_off">확인되지 않음. 이 지문을 직접 대조하세요:</string>
+    <string name="verify_mark">일치함, 확인됨으로 표시</string>
+    <string name="verify_unmark">확인 취소</string>
 </resources>

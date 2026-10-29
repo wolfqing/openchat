@@ -21,6 +21,8 @@ import android.os.IBinder
 import android.os.SystemClock
 import org.openchat.android.R
 import org.openchat.android.core.Mentions
+import org.openchat.android.core.VerifyQr
+import org.openchat.android.core.hexToBytes
 import org.openchat.android.core.sha256
 import org.openchat.android.core.toHex
 import org.openchat.android.mesh.BleTransport
@@ -200,6 +202,10 @@ class MeshService : Service(), ChatController {
         override fun onCarried(peerHex: String, messageId: String) =
             ChatRepository.setState(Conversation.Private(peerHex).key, messageId, DeliveryState.CARRIED)
 
+        override fun onVerified(peerHex: String) {
+            engine.noiseKeyOf(peerHex)?.let { Social.setVerified(sha256(it).toHex(), true) }
+        }
+
         // Coalesce bursts of changes into one write.
         override fun onStateChanged() { handler.removeCallbacks(saveState); handler.postDelayed(saveState, 500) }
     }
@@ -240,6 +246,24 @@ class MeshService : Service(), ChatController {
     }
 
     override fun noiseKey(peerHex: String): ByteArray? = noiseKeys[peerHex]
+
+    override fun myVerifyUrl(): String {
+        val id = engine.identity
+        return VerifyQr.build(id.noise.publicKey, id.signing, id.nickname, null, System.currentTimeMillis() / 1000).toUrl()
+    }
+
+    override fun verifyScanned(url: String): String? {
+        val qr = VerifyQr.verify(url.trim(), System.currentTimeMillis() / 1000) ?: return null
+        val key = qr.noiseKeyHex.hexToBytes() ?: return null
+        if (key.contentEquals(engine.identity.noise.publicKey)) return null
+        Social.setVerified(sha256(key).toHex(), true)
+        val peerHex = org.openchat.android.mesh.Identity.peerIdFor(key).toHex()
+        noiseKeys.putIfAbsent(peerHex, key)
+        ChatRepository.rememberName(peerHex, qr.nickname)
+        // If they are around, make them prove they hold the key the QR names.
+        handler.post { engine.sendVerifyChallenge(peerHex) }
+        return qr.nickname
+    }
 
     override fun joinGeo(geohash: String, teleported: Boolean) = geo.join(geohash.lowercase(), teleported)
     override fun leaveGeo(geohash: String) = geo.leave(geohash)

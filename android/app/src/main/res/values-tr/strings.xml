@@ -97,4 +97,16 @@
     <string name="peer_more">Daha fazla</string>
     <string name="me_blocked_title">Engellenenler</string>
     <string name="mention_notify">%1$s senden bahsetti</string>
+    <string name="verify_title">Yüz yüze doğrula</string>
+    <string name="verify_body">Buluştuğunuzda birbirinizin kodunu tarayın. Sonra adının yanında ✓ görünür. bitchat ile de çalışır.</string>
+    <string name="verify_show">Kodumu göster</string>
+    <string name="verify_scan">Kod tara</string>
+    <string name="verify_my_qr">Doğrulama kodum</string>
+    <string name="verify_my_qr_note">5 dakika geçerli. Yalnızca karşınızdaki kişiye gösterin.</string>
+    <string name="verify_scan_ok">%1$s doğrulandı. Adının yanında artık ✓ var.</string>
+    <string name="verify_scan_bad">Geçerli bir doğrulama kodu değil ya da süresi doldu. Tekrar göstermesini isteyin.</string>
+    <string name="verify_badge_on">✓ Yüz yüze doğrulandı</string>
+    <string name="verify_badge_off">Doğrulanmadı. Bu parmak izini yüz yüze karşılaştırın:</string>
+    <string name="verify_mark">Eşleşiyor, doğrulandı olarak işaretle</string>
+    <string name="verify_unmark">Doğrulamayı kaldır</string>
 </resources>

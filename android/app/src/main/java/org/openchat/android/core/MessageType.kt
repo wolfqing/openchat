@@ -55,5 +55,7 @@ object NoisePayloadType {
     const val PRIVATE_MESSAGE = 0x01
     const val READ_RECEIPT = 0x02
     const val DELIVERED = 0x03
+    const val VERIFY_CHALLENGE = 0x10
+    const val VERIFY_RESPONSE = 0x11
     const val AUTHENTICATED_PEER_STATE = 0x21
 }

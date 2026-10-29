@@ -93,4 +93,16 @@
     <string name="peer_more">Thêm</string>
     <string name="me_blocked_title">Đã chặn</string>
     <string name="mention_notify">%1$s đã nhắc đến bạn</string>
+    <string name="verify_title">Xác minh trực tiếp</string>
+    <string name="verify_body">Khi gặp nhau, hãy quét mã của nhau. Sau đó tên họ sẽ có ✓ trên điện thoại này. Dùng được với bitchat.</string>
+    <string name="verify_show">Hiện mã của tôi</string>
+    <string name="verify_scan">Quét mã</string>
+    <string name="verify_my_qr">Mã xác minh của tôi</string>
+    <string name="verify_my_qr_note">Có hiệu lực 5 phút. Chỉ đưa cho người trước mặt bạn quét.</string>
+    <string name="verify_scan_ok">Đã xác minh %1$s. Tên họ giờ có ✓.</string>
+    <string name="verify_scan_bad">Đây không phải mã xác minh hợp lệ hoặc đã hết hạn. Hãy nhờ họ mở lại.</string>
+    <string name="verify_badge_on">✓ Đã xác minh trực tiếp</string>
+    <string name="verify_badge_off">Chưa xác minh. Hãy so khớp dấu vân tay này trực tiếp:</string>
+    <string name="verify_mark">Khớp, đánh dấu đã xác minh</string>
+    <string name="verify_unmark">Bỏ xác minh</string>
 </resources>

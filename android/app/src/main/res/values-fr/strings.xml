@@ -101,4 +101,16 @@
     <string name="peer_more">Plus</string>
     <string name="me_blocked_title">Bloqués</string>
     <string name="mention_notify">%1$s vous a mentionné</string>
+    <string name="verify_title">Vérifier en personne</string>
+    <string name="verify_body">Scannez vos codes quand vous vous voyez. Son nom affichera ✓ sur ce téléphone. Compatible avec bitchat.</string>
+    <string name="verify_show">Afficher mon code</string>
+    <string name="verify_scan">Scanner un code</string>
+    <string name="verify_my_qr">Mon code de vérification</string>
+    <string name="verify_my_qr_note">Valable 5 minutes. Ne le montrez qu\'à la personne en face de vous.</string>
+    <string name="verify_scan_ok">%1$s vérifié. Son nom affiche maintenant ✓.</string>
+    <string name="verify_scan_bad">Code de vérification invalide ou expiré. Demandez-lui de l\'afficher à nouveau.</string>
+    <string name="verify_badge_on">✓ Vérifié en personne</string>
+    <string name="verify_badge_off">Non vérifié. Comparez cette empreinte en personne :</string>
+    <string name="verify_mark">Identiques, marquer comme vérifié</string>
+    <string name="verify_unmark">Retirer la vérification</string>
 </resources>

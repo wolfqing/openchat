@@ -105,4 +105,16 @@
     <string name="peer_more">Ещё</string>
     <string name="me_blocked_title">Заблокированные</string>
     <string name="mention_notify">%1$s упомянул(а) вас</string>
+    <string name="verify_title">Проверка при встрече</string>
+    <string name="verify_body">При встрече отсканируйте коды друг друга. После этого рядом с именем будет ✓. Работает и с bitchat.</string>
+    <string name="verify_show">Мой код</string>
+    <string name="verify_scan">Сканировать</string>
+    <string name="verify_my_qr">Мой код проверки</string>
+    <string name="verify_my_qr_note">Действует 5 минут. Показывайте только тому, кто перед вами.</string>
+    <string name="verify_scan_ok">%1$s проверен. Теперь рядом с именем ✓.</string>
+    <string name="verify_scan_bad">Это не код проверки или срок его действия истёк. Попросите показать снова.</string>
+    <string name="verify_badge_on">✓ Проверен при встрече</string>
+    <string name="verify_badge_off">Не проверен. Сравните этот отпечаток при встрече:</string>
+    <string name="verify_mark">Совпадает, отметить как проверенного</string>
+    <string name="verify_unmark">Снять отметку</string>
 </resources>

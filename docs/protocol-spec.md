@@ -315,7 +315,7 @@ First byte is the payload type, the rest is its body.
 | `0x03` | delivered | message ID, UTF-8 |
 | `0x06`, `0x07` | group invite, key update | not in v0.1 |
 | `0x08` | voice frame | not in v0.1 |
-| `0x10`, `0x11` | verify challenge, response | not in v0.1 |
+| `0x10`, `0x11` | verify challenge, response | §16.2 |
 | `0x12` | vouch | not in v0.1 |
 | `0x20` (also `0x09`) | private file | not in v0.1 |
 | `0x21` | authenticated peer state | version `0x01`, then TLVs `0x01` capabilities (1–8 bytes), `0x02` Ed25519 key (32) |
@@ -569,4 +569,32 @@ of itself. The store is persisted with the §13.7 state and restored on
 start, minus what aged out. The first request to a neighbour goes 5 s after
 its announce identifies the link; afterwards one request per direct
 neighbour every 15 s. A panic wipe clears the store.
+
+## 16. In-person verification (v0.5)
+
+### 16.1 QR link
+
+`bitchat://verify?v=1&noise=<hex>&sign=<hex>&nick=<name>&ts=<unix s>&nonce=<b64url>&sig=<hex>[&npub=<npub>]`,
+values percent-encoded (a space is `%20`; a literal `+` is not a space).
+`noise` and `sign` are the Noise static and Ed25519 public keys, `nonce`
+16 random bytes in unpadded base64url. `sig` is Ed25519, by the `sign`
+key, over the canonical bytes: each of `"bitchat-verify-v1"`, `v`,
+lowercase `noise`, lowercase `sign`, `npub` (empty if absent), `nick`, `ts`
+and `nonce`, as UTF-8 prefixed by a 1-byte length (truncated at 255). A
+scanner accepts the link if `|now − ts| ≤ 300 s` and the signature verifies,
+then marks the fingerprint SHA-256(`noise`) as verified.
+
+### 16.2 Challenge over Noise
+
+After a scan, if the peer is reachable the scanner sends `verifyChallenge`
+(`0x10`) over the Noise session: TLVs with 1-byte type and 1-byte length,
+`0x01` the target's Noise key as lowercase hex ASCII, `0x02` a fresh
+16-byte nonce. The target, if the key is its own, answers `verifyResponse`
+(`0x11`): `0x01` key hex, `0x02` nonce, `0x03` Ed25519 signature over
+`"bitchat-verify-resp-v1"` ‖ len(key hex) ‖ key hex ‖ nonce. The scanner
+checks it against the signing key from the peer's announce.
+
+Verification state is local and never sent. Blocking (also local) drops a
+sender's public and private messages, including courier mail, without a
+delivery receipt; the phone still relays their packets.
 

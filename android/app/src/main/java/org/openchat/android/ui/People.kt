@@ -1,6 +1,10 @@
 package org.openchat.android.ui
 
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +18,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.QRCodeWriter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -61,7 +74,15 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                         val fp = meshFingerprint(person.peerHex)
                         val blocked = fp != null && fp in social.blocked
                         if (fp != null) {
-                            Text(fp.chunked(4).take(8).joinToString(" "), fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            val verified = fp in social.verified
+                            Text(
+                                stringResource(if (verified) R.string.verify_badge_on else R.string.verify_badge_off),
+                                fontSize = 13.sp, color = if (verified) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(fp.chunked(4).joinToString(" "), fontFamily = FontFamily.Monospace, fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            TextButton(onClick = { Social.setVerified(fp, !verified) }) {
+                                Text(stringResource(if (verified) R.string.verify_unmark else R.string.verify_mark))
+                            }
                         }
                         if (!blocked) {
                             FilledTonalButton(onClick = { onDismiss(); onMessage(person.peerHex) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.peer_message)) }
@@ -86,6 +107,46 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
             }
         },
     )
+}
+
+/** My verification QR (§16), rebuilt each time it is shown since it is valid for five minutes. */
+@Composable
+fun MyQrDialog(onDismiss: () -> Unit) {
+    val url = remember { ChatRepository.controller?.myVerifyUrl() }
+    val bitmap = remember(url) { url?.let { qrBitmap(it, 720) } }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+        title = { Text(stringResource(R.string.verify_my_qr)) },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (bitmap != null) {
+                    Image(bitmap, contentDescription = null, modifier = Modifier.fillMaxWidth().aspectRatio(1f).background(Color.White).padding(8.dp))
+                }
+                Text(stringResource(R.string.verify_my_qr_note), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+    )
+}
+
+/** Black-on-white QR code; the white quiet zone comes from the caller's background. */
+fun qrBitmap(text: String, size: Int): ImageBitmap {
+    val m = QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size, mapOf(EncodeHintType.MARGIN to 1, EncodeHintType.ERROR_CORRECTION to "M"))
+    val pixels = IntArray(m.width * m.height) { i -> if (m.get(i % m.width, i / m.width)) android.graphics.Color.BLACK else android.graphics.Color.WHITE }
+    return Bitmap.createBitmap(pixels, m.width, m.height, Bitmap.Config.ARGB_8888).asImageBitmap()
+}
+
+/** Show my QR, or scan someone else's. */
+@Composable
+fun VerifySection(onScan: () -> Unit) {
+    var show by remember { mutableStateOf(false) }
+    if (show) MyQrDialog { show = false }
+    Text(stringResource(R.string.verify_title), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 24.dp))
+    Text(stringResource(R.string.verify_body), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+        FilledTonalButton(onClick = { show = true }) { Text(stringResource(R.string.verify_show)) }
+        OutlinedButton(onClick = onScan) { Text(stringResource(R.string.verify_scan)) }
+    }
 }
 
 /** Blocked people, listed on the Me tab with a way back. */

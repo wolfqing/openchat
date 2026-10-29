@@ -48,6 +48,8 @@ class Recorder : MeshListener {
     var peers: List<MeshPeer> = emptyList()
     val queued = ArrayList<String>()
     val carried = ArrayList<String>()
+    val verified = ArrayList<String>()
+    override fun onVerified(peerHex: String) { verified += peerHex }
     override fun onPeersChanged(peers: List<MeshPeer>) { this.peers = peers }
     override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long) { publics += "$nickname:$text" }
     override fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) { privates += messageId to text }
@@ -327,5 +329,14 @@ class MeshEngineTest {
         carol.sendPublic("hi")
         net.scheduler.advance(2_000)
         assertEquals(listOf("carol:hi"), net.recorders["bob"]!!.publics)
+    }
+
+    @Test
+    fun verifyChallengeIsAnsweredOverNoise() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        alice.sendVerifyChallenge(carol.myPeerHex)
+        net.scheduler.advance(5_000)
+        assertEquals(listOf(carol.myPeerHex), net.recorders["alice"]!!.verified)
     }
 }

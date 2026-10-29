@@ -93,4 +93,16 @@
     <string name="peer_more">နောက်ထပ်</string>
     <string name="me_blocked_title">ပိတ်ဆို့ထားသူများ</string>
     <string name="mention_notify">%1$s က သင့်ကို ဖော်ပြခဲ့သည်</string>
+    <string name="verify_title">မျက်နှာချင်းဆိုင် အတည်ပြုရန်</string>
+    <string name="verify_body">တွေ့ဆုံချိန် တစ်ဦးကုဒ်ကို တစ်ဦး စကင်ဖတ်ပါ။ ထို့နောက် အမည်ဘေးတွင် ✓ ပြမည်။ bitchat နှင့်လည်း အသုံးပြုနိုင်သည်။</string>
+    <string name="verify_show">ကျွန်ုပ်၏ကုဒ် ပြရန်</string>
+    <string name="verify_scan">ကုဒ် စကင်ဖတ်ရန်</string>
+    <string name="verify_my_qr">ကျွန်ုပ်၏ အတည်ပြုကုဒ်</string>
+    <string name="verify_my_qr_note">၅ မိနစ် သက်တမ်းရှိသည်။ ရှေ့ရှိလူကိုသာ ပြပါ။</string>
+    <string name="verify_scan_ok">%1$s ကို အတည်ပြုပြီး။ ယခု အမည်ဘေးတွင် ✓ ပြမည်။</string>
+    <string name="verify_scan_bad">မှန်ကန်သော အတည်ပြုကုဒ် မဟုတ်ပါ သို့မဟုတ် သက်တမ်းကုန်သွားပြီ။ ထပ်ပြခိုင်းပါ။</string>
+    <string name="verify_badge_on">✓ မျက်နှာချင်းဆိုင် အတည်ပြုပြီး</string>
+    <string name="verify_badge_off">အတည်မပြုရသေးပါ။ ဤလက်ဗွေကို မျက်နှာချင်းဆိုင် တိုက်စစ်ပါ-</string>
+    <string name="verify_mark">ကိုက်ညီသည်၊ အတည်ပြုပြီးဟု မှတ်ရန်</string>
+    <string name="verify_unmark">အတည်ပြုချက် ဖယ်ရန်</string>
 </resources>

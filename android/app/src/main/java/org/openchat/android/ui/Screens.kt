@@ -207,6 +207,9 @@ fun MainScreen(
     onRequestLocation: () -> Unit,
     onShareApp: () -> Unit,
     onLanguage: (AppLanguage.Choice) -> Unit,
+    onScan: () -> Unit,
+    scanResult: String?,
+    onScanResultSeen: () -> Unit,
 ) {
     var tab by rememberSaveable { mutableStateOf(Tab.NEARBY) }
     var openChat by rememberSaveable { mutableStateOf<String?>(null) } // conversation key
@@ -232,6 +235,13 @@ fun MainScreen(
         )
     }
 
+    if (scanResult != null) {
+        AlertDialog(
+            onDismissRequest = onScanResultSeen,
+            confirmButton = { TextButton(onClick = onScanResultSeen) { Text(stringResource(R.string.ok)) } },
+            text = { Text(if (scanResult.isEmpty()) stringResource(R.string.verify_scan_bad) else stringResource(R.string.verify_scan_ok, scanResult)) },
+        )
+    }
     person?.let { p -> PersonSheet(p, onDismiss = { person = null }, onMessage = { openChat = Conversation.Private(it).key }) }
 
     val chat = openChat
@@ -286,7 +296,7 @@ fun MainScreen(
                 )
                 Tab.PRIVATE -> PrivateList(onOpen = { openChat = Conversation.Private(it).key })
                 Tab.LOCATION -> LocationPane(onRequestLocation, onOpen = { openChat = Conversation.Geo(it).key })
-                Tab.ME -> MePane(onShareApp, onLanguage)
+                Tab.ME -> MePane(onShareApp, onLanguage, onScan)
             }
         }
     }
@@ -294,11 +304,12 @@ fun MainScreen(
 
 /** Name with its #xxxx suffix set smaller, monospaced and muted, so the name itself leads. */
 @Composable
-fun labelText(label: PeerLabel, teleported: Boolean = false): AnnotatedString = buildAnnotatedString {
+fun labelText(label: PeerLabel, teleported: Boolean = false, verified: Boolean = false): AnnotatedString = buildAnnotatedString {
     append(label.name)
     withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal, fontSize = 0.8.em, color = MaterialTheme.colorScheme.onSurfaceVariant)) {
         append(label.suffix)
     }
+    if (verified) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" ✓") }
     if (teleported) append(" ✈")
 }
 
@@ -408,7 +419,7 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = if (m.mine) Alignment.End else Alignment.Start) {
         if (!m.mine) {
             Text(
-                labelText(PeerLabel.of(m), m.teleported), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                labelText(PeerLabel.of(m), m.teleported, verified = !m.conversation.startsWith("geo:") && Social.state.collectAsState().value.isVerifiedPeer(m.senderKey)), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.let { if (onSenderClick != null) it.clickable { onSenderClick(m) } else it },
             )
         }
@@ -510,7 +521,7 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
             title = {
                 Column {
-                    PanicTitle(labelText(label), onPanic)
+                    PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex)), onPanic)
                     Text(
                         stringResource(if (social.isBlockedPeer(peerHex)) R.string.peer_blocked_short else if (peer != null) R.string.dm_status_here else R.string.dm_status_away),
                         fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -542,6 +553,7 @@ private fun PrivateList(onOpen: (String) -> Unit) {
     val names by ChatRepository.names.collectAsState()
     val unread by ChatRepository.unread.collectAsState()
     val me by ChatRepository.mesh.collectAsState()
+    val social by Social.state.collectAsState()
     val withHistory = all.keys.filter { it.startsWith("dm:") }.map { it.removePrefix("dm:") }
     val ids = (peers.map { it.peerIdHex } + withHistory).distinct().filter { it != me.myPeerHex }
     if (ids.isEmpty()) {
@@ -558,7 +570,7 @@ private fun PrivateList(onOpen: (String) -> Unit) {
                 Box(Modifier.size(10.dp).background(if (peer != null) Color(0xFF2EB872) else Color.Gray, CircleShape))
                 Spacer(Modifier.size(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex)), fontWeight = FontWeight.SemiBold)
+                    Text(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex), verified = social.isVerifiedPeer(hex)), fontWeight = FontWeight.SemiBold)
                     Text(
                         last?.text ?: stringResource(if (peer?.direct == true) R.string.dm_direct else if (peer != null) R.string.dm_relayed else R.string.dm_away),
                         fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
@@ -659,7 +671,7 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
 // ---------------------------------------------------------------- me
 
 @Composable
-private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> Unit) {
+private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> Unit, onScan: () -> Unit) {
     val mesh by ChatRepository.mesh.collectAsState()
     var nick by rememberSaveable(mesh.myNickname) { mutableStateOf(mesh.myNickname) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
@@ -691,6 +703,7 @@ private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> U
         Text(mesh.fingerprint.chunked(4).joinToString(" "), fontFamily = FontFamily.Monospace, fontSize = 13.sp, lineHeight = 20.sp)
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.me_device_id, mesh.myPeerHex), fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        VerifySection(onScan)
         if (mesh.carriedCount > 0) {
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.me_carrying, mesh.carriedCount), fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)

@@ -97,4 +97,16 @@
     <string name="peer_more">بیشتر</string>
     <string name="me_blocked_title">مسدودشده‌ها</string>
     <string name="mention_notify">%1$s از شما نام برد</string>
+    <string name="verify_title">تأیید حضوری</string>
+    <string name="verify_body">هنگام دیدار کد یکدیگر را اسکن کنید. سپس کنار نامش ✓ نشان داده می‌شود. با bitchat هم کار می‌کند.</string>
+    <string name="verify_show">نمایش کد من</string>
+    <string name="verify_scan">اسکن کد</string>
+    <string name="verify_my_qr">کد تأیید من</string>
+    <string name="verify_my_qr_note">۵ دقیقه معتبر است. فقط به کسی که روبه‌رویتان است نشان دهید.</string>
+    <string name="verify_scan_ok">%1$s تأیید شد. اکنون کنار نامش ✓ هست.</string>
+    <string name="verify_scan_bad">این کد تأیید معتبر نیست یا منقضی شده. بخواهید دوباره نشانش دهد.</string>
+    <string name="verify_badge_on">✓ حضوری تأیید شده</string>
+    <string name="verify_badge_off">تأیید نشده. این اثر انگشت را حضوری مقایسه کنید:</string>
+    <string name="verify_mark">یکسان است، علامت تأیید بزن</string>
+    <string name="verify_unmark">حذف تأیید</string>
 </resources>

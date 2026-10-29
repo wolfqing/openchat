@@ -93,4 +93,16 @@
     <string name="peer_more">Lainnya</string>
     <string name="me_blocked_title">Diblokir</string>
     <string name="mention_notify">%1$s menyebut Anda</string>
+    <string name="verify_title">Verifikasi langsung</string>
+    <string name="verify_body">Saling pindai kode saat bertemu. Namanya lalu tampil dengan ✓ di ponsel ini. Juga berfungsi dengan bitchat.</string>
+    <string name="verify_show">Tampilkan kode saya</string>
+    <string name="verify_scan">Pindai kode</string>
+    <string name="verify_my_qr">Kode verifikasi saya</string>
+    <string name="verify_my_qr_note">Berlaku 5 menit. Tunjukkan hanya ke orang di depan Anda.</string>
+    <string name="verify_scan_ok">%1$s terverifikasi. Namanya kini tampil dengan ✓.</string>
+    <string name="verify_scan_bad">Ini bukan kode verifikasi yang valid atau sudah kedaluwarsa. Minta ia menampilkannya lagi.</string>
+    <string name="verify_badge_on">✓ Terverifikasi langsung</string>
+    <string name="verify_badge_off">Belum terverifikasi. Cocokkan sidik jari ini secara langsung:</string>
+    <string name="verify_mark">Cocok, tandai terverifikasi</string>
+    <string name="verify_unmark">Hapus verifikasi</string>
 </resources>

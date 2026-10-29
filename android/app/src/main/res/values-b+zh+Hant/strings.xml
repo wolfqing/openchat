@@ -93,4 +93,16 @@
     <string name="peer_more">更多</string>
     <string name="me_blocked_title">已封鎖的人</string>
     <string name="mention_notify">%1$s 提到了你</string>
+    <string name="verify_title">當面驗證</string>
+    <string name="verify_body">見面時互掃 QR 碼，之後對方名字旁會顯示 ✓。和 bitchat 也能互掃。</string>
+    <string name="verify_show">顯示我的 QR 碼</string>
+    <string name="verify_scan">掃描</string>
+    <string name="verify_my_qr">我的驗證 QR 碼</string>
+    <string name="verify_my_qr_note">5 分鐘內有效。只給面前的人掃。</string>
+    <string name="verify_scan_ok">已驗證 %1$s，對方名字旁現在會顯示 ✓。</string>
+    <string name="verify_scan_bad">這不是有效的驗證 QR 碼，或已過期。請對方重新打開。</string>
+    <string name="verify_badge_on">✓ 已當面驗證</string>
+    <string name="verify_badge_off">未驗證。當面核對下面的指紋：</string>
+    <string name="verify_mark">一致，標記為已驗證</string>
+    <string name="verify_unmark">取消驗證</string>
 </resources>

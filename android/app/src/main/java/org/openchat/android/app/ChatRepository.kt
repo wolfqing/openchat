@@ -77,6 +77,10 @@ interface ChatController {
     fun markRead(peerHex: String, messageIds: List<String>)
     /** Noise static key of a mesh peer we have heard from, if known. */
     fun noiseKey(peerHex: String): ByteArray?
+    /** A fresh signed verification link for my QR code (§16). */
+    fun myVerifyUrl(): String
+    /** Checks a scanned QR; on success marks that identity verified and returns its nickname. */
+    fun verifyScanned(url: String): String?
     fun setNickname(name: String)
     fun joinGeo(geohash: String, teleported: Boolean)
     fun leaveGeo(geohash: String)

@@ -104,4 +104,16 @@
     <string name="peer_more">更多</string>
     <string name="me_blocked_title">已屏蔽的人</string>
     <string name="mention_notify">%1$s 提到了你</string>
+    <string name="verify_title">当面验证</string>
+    <string name="verify_body">见面时互扫二维码，之后对方名字旁会显示 ✓。和 bitchat 也能互扫。</string>
+    <string name="verify_show">显示我的二维码</string>
+    <string name="verify_scan">扫一扫</string>
+    <string name="verify_my_qr">我的验证二维码</string>
+    <string name="verify_my_qr_note">5 分钟内有效。只给面前的人扫。</string>
+    <string name="verify_scan_ok">已验证 %1$s，对方名字旁现在会显示 ✓。</string>
+    <string name="verify_scan_bad">这不是有效的验证二维码，或已过期。请对方重新打开。</string>
+    <string name="verify_badge_on">✓ 已当面验证</string>
+    <string name="verify_badge_off">未验证。当面核对下面的指纹：</string>
+    <string name="verify_mark">一致，标记为已验证</string>
+    <string name="verify_unmark">取消验证</string>
 </resources>

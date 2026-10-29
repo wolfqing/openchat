@@ -33,6 +33,14 @@
   mentions me gets an orange outline and a notification when that chat is
   not open (only the suffixed form counts when someone nearby shares my
   name). Typing "@" in any composer offers the names around. 3 new tests.
+- In-person verification, compatible with bitchat's `bitchat://verify`
+  QR ([spec §16](docs/protocol-spec.md)). The Me tab shows a signed code
+  valid for five minutes and scans others (camera via
+  zxing-android-embedded, Apache-2.0). A valid scan marks that identity
+  verified, and if the person is in range a Noise challenge makes them
+  prove they hold the key. Verified names show ✓. The person card shows the
+  full fingerprint with "They match, mark as verified" for a manual check.
+  5 new tests.
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.4.0 (preview) — 2026-10-29

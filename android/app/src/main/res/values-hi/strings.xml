@@ -97,4 +97,16 @@
     <string name="peer_more">और</string>
     <string name="me_blocked_title">ब्लॉक किए गए</string>
     <string name="mention_notify">%1$s ने आपका ज़िक्र किया</string>
+    <string name="verify_title">आमने-सामने सत्यापित करें</string>
+    <string name="verify_body">मिलने पर एक-दूसरे का कोड स्कैन करें। फिर इस फ़ोन पर उनके नाम के साथ ✓ दिखेगा। bitchat के साथ भी काम करता है।</string>
+    <string name="verify_show">मेरा कोड दिखाएँ</string>
+    <string name="verify_scan">कोड स्कैन करें</string>
+    <string name="verify_my_qr">मेरा सत्यापन कोड</string>
+    <string name="verify_my_qr_note">5 मिनट तक मान्य। केवल सामने वाले व्यक्ति को दिखाएँ।</string>
+    <string name="verify_scan_ok">%1$s सत्यापित। अब उनके नाम के साथ ✓ दिखेगा।</string>
+    <string name="verify_scan_bad">यह मान्य सत्यापन कोड नहीं है या इसकी अवधि खत्म हो गई। उनसे दोबारा दिखाने को कहें।</string>
+    <string name="verify_badge_on">✓ आमने-सामने सत्यापित</string>
+    <string name="verify_badge_off">सत्यापित नहीं। यह फ़िंगरप्रिंट आमने-सामने मिलाएँ:</string>
+    <string name="verify_mark">मेल खाते हैं, सत्यापित चिह्नित करें</string>
+    <string name="verify_unmark">सत्यापन हटाएँ</string>
 </resources>

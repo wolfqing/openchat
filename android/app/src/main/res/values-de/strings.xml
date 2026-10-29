@@ -97,4 +97,16 @@
     <string name="peer_more">Mehr</string>
     <string name="me_blocked_title">Blockiert</string>
     <string name="mention_notify">%1$s hat dich erwähnt</string>
+    <string name="verify_title">Persönlich bestätigen</string>
+    <string name="verify_body">Scannt beim Treffen gegenseitig eure Codes. Danach steht ✓ neben dem Namen. Funktioniert auch mit bitchat.</string>
+    <string name="verify_show">Meinen Code zeigen</string>
+    <string name="verify_scan">Code scannen</string>
+    <string name="verify_my_qr">Mein Bestätigungscode</string>
+    <string name="verify_my_qr_note">5 Minuten gültig. Nur der Person vor dir zeigen.</string>
+    <string name="verify_scan_ok">%1$s bestätigt. Der Name zeigt jetzt ✓.</string>
+    <string name="verify_scan_bad">Kein gültiger Bestätigungscode oder abgelaufen. Bitte erneut anzeigen lassen.</string>
+    <string name="verify_badge_on">✓ Persönlich bestätigt</string>
+    <string name="verify_badge_off">Nicht bestätigt. Vergleicht diesen Fingerabdruck persönlich:</string>
+    <string name="verify_mark">Stimmt überein, als bestätigt markieren</string>
+    <string name="verify_unmark">Bestätigung entfernen</string>
 </resources>

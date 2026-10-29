@@ -101,4 +101,16 @@
     <string name="peer_more">Más</string>
     <string name="me_blocked_title">Bloqueados</string>
     <string name="mention_notify">%1$s te mencionó</string>
+    <string name="verify_title">Verificar en persona</string>
+    <string name="verify_body">Escaneen sus códigos al verse. Su nombre mostrará ✓ en este teléfono. Funciona también con bitchat.</string>
+    <string name="verify_show">Mostrar mi código</string>
+    <string name="verify_scan">Escanear código</string>
+    <string name="verify_my_qr">Mi código de verificación</string>
+    <string name="verify_my_qr_note">Válido 5 minutos. Muéstralo solo a quien tienes delante.</string>
+    <string name="verify_scan_ok">%1$s verificado. Su nombre ahora muestra ✓.</string>
+    <string name="verify_scan_bad">No es un código de verificación válido o caducó. Pide que lo muestre de nuevo.</string>
+    <string name="verify_badge_on">✓ Verificado en persona</string>
+    <string name="verify_badge_off">Sin verificar. Compara esta huella en persona:</string>
+    <string name="verify_mark">Coinciden, marcar como verificado</string>
+    <string name="verify_unmark">Quitar verificación</string>
 </resources>
