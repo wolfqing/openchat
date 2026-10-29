@@ -51,6 +51,8 @@ body {
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+/* every nickname carries its #xxxx suffix, so duplicate names stay distinct */
+.tag { font-family: var(--font-mono); font-size: .78em; font-weight: 400; color: var(--muted); }
 
 /* ---------- brief ---------- */
 .brief { max-width: 1140px; margin: 0 auto 28px; display: grid; gap: 18px; }
@@ -187,6 +189,7 @@ figure { margin: 0; }
 
 .toast { position: absolute; left: 12px; right: 12px; top: 100px; background: var(--ink); color: var(--screen); border-radius: 12px; padding: 10px 14px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
 .toast .emblem { width: 24px; height: 24px; }
+.toast .tag { color: inherit; opacity: .7; }
 
 .notes { max-width: 1140px; margin: 36px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px 32px; }
 .notes h4 { margin: 0 0 4px; font-size: 14px; }
@@ -242,7 +245,7 @@ figure { margin: 0; }
       </div>
       <nav class="nav" aria-hidden="true"></nav>
     </div>
-    <figcaption data-i18n-html="cap1"><b>附近频道</b>：像公告板，不用气泡。每条消息前是发言人的徽记，下方小字写经过几跳。两个“苏轼”重名，徽记不同。</figcaption>
+    <figcaption data-i18n-html="cap1"><b>附近频道</b>：像公告板，不用气泡。每条消息前是发言人的徽记，下方小字写经过几跳。每个名字后面都带 #xxxx（peer ID 前四位），两个苏轼靠 #e887 和 #0c3b 区分，徽记也不同。</figcaption>
   </figure>
 
   <!-- 2. private chat -->
@@ -349,7 +352,7 @@ figure { margin: 0; }
       nearby: '附近', nearbySub: '范围内所有人都能看到', public: '公开', enc: '加密',
       bandPub: '<span class="pulse"></span><span>直连 <b>3</b></span><span class="sep">|</span><span>可达 <b>11</b></span><span class="ago">12 秒前</span>',
       pubPh: '对附近所有人说…',
-      cap1: '<b>附近频道</b>：像公告板，不用气泡。每条消息前是发言人的徽记，下方小字写经过几跳。两个“苏轼”重名，徽记不同。',
+      cap1: '<b>附近频道</b>：像公告板，不用气泡。每条消息前是发言人的徽记，下方小字写经过几跳。每个名字后面都带 #xxxx（peer ID 前四位），两个苏轼靠 #e887 和 #0c3b 区分，徽记也不同。',
       cap2: '<b>私信</b>：发出的消息下面是送达路径。发一条试试，看它一步步走完。点头像核对指纹。',
       cap3: '<b>附近没人</b>：这是最常见的状态，所以最用心。雷达说明 App 在工作，下面每条都是能马上做的事。',
       fpBody: '当面对比两台手机上的图案和数字。一样，就说明中间没有人冒充。',
@@ -392,7 +395,7 @@ figure { margin: 0; }
       nearby: 'Nearby', nearbySub: 'Everyone in range can see this', public: 'Public', enc: 'Encrypted',
       bandPub: '<span class="pulse"></span><span>Direct <b>3</b></span><span class="sep">|</span><span>Reach <b>11</b></span><span class="ago">12s ago</span>',
       pubPh: 'Say something to everyone nearby…',
-      cap1: '<b>Nearby channel</b>: a bulletin board, not chat bubbles. Each post starts with the sender’s emblem, and the small line under it shows the hop count. Two people are both called “Curie”, and their emblems differ.',
+      cap1: '<b>Nearby channel</b>: a bulletin board, not chat bubbles. Each post starts with the sender’s emblem, and the small line under it shows the hop count. Every name carries a #xxxx suffix (the first four hex digits of the peer ID), so the two Curies show as #e887 and #0c3b, with different emblems.',
       cap2: '<b>Private chat</b>: each sent message shows its delivery path. Send one and watch it go step by step. Tap the avatar to verify the fingerprint.',
       cap3: '<b>Nobody nearby</b>: the most common state, so it gets the most care. The radar shows the app is working, and every line below is something you can do right now.',
       fpBody: 'Compare the pattern and the numbers on both phones in person. If they match, nobody in between is pretending to be them.',
@@ -468,6 +471,9 @@ figure { margin: 0; }
   // Keys stay fixed across languages, so each person keeps the same emblem.
   const keys = { zh: 'a1f4c09e77b2', lb: '5d02be91c3aa', ss: 'e88713f0b45c', ss2: '0c3b9e21d7f8', me: '9b17aa30e6d1' };
   const nameOf = who => S().names[who === 'ss2' ? 'ss' : who];
+  const tagOf = who => '#' + keys[who].slice(0, 4);
+  const nameTag = who => `${esc(nameOf(who))}<span class="tag">${tagOf(who)}</span>`;
+  const plainName = who => nameOf(who) + tagOf(who);
 
   // ---------- nav ----------
   const navIcons = [
@@ -489,7 +495,7 @@ figure { margin: 0; }
     const key = keys[who], mine = who === 'me';
     return `<article class="post${mine ? ' mine' : ''}">
       ${emblem(key)}
-      <div class="who"><span class="name" style="color:${mine ? 'var(--ink)' : `hsl(${hueOf(key)} 62% var(--em-l))`}">${nameOf(who)}</span><span class="tag">#${key.slice(0, 4)}</span><span class="time">${time}</span></div>
+      <div class="who"><span class="name" style="color:${mine ? 'var(--ink)' : `hsl(${hueOf(key)} 62% var(--em-l))`}">${nameTag(who)}</span><span class="time">${time}</span></div>
       <div class="text">${esc(text)}</div>
       <div class="hops">${mine ? S().broadcast : hops === 0 ? S().direct : S().hops(hops)}</div>
     </article>`;
@@ -527,13 +533,13 @@ figure { margin: 0; }
   const inMsg = (text, time, hops) => `<div class="msg in"><div class="bubble">${esc(text)}</div><div class="meta"><span>${time}</span><span>${S().hops(hops)}</span></div></div>`;
   const scrollDm = () => { const f = dmFeed.parentElement; f.scrollTop = f.scrollHeight; };
   function renderDm() {
-    const s = S(), n = s.names.zh;
-    document.getElementById('dm-name').textContent = n;
+    const s = S(), n = nameTag('zh');
+    document.getElementById('dm-name').innerHTML = n;
     document.getElementById('dm-sub').textContent = verified ? s.dmVerified : s.dmSub;
     document.getElementById('dm-band').innerHTML = s.dmBand(n);
-    document.getElementById('dm-input').placeholder = s.dmPh(n);
-    document.getElementById('fp-title').textContent = s.fpTitle(n);
-    document.getElementById('dm-emblem').setAttribute('aria-label', s.fpTitle(n));
+    document.getElementById('dm-input').placeholder = s.dmPh(plainName('zh'));
+    document.getElementById('fp-title').innerHTML = s.fpTitle(n);
+    document.getElementById('dm-emblem').setAttribute('aria-label', s.fpTitle(plainName('zh')));
     dmFeed.innerHTML = `<div class="dayline">${s.dmDay}</div>` + inMsg(s.dm[0], '14:25', 2);
     dmFeed.append(outMsg(s.dm[1], '14:26', 3));
     dmFeed.insertAdjacentHTML('beforeend', inMsg(s.dm[2], '14:27', 2));
@@ -591,7 +597,7 @@ figure { margin: 0; }
     document.getElementById('empty-band-text').innerHTML = joined ? s.direct1 : s.scanning;
     scanEl.textContent = joined ? s.justNow : s.scanned(fmt(secs));
     document.getElementById('empty-title').textContent = joined ? s.joinedTitle : s.emptyTitle;
-    document.getElementById('empty-lede').textContent = joined ? s.joinedLede(s.names.lb) : s.emptyLede;
+    document.getElementById('empty-lede').textContent = joined ? s.joinedLede(plainName('lb')) : s.emptyLede;
     simBtn.textContent = joined ? s.reset : s.sim;
   }
   simBtn.addEventListener('click', () => {
@@ -600,7 +606,7 @@ figure { margin: 0; }
       clearInterval(scanning);
       const t = document.createElement('div');
       t.className = 'toast'; t.setAttribute('role', 'status');
-      t.innerHTML = `${emblem(keys.lb, 24)}<span>${S().toast(S().names.lb)}</span>`;
+      t.innerHTML = `${emblem(keys.lb, 24)}<span>${S().toast(nameTag('lb'))}</span>`;
       phoneEmpty.append(t); setTimeout(() => t.remove(), 2600);
     } else { secs = 0; startScan(); }
     renderEmpty();

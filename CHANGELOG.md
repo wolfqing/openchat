@@ -12,7 +12,9 @@
   <https://claude.ai/artifact/QBFVpgvNTgxqF1RhRwDG18>.
 - The prototype has a Chinese/English switch. Sample nicknames are
   historical figures (张衡, 李白, 苏轼; Lovelace, Darwin, Curie), so none
-  of them reads as a real user.
+  of them reads as a real user. Every name carries a `#xxxx` suffix
+  (the first four hex digits of the peer ID), which tells duplicate
+  names apart.
 - No app code changed. Only the signal band, delivery path and empty
   state are planned before device testing.
 
