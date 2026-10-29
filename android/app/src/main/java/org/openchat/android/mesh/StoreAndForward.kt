@@ -3,6 +3,8 @@ package org.openchat.android.mesh
 import org.openchat.android.core.ByteReader
 import org.openchat.android.core.ByteWriter
 import org.openchat.android.core.CourierEnvelope
+import org.openchat.android.core.Packet
+import org.openchat.android.core.PacketCodec
 import org.openchat.android.core.hexToBytes
 import org.openchat.android.core.toHex
 
@@ -28,8 +30,13 @@ class CarriedEnvelope(
     var lastRemoteHandover: Long = 0,
 )
 
-/** Everything the engine keeps across restarts besides the identity (§13.7). */
-class MeshState(val known: Map<String, KnownPeer>, val outbox: List<QueuedMessage>, val carried: List<CarriedEnvelope>) {
+/** Everything the engine keeps across restarts besides the identity (§13.7, §14.6). */
+class MeshState(
+    val known: Map<String, KnownPeer>,
+    val outbox: List<QueuedMessage>,
+    val carried: List<CarriedEnvelope>,
+    val history: List<Packet> = emptyList(),
+) {
     fun serialize(): ByteArray {
         val w = ByteWriter(1024)
         w.u8(VERSION)
@@ -53,18 +60,22 @@ class MeshState(val known: Map<String, KnownPeer>, val outbox: List<QueuedMessag
             w.u8(c.sprayedTo.size); c.sprayedTo.forEach { str(w, it) }
             w.u64(c.lastRemoteHandover)
         }
+        val frames = history.mapNotNull { PacketCodec.encode(it) }
+        w.u16(frames.size)
+        for (f in frames) { w.u16(f.size).bytes(f) }
         return w.toByteArray()
     }
 
     companion object {
-        private const val VERSION = 1
+        private const val VERSION = 2
 
         private fun str(w: ByteWriter, s: String) { val b = s.toByteArray(Charsets.UTF_8); w.u16(b.size).bytes(b) }
         private fun str(r: ByteReader): String? { val n = r.u16() ?: return null; return String(r.bytes(n) ?: return null, Charsets.UTF_8) }
 
         fun deserialize(data: ByteArray): MeshState? {
             val r = ByteReader(data)
-            if (r.u8() != VERSION) return null
+            val version = r.u8() ?: return null
+            if (version < 1 || version > VERSION) return null
             val known = LinkedHashMap<String, KnownPeer>()
             repeat(r.u16() ?: return null) {
                 val hex = str(r) ?: return null
@@ -95,7 +106,14 @@ class MeshState(val known: Map<String, KnownPeer>, val outbox: List<QueuedMessag
                 val remote = r.u64() ?: return null
                 if (env != null) carried.add(CarriedEnvelope(env, dep, stored, env.copies, sprayed, remote))
             }
-            return MeshState(known, outbox, carried)
+            val history = ArrayList<Packet>()
+            if (version >= 2) {
+                repeat(r.u16() ?: return null) {
+                    val frame = r.bytes(r.u16() ?: return null) ?: return null
+                    PacketCodec.decode(frame)?.let { history.add(it) }
+                }
+            }
+            return MeshState(known, outbox, carried, history)
         }
     }
 }

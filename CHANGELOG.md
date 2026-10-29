@@ -1,5 +1,29 @@
 # Changelog
 
+## Android, unreleased
+
+- History sync, wire-compatible with bitchat's `requestSync` gossip
+  ([docs/protocol-spec.md §14](docs/protocol-spec.md)). Every phone keeps
+  the last 15 minutes of public messages (up to 1000) and the latest
+  announce of each peer. Five seconds after a neighbour is identified, and
+  every 15 s after that, it sends the neighbour a Golomb-coded set of the
+  packet IDs it holds; the neighbour replies with the signed packets that
+  are missing, marked `IS_RSR` with TTL 0. So someone who arrives late, or
+  walks from one group to another, sees what was said before. Replies are
+  accepted only from a neighbour asked within the last 30 s, answered at
+  most 8 times per peer per 30 s, and verified like any other message;
+  a departed sender's remembered key still verifies its old messages.
+- The history is stored with the sealed mesh state (format v2, reads v1)
+  and wiped by the triple tap.
+- Only announces and public messages are synced. Fragments, files, group
+  messages, prekey bundles and board posts stay out of scope.
+- 10 new unit tests: packet ID, GCS bitstream against the spec, false-
+  positive rate, newest-first trimming, request TLV encode/decode and
+  tolerance, type flags, a late joiner receiving history one hop from the
+  author, an unsolicited reply being dropped, and history persistence.
+  60 tests in all.
+- Not yet checked on a device or against a bitchat phone.
+
 ## Android v0.4.0 (preview) — 2026-10-29
 
 - Store-and-forward, wire-compatible with bitchat's courier path

@@ -21,6 +21,7 @@ bitchat-android source was never read.
 | Share the APK offline by Bluetooth or Quick Share, no app store | `app/ApkShare.kt` |
 | Mesh keeps running with the screen off (foreground service) | `app/MeshService.kt` |
 | Store-and-forward: outbox plus courier envelopes carried by nearby phones (spec §13) | `core/Courier.kt`, `crypto/Noise.kt` `NoiseX`, `mesh/StoreAndForward.kt`, `mesh/MeshEngine.kt` |
+| History sync: late joiners get the last 15 min of public messages from a neighbour via GCS-filtered `requestSync` (spec §14) | `core/Sync.kt`, `mesh/MeshEngine.kt` |
 
 Not yet: gossip sync of public history, Nostr private messages, files,
 images, voice, groups. See spec §12.
@@ -45,8 +46,9 @@ The APK lands in `app/build/outputs/apk/debug/app-debug.apk`. minSdk 26
 | `CodecTest` | header layout, flags, v2 routes, raw-DEFLATE compression, Noise-only padding, signing bytes, TLVs, stream framing, fragments, relay policy |
 | `NoiseTest` | Noise_XX_25519_ChaChaPoly_SHA256 against the cacophony test vector, bitchat's 4-byte nonce prefix, replay window |
 | `NostrTest` | all BIP-340 official vectors, NIP-01 event IDs, geohash, per-cell keys, relay choice |
-| `MeshEngineTest` | three simulated phones in a line: announces over two hops, relayed public and fragmented messages, private messages with receipts across a relay, crossed handshakes, panic reset, peer expiry, courier carry and handover, outbox persistence |
+| `MeshEngineTest` | three simulated phones in a line: announces over two hops, relayed public and fragmented messages, private messages with receipts across a relay, crossed handshakes, panic reset, peer expiry, courier carry and handover, outbox persistence, a late joiner synced from a neighbour, unsolicited sync replies dropped, history persistence |
 | `CourierTest` | upstream's golden courier vectors (envelope TLV, recipient tag, signing pre-image), Noise X seal and open |
+| `SyncTest` | packet ID, GCS bitstream layout and false-positive rate, newest-first trimming, `requestSync` TLV and type flags |
 
 ## Known risks
 

@@ -5,7 +5,11 @@ import org.openchat.android.core.CourierEnvelope
 import org.openchat.android.core.Deduplicator
 import org.openchat.android.core.FragmentAssembler
 import org.openchat.android.core.Fragmenter
+import org.openchat.android.core.GcsFilter
 import org.openchat.android.core.MessageType
+import org.openchat.android.core.PacketId
+import org.openchat.android.core.SyncRequest
+import org.openchat.android.core.SyncTypes
 import org.openchat.android.core.NoisePayload
 import org.openchat.android.core.NoisePayloadType
 import org.openchat.android.core.Packet
@@ -84,6 +88,7 @@ class MeshEngine(
         val signingKey: ByteArray,
         var lastSeen: Long,
         var directLinks: MutableSet<String> = mutableSetOf(),
+        var announce: Packet? = null, // latest verified announce, served to sync requests (§14.4)
     )
 
     private class Session(val handshake: HandshakeXX?) {
@@ -111,6 +116,12 @@ class MeshEngine(
     private val seenIds = LinkedHashSet<String>()   // private message IDs already delivered to the listener
     private val acked = LinkedHashMap<String, Int>() // message ID -> best receipt seen (1 delivered, 2 read)
     private val pendingAcks = HashMap<String, MutableSet<String>>()
+    // History sync (§14).
+    private val history = LinkedHashMap<String, Packet>() // packet ID hex -> verified public message
+    private var myAnnounce: Packet? = null
+    private val pendingSync = HashMap<String, Long>()     // peer hex -> when we last asked it
+    private val syncReplies = HashMap<String, ArrayList<Long>>() // peer hex -> times we answered it
+    private var lastSyncRound = 0L
     private var lastPrune = 0L
     private var lastAnnounce = 0L
     private var nextAnnounceDue = 0L
@@ -119,13 +130,15 @@ class MeshEngine(
     val myPeerHex get() = identity.peerIdHex
     val carriedCount get() = carried.size
     val outboxCount get() = outbox.size
+    val historyCount get() = history.size
 
-    fun exportState() = MeshState(HashMap(known), outbox.values.toList(), carried.toList())
+    fun exportState() = MeshState(HashMap(known), outbox.values.toList(), carried.toList(), history.values.toList())
 
     fun importState(s: MeshState) {
         known.putAll(s.known)
         s.outbox.forEach { outbox[it.messageId] = it }
         carried.addAll(s.carried)
+        s.history.forEach { storeHistory(it) }
         prune(scheduler.now())
     }
 
@@ -150,6 +163,7 @@ class MeshEngine(
         identity = newIdentity
         peers.clear(); sessions.clear(); pendingNoise.clear(); lastHandshakeStart.clear(); earlyCiphertexts.clear()
         known.clear(); outbox.clear(); carried.clear(); seenIds.clear(); acked.clear(); pendingAcks.clear()
+        history.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
         pendingRelays.values.forEach { it.cancel() }; pendingRelays.clear()
         dedup.clear()
         assembler = FragmentAssembler(clock = scheduler::now)
@@ -171,6 +185,7 @@ class MeshEngine(
         expirePeers(now)
         rekeyOldSessions(now)
         if (now - lastPrune > 30_000) { lastPrune = now; prune(now) }
+        if (now - lastSyncRound >= SYNC_INTERVAL_MS) { lastSyncRound = now; syncRound() }
         scheduler.schedule(1000) { tick() }
     }
 
@@ -205,6 +220,7 @@ class MeshEngine(
         val p = sign(Packet(type = MessageType.MESSAGE, senderId = identity.peerId, timestamp = scheduler.now(), payload = text.toByteArray(Charsets.UTF_8)))
             ?: return
         dedup.markIfNew(Deduplicator.key(p))
+        storeHistory(p)
         broadcast(p, exclude = null)
     }
 
@@ -250,6 +266,7 @@ class MeshEngine(
         val payload = Announcement(identity.nickname, identity.noise.publicKey, identity.signing.publicKey, neighbors).encode() ?: return
         val p = sign(Packet(type = MessageType.ANNOUNCE, senderId = identity.peerId, timestamp = now, payload = payload)) ?: return
         dedup.markIfNew(Deduplicator.key(p))
+        myAnnounce = p
         lastAnnounce = now
         nextAnnounceDue = now + when {
             links.isEmpty() -> 4_000L
@@ -274,6 +291,8 @@ class MeshEngine(
     // ---------------------------------------------------------------- receive pipeline
 
     private fun receive(p: Packet, linkId: String?, relayable: Boolean = true) {
+        // A sync reply is only taken from a neighbour we asked recently (§14.5).
+        if (p.isRsr && !solicited(linkId)) return
         if (p.type == MessageType.FRAGMENT) {
             // Relay fragments independently, and try to reassemble locally.
             if (!dedup.markIfNew(Deduplicator.key(p))) { pendingRelays.remove(Deduplicator.key(p))?.cancel(); return }
@@ -296,6 +315,7 @@ class MeshEngine(
             MessageType.NOISE_HANDSHAKE -> if (forMe) { handleHandshake(senderHex, p.payload); return }
             MessageType.NOISE_ENCRYPTED -> if (forMe) { handleEncrypted(senderHex, p.payload); return }
             MessageType.COURIER_ENVELOPE -> if (forMe) { handleCourier(p, linkId); return }
+            MessageType.REQUEST_SYNC -> { if (forMe || p.isBroadcast) handleSyncRequest(p, linkId); return }
         }
         // Reassembled packets were already relayed as fragments.
         if (relayable && linkId != null) maybeRelay(p, linkId)
@@ -329,6 +349,7 @@ class MeshEngine(
         val changed = existing == null || existing.nickname != a.nickname
         state.nickname = a.nickname
         state.lastSeen = now
+        if ((state.announce?.timestamp ?: 0) <= p.timestamp) state.announce = p
         // An announce at full TTL straight off a link came from that link's device.
         var newlyDirect = false
         if (linkId != null && p.ttl >= Packet.DEFAULT_TTL) {
@@ -338,6 +359,7 @@ class MeshEngine(
                 state.directLinks.add(linkId)
                 newlyDirect = true
                 publishPeers()
+                scheduler.schedule(INITIAL_SYNC_DELAY_MS) { if (links[linkId]?.peerHex == hex) requestSyncFrom(hex, linkId) }
             }
         }
         if (changed) publishPeers()
@@ -362,13 +384,96 @@ class MeshEngine(
 
     private fun handlePublic(p: Packet): Boolean {
         val hex = p.senderId.toHex()
-        val peer = peers[hex] ?: return false
-        if (!verify(p, peer.signingKey)) return false
-        if (scheduler.now() - p.timestamp > 900_000) return false
+        // A synced message may come from a peer that already left; its remembered key still verifies it.
+        val peer = peers[hex]
+        val signingKey = peer?.signingKey ?: known[hex]?.signingKey ?: return false
+        if (!verify(p, signingKey)) return false
+        if (!isFresh(p, scheduler.now())) return false
         val text = try { String(p.payload, Charsets.UTF_8) } catch (e: Exception) { return false }
-        peer.lastSeen = scheduler.now()
-        listener.onPublicMessage(hex, peer.nickname, text, p.timestamp)
+        if (peer != null && !p.isRsr) peer.lastSeen = scheduler.now()
+        if (p.isBroadcast) storeHistory(p)
+        listener.onPublicMessage(hex, peer?.nickname ?: known[hex]!!.nickname, text, p.timestamp)
         return true
+    }
+
+    // ---------------------------------------------------------------- history sync (§14)
+
+    private fun isFresh(p: Packet, now: Long) = now - p.timestamp <= HISTORY_MAX_AGE_MS && p.timestamp - now <= FUTURE_SKEW_MS
+
+    private fun storeHistory(p: Packet) {
+        if (!isFresh(p, scheduler.now())) return
+        val id = PacketId.compute(p).toHex()
+        if (history.put(id, p) == null) {
+            while (history.size > HISTORY_CAP) history.remove(history.keys.first())
+            listener.onStateChanged()
+        }
+    }
+
+    private fun solicited(linkId: String?): Boolean {
+        val hex = links[linkId ?: return false]?.peerHex ?: return false
+        val at = pendingSync[hex] ?: return false
+        return scheduler.now() - at <= SYNC_REPLY_WINDOW_MS
+    }
+
+    private fun syncCandidates(now: Long): List<Packet> {
+        val out = ArrayList<Packet>()
+        myAnnounce?.let { out.add(it) }
+        peers.values.mapNotNullTo(out) { it.announce }
+        history.values.filterTo(out) { isFresh(it, now) }
+        out.sortByDescending { it.timestamp }
+        return out
+    }
+
+    private fun syncRound() {
+        for (link in links.values.toList()) link.peerHex?.let { requestSyncFrom(it, link.id) }
+    }
+
+    /** Asks one neighbour for the announces and public messages we are missing (§14.3). */
+    private fun requestSyncFrom(peerHex: String, linkId: String) {
+        if (!links.containsKey(linkId)) return
+        val now = scheduler.now()
+        val candidates = syncCandidates(now)
+        val p = GcsFilter.deriveP(SYNC_FPR)
+        val take = minOf(candidates.size, GcsFilter.estimateMaxElements(SYNC_FILTER_BYTES, p), HISTORY_CAP)
+        val request = if (take == 0) SyncRequest(p, 1, ByteArray(0)) else {
+            val included = candidates.take(take)
+            val f = GcsFilter.build(included.map { PacketId.compute(it) }, SYNC_FILTER_BYTES, SYNC_FPR)
+            val since = if (f.includedCount in 1 until candidates.size) included[f.includedCount - 1].timestamp else null
+            SyncRequest(f.p, f.m, f.data, SyncTypes.PUBLIC, since)
+        }
+        val pkt = sign(Packet(type = MessageType.REQUEST_SYNC, senderId = identity.peerId, recipientId = peerHex.hexToBytes(), timestamp = now, payload = request.encode(), ttl = 0)) ?: return
+        pendingSync[peerHex] = now
+        dedup.markIfNew(Deduplicator.key(pkt))
+        sendOn(listOf(linkId), pkt)
+    }
+
+    /** Answers with every stored packet the asker's filter does not cover (§14.4). */
+    private fun handleSyncRequest(p: Packet, linkId: String?) {
+        if (linkId == null || !links.containsKey(linkId)) return
+        val hex = p.senderId.toHex()
+        val signingKey = peers[hex]?.signingKey ?: known[hex]?.signingKey ?: return
+        if (!verify(p, signingKey)) return
+        val now = scheduler.now()
+        val recent = syncReplies.getOrPut(hex) { ArrayList() }
+        recent.removeAll { now - it > SYNC_REPLY_WINDOW_MS }
+        if (recent.size >= SYNC_REPLY_LIMIT) return
+        recent.add(now)
+        val request = SyncRequest.decode(p.payload) ?: return
+        val filter = GcsFilter.decode(request.p, request.m, request.data)
+        fun missing(pkt: Packet) = !GcsFilter.contains(filter, GcsFilter.bucket(PacketId.compute(pkt), request.m))
+        val replies = ArrayList<Packet>()
+        if (request.wants(SyncTypes.ANNOUNCE)) {
+            myAnnounce?.let { if (isFresh(it, now) && missing(it)) replies.add(it) }
+            for (peer in peers.values) peer.announce?.let { if (isFresh(it, now) && missing(it)) replies.add(it) }
+        }
+        if (request.wants(SyncTypes.MESSAGE)) {
+            for (m in history.values) {
+                if (!isFresh(m, now)) continue
+                if (request.since != null && m.timestamp < request.since) continue
+                if (missing(m)) replies.add(m)
+            }
+        }
+        for (r in replies) sendOn(listOf(linkId), r.copy(ttl = 0, isRsr = true))
     }
 
     // ---------------------------------------------------------------- Noise
@@ -656,6 +761,9 @@ class MeshEngine(
     private fun prune(now: Long) {
         var changed = outbox.values.removeAll { now - it.createdAt > CourierEnvelope.LIFETIME_MS }
         changed = carried.removeAll { it.envelope.isExpired(now) } || changed
+        changed = history.values.removeAll { !isFresh(it, now) } || changed
+        pendingSync.values.removeAll { now - it > SYNC_REPLY_WINDOW_MS }
+        syncReplies.values.removeAll { times -> times.removeAll { now - it > SYNC_REPLY_WINDOW_MS }; times.isEmpty() }
         if (changed) listener.onStateChanged()
     }
 
@@ -679,6 +787,16 @@ class MeshEngine(
         private const val OPENED_CAP = 512
         private const val EXPIRY_SLACK_MS = 60 * 60 * 1000L
         private const val REMOTE_HANDOVER_COOLDOWN_MS = 10 * 60 * 1000L
+        // History sync (§14, §11).
+        private const val HISTORY_CAP = 1000
+        private const val HISTORY_MAX_AGE_MS = 900_000L
+        private const val FUTURE_SKEW_MS = 120_000L
+        private const val SYNC_INTERVAL_MS = 15_000L
+        private const val INITIAL_SYNC_DELAY_MS = 5_000L
+        private const val SYNC_REPLY_WINDOW_MS = 30_000L
+        private const val SYNC_REPLY_LIMIT = 8
+        private const val SYNC_FILTER_BYTES = 400
+        private const val SYNC_FPR = 0.01
     }
 
     private fun sign(p: Packet): Packet? {

@@ -146,7 +146,7 @@ Signed types in v0.1: `announce`, `message`, `leave`. `noiseHandshake`,
 | `0x10` | noiseHandshake | send, receive, relay |
 | `0x11` | noiseEncrypted | send, receive, relay |
 | `0x20` | fragment | send, receive, relay |
-| `0x21` | requestSync | ignore (link-local) |
+| `0x21` | requestSync | send, receive; never relayed (§14) |
 | `0x22` | fileTransfer | relay only |
 | `0x23`–`0x29`, `0x2C` | boardPost, prekeyBundle, groupMessage, ping, pong, nostrCarrier, voiceFrame, announceV2 | relay only |
 
@@ -369,10 +369,15 @@ ID) and keeps running. This is local behaviour and needs no wire support.
 | Stale broadcast | 900 s |
 | Max central links (upstream) | 6 |
 | Scan duty cycle | 5 s on / 10 s off; dense 3 s / 15 s |
+| Sync round | every 15 s per direct peer; first 5 s after link-up |
+| Sync history | 1000 public messages, 900 s |
+| Sync filter | ≤ 400 bytes, P = 7 (FPR ≈ 1 %) |
+| Sync replies | ≤ 8 per peer per 30 s; accepted ≤ 30 s after our request |
 
 ## 12. Not yet implemented
 
-- `requestSync` gossip sync with GCS filters (public history for late joiners)
+- gossip sync of fragments, file transfers, group messages, prekey bundles
+  and board posts (openchat syncs only announces and public messages, §14)
 - courier envelope v2 (sealed to a one-time prekey, TLV `0x05`): openchat
   carries and hands over such envelopes but cannot open one addressed to it
 - the bridge courier drop (envelopes parked on Nostr relays)
@@ -486,4 +491,82 @@ On a verified announce from peer P with Noise key K:
 
 The outbox, the carried envelopes and the remembered keys are stored in
 app-private storage sealed like the identity, and restored on start.
+
+## 14. History sync (v0.5)
+
+A phone that arrives late, or walks between two groups, asks each direct
+neighbour what public traffic it has missed. The request carries a compact
+set of everything the asker already holds; the neighbour replies with what
+is missing. Only announces and public messages are synced; the request is
+link-local and never relayed.
+
+### 14.1 Packet ID
+
+Every synced packet is identified by the first 16 bytes of
+SHA-256(`type` ‖ `senderID` ‖ BE64 `timestamp` ‖ `payload`), over the
+decoded (uncompressed) payload. The ID is independent of TTL, flags,
+recipient and signature, so a relayed or re-sent copy has the same ID.
+
+### 14.2 Golomb-coded set
+
+The asker maps each ID to a bucket: `h = BE64(SHA-256(id)[0:8]) & 0x7FFF…`,
+`bucket = h mod M`, with bucket 0 remapped to 1. `M = N · 2^P` where `N` is
+the number of IDs and `P` the Rice parameter (`P = ⌈log2(1/FPR)⌉`, 7 for a
+1 % false-positive rate; a value above 32 is rejected on receipt). Buckets
+are sorted ascending, duplicates dropped, and encoded as deltas `x ≥ 1`
+(first delta from 0): `q = (x−1) >> P` as unary (`q` one-bits then a zero),
+then the low `P` bits of `x−1`, MSB first, final byte zero-padded. The
+decoder stops at the end of data or when the running sum reaches `M`.
+
+The filter is sized to at most 400 bytes. IDs are offered newest first and
+the tail is trimmed to fit, so the covered set is always a newest-prefix;
+the timestamp of the oldest covered packet becomes the `since` cursor.
+
+### 14.3 Request payload (`0x21`)
+
+TLV, 1-byte type, 2-byte big-endian length:
+
+| Type | Value |
+|---|---|
+| `0x01` | `P`, 1 byte |
+| `0x02` | `M`, 4 bytes BE |
+| `0x03` | filter bitstream (may be empty; a receiver rejects more than 1024 bytes) |
+| `0x04` | type flags, 1–8 bytes little-endian: bit 0 announce, bit 1 message; higher bits name types openchat does not sync and ignores |
+| `0x05` | `since`, 8 bytes BE ms, optional: the filter covers only packets at or after this time |
+| `0x06` | fragment stream IDs for targeted resync, optional; openchat ignores it |
+
+Unknown TLVs are skipped. A request without `0x04` means announces and
+messages. The packet is signed (§2.6), TTL 0, addressed to the neighbour
+(broadcast when no neighbour is identified yet), and sent only on the
+direct link.
+
+### 14.4 Replying
+
+A receiver answers a request that is broadcast or addressed to it, from a
+peer whose signing key it holds, at most 8 times per peer per 30 s. For
+every stored packet of a requested type whose ID is not in the filter it
+sends the stored packet unchanged except `TTL = 0` and `IS_RSR` set, on the
+link the request came in on. Announces ignore the `since` cursor (they carry
+the keys that verify everything else); messages older than `since` are
+skipped. Nothing else is sent: a reply is the stored packets themselves,
+including their original signatures.
+
+### 14.5 Accepting replies
+
+A packet with `IS_RSR` set is accepted only on a link whose peer we asked
+within the last 30 s; otherwise it is dropped. Accepted replies go through
+the normal pipeline: dedup, announce verification, message verification
+against the sender's signing key (from the live peer table or the
+remembered peers of §13.1), and the 900 s freshness window. `TTL = 0`
+means they are never relayed. A message learned this way is stored and
+offered onward, so history crosses partitions one hop per encounter.
+
+### 14.6 Store and schedule
+
+Each phone keeps its own and every verified broadcast public message of the
+last 900 s, newest 1000, and the latest announce of every current peer and
+of itself. The store is persisted with the §13.7 state and restored on
+start, minus what aged out. The first request to a neighbour goes 5 s after
+its announce identifies the link; afterwards one request per direct
+neighbour every 15 s. A panic wipe clears the store.
 
