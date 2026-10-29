@@ -285,8 +285,8 @@ class MeshEngine(
         val now = scheduler.now()
         if (!force && now < nextAnnounceDue) return
         if (now - lastAnnounce < 1000) return
-        val neighbors = links.values.mapNotNull { it.peerHex?.hexToBytes() }.distinctBy { it.toHex() }
-        val payload = Announcement(identity.nickname, identity.noise.publicKey, identity.signing.publicKey, neighbors, AuthPeerState.CAP_PRIVATE_MEDIA).encode() ?: return
+        // No neighbour list: it hands any listener the local social graph, and routing falls back to flooding (§20).
+        val payload = Announcement(identity.nickname, identity.noise.publicKey, identity.signing.publicKey, emptyList(), AuthPeerState.CAP_PRIVATE_MEDIA).encode() ?: return
         val p = sign(Packet(type = MessageType.ANNOUNCE, senderId = identity.peerId, timestamp = now, payload = payload)) ?: return
         dedup.markIfNew(Deduplicator.key(p))
         myAnnounce = p

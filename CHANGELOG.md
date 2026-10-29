@@ -75,6 +75,14 @@
   tab turns it off and says what that exposes. Relay sends now queue until
   the socket opens instead of being dropped after 3 s. The APK grows to
   about 36 MB (Tor for arm64, armv7 and x86_64). 1 new test.
+- Announces no longer list neighbours, so a listener cannot read the local
+  social graph off the air (upstream made the same change on its own).
+- Peer ID rotation ([spec §20](docs/protocol-spec.md)): implemented and
+  checked against upstream's draft vectors, but not switched on. Upstream
+  has not shipped it in either client, and a rotating ID would make an
+  openchat phone invisible to every bitchat phone. 4 new tests.
+- 92 unit tests in all. New dependencies: zxing core and
+  zxing-android-embedded (Apache-2.0), tor-android and jtorctl (BSD-3).
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.4.0 (preview) — 2026-10-29

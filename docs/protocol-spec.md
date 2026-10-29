@@ -695,3 +695,26 @@ directly, and the tab says relay operators then see the device's address.
 The Bluetooth mesh never uses the internet. No bridges or pluggable
 transports yet, so Tor cannot start where it is blocked.
 
+## 20. Metadata and peer ID rotation (v0.5)
+
+openchat no longer sends the neighbour list (announce TLV `0x04`): it gives
+any listener the local adjacency graph, and routing falls back to flooding.
+It still accepts the TLV from others.
+
+Peer ID rotation follows upstream's draft and, like upstream, is not wired
+in: a rotating ID breaks the `peerID = SHA-256(noise key)[0..8]` check every
+current client uses, so a phone that rotated would be invisible to every
+bitchat phone. openchat implements and tests the derivations so it can join
+once both bitchat clients ship them:
+
+- `K_rot = HKDF-SHA256(noise static private, salt "", "bitchat-peer-rotation-v1")`,
+  `peerID_e = HMAC-SHA256(K_rot, "bitchat-peer-id-v2" ‖ BE32(floor(t / 3600)))[0..8]`.
+- Recognition tag A→B = HMAC-SHA256(HKDF(X25519(A, B), "bitchat-recognition-v1"),
+  BE32(epoch) ‖ A pub ‖ B pub ‖ peerID_e)[0..8], directional; eight slots,
+  random-padded, shuffled.
+- Binding signed in-session: `"bitchat-peerid-binding-v1"` ‖ BE32(epoch) ‖
+  peerID_e ‖ noise static public (69 bytes).
+- `announceV2` (`0x2C`) TLVs, 1-byte type and length (assumed, as v1):
+  `0x01` epoch (4), `0x02` tags (64), `0x03` capabilities, `0x04` bridge
+  geohash. Received v2 announces are relayed and otherwise ignored.
+

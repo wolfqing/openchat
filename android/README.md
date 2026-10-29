@@ -22,9 +22,18 @@ bitchat-android source was never read.
 | Mesh keeps running with the screen off (foreground service) | `app/MeshService.kt` |
 | Store-and-forward: outbox plus courier envelopes carried by nearby phones (spec §13) | `core/Courier.kt`, `crypto/Noise.kt` `NoiseX`, `mesh/StoreAndForward.kt`, `mesh/MeshEngine.kt` |
 | History sync: late joiners get the last 15 min of public messages from a neighbour via GCS-filtered `requestSync` (spec §14) | `core/Sync.kt`, `mesh/MeshEngine.kt` |
+| Block people on the mesh and per location channel; tap a name for the person card | `app/Social.kt`, `ui/People.kt` |
+| @mentions: highlighted, notified, autocompleted | `core/Mentions.kt` |
+| In-person verification with bitchat's `bitchat://verify` QR plus a Noise challenge (spec §16) | `core/Verification.kt`, `ui/People.kt` |
+| IRC-style commands: `/msg /who /clear /hug /slap /block /unblock /fav /unfav /drop /help` | `app/Commands.kt` |
+| Favorites, and private messages over Nostr between mutual favorites in bitchat's envelope (spec §15) | `nostr/PrivateEnvelope.kt`, `core/NostrEmbedded.kt`, `app/NostrDirect.kt` |
+| Location notes that fade after 24 h (spec §17) | `app/GeoChannels.kt` |
+| Photos and voice notes, public or Noise-encrypted private (spec §18) | `core/FilePacket.kt`, `app/Media.kt` |
+| Relay traffic through Tor by default, fail-closed (spec §19) | `nostr/NetRoute.kt`, `app/Tor.kt` |
 
-Not yet: gossip sync of public history, Nostr private messages, files,
-images, voice, groups. See spec §12.
+Not yet: groups, boards, live push-to-talk, files other than images and
+audio, private media over Nostr, Tor bridges. Peer ID rotation exists only
+as tested code, as upstream's draft does (spec §20). See spec §12.
 
 ## Build
 
@@ -48,6 +57,10 @@ The APK lands in `app/build/outputs/apk/debug/app-debug.apk`. minSdk 26
 | `NostrTest` | all BIP-340 official vectors, NIP-01 event IDs, geohash, per-cell keys, relay choice |
 | `MeshEngineTest` | three simulated phones in a line: announces over two hops, relayed public and fragmented messages, private messages with receipts across a relay, crossed handshakes, panic reset, peer expiry, courier carry and handover, outbox persistence, a late joiner synced from a neighbour, unsolicited sync replies dropped, history persistence |
 | `CourierTest` | upstream's golden courier vectors (envelope TLV, recipient tag, signing pre-image), Noise X seal and open |
+| `PrivateEnvelopeTest` | opens two envelopes recorded from bitchat builds, HChaCha20 draft vector, bech32 npubs |
+| `VerificationTest` | verify QR link, canonical signed bytes, expiry, challenge and response |
+| `FilePacketTest`, `NostrEmbeddedTest`, `MentionsTest`, `CommandsTest`, `GeohashTest`, `NetRouteTest` | media TLV and type checks, `bitchat1:` embedding, mentions, commands, geohash neighbours and notes, fail-closed Tor routing |
+| `PeerIdRotationTest` | upstream's draft vectors for rotating IDs and recognition tags |
 | `SyncTest` | packet ID, GCS bitstream layout and false-positive rate, newest-first trimming, `requestSync` TLV and type flags |
 
 ## Known risks
