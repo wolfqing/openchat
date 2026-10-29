@@ -24,7 +24,32 @@ data class ChatMessage(
     val timestamp: Long,
     val mine: Boolean,
     val state: DeliveryState = DeliveryState.SENT,
+    val teleported: Boolean = false, // geohash sender says it is not in the cell
 )
+
+/**
+ * A nickname plus a #xxxx suffix. The UI shows both wherever a name appears, so duplicate
+ * nicknames stay distinct (docs/design/ui-direction.md). Mesh peers use the first four hex
+ * digits of the peer ID; Nostr senders use the last four of the public key, as anon#xxxx did.
+ */
+data class PeerLabel(val name: String, val suffix: String) {
+    override fun toString() = name + suffix
+
+    companion object {
+        // A nickname typed as "name#e887" must not pass for someone else's suffix.
+        private val FAKE_SUFFIX = Regex("(#[0-9A-Fa-f]{4})+$")
+
+        private fun clean(nickname: String?) =
+            nickname?.trim()?.replace(FAKE_SUFFIX, "")?.trim()?.takeIf { it.isNotEmpty() } ?: "anon"
+
+        private fun suffix(four: String) = if (four.length == 4) "#" + four.lowercase() else ""
+
+        fun mesh(nickname: String?, peerHex: String) = PeerLabel(clean(nickname), suffix(peerHex.take(4)))
+        fun nostr(nickname: String?, pubkeyHex: String) = PeerLabel(clean(nickname), suffix(pubkeyHex.takeLast(4)))
+        fun of(m: ChatMessage) =
+            if (m.conversation.startsWith("geo:")) nostr(m.senderName, m.senderKey) else mesh(m.senderName, m.senderKey)
+    }
+}
 
 data class MeshStatus(
     val bluetoothOn: Boolean = false,

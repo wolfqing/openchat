@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="launcher_bg">#1F7A4D</color>
+    <color name="launcher_bg">#000000</color>
+    <!-- Signal orange, dark-theme value from docs/design/ui-prototype.html. -->
+    <color name="signal">#FF7840</color>
 </resources>

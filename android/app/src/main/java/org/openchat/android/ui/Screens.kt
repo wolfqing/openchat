@@ -1,9 +1,11 @@
 package org.openchat.android.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.annotation.PluralsRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,10 +31,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -40,6 +43,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -55,7 +60,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -69,56 +73,104 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import org.openchat.android.R
+import org.openchat.android.app.AppLanguage
 import org.openchat.android.app.ChatMessage
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.DeliveryState
+import org.openchat.android.app.PeerLabel
 import org.openchat.android.nostr.Geohash
+import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val Accent = Color(0xFF1F7A4D)
+// Dark palette from docs/design/ui-prototype.html: signal orange on near-black.
+private val Signal = Color(0xFFFF7840)
+private val SignalSoft = Color(0xFF3A1A0C)
 
+/** Dark by default, whatever the system setting. */
 @Composable
 fun OpenChatTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
-    val scheme = if (dark) darkColorScheme(primary = Color(0xFF6FD3A0), secondary = Color(0xFF6FD3A0))
-    else lightColorScheme(primary = Accent, secondary = Accent)
+    val scheme = darkColorScheme(
+        primary = Signal, onPrimary = Color(0xFF1A0A03),
+        primaryContainer = SignalSoft, onPrimaryContainer = Color(0xFFEDF1EF),
+        secondary = Signal, onSecondary = Color(0xFF1A0A03),
+        secondaryContainer = SignalSoft, onSecondaryContainer = Signal,
+        background = Color(0xFF0B0D0D), onBackground = Color(0xFFEDF1EF),
+        surface = Color(0xFF0B0D0D), onSurface = Color(0xFFEDF1EF),
+        surfaceVariant = Color(0xFF121616), onSurfaceVariant = Color(0xFF9AA4A3),
+        outline = Color(0xFF4A5555), outlineVariant = Color(0xFF262D2D),
+    )
     MaterialTheme(colorScheme = scheme, content = content)
+}
+
+@Composable
+private fun plural(@PluralsRes id: Int, count: Int): String = LocalContext.current.resources.getQuantityString(id, count, count)
+
+/** One button naming the current language; a menu lists the rest. Choosing one restarts the screen in that language. */
+@Composable
+fun LanguagePicker(onLanguage: (AppLanguage.Choice) -> Unit) {
+    val current = AppLanguage.get(LocalContext.current)
+    var open by remember { mutableStateOf(false) }
+    val system = stringResource(R.string.lang_system)
+    Box {
+        OutlinedButton(onClick = { open = true }) {
+            Text(current.label ?: system)
+            Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            AppLanguage.Choice.entries.forEach { c ->
+                DropdownMenuItem(
+                    text = { Text(c.label ?: system, fontWeight = if (c == current) FontWeight.Bold else FontWeight.Normal) },
+                    onClick = { open = false; if (c != current) onLanguage(c) },
+                )
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------- onboarding
 
 @Composable
-fun OnboardingScreen(onStart: () -> Unit) {
+fun OnboardingScreen(onStart: () -> Unit, onLanguage: (AppLanguage.Choice) -> Unit) {
     Surface(Modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxSize().padding(28.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Center,
         ) {
-            Text("没网，也能聊。", fontSize = 34.sp, fontWeight = FontWeight.Bold)
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) { LanguagePicker(onLanguage) }
+            Spacer(Modifier.height(24.dp))
+            Text(stringResource(R.string.onboard_title), fontSize = 34.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(16.dp))
             Text(
-                "停电、地震、台风、基站挤爆、在山里或飞机上，手机没有信号时，openchat 用蓝牙把附近的手机连成一张网，消息一台传一台。",
+                stringResource(R.string.onboard_body),
                 fontSize = 17.sp, lineHeight = 26.sp,
             )
             Spacer(Modifier.height(12.dp))
-            Text("不用注册，不要手机号，没有服务器。", fontSize = 17.sp, lineHeight = 26.sp)
+            Text(stringResource(R.string.onboard_no_account), fontSize = 17.sp, lineHeight = 26.sp)
             Spacer(Modifier.height(24.dp))
             SafetyNote()
             Spacer(Modifier.height(32.dp))
             Button(onClick = onStart, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                Text("开始", fontSize = 18.sp)
+                Text(stringResource(R.string.onboard_start), fontSize = 18.sp)
             }
             Spacer(Modifier.height(8.dp))
-            Text("下一步会请你允许使用蓝牙，用来发现附近的人。", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.onboard_next), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -127,13 +179,10 @@ fun OnboardingScreen(onStart: () -> Unit) {
 fun SafetyNote() {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(Modifier.padding(16.dp)) {
-            Text("请先知道", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.safety_title), fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(6.dp))
             Text(
-                "· 「附近」频道是公开的，范围内所有人都能看到。\n" +
-                    "· 私信是加密的，但附近的人能看出你在用这个 App，也能长期认出同一台手机。\n" +
-                    "· 本软件未经完整的独立安全审计。如果被识别出来会有严重后果，请不要依赖它。\n" +
-                    "· 连点三下顶部标题，立刻清空所有数据。",
+                stringResource(R.string.safety_body),
                 fontSize = 14.sp, lineHeight = 21.sp,
             )
         }
@@ -142,7 +191,7 @@ fun SafetyNote() {
 
 // ---------------------------------------------------------------- main shell
 
-private enum class Tab(val label: String) { NEARBY("附近"), PRIVATE("私信"), LOCATION("位置频道"), ME("我") }
+private enum class Tab(@StringRes val label: Int) { NEARBY(R.string.tab_nearby), PRIVATE(R.string.tab_private), LOCATION(R.string.tab_location), ME(R.string.tab_me) }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,6 +201,7 @@ fun MainScreen(
     onEnableBluetooth: () -> Unit,
     onRequestLocation: () -> Unit,
     onShareApp: () -> Unit,
+    onLanguage: (AppLanguage.Choice) -> Unit,
 ) {
     var tab by rememberSaveable { mutableStateOf(Tab.NEARBY) }
     var openChat by rememberSaveable { mutableStateOf<String?>(null) } // conversation key
@@ -162,6 +212,7 @@ fun MainScreen(
 
     val onPanic = {
         ChatRepository.controller?.panic()
+        drafts.clear()
         openChat = null
         tab = Tab.NEARBY
         wiped = true
@@ -170,8 +221,8 @@ fun MainScreen(
     if (wiped) {
         AlertDialog(
             onDismissRequest = { wiped = false },
-            confirmButton = { TextButton(onClick = { wiped = false }) { Text("好") } },
-            text = { Text("已清空。你现在是一个新身份：${mesh.myNickname}") },
+            confirmButton = { TextButton(onClick = { wiped = false }) { Text(stringResource(R.string.ok)) } },
+            text = { Text(stringResource(R.string.wiped, PeerLabel.mesh(mesh.myNickname, mesh.myPeerHex).toString())) },
         )
     }
 
@@ -187,7 +238,7 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { PanicTitle(tab.label, onPanic) })
+            TopAppBar(title = { PanicTitle(stringResource(tab.label), onPanic) })
         },
         bottomBar = {
             NavigationBar {
@@ -201,12 +252,12 @@ fun MainScreen(
                     NavigationBarItem(
                         selected = tab == t,
                         onClick = { tab = t },
-                        label = { Text(t.label) },
+                        label = { Text(stringResource(t.label)) },
                         icon = {
                             BadgedBox(badge = { if (count > 0) Badge { Text("$count") } }) {
                                 Icon(
-                                    when (t) { Tab.NEARBY -> Icons.Filled.Home; Tab.PRIVATE -> Icons.Filled.Email; Tab.LOCATION -> Icons.Filled.LocationOn; Tab.ME -> Icons.Filled.Person },
-                                    contentDescription = t.label,
+                                    when (t) { Tab.NEARBY -> Icons.Filled.Share; Tab.PRIVATE -> Icons.Filled.Lock; Tab.LOCATION -> Icons.Filled.LocationOn; Tab.ME -> Icons.Filled.Person },
+                                    contentDescription = stringResource(t.label),
                                 )
                             }
                         },
@@ -220,22 +271,35 @@ fun MainScreen(
             when (tab) {
                 Tab.NEARBY -> ChatPane(
                     conversation = Conversation.Mesh.key,
-                    emptyText = if (peers.isEmpty()) "附近还没有人。\n打开 openchat 的手机靠近到几十米内，就会自动连上。\n同一网络里的 bitchat 用户也能收到你的消息。" else "附近有 ${peers.size} 人。发一句话，大家都能看到。",
-                    placeholder = "对附近所有人说…",
+                    emptyText = if (peers.isEmpty()) stringResource(R.string.nearby_empty_alone) else plural(R.plurals.nearby_empty_peers, peers.size),
+                    placeholder = stringResource(R.string.nearby_placeholder),
                     onSend = { ChatRepository.controller?.sendPublic(it) },
                     onSenderClick = { key -> if (key != mesh.myPeerHex) openChat = Conversation.Private(key).key },
                 )
                 Tab.PRIVATE -> PrivateList(onOpen = { openChat = Conversation.Private(it).key })
                 Tab.LOCATION -> LocationPane(onRequestLocation, onOpen = { openChat = Conversation.Geo(it).key })
-                Tab.ME -> MePane(onShareApp)
+                Tab.ME -> MePane(onShareApp, onLanguage)
             }
         }
     }
 }
 
+/** Name with its #xxxx suffix set smaller, monospaced and muted, so the name itself leads. */
+@Composable
+fun labelText(label: PeerLabel, teleported: Boolean = false): AnnotatedString = buildAnnotatedString {
+    append(label.name)
+    withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal, fontSize = 0.8.em, color = MaterialTheme.colorScheme.onSurfaceVariant)) {
+        append(label.suffix)
+    }
+    if (teleported) append(" ✈")
+}
+
 /** Title that wipes everything on a triple tap, with no confirmation (docs/protocol-spec.md §10). */
 @Composable
-fun PanicTitle(text: String, onPanic: () -> Unit) {
+fun PanicTitle(text: String, onPanic: () -> Unit) = PanicTitle(AnnotatedString(text), onPanic)
+
+@Composable
+fun PanicTitle(text: AnnotatedString, onPanic: () -> Unit) {
     var taps by remember { mutableStateOf(0) }
     var firstTap by remember { mutableLongStateOf(0L) }
     Text(
@@ -253,20 +317,29 @@ fun PanicTitle(text: String, onPanic: () -> Unit) {
 @Composable
 private fun StatusBanner(missing: Boolean, btOn: Boolean, running: Boolean, peers: Int, onGrant: () -> Unit, onEnable: () -> Unit) {
     val (text, action) = when {
-        missing -> "需要蓝牙权限才能发现附近的人" to onGrant
-        !btOn -> "蓝牙已关闭，点这里打开" to onEnable
-        !running -> "正在启动…" to null
-        peers == 0 -> "正在寻找附近的人…" to null
-        else -> "已连上附近 $peers 人" to null
+        missing -> stringResource(R.string.banner_need_permission) to onGrant
+        !btOn -> stringResource(R.string.banner_bt_off) to onEnable
+        !running -> stringResource(R.string.banner_starting) to null
+        peers == 0 -> stringResource(R.string.banner_searching) to null
+        else -> plural(R.plurals.banner_connected, peers) to null
     }
     val warn = missing || !btOn
+    val connected = !warn && running && peers > 0
     Box(
         Modifier.fillMaxWidth()
-            .background(if (warn) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer)
+            .background(if (warn) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant)
             .let { if (action != null) it.clickable { action() } else it }
             .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
-        Text(text, fontSize = 14.sp, color = if (warn) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(
+            text, fontSize = 14.sp,
+            fontFamily = if (connected) FontFamily.Monospace else null,
+            color = when {
+                warn -> MaterialTheme.colorScheme.onErrorContainer
+                connected -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
     }
 }
 
@@ -306,17 +379,17 @@ fun ChatPane(
                 }
             }
         }
-        Composer(placeholder, onSend)
+        Composer(conversation, placeholder, onSend)
     }
 }
 
 @Composable
 private fun Bubble(m: ChatMessage, onSenderClick: ((String) -> Unit)?) {
-    val time = remember(m.timestamp) { SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(m.timestamp)) }
+    val time = remember(m.timestamp) { stampText(m.timestamp) }
     Column(Modifier.fillMaxWidth(), horizontalAlignment = if (m.mine) Alignment.End else Alignment.Start) {
         if (!m.mine) {
             Text(
-                m.senderName, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary,
+                labelText(PeerLabel.of(m), m.teleported), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.let { if (onSenderClick != null) it.clickable { onSenderClick(m.senderKey) } else it },
             )
         }
@@ -327,29 +400,44 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((String) -> Unit)?) {
         ) {
             Text(m.text, Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
         }
-        val status = if (m.mine) when (m.state) {
-            DeliveryState.SENDING -> " · 发送中"; DeliveryState.SENT -> " · 已发出"; DeliveryState.DELIVERED -> " · 已送达"
-            DeliveryState.READ -> " · 已读"; DeliveryState.FAILED -> " · 发送失败"
-        } else ""
+        val status = if (m.mine) " · " + stringResource(
+            when (m.state) {
+                DeliveryState.SENDING -> R.string.state_sending; DeliveryState.SENT -> R.string.state_sent; DeliveryState.DELIVERED -> R.string.state_delivered
+                DeliveryState.READ -> R.string.state_read; DeliveryState.FAILED -> R.string.state_failed
+            },
+        ) else ""
         Text(time + status, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
+/** "HH:mm" today, otherwise the short local date as well. */
+private fun stampText(ts: Long): String {
+    val locale = Locale.getDefault()
+    val clock = SimpleDateFormat("HH:mm", locale).format(Date(ts))
+    val day = SimpleDateFormat("yyyyDDD", locale)
+    return if (day.format(Date(ts)) == day.format(Date())) clock
+    else DateFormat.getDateInstance(DateFormat.SHORT, locale).format(Date(ts)) + " " + clock
+}
+
+/** Unsent text per conversation, kept while the user switches tabs. Cleared by the panic wipe. */
+private val drafts = HashMap<String, String>()
+
 @Composable
-private fun Composer(placeholder: String, onSend: (String) -> Unit) {
-    var text by rememberSaveable { mutableStateOf("") }
-    val send = { val t = text.trim(); if (t.isNotEmpty()) { onSend(t); text = "" } }
+private fun Composer(conversation: String, placeholder: String, onSend: (String) -> Unit) {
+    var text by remember(conversation) { mutableStateOf(drafts[conversation].orEmpty()) }
+    fun set(t: String) { text = t; if (t.isEmpty()) drafts.remove(conversation) else drafts[conversation] = t }
+    val send = { val t = text.trim(); if (t.isNotEmpty()) { onSend(t); set("") } }
     HorizontalDivider()
     Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(
-            value = text, onValueChange = { if (it.length <= 1000) text = it },
+            value = text, onValueChange = { if (it.length <= 1000) set(it) },
             placeholder = { Text(placeholder) },
             modifier = Modifier.weight(1f),
             maxLines = 4,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
             keyboardActions = KeyboardActions(onSend = { send() }),
         )
-        IconButton(onClick = send) { Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "发送", tint = MaterialTheme.colorScheme.primary) }
+        IconButton(onClick = send) { Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.send), tint = MaterialTheme.colorScheme.primary) }
     }
 }
 
@@ -359,15 +447,17 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
     val names by ChatRepository.names.collectAsState()
     val peers by ChatRepository.peers.collectAsState()
     val peer = peers.firstOrNull { it.peerIdHex == peerHex }
-    val name = peer?.nickname ?: names[peerHex] ?: peerHex.take(8)
+    val label = PeerLabel.mesh(peer?.nickname ?: names[peerHex], peerHex)
+    val name = label.toString()
     val readSent = remember { HashSet<String>() }
+    BackHandler(onBack = onBack)
     Scaffold(topBar = {
         TopAppBar(
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
             title = {
                 Column {
-                    PanicTitle(name, onPanic)
-                    Text(if (peer != null) "在附近 · 加密私信" else "不在附近 · 消息会在对方回来后送达", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    PanicTitle(labelText(label), onPanic)
+                    Text(stringResource(if (peer != null) R.string.dm_status_here else R.string.dm_status_away), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
         )
@@ -375,8 +465,8 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
         Box(Modifier.padding(padding)) {
             ChatPane(
                 conversation = Conversation.Private(peerHex).key,
-                emptyText = "和 $name 的私信是端到端加密的，中间转发的手机看不到内容。",
-                placeholder = "写给 $name…",
+                emptyText = stringResource(R.string.dm_empty, name),
+                placeholder = stringResource(R.string.dm_placeholder, name),
                 onSend = { ChatRepository.controller?.sendPrivate(peerHex, it) },
                 onVisible = { list ->
                     val unreadIds = list.filter { !it.mine && readSent.add(it.id) }.map { it.id }
@@ -398,7 +488,7 @@ private fun PrivateList(onOpen: (String) -> Unit) {
     val ids = (peers.map { it.peerIdHex } + withHistory).distinct().filter { it != me.myPeerHex }
     if (ids.isEmpty()) {
         Box(Modifier.fillMaxSize()) {
-            Text("附近的人会出现在这里。\n点一下名字就能发加密私信。", Modifier.align(Alignment.Center).padding(32.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.dm_list_empty), Modifier.align(Alignment.Center).padding(32.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
@@ -410,9 +500,9 @@ private fun PrivateList(onOpen: (String) -> Unit) {
                 Box(Modifier.size(10.dp).background(if (peer != null) Color(0xFF2EB872) else Color.Gray, CircleShape))
                 Spacer(Modifier.size(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(peer?.nickname ?: names[hex] ?: hex.take(8), fontWeight = FontWeight.SemiBold)
+                    Text(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex)), fontWeight = FontWeight.SemiBold)
                     Text(
-                        last?.text ?: if (peer?.direct == true) "就在身边" else if (peer != null) "经其他手机转发可达" else "不在附近",
+                        last?.text ?: stringResource(if (peer?.direct == true) R.string.dm_direct else if (peer != null) R.string.dm_relayed else R.string.dm_away),
                         fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
                     )
                 }
@@ -431,11 +521,11 @@ private fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Unit
     val geo by ChatRepository.geo.collectAsState()
     var manual by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text("有网络时，可以和同一地区的人聊天，距离不限于蓝牙范围。每个地区用一个独立的匿名身份。", lineHeight = 22.sp)
+        Text(stringResource(R.string.geo_intro), lineHeight = 22.sp)
         Spacer(Modifier.height(16.dp))
         val here = geo.locationGeohash
         if (here == null) {
-            FilledTonalButton(onClick = onRequestLocation) { Text("使用我的大致位置") }
+            FilledTonalButton(onClick = onRequestLocation) { Text(stringResource(R.string.geo_use_location)) }
         } else {
             Geohash.Level.entries.forEach { level ->
                 val cell = here.take(level.precision)
@@ -444,51 +534,61 @@ private fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Unit
                     onClick = { ChatRepository.controller?.joinGeo(cell, teleported = false); onOpen(cell) },
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 ) {
-                    Text("${level.label} · #$cell" + if (n > 0) " · $n 人在线" else "", Modifier.weight(1f))
+                    Text("${stringResource(levelLabel(level))} · #$cell" + if (n > 0) " · " + plural(R.plurals.geo_online, n) else "", Modifier.weight(1f))
                 }
             }
-            TextButton(onClick = onRequestLocation) { Text("刷新位置") }
+            TextButton(onClick = onRequestLocation) { Text(stringResource(R.string.geo_refresh)) }
         }
         Spacer(Modifier.height(16.dp))
-        Text("去别的地区看看", fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.geo_elsewhere), fontWeight = FontWeight.SemiBold)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(manual, { manual = it.lowercase().filter { c -> c.isLetterOrDigit() }.take(8) }, placeholder = { Text("geohash，如 wtw3s") }, modifier = Modifier.weight(1f), singleLine = true)
+            OutlinedTextField(manual, { manual = it.lowercase().filter { c -> c.isLetterOrDigit() }.take(8) }, placeholder = { Text(stringResource(R.string.geo_hint)) }, modifier = Modifier.weight(1f), singleLine = true)
             Spacer(Modifier.size(8.dp))
             Button(enabled = Geohash.isValid(manual) && manual.length >= 2, onClick = {
                 ChatRepository.controller?.joinGeo(manual, teleported = true); onOpen(manual)
-            }) { Text("进入") }
+            }) { Text(stringResource(R.string.geo_enter)) }
         }
-        Text("你不在那里，所以别人会看到你的名字旁有 ✈ 标记。", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.geo_teleport_note), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (geo.joined.isNotEmpty()) {
             Spacer(Modifier.height(16.dp))
-            Text("已加入", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.geo_joined), fontWeight = FontWeight.SemiBold)
             geo.joined.sorted().forEach { g -> TextButton(onClick = { onOpen(g) }) { Text("#$g") } }
         }
     }
+}
+
+@StringRes
+private fun levelLabel(level: Geohash.Level): Int = when (level) {
+    Geohash.Level.BLOCK -> R.string.geo_level_block
+    Geohash.Level.NEIGHBORHOOD -> R.string.geo_level_neighborhood
+    Geohash.Level.CITY -> R.string.geo_level_city
+    Geohash.Level.PROVINCE -> R.string.geo_level_province
+    Geohash.Level.REGION -> R.string.geo_level_region
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
     val geo by ChatRepository.geo.collectAsState()
+    BackHandler(onBack = onBack)
     Scaffold(topBar = {
         TopAppBar(
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
             title = {
                 Column {
                     PanicTitle("#$geohash", onPanic)
                     val n = geo.participants[geohash] ?: 0
-                    Text(if (geo.relaysConnected == 0) "正在连接网络…" else "公开频道 · 近 5 分钟 $n 人", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(if (geo.relaysConnected == 0) stringResource(R.string.geo_connecting) else plural(R.plurals.geo_recent, n), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
-            actions = { TextButton(onClick = { ChatRepository.controller?.leaveGeo(geohash); onBack() }) { Text("退出") } },
+            actions = { TextButton(onClick = { ChatRepository.controller?.leaveGeo(geohash); onBack() }) { Text(stringResource(R.string.geo_leave)) } },
         )
     }) { padding ->
         Box(Modifier.padding(padding)) {
             ChatPane(
                 conversation = Conversation.Geo(geohash).key,
-                emptyText = "这是 #$geohash 的公开频道，需要联网。附近用 bitchat 的人也在这里。",
-                placeholder = "对 #$geohash 说…",
+                emptyText = stringResource(R.string.geo_empty, geohash),
+                placeholder = stringResource(R.string.geo_placeholder, geohash),
                 onSend = { ChatRepository.controller?.sendGeo(geohash, it) },
             )
         }
@@ -498,30 +598,39 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
 // ---------------------------------------------------------------- me
 
 @Composable
-private fun MePane(onShareApp: () -> Unit) {
+private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> Unit) {
     val mesh by ChatRepository.mesh.collectAsState()
     var nick by rememberSaveable(mesh.myNickname) { mutableStateOf(mesh.myNickname) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text("我的名字", fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.me_name), fontWeight = FontWeight.SemiBold)
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(nick, { nick = it.take(32) }, singleLine = true, modifier = Modifier.weight(1f))
             Spacer(Modifier.size(8.dp))
-            Button(enabled = nick.isNotBlank() && nick != mesh.myNickname, onClick = { ChatRepository.controller?.setNickname(nick) }) { Text("保存") }
+            Button(enabled = nick.isNotBlank() && nick != mesh.myNickname, onClick = { ChatRepository.controller?.setNickname(nick) }) { Text(stringResource(R.string.save)) }
         }
+        val seenAs = stringResource(R.string.me_seen_as)
+        Text(
+            buildAnnotatedString { append(seenAs); append(labelText(PeerLabel.mesh(mesh.myNickname, mesh.myPeerHex))) },
+            fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(stringResource(R.string.me_suffix_note), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(24.dp))
-        Text("把 openchat 传给身边的人", fontWeight = FontWeight.SemiBold)
-        Text("不需要应用商店，也不需要网络。可以用蓝牙、快速分享（附近分享）或其他方式直接发送安装包。", fontSize = 14.sp, lineHeight = 21.sp)
+        Text(stringResource(R.string.me_language), fontWeight = FontWeight.SemiBold)
+        LanguagePicker(onLanguage)
+        Spacer(Modifier.height(24.dp))
+        Text(stringResource(R.string.me_share_title), fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.me_share_body), fontSize = 14.sp, lineHeight = 21.sp)
         Spacer(Modifier.height(8.dp))
-        Button(onClick = onShareApp, modifier = Modifier.fillMaxWidth()) { Text("分享安装包") }
+        Button(onClick = onShareApp, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.me_share_button)) }
         Spacer(Modifier.height(24.dp))
         SafetyNote()
         Spacer(Modifier.height(24.dp))
-        Text("身份指纹", fontWeight = FontWeight.SemiBold)
-        Text("当面核对这串字符，可以确认对方真的是你认识的人。", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.me_fp_title), fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.me_fp_body), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(mesh.fingerprint.chunked(4).joinToString(" "), fontFamily = FontFamily.Monospace, fontSize = 13.sp, lineHeight = 20.sp)
         Spacer(Modifier.height(8.dp))
-        Text("设备 ID：${mesh.myPeerHex}", fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.me_device_id, mesh.myPeerHex), fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(24.dp))
-        Text("openchat 兼容 bitchat 网络。开源，MIT 许可证。", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.me_about), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

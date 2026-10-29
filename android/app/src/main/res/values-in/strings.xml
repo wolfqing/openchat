@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Indonesian. Machine-drafted; needs a native speaker's review. -->
+<resources>
+    <string name="channel_status">Status jaringan</string>
+    <string name="channel_messages">Pesan pribadi</string>
+    <string name="status_running">Menghubungkan ke ponsel di sekitar lewat Bluetooth</string>
+    <string name="onboard_title">Tak ada sinyal? Tetap bisa ngobrol.</string>
+    <string name="onboard_body">Saat ponselmu tak ada sinyal (listrik padam, gempa, topan, menara seluler penuh, di gunung atau di pesawat), openchat menghubungkan ponsel-ponsel di sekitar lewat Bluetooth dan meneruskan setiap pesan dari ponsel ke ponsel.</string>
+    <string name="onboard_no_account">Tanpa daftar, tanpa nomor telepon, tanpa server.</string>
+    <string name="onboard_start">Mulai</string>
+    <string name="onboard_next">Selanjutnya, kamu akan diminta mengizinkan Bluetooth agar aplikasi bisa menemukan orang di sekitar.</string>
+    <string name="safety_title">Sebelum mulai</string>
+    <string name="safety_body">· Saluran \"Sekitar\" bersifat publik. Semua orang dalam jangkauan bisa melihatnya.\n· Pesan pribadi dienkripsi, tetapi orang di sekitar bisa tahu kamu memakai aplikasi ini dan mengenali ponsel yang sama dari waktu ke waktu.\n· Aplikasi ini belum menjalani audit keamanan independen yang lengkap. Jika identitasmu ketahuan bisa sangat membahayakanmu, jangan mengandalkannya.\n· Ketuk judul di bagian atas tiga kali untuk menghapus semua data sekaligus.</string>
+    <string name="tab_nearby">Sekitar</string>
+    <string name="tab_private">Pribadi</string>
+    <string name="tab_location">Lokasi</string>
+    <string name="tab_me">Saya</string>
+    <string name="ok">OK</string>
+    <string name="wiped">Terhapus. Identitas barumu: %1$s</string>
+    <string name="banner_need_permission">Izin Bluetooth diperlukan untuk menemukan orang di sekitar</string>
+    <string name="banner_bt_off">Bluetooth mati. Ketuk di sini untuk menyalakan</string>
+    <string name="banner_starting">Memulai…</string>
+    <string name="banner_searching">Mencari orang di sekitar…</string>
+    <plurals name="banner_connected">
+        <item quantity="other">Terhubung dengan %d orang di sekitar</item>
+    </plurals>
+    <string name="nearby_empty_alone">Belum ada orang di sekitar.\nPonsel yang menjalankan openchat terhubung otomatis dalam jarak beberapa puluh meter.\nPengguna bitchat di jaringan yang sama juga bisa menerima pesanmu.</string>
+    <plurals name="nearby_empty_peers">
+        <item quantity="other">Ada %d orang di sekitar. Tulis sesuatu, semua bisa melihatnya.</item>
+    </plurals>
+    <string name="nearby_placeholder">Katakan sesuatu ke semua orang di sekitar…</string>
+    <string name="state_sending">Mengirim</string>
+    <string name="state_sent">Terkirim</string>
+    <string name="state_delivered">Diterima</string>
+    <string name="state_read">Dibaca</string>
+    <string name="state_failed">Gagal terkirim</string>
+    <string name="send">Kirim</string>
+    <string name="back">Kembali</string>
+    <string name="dm_status_here">Di sekitar · terenkripsi</string>
+    <string name="dm_status_away">Tidak di sekitar · pesan akan sampai saat dia kembali</string>
+    <string name="dm_empty">Pesan dengan %1$s terenkripsi ujung ke ujung. Ponsel yang meneruskannya tidak bisa membacanya.</string>
+    <string name="dm_placeholder">Pesan untuk %1$s…</string>
+    <string name="dm_list_empty">Orang di sekitar akan muncul di sini.\nKetuk nama untuk mengirim pesan terenkripsi.</string>
+    <string name="dm_direct">Tepat di sebelahmu</string>
+    <string name="dm_relayed">Terjangkau lewat ponsel lain</string>
+    <string name="dm_away">Tidak di sekitar</string>
+    <string name="geo_intro">Dengan koneksi internet, kamu bisa ngobrol dengan orang di area yang sama, melampaui jangkauan Bluetooth. Setiap area memakai identitas anonim tersendiri.</string>
+    <string name="geo_use_location">Gunakan perkiraan lokasiku</string>
+    <string name="geo_level_block">Blok</string>
+    <string name="geo_level_neighborhood">Lingkungan</string>
+    <string name="geo_level_city">Kota</string>
+    <string name="geo_level_province">Provinsi</string>
+    <string name="geo_level_region">Wilayah</string>
+    <plurals name="geo_online">
+        <item quantity="other">%d online</item>
+    </plurals>
+    <string name="geo_refresh">Perbarui lokasi</string>
+    <string name="geo_elsewhere">Kunjungi area lain</string>
+    <string name="geo_hint">geohash, mis. wtw3s</string>
+    <string name="geo_enter">Buka</string>
+    <string name="geo_teleport_note">Kamu tidak berada di sana, jadi orang lain akan melihat ✈ di samping namamu.</string>
+    <string name="geo_joined">Bergabung</string>
+    <string name="geo_connecting">Menghubungkan…</string>
+    <plurals name="geo_recent">
+        <item quantity="other">Saluran publik · %d orang dalam 5 menit terakhir</item>
+    </plurals>
+    <string name="geo_leave">Keluar</string>
+    <string name="geo_empty">Ini saluran publik untuk #%1$s dan butuh koneksi internet. Pengguna bitchat di sekitar juga ada di sini.</string>
+    <string name="geo_placeholder">Katakan sesuatu di #%1$s…</string>
+    <string name="me_name">Namaku</string>
+    <string name="save">Simpan</string>
+    <string name="me_seen_as">"Orang di sekitar melihat: "</string>
+    <string name="me_suffix_note">Nama bisa sama. Empat karakter setelah # berasal dari ID perangkatmu dan membedakan orang dengan nama yang sama.</string>
+    <string name="me_language">Bahasa</string>
+    <string name="lang_system">Bahasa sistem</string>
+    <string name="me_share_title">Bagikan openchat ke orang di sekitarmu</string>
+    <string name="me_share_body">Tak perlu toko aplikasi atau internet. Kirim file pemasangnya langsung lewat Bluetooth, Quick Share, atau cara lain.</string>
+    <string name="me_share_button">Bagikan file pemasang</string>
+    <string name="me_fp_title">Sidik jari identitas</string>
+    <string name="me_fp_body">Cocokkan karakter ini secara langsung untuk memastikan seseorang benar-benar orang yang kamu kenal.</string>
+    <string name="me_device_id">ID perangkat: %1$s</string>
+    <string name="me_about">openchat bekerja dengan jaringan bitchat. Sumber terbuka, lisensi MIT.</string>
+</resources>

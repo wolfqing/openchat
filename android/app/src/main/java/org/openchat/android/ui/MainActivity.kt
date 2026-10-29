@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import org.openchat.android.app.ApkShare
+import org.openchat.android.app.AppLanguage
 import org.openchat.android.app.MeshService
 
 class MainActivity : ComponentActivity() {
@@ -26,6 +27,13 @@ class MainActivity : ComponentActivity() {
 
     private val locationLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         org.openchat.android.app.ChatRepository.controller?.refreshLocation()
+    }
+
+    override fun attachBaseContext(newBase: Context) = super.attachBaseContext(AppLanguage.wrap(newBase))
+
+    private fun setLanguage(choice: AppLanguage.Choice) {
+        AppLanguage.set(this, choice)
+        recreate()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,7 +50,7 @@ class MainActivity : ComponentActivity() {
                         prefs.edit().putBoolean("onboarded", true).apply()
                         onboarded.value = true
                         requestMeshPermissions()
-                    })
+                    }, onLanguage = ::setLanguage)
                 } else {
                     MainScreen(
                         missingPermissions = missingPermissions.value,
@@ -50,6 +58,7 @@ class MainActivity : ComponentActivity() {
                         onEnableBluetooth = ::enableBluetooth,
                         onRequestLocation = ::requestLocation,
                         onShareApp = { startActivity(ApkShare.intent(this)) },
+                        onLanguage = ::setLanguage,
                     )
                 }
             }

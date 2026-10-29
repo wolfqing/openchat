@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vietnamese. Machine-drafted; needs a native speaker's review. -->
+<resources>
+    <string name="channel_status">Trạng thái mạng</string>
+    <string name="channel_messages">Tin nhắn riêng</string>
+    <string name="status_running">Đang kết nối với điện thoại gần đó qua Bluetooth</string>
+    <string name="onboard_title">Mất sóng? Vẫn trò chuyện được.</string>
+    <string name="onboard_body">Khi điện thoại mất sóng (mất điện, động đất, bão, trạm phát sóng quá tải, trên núi hay trên máy bay), openchat nối các điện thoại gần nhau qua Bluetooth và chuyển từng tin nhắn từ máy này sang máy khác.</string>
+    <string name="onboard_no_account">Không cần đăng ký, không cần số điện thoại, không có máy chủ.</string>
+    <string name="onboard_start">Bắt đầu</string>
+    <string name="onboard_next">Tiếp theo, bạn sẽ được yêu cầu cho phép Bluetooth để ứng dụng tìm được người ở gần.</string>
+    <string name="safety_title">Trước khi bắt đầu</string>
+    <string name="safety_body">· Kênh \"Gần đây\" là công khai. Mọi người trong phạm vi đều thấy được.\n· Tin nhắn riêng được mã hóa, nhưng người ở gần có thể biết bạn dùng ứng dụng này và nhận ra cùng một điện thoại theo thời gian.\n· Ứng dụng này chưa qua kiểm định bảo mật độc lập đầy đủ. Nếu bị nhận diện có thể khiến bạn gặp nguy hiểm nghiêm trọng, đừng dựa vào nó.\n· Chạm vào tiêu đề phía trên ba lần để xóa toàn bộ dữ liệu ngay lập tức.</string>
+    <string name="tab_nearby">Gần đây</string>
+    <string name="tab_private">Riêng tư</string>
+    <string name="tab_location">Vị trí</string>
+    <string name="tab_me">Tôi</string>
+    <string name="ok">OK</string>
+    <string name="wiped">Đã xóa. Danh tính mới của bạn: %1$s</string>
+    <string name="banner_need_permission">Cần quyền Bluetooth để tìm người ở gần</string>
+    <string name="banner_bt_off">Bluetooth đang tắt. Chạm vào đây để bật</string>
+    <string name="banner_starting">Đang khởi động…</string>
+    <string name="banner_searching">Đang tìm người ở gần…</string>
+    <plurals name="banner_connected">
+        <item quantity="other">Đã kết nối với %d người ở gần</item>
+    </plurals>
+    <string name="nearby_empty_alone">Chưa có ai ở gần.\nĐiện thoại chạy openchat tự kết nối trong phạm vi vài chục mét.\nNgười dùng bitchat trong cùng mạng lưới cũng nhận được tin nhắn của bạn.</string>
+    <plurals name="nearby_empty_peers">
+        <item quantity="other">Có %d người ở gần. Nói gì đó, mọi người đều thấy.</item>
+    </plurals>
+    <string name="nearby_placeholder">Nói gì đó với mọi người ở gần…</string>
+    <string name="state_sending">Đang gửi</string>
+    <string name="state_sent">Đã gửi</string>
+    <string name="state_delivered">Đã nhận</string>
+    <string name="state_read">Đã xem</string>
+    <string name="state_failed">Chưa gửi được</string>
+    <string name="send">Gửi</string>
+    <string name="back">Quay lại</string>
+    <string name="dm_status_here">Ở gần · đã mã hóa</string>
+    <string name="dm_status_away">Không ở gần · tin nhắn sẽ đến khi người đó quay lại</string>
+    <string name="dm_empty">Tin nhắn với %1$s được mã hóa đầu cuối. Các điện thoại chuyển tiếp không đọc được.</string>
+    <string name="dm_placeholder">Nhắn cho %1$s…</string>
+    <string name="dm_list_empty">Người ở gần sẽ hiện ở đây.\nChạm vào một tên để gửi tin nhắn mã hóa.</string>
+    <string name="dm_direct">Ngay bên cạnh</string>
+    <string name="dm_relayed">Liên lạc được qua điện thoại khác</string>
+    <string name="dm_away">Không ở gần</string>
+    <string name="geo_intro">Khi có internet, bạn có thể trò chuyện với người cùng khu vực, xa hơn tầm Bluetooth. Mỗi khu vực dùng một danh tính ẩn danh riêng.</string>
+    <string name="geo_use_location">Dùng vị trí gần đúng của tôi</string>
+    <string name="geo_level_block">Dãy phố</string>
+    <string name="geo_level_neighborhood">Khu phố</string>
+    <string name="geo_level_city">Thành phố</string>
+    <string name="geo_level_province">Tỉnh</string>
+    <string name="geo_level_region">Vùng</string>
+    <plurals name="geo_online">
+        <item quantity="other">%d đang trực tuyến</item>
+    </plurals>
+    <string name="geo_refresh">Làm mới vị trí</string>
+    <string name="geo_elsewhere">Ghé khu vực khác</string>
+    <string name="geo_hint">geohash, ví dụ wtw3s</string>
+    <string name="geo_enter">Vào</string>
+    <string name="geo_teleport_note">Bạn không ở đó, nên người khác sẽ thấy ✈ cạnh tên bạn.</string>
+    <string name="geo_joined">Đã tham gia</string>
+    <string name="geo_connecting">Đang kết nối…</string>
+    <plurals name="geo_recent">
+        <item quantity="other">Kênh công khai · %d người trong 5 phút qua</item>
+    </plurals>
+    <string name="geo_leave">Rời</string>
+    <string name="geo_empty">Đây là kênh công khai của #%1$s và cần kết nối internet. Người dùng bitchat ở gần cũng ở đây.</string>
+    <string name="geo_placeholder">Nói gì đó trong #%1$s…</string>
+    <string name="me_name">Tên của tôi</string>
+    <string name="save">Lưu</string>
+    <string name="me_seen_as">"Người ở gần thấy: "</string>
+    <string name="me_suffix_note">Tên có thể trùng. Bốn ký tự sau # lấy từ ID thiết bị của bạn, giúp phân biệt những người trùng tên.</string>
+    <string name="me_language">Ngôn ngữ</string>
+    <string name="lang_system">Theo hệ thống</string>
+    <string name="me_share_title">Chuyển openchat cho người quanh bạn</string>
+    <string name="me_share_body">Không cần cửa hàng ứng dụng hay internet. Gửi trực tiếp tệp cài đặt qua Bluetooth, Quick Share hoặc cách khác.</string>
+    <string name="me_share_button">Chia sẻ tệp cài đặt</string>
+    <string name="me_fp_title">Dấu vân tay danh tính</string>
+    <string name="me_fp_body">So sánh trực tiếp chuỗi ký tự này để chắc chắn người kia đúng là người bạn quen.</string>
+    <string name="me_device_id">ID thiết bị: %1$s</string>
+    <string name="me_about">openchat hoạt động với mạng bitchat. Mã nguồn mở, giấy phép MIT.</string>
+</resources>

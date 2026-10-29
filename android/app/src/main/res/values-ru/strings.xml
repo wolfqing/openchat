@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Russian. Machine-drafted; needs a native speaker's review. -->
+<resources>
+    <string name="channel_status">Состояние сети</string>
+    <string name="channel_messages">Личные сообщения</string>
+    <string name="status_running">Подключение к телефонам рядом по Bluetooth</string>
+    <string name="onboard_title">Нет сети? Общайтесь всё равно.</string>
+    <string name="onboard_body">Когда у телефона нет сети (отключение электричества, землетрясение, тайфун, перегруженная вышка, в горах или в самолёте), openchat соединяет ближайшие телефоны по Bluetooth и передаёт каждое сообщение от телефона к телефону.</string>
+    <string name="onboard_no_account">Без регистрации, без номера телефона, без сервера.</string>
+    <string name="onboard_start">Начать</string>
+    <string name="onboard_next">Далее вас попросят разрешить Bluetooth, чтобы приложение могло находить людей рядом.</string>
+    <string name="safety_title">Перед началом</string>
+    <string name="safety_body">· Канал «Рядом» публичный. Его видят все в зоне действия.\n· Личные сообщения зашифрованы, но люди рядом могут понять, что вы пользуетесь этим приложением, и со временем узнавать тот же телефон.\n· Приложение ещё не проходило полного независимого аудита безопасности. Если раскрытие личности грозит вам серьёзной опасностью, не полагайтесь на него.\n· Нажмите на заголовок вверху три раза, чтобы сразу стереть все данные.</string>
+    <string name="tab_nearby">Рядом</string>
+    <string name="tab_private">Личные</string>
+    <string name="tab_location">Место</string>
+    <string name="tab_me">Я</string>
+    <string name="ok">ОК</string>
+    <string name="wiped">Всё стёрто. Ваша новая личность: %1$s</string>
+    <string name="banner_need_permission">Нужно разрешение Bluetooth, чтобы находить людей рядом</string>
+    <string name="banner_bt_off">Bluetooth выключен. Нажмите, чтобы включить</string>
+    <string name="banner_starting">Запуск…</string>
+    <string name="banner_searching">Поиск людей рядом…</string>
+    <plurals name="banner_connected">
+        <item quantity="one">Подключено людей рядом: %d</item>
+        <item quantity="few">Подключено людей рядом: %d</item>
+        <item quantity="many">Подключено людей рядом: %d</item>
+        <item quantity="other">Подключено людей рядом: %d</item>
+    </plurals>
+    <string name="nearby_empty_alone">Рядом пока никого нет.\nТелефоны с openchat подключаются автоматически в радиусе нескольких десятков метров.\nПользователи bitchat в той же сети тоже получат ваши сообщения.</string>
+    <plurals name="nearby_empty_peers">
+        <item quantity="one">Людей рядом: %d. Напишите что-нибудь — увидят все.</item>
+        <item quantity="few">Людей рядом: %d. Напишите что-нибудь — увидят все.</item>
+        <item quantity="many">Людей рядом: %d. Напишите что-нибудь — увидят все.</item>
+        <item quantity="other">Людей рядом: %d. Напишите что-нибудь — увидят все.</item>
+    </plurals>
+    <string name="nearby_placeholder">Напишите всем рядом…</string>
+    <string name="state_sending">Отправка</string>
+    <string name="state_sent">Отправлено</string>
+    <string name="state_delivered">Доставлено</string>
+    <string name="state_read">Прочитано</string>
+    <string name="state_failed">Не отправлено</string>
+    <string name="send">Отправить</string>
+    <string name="back">Назад</string>
+    <string name="dm_status_here">Рядом · зашифровано</string>
+    <string name="dm_status_away">Не рядом · сообщения дойдут, когда собеседник вернётся</string>
+    <string name="dm_empty">Переписка с %1$s защищена сквозным шифрованием. Телефоны, которые передают сообщения, не могут их прочитать.</string>
+    <string name="dm_placeholder">Сообщение для %1$s…</string>
+    <string name="dm_list_empty">Здесь появятся люди рядом.\nНажмите на имя, чтобы отправить зашифрованное сообщение.</string>
+    <string name="dm_direct">Совсем рядом</string>
+    <string name="dm_relayed">Доступен через другие телефоны</string>
+    <string name="dm_away">Не рядом</string>
+    <string name="geo_intro">С подключением к интернету можно общаться с людьми из того же района, за пределами действия Bluetooth. Для каждого района используется отдельная анонимная личность.</string>
+    <string name="geo_use_location">Использовать моё примерное местоположение</string>
+    <string name="geo_level_block">Квартал</string>
+    <string name="geo_level_neighborhood">Микрорайон</string>
+    <string name="geo_level_city">Город</string>
+    <string name="geo_level_province">Область</string>
+    <string name="geo_level_region">Регион</string>
+    <plurals name="geo_online">
+        <item quantity="one">В сети: %d</item>
+        <item quantity="few">В сети: %d</item>
+        <item quantity="many">В сети: %d</item>
+        <item quantity="other">В сети: %d</item>
+    </plurals>
+    <string name="geo_refresh">Обновить местоположение</string>
+    <string name="geo_elsewhere">Перейти в другой район</string>
+    <string name="geo_hint">geohash, например wtw3s</string>
+    <string name="geo_enter">Перейти</string>
+    <string name="geo_teleport_note">Вас там нет, поэтому другие увидят ✈ рядом с вашим именем.</string>
+    <string name="geo_joined">Вы в канале</string>
+    <string name="geo_connecting">Подключение…</string>
+    <plurals name="geo_recent">
+        <item quantity="one">Публичный канал · за последние 5 минут: %d</item>
+        <item quantity="few">Публичный канал · за последние 5 минут: %d</item>
+        <item quantity="many">Публичный канал · за последние 5 минут: %d</item>
+        <item quantity="other">Публичный канал · за последние 5 минут: %d</item>
+    </plurals>
+    <string name="geo_leave">Выйти</string>
+    <string name="geo_empty">Это публичный канал #%1$s, нужен интернет. Пользователи bitchat поблизости тоже здесь.</string>
+    <string name="geo_placeholder">Напишите в #%1$s…</string>
+    <string name="me_name">Моё имя</string>
+    <string name="save">Сохранить</string>
+    <string name="me_seen_as">"Люди рядом видят: "</string>
+    <string name="me_suffix_note">Имена могут повторяться. Четыре символа после # берутся из ID устройства и помогают различать людей с одинаковыми именами.</string>
+    <string name="me_language">Язык</string>
+    <string name="lang_system">Как в системе</string>
+    <string name="me_share_title">Передайте openchat людям рядом</string>
+    <string name="me_share_body">Не нужны ни магазин приложений, ни интернет. Отправьте установочный файл напрямую по Bluetooth, через Quick Share или любым другим способом.</string>
+    <string name="me_share_button">Поделиться установщиком</string>
+    <string name="me_fp_title">Отпечаток личности</string>
+    <string name="me_fp_body">Сравните эти символы при встрече, чтобы убедиться, что это действительно знакомый вам человек.</string>
+    <string name="me_device_id">ID устройства: %1$s</string>
+    <string name="me_about">openchat совместим с сетью bitchat. Открытый исходный код, лицензия MIT.</string>
+</resources>

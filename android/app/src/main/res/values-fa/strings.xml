@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Persian. Machine-drafted; needs a native speaker's review. -->
+<resources>
+    <string name="channel_status">وضعیت شبکه</string>
+    <string name="channel_messages">پیام‌های خصوصی</string>
+    <string name="status_running">در حال اتصال به گوشی‌های نزدیک با بلوتوث</string>
+    <string name="onboard_title">آنتن نداری؟ باز هم گفتگو کن.</string>
+    <string name="onboard_body">وقتی گوشی‌ات آنتن ندارد (قطعی برق، زلزله، طوفان، شلوغی دکل مخابراتی، در کوهستان یا در هواپیما)، openchat گوشی‌های نزدیک را با بلوتوث به هم وصل می‌کند و هر پیام را از گوشی به گوشی می‌رساند.</string>
+    <string name="onboard_no_account">بدون ثبت‌نام، بدون شماره تلفن، بدون سرور.</string>
+    <string name="onboard_start">شروع</string>
+    <string name="onboard_next">در مرحلهٔ بعد از تو خواسته می‌شود اجازهٔ بلوتوث را بدهی تا برنامه بتواند افراد نزدیک را پیدا کند.</string>
+    <string name="safety_title">پیش از شروع</string>
+    <string name="safety_body">· کانال «نزدیک» عمومی است و همهٔ کسانی که در محدوده‌اند آن را می‌بینند.\n· پیام‌های خصوصی رمزگذاری می‌شوند، اما افراد نزدیک می‌توانند بفهمند که از این برنامه استفاده می‌کنی و در طول زمان همان گوشی را بشناسند.\n· این برنامه هنوز ممیزی امنیتی مستقل و کامل نشده است. اگر شناسایی شدن تو را در خطر جدی قرار می‌دهد، به آن تکیه نکن.\n· سه بار روی عنوان بالای صفحه بزن تا همهٔ داده‌ها یک‌جا پاک شوند.</string>
+    <string name="tab_nearby">نزدیک</string>
+    <string name="tab_private">خصوصی</string>
+    <string name="tab_location">مکان</string>
+    <string name="tab_me">من</string>
+    <string name="ok">باشه</string>
+    <string name="wiped">پاک شد. هویت جدید تو: %1$s</string>
+    <string name="banner_need_permission">برای پیدا کردن افراد نزدیک، اجازهٔ بلوتوث لازم است</string>
+    <string name="banner_bt_off">بلوتوث خاموش است. برای روشن کردن اینجا بزن</string>
+    <string name="banner_starting">در حال شروع…</string>
+    <string name="banner_searching">در حال جست‌وجوی افراد نزدیک…</string>
+    <plurals name="banner_connected">
+        <item quantity="one">متصل به %d نفر در نزدیکی</item>
+        <item quantity="other">متصل به %d نفر در نزدیکی</item>
+    </plurals>
+    <string name="nearby_empty_alone">هنوز کسی نزدیک نیست.\nگوشی‌هایی که openchat دارند در فاصلهٔ چند ده متری خودکار به هم وصل می‌شوند.\nکاربران bitchat در همان شبکه هم پیام‌های تو را دریافت می‌کنند.</string>
+    <plurals name="nearby_empty_peers">
+        <item quantity="one">%d نفر نزدیک‌اند. چیزی بنویس تا همه ببینند.</item>
+        <item quantity="other">%d نفر نزدیک‌اند. چیزی بنویس تا همه ببینند.</item>
+    </plurals>
+    <string name="nearby_placeholder">به همهٔ افراد نزدیک چیزی بگو…</string>
+    <string name="state_sending">در حال ارسال</string>
+    <string name="state_sent">ارسال شد</string>
+    <string name="state_delivered">تحویل شد</string>
+    <string name="state_read">خوانده شد</string>
+    <string name="state_failed">ارسال نشد</string>
+    <string name="send">ارسال</string>
+    <string name="back">بازگشت</string>
+    <string name="dm_status_here">نزدیک · رمزگذاری‌شده</string>
+    <string name="dm_status_away">نزدیک نیست · پیام‌ها وقتی برگردد تحویل می‌شوند</string>
+    <string name="dm_empty">پیام‌ها با %1$s سرتاسری رمزگذاری می‌شوند. گوشی‌هایی که آن‌ها را جابه‌جا می‌کنند نمی‌توانند بخوانندشان.</string>
+    <string name="dm_placeholder">پیام به %1$s…</string>
+    <string name="dm_list_empty">افراد نزدیک اینجا نشان داده می‌شوند.\nروی یک نام بزن تا پیام رمزگذاری‌شده بفرستی.</string>
+    <string name="dm_direct">درست کنار تو</string>
+    <string name="dm_relayed">از طریق گوشی‌های دیگر در دسترس</string>
+    <string name="dm_away">نزدیک نیست</string>
+    <string name="geo_intro">اگر اینترنت داشته باشی، می‌توانی فراتر از برد بلوتوث با افراد همان منطقه گفتگو کنی. هر منطقه هویت ناشناس جداگانه‌ای دارد.</string>
+    <string name="geo_use_location">از موقعیت تقریبی من استفاده کن</string>
+    <string name="geo_level_block">بلوک</string>
+    <string name="geo_level_neighborhood">محله</string>
+    <string name="geo_level_city">شهر</string>
+    <string name="geo_level_province">استان</string>
+    <string name="geo_level_region">منطقه</string>
+    <plurals name="geo_online">
+        <item quantity="one">%d نفر آنلاین</item>
+        <item quantity="other">%d نفر آنلاین</item>
+    </plurals>
+    <string name="geo_refresh">به‌روزرسانی موقعیت</string>
+    <string name="geo_elsewhere">رفتن به منطقه‌ای دیگر</string>
+    <string name="geo_hint">geohash، مثلاً wtw3s</string>
+    <string name="geo_enter">برو</string>
+    <string name="geo_teleport_note">تو آنجا نیستی، پس دیگران کنار نامت ✈ می‌بینند.</string>
+    <string name="geo_joined">پیوستی</string>
+    <string name="geo_connecting">در حال اتصال…</string>
+    <plurals name="geo_recent">
+        <item quantity="one">کانال عمومی · %d نفر در ۵ دقیقهٔ گذشته</item>
+        <item quantity="other">کانال عمومی · %d نفر در ۵ دقیقهٔ گذشته</item>
+    </plurals>
+    <string name="geo_leave">خروج</string>
+    <string name="geo_empty">این کانال عمومی #%1$s است و به اینترنت نیاز دارد. کاربران bitchat نزدیک هم اینجا هستند.</string>
+    <string name="geo_placeholder">در #%1$s چیزی بگو…</string>
+    <string name="me_name">نام من</string>
+    <string name="save">ذخیره</string>
+    <string name="me_seen_as">"افراد نزدیک تو را این‌طور می‌بینند: "</string>
+    <string name="me_suffix_note">نام‌ها ممکن است تکراری باشند. چهار نویسهٔ بعد از # از شناسهٔ دستگاه تو می‌آیند و افراد هم‌نام را از هم جدا می‌کنند.</string>
+    <string name="me_language">زبان</string>
+    <string name="lang_system">زبان سیستم</string>
+    <string name="me_share_title">openchat را به اطرافیانت برسان</string>
+    <string name="me_share_body">نه فروشگاه برنامه لازم است نه اینترنت. فایل نصب را مستقیم با بلوتوث، Quick Share یا هر راه دیگری بفرست.</string>
+    <string name="me_share_button">اشتراک‌گذاری فایل نصب</string>
+    <string name="me_fp_title">اثر انگشت هویت</string>
+    <string name="me_fp_body">این نویسه‌ها را حضوری مقایسه کن تا مطمئن شوی طرف مقابل واقعاً همان کسی است که می‌شناسی.</string>
+    <string name="me_device_id">شناسهٔ دستگاه: %1$s</string>
+    <string name="me_about">openchat با شبکهٔ bitchat کار می‌کند. متن‌باز، با مجوز MIT.</string>
+</resources>

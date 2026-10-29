@@ -1,0 +1,635 @@
+<title>openchat 界面原型</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: a short brief, then three phone screens side by side (stacked on narrow).
+   Two layers: content stays quiet and readable; only the mesh layer (signal band,
+   delivery path, hops, emblems) uses the signal color and the mono face. */
+:root {
+  --bg: #EEF0EC;          /* page ground, slight green-grey field neutral */
+  --screen: #F8F9F6;      /* phone screen */
+  --surface: #FFFFFF;     /* raised: composer, sheets */
+  --ink: #14191A;
+  --muted: #586264;
+  --line: #D6DCD8;
+  --signal: #E2531A;      /* mesh layer only: safety orange */
+  --signal-soft: #FBE3D8;
+  --lock: #24527F;        /* encrypted / private */
+  --lock-soft: #DCE7F2;
+  --warn: #A3300F;
+  --em-l: 42%;            /* emblem lightness */
+  --frame: #1B2021;
+  --font-body: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B0D0D; --screen: #000000; --surface: #121616; --ink: #EDF1EF; --muted: #9AA4A3;
+    --line: #262D2D; --signal: #FF7840; --signal-soft: #3A1A0C; --lock: #93BCE8; --lock-soft: #13263A;
+    --warn: #FF9A7A; --em-l: 66%; --frame: #2A3132; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B0D0D; --screen: #000000; --surface: #121616; --ink: #EDF1EF; --muted: #9AA4A3;
+  --line: #262D2D; --signal: #FF7840; --signal-soft: #3A1A0C; --lock: #93BCE8; --lock-soft: #13263A;
+  --warn: #FF9A7A; --em-l: 66%; --frame: #2A3132; color-scheme: dark;
+}
+
+/* Noto Sans SC sets curly quotes full-width; use a Latin-first stack in English. */
+html[lang="en"] { --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body);
+  font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+/* every nickname carries its #xxxx suffix, so duplicate names stay distinct */
+.tag { font-family: var(--font-mono); font-size: .78em; font-weight: 400; color: var(--muted); }
+
+/* ---------- brief ---------- */
+.brief { max-width: 1140px; margin: 0 auto 28px; display: grid; gap: 18px; }
+.brief h1 { font-size: 26px; line-height: 1.25; margin: 0; text-wrap: balance; }
+.brief p { margin: 0; max-width: 64ch; color: var(--muted); }
+.brief-row { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; justify-content: space-between; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; cursor: pointer; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+/* ---------- stage ---------- */
+.stage { max-width: 1140px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 32px 24px; justify-content: center; }
+.shot { display: grid; gap: 10px; width: min(360px, 100%); }
+.shot figcaption { font-size: 13px; color: var(--muted); }
+.shot figcaption b { color: var(--ink); font-weight: 500; }
+figure { margin: 0; }
+
+.phone {
+  width: 100%; height: 740px; background: var(--screen); border: 8px solid var(--frame);
+  border-radius: 34px; overflow: hidden; display: flex; flex-direction: column; position: relative;
+}
+.sysbar { display: flex; justify-content: space-between; padding: 8px 20px 4px; font-size: 12px; font-family: var(--font-mono); color: var(--ink); }
+
+/* signal band: the one place the network shows itself */
+.band {
+  display: flex; align-items: center; gap: 10px; padding: 8px 16px; font-size: 12.5px;
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+.band .pulse { width: 9px; height: 9px; border-radius: 50%; background: var(--signal); position: relative; flex: none; }
+.band .pulse::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 1.5px solid var(--signal); animation: ping 2s ease-out infinite; }
+.band.idle .pulse { background: transparent; border: 1.5px solid var(--signal); }
+.band b { font-weight: 600; color: var(--signal); }
+.band .sep { color: var(--line); }
+.band .ago { margin-left: auto; color: var(--muted); }
+@keyframes ping { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+
+.apphead { display: flex; align-items: center; gap: 10px; padding: 12px 16px 10px; }
+.apphead h2 { margin: 0; font-size: 19px; line-height: 1.3; cursor: default; user-select: none; }
+.apphead .sub { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.apphead .grow { flex: 1; min-width: 0; }
+.iconbtn { border: 0; background: transparent; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; cursor: pointer; flex: none; }
+.iconbtn:hover { background: var(--line); }
+.scope {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+}
+.scope.lock { color: var(--lock); border-color: var(--lock); }
+
+.feed { flex: 1; overflow-y: auto; padding: 4px 0 12px; scrollbar-width: thin; }
+
+/* public channel: full-width rows, no bubbles (a bulletin, not a chat) */
+.post { display: grid; grid-template-columns: 28px 1fr; gap: 0 10px; padding: 9px 16px; }
+.post + .post { border-top: 1px solid var(--line); }
+.post .who { display: flex; align-items: baseline; gap: 6px; font-size: 13.5px; min-width: 0; }
+.post .name { font-weight: 700; }
+.post .tag { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.post .time { margin-left: auto; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.post .text { grid-column: 2; font-size: 16px; line-height: 1.55; overflow-wrap: anywhere; }
+.post .hops { grid-column: 2; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.post.mine .name { color: var(--ink); }
+.emblem { width: 28px; height: 28px; display: block; border-radius: 6px; background: var(--surface); border: 1px solid var(--line); }
+.emblem-btn { padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; }
+.dayline { text-align: center; font-size: 11.5px; color: var(--muted); padding: 8px 0 4px; font-family: var(--font-mono); }
+
+/* private chat: bubbles, lock tint */
+.dm { display: flex; flex-direction: column; gap: 10px; padding: 8px 14px; }
+.msg { max-width: 82%; display: grid; gap: 3px; }
+.msg.in { align-self: flex-start; }
+.msg.out { align-self: flex-end; justify-items: end; }
+.bubble { padding: 8px 12px; border-radius: 16px; font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; }
+.msg.in .bubble { background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+.msg.out .bubble { background: var(--lock-soft); color: var(--ink); border-bottom-right-radius: 5px; }
+.meta { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+
+/* delivery path: sent → relayed → delivered → read. Filled vs hollow, plus words. */
+.path { display: inline-flex; align-items: center; }
+.path i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--muted); display: block; transition: background .25s, border-color .25s; }
+.path s { width: 10px; height: 1.5px; background: var(--line); display: block; transition: background .25s; }
+.path i.on { background: var(--signal); border-color: var(--signal); }
+.path s.on { background: var(--signal); }
+.path.fail i.on { background: var(--warn); border-color: var(--warn); }
+.state { color: var(--ink); }
+.state.fail { color: var(--warn); }
+.retry { border: 0; background: none; padding: 0; color: var(--signal); font: inherit; text-decoration: underline; cursor: pointer; }
+
+.composer { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px 12px; background: var(--surface); border-top: 1px solid var(--line); }
+.composer .chip { font-size: 12px; padding: 3px 8px; border-radius: 999px; white-space: nowrap; margin-bottom: 9px; border: 1px solid var(--line); color: var(--muted); }
+.composer .chip.lock { color: var(--lock); border-color: var(--lock); }
+.composer textarea {
+  flex: 1; min-width: 0; resize: none; border: 1px solid var(--line); border-radius: 18px; padding: 8px 14px;
+  background: var(--screen); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.4; height: 40px; max-height: 96px;
+}
+.composer textarea::placeholder { color: var(--muted); }
+.send { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--ink); color: var(--screen); display: grid; place-items: center; cursor: pointer; flex: none; }
+
+.nav { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--surface); padding: 6px 0 10px; }
+.nav span { display: grid; justify-items: center; gap: 2px; font-size: 11.5px; color: var(--muted); position: relative; }
+.nav span.on { color: var(--ink); font-weight: 500; }
+.nav svg { width: 22px; height: 22px; }
+.nav .badge { position: absolute; top: -2px; left: calc(50% + 6px); background: var(--signal); color: #fff; font-size: 10px; font-family: var(--font-mono); padding: 0 5px; border-radius: 8px; line-height: 15px; }
+
+/* fingerprint sheet */
+.sheet { position: absolute; inset: 0; background: color-mix(in srgb, var(--ink) 40%, transparent); display: flex; align-items: flex-end; }
+.sheet-card { background: var(--surface); width: 100%; border-radius: 20px 20px 0 0; padding: 20px 20px 24px; display: grid; gap: 14px; justify-items: center; text-align: center; }
+.sheet-card .emblem { width: 112px; height: 112px; border-radius: 14px; }
+.sheet-card h3 { margin: 0; font-size: 17px; }
+.sheet-card p { margin: 0; font-size: 14px; color: var(--muted); max-width: 30ch; }
+.fp { font-family: var(--font-mono); font-size: 15px; letter-spacing: .04em; display: grid; grid-template-columns: repeat(4, auto); gap: 4px 14px; }
+.btnrow { display: flex; gap: 10px; width: 100%; }
+.btn { flex: 1; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-size: 15px; }
+.btn.primary { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+/* empty state: radar */
+.empty { flex: 1; display: grid; align-content: start; gap: 16px; padding: 8px 20px 16px; overflow-y: auto; }
+.radar { width: 100%; max-width: 240px; aspect-ratio: 1; justify-self: center; position: relative; }
+.radar svg { width: 100%; height: 100%; display: block; }
+.radar .sweep { transform-origin: 120px 120px; animation: sweep 3.2s linear infinite; }
+@keyframes sweep { to { transform: rotate(360deg); } }
+.blip { opacity: 0; transition: opacity .4s; }
+.blip.show { opacity: 1; }
+.empty h3 { margin: 0; font-size: 20px; text-align: center; }
+.empty .lede { margin: -8px 0 0; font-size: 14px; color: var(--muted); text-align: center; }
+.tips { display: grid; gap: 8px; }
+.tip { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-align: left; font-size: 14.5px; line-height: 1.45; }
+.tip small { display: block; color: var(--muted); font-size: 12.5px; }
+.tip .n { font-family: var(--font-mono); font-size: 12px; color: var(--signal); border: 1.5px solid var(--signal); border-radius: 50%; width: 22px; height: 22px; display: grid; place-items: center; }
+.tip.action { cursor: pointer; }
+.tip.action:hover { border-color: var(--ink); }
+.sim { justify-self: center; font-size: 12.5px; color: var(--muted); border: 1px dashed var(--line); background: transparent; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+
+.toast { position: absolute; left: 12px; right: 12px; top: 100px; background: var(--ink); color: var(--screen); border-radius: 12px; padding: 10px 14px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+.toast .emblem { width: 24px; height: 24px; }
+.toast .tag { color: inherit; opacity: .7; }
+
+.notes { max-width: 1140px; margin: 36px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px 32px; }
+.notes h4 { margin: 0 0 4px; font-size: 14px; }
+.notes p { margin: 0; font-size: 13.5px; color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .band .pulse::after, .radar .sweep { animation: none; }
+}
+</style>
+
+<header class="brief">
+  <h1 data-i18n="h1">openchat 界面原型</h1>
+  <p data-i18n="intro">原则是两层分开：消息内容保持安静、好读；网络状态（信号带、送达路径、跳数、身份徽记）统一用信号橙和等宽数字表达，只出现在固定位置。界面的特色来自让这张网看得见。示例昵称都用历史人物。</p>
+  <div class="brief-row">
+    <div class="legend" aria-label="网络层图例">
+      <span><span class="path"><i class="on"></i><s class="on"></s><i class="on"></i><s></s><i></i></span><span data-i18n="lgPath">送达路径</span></span>
+      <span class="mono" data-i18n="lgHops">经 2 跳</span>
+      <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 16 0M8 12a4 4 0 0 1 8 0"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg><span data-i18n="lgPublic">公开广播</span></span>
+      <span style="color:var(--lock)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span data-i18n="lgDm">加密私信</span></span>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Language">
+        <button id="lang-zh" aria-pressed="true" data-l="zh">中文</button>
+        <button id="lang-en" aria-pressed="false" data-l="en">English</button>
+      </div>
+      <div class="seg" role="group" aria-label="Theme" id="theme-seg">
+        <button id="th-sys" aria-pressed="true" data-t="" data-i18n="thSys">跟随系统</button>
+        <button id="th-light" aria-pressed="false" data-t="light" data-i18n="thLight">亮色</button>
+        <button id="th-dark" aria-pressed="false" data-t="dark" data-i18n="thDark">暗色</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="stage">
+  <!-- 1. nearby public channel -->
+  <figure class="shot">
+    <div class="phone" id="p-public">
+      <div class="sysbar"><span>14:32</span><span data-i18n="noSvc73">无服务 · 73%</span></div>
+      <div class="apphead">
+        <div class="grow">
+          <h2 data-i18n="nearby">附近</h2>
+          <div class="sub" data-i18n="nearbySub">范围内所有人都能看到</div>
+        </div>
+        <span class="scope"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 16 0M8 12a4 4 0 0 1 8 0"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg><span data-i18n="public">公开</span></span>
+      </div>
+      <div class="band" data-i18n-html="bandPub"><span class="pulse"></span><span>直连 <b>3</b></span><span class="sep">|</span><span>可达 <b>11</b></span><span class="ago">12 秒前</span></div>
+      <div class="feed" id="pub-feed"></div>
+      <div class="composer">
+        <span class="chip" data-i18n="public">公开</span>
+        <textarea id="pub-input" rows="1" placeholder="对附近所有人说…" data-i18n-ph="pubPh"></textarea>
+        <button class="send" id="pub-send" aria-label="发送"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5 21 12 3 3.5v6.6L15 12 3 13.9z"/></svg></button>
+      </div>
+      <nav class="nav" aria-hidden="true"></nav>
+    </div>
+    <figcaption data-i18n-html="cap1"><b>附近频道</b>：像公告板，不用气泡。每条消息前是发言人的徽记，下方小字写经过几跳。每个名字后面都带 #xxxx（peer ID 前四位），两个苏轼靠 #e887 和 #0c3b 区分，徽记也不同。</figcaption>
+  </figure>
+
+  <!-- 2. private chat -->
+  <figure class="shot">
+    <div class="phone" id="p-dm">
+      <div class="sysbar"><span>14:33</span><span data-i18n="noSvc73">无服务 · 73%</span></div>
+      <div class="apphead">
+        <button class="iconbtn" aria-label="返回"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button class="emblem-btn" id="dm-emblem" aria-label="核对身份"></button>
+        <div class="grow">
+          <h2 id="dm-name">张衡</h2>
+          <div class="sub" id="dm-sub">在附近 · 经 1 台手机转达</div>
+        </div>
+        <span class="scope lock"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span data-i18n="enc">加密</span></span>
+      </div>
+      <div class="band" id="dm-band"><span class="pulse"></span><span>到张衡 <b>2</b> 跳</span><span class="sep">|</span><span>直连 <b>3</b></span><span class="ago">4 秒前</span></div>
+      <div class="feed"><div class="dm" id="dm-feed"></div></div>
+      <div class="composer">
+        <span class="chip lock" data-i18n="enc">加密</span>
+        <textarea id="dm-input" rows="1" placeholder="写给张衡…"></textarea>
+        <button class="send" id="dm-send" aria-label="发送"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5 21 12 3 3.5v6.6L15 12 3 13.9z"/></svg></button>
+      </div>
+      <div class="sheet" id="fp-sheet" hidden>
+        <div class="sheet-card" role="dialog" aria-labelledby="fp-title">
+          <span id="fp-emblem"></span>
+          <h3 id="fp-title">核对张衡的身份</h3>
+          <p data-i18n="fpBody">当面对比两台手机上的图案和数字。一样，就说明中间没有人冒充。</p>
+          <div class="fp" id="fp-digits"></div>
+          <div class="btnrow">
+            <button class="btn" id="fp-close" data-i18n="later">稍后</button>
+            <button class="btn primary" id="fp-ok" data-i18n="match">一致，标为已核对</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption data-i18n-html="cap2"><b>私信</b>：发出的消息下面是送达路径。发一条试试，看它一步步走完。点头像核对指纹。</figcaption>
+  </figure>
+
+  <!-- 3. nobody nearby -->
+  <figure class="shot">
+    <div class="phone" id="p-empty">
+      <div class="sysbar"><span>14:30</span><span data-i18n="noSvc74">无服务 · 74%</span></div>
+      <div class="apphead">
+        <div class="grow">
+          <h2 data-i18n="nearby">附近</h2>
+          <div class="sub" data-i18n="nearbySub">范围内所有人都能看到</div>
+        </div>
+        <span class="scope" data-i18n="public">公开</span>
+      </div>
+      <div class="band idle" id="empty-band"><span class="pulse"></span><span id="empty-band-text">正在扫描 · <b>0</b> 人</span><span class="ago" id="scan-time">已扫 3:12</span></div>
+      <div class="empty">
+        <div class="radar" aria-hidden="true">
+          <svg viewBox="0 0 240 240">
+            <defs>
+              <linearGradient id="sw" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="var(--signal)" stop-opacity="0"/>
+                <stop offset="1" stop-color="var(--signal)" stop-opacity=".35"/>
+              </linearGradient>
+            </defs>
+            <circle cx="120" cy="120" r="110" fill="none" stroke="var(--line)" stroke-width="1"/>
+            <circle cx="120" cy="120" r="74" fill="none" stroke="var(--line)" stroke-width="1"/>
+            <circle cx="120" cy="120" r="38" fill="none" stroke="var(--line)" stroke-width="1"/>
+            <text x="124" y="80" font-size="9" fill="var(--muted)" font-family="IBM Plex Mono, monospace">10 m</text>
+            <text x="124" y="44" font-size="9" fill="var(--muted)" font-family="IBM Plex Mono, monospace">30 m</text>
+            <text x="124" y="14" font-size="9" fill="var(--muted)" font-family="IBM Plex Mono, monospace">50 m+</text>
+            <path class="sweep" d="M120 120 L230 120 A110 110 0 0 0 197.8 42.2 Z" fill="url(#sw)"/>
+            <circle cx="120" cy="120" r="5" fill="var(--ink)"/>
+            <g class="blip" id="blip"><circle cx="168" cy="86" r="6" fill="var(--signal)"/><circle cx="168" cy="86" r="11" fill="none" stroke="var(--signal)" stroke-width="1.5"/></g>
+          </svg>
+        </div>
+        <h3 id="empty-title">附近还没有人</h3>
+        <p class="lede" id="empty-lede">蓝牙正常。有人进入几十米内，会自动连上。</p>
+        <div class="tips">
+          <div class="tip"><span class="n">1</span><div data-i18n-html="tip1">让对方也打开 openchat<small>手机锁屏后也能收发，但 App 不能被划掉</small></div></div>
+          <div class="tip"><span class="n">2</span><div data-i18n-html="tip2">走到开阔处，离窗户近一点<small>墙和人群会挡住蓝牙，室内通常只有 10 米左右</small></div></div>
+          <button class="tip action" type="button"><span class="n">3</span><div data-i18n-html="tip3">把 App 发给身边的人<small>用快传或蓝牙发送安装包，不需要网络</small></div></button>
+        </div>
+        <button class="sim" id="sim-join" type="button">原型演示：模拟有人进入范围</button>
+      </div>
+      <nav class="nav" aria-hidden="true"></nav>
+    </div>
+    <figcaption data-i18n-html="cap3"><b>附近没人</b>：这是最常见的状态，所以最用心。雷达说明 App 在工作，下面每条都是能马上做的事。</figcaption>
+  </figure>
+</main>
+
+<section class="notes">
+  <div><h4 data-i18n="n1h">信号带</h4><p data-i18n="n1">每个页面顶部同一位置。实心点在呼吸表示网是活的，空心点表示还在找。数字用等宽字体，和正文明显不同。</p></div>
+  <div><h4 data-i18n="n2h">送达路径</h4><p data-i18n="n2">四个点：发出、被转发、送达、已读。实心和空心区分状态，旁边总有文字，不只靠颜色。失败时变红并给出重发。</p></div>
+  <div><h4 data-i18n="n3h">身份徽记</h4><p data-i18n="n3">由公钥算出颜色和对称图案。昵称可以重名，徽记不行。点开就是指纹核对页。</p></div>
+  <div><h4 data-i18n="n4h">公开与私密</h4><p data-i18n="n4">公开频道是通栏公告，输入框前写“公开”；私信是气泡，带锁的蓝色。两者一眼能分开，避免发错地方。</p></div>
+</section>
+
+<script>
+(() => {
+  // ---------- strings ----------
+  // Sample nicknames are historical figures so nothing reads as a real user.
+  const STR = {
+    zh: {
+      h1: 'openchat 界面原型',
+      intro: '原则是两层分开：消息内容保持安静、好读；网络状态（信号带、送达路径、跳数、身份徽记）统一用信号橙和等宽数字表达，只出现在固定位置。界面的特色来自让这张网看得见。示例昵称都用历史人物。',
+      lgPath: '送达路径', lgHops: '经 2 跳', lgPublic: '公开广播', lgDm: '加密私信',
+      thSys: '跟随系统', thLight: '亮色', thDark: '暗色',
+      noSvc73: '无服务 · 73%', noSvc74: '无服务 · 74%',
+      nearby: '附近', nearbySub: '范围内所有人都能看到', public: '公开', enc: '加密',
+      bandPub: '<span class="pulse"></span><span>直连 <b>3</b></span><span class="sep">|</span><span>可达 <b>11</b></span><span class="ago">12 秒前</span>',
+      pubPh: '对附近所有人说…',
+      cap1: '<b>附近频道</b>：像公告板，不用气泡。每条消息前是发言人的徽记，下方小字写经过几跳。每个名字后面都带 #xxxx（peer ID 前四位），两个苏轼靠 #e887 和 #0c3b 区分，徽记也不同。',
+      cap2: '<b>私信</b>：发出的消息下面是送达路径。发一条试试，看它一步步走完。点头像核对指纹。',
+      cap3: '<b>附近没人</b>：这是最常见的状态，所以最用心。雷达说明 App 在工作，下面每条都是能马上做的事。',
+      fpBody: '当面对比两台手机上的图案和数字。一样，就说明中间没有人冒充。',
+      later: '稍后', match: '一致，标为已核对',
+      tip1: '让对方也打开 openchat<small>手机锁屏后也能收发，但 App 不能被划掉</small>',
+      tip2: '走到开阔处，离窗户近一点<small>墙和人群会挡住蓝牙，室内通常只有 10 米左右</small>',
+      tip3: '把 App 发给身边的人<small>用快传或蓝牙发送安装包，不需要网络</small>',
+      n1h: '信号带', n1: '每个页面顶部同一位置。实心点在呼吸表示网是活的，空心点表示还在找。数字用等宽字体，和正文明显不同。',
+      n2h: '送达路径', n2: '四个点：发出、被转发、送达、已读。实心和空心区分状态，旁边总有文字，不只靠颜色。失败时变红并给出重发。',
+      n3h: '身份徽记', n3: '由公钥算出颜色和对称图案。昵称可以重名，徽记不行。点开就是指纹核对页。',
+      n4h: '公开与私密', n4: '公开频道是通栏公告，输入框前写“公开”；私信是气泡，带锁的蓝色。两者一眼能分开，避免发错地方。',
+      nav: ['附近', '私信', '位置频道', '我'],
+      names: { zh: '张衡', lb: '李白', ss: '苏轼', me: '我' },
+      today: '今天', direct: '直连', hops: n => `经 ${n} 跳`, broadcast: '已广播给 3 台直连手机',
+      posts: [
+        ['lb', '14:18', '2 号楼停电了，一楼大厅有应急灯，可以来这边。', 0],
+        ['ss', '14:21', '有人知道社区卫生站开着吗？家里老人需要量血压。', 2],
+        ['zh', '14:24', '卫生站开着，在发瓶装水。我刚从那边回来。', 1],
+        ['ss2', '14:27', '东门那条路积水到膝盖，别走东门。', 3],
+        ['lb', '14:30', '收到。西门能走，我们在西门口集合。', 0],
+      ],
+      dmDay: '今天 · 端到端加密，转发的手机看不到内容',
+      dm: ['你在哪？我在卫生站门口。', '我在西门，带着充电宝，过去找你。', '好，我穿红色外套。', '我妈电话打不通，你那边有信号吗？'],
+      states: ['发送中', '已转发', '已送达', '已读'], failed: '没送到 · ', retry: '重发', viaHops: ' · 经 2 跳',
+      dmSub: '在附近 · 经 1 台手机转达', dmVerified: '在附近 · 已当面核对',
+      dmBand: n => `<span class="pulse"></span><span>到${n} <b>2</b> 跳</span><span class="sep">|</span><span>直连 <b>3</b></span><span class="ago">4 秒前</span>`,
+      dmPh: n => `写给${n}…`, fpTitle: n => `核对${n}的身份`,
+      scanning: '正在扫描 · <b>0</b> 人', scanned: t => `已扫 ${t}`, justNow: '刚刚', direct1: '直连 <b>1</b>',
+      emptyTitle: '附近还没有人', emptyLede: '蓝牙正常。有人进入几十米内，会自动连上。',
+      joinedTitle: '连上了 1 个人', joinedLede: n => `现在发的话，${n}能看到。附近的人越多，消息传得越远。`,
+      toast: n => `<b>${n}</b> 进入范围 · 直连`,
+      sim: '原型演示：模拟有人进入范围', reset: '重置演示',
+    },
+    en: {
+      h1: 'openchat UI prototype',
+      intro: 'Two layers, kept apart. Message text stays plain and readable. Network state (signal band, delivery path, hop count, identity emblems) always uses signal orange and monospaced digits, in fixed places. What sets the app apart is that you can see the mesh. Sample nicknames are historical figures.',
+      lgPath: 'Delivery path', lgHops: '2 hops', lgPublic: 'Public broadcast', lgDm: 'Encrypted DM',
+      thSys: 'System', thLight: 'Light', thDark: 'Dark',
+      noSvc73: 'No service · 73%', noSvc74: 'No service · 74%',
+      nearby: 'Nearby', nearbySub: 'Everyone in range can see this', public: 'Public', enc: 'Encrypted',
+      bandPub: '<span class="pulse"></span><span>Direct <b>3</b></span><span class="sep">|</span><span>Reach <b>11</b></span><span class="ago">12s ago</span>',
+      pubPh: 'Say something to everyone nearby…',
+      cap1: '<b>Nearby channel</b>: a bulletin board, not chat bubbles. Each post starts with the sender’s emblem, and the small line under it shows the hop count. Every name carries a #xxxx suffix (the first four hex digits of the peer ID), so the two Curies show as #e887 and #0c3b, with different emblems.',
+      cap2: '<b>Private chat</b>: each sent message shows its delivery path. Send one and watch it go step by step. Tap the avatar to verify the fingerprint.',
+      cap3: '<b>Nobody nearby</b>: the most common state, so it gets the most care. The radar shows the app is working, and every line below is something you can do right now.',
+      fpBody: 'Compare the pattern and the numbers on both phones in person. If they match, nobody in between is pretending to be them.',
+      later: 'Later', match: 'They match',
+      tip1: 'Ask them to open openchat too<small>It works with the screen locked, but don’t swipe the app away</small>',
+      tip2: 'Move into the open, near a window<small>Walls and crowds block Bluetooth. Indoors the range is often about 10 m</small>',
+      tip3: 'Send the app to people near you<small>Share the installer by Quick Share or Bluetooth. No internet needed</small>',
+      n1h: 'Signal band', n1: 'Same place at the top of every screen. A breathing solid dot means the mesh is live; a hollow dot means it is still looking. Digits are monospaced, clearly apart from message text.',
+      n2h: 'Delivery path', n2: 'Four dots: sent, relayed, delivered, read. Solid and hollow show the state, and words always sit beside it, so color is never the only cue. A failure turns red and offers a retry.',
+      n3h: 'Identity emblem', n3: 'Color and a symmetric pattern derived from the public key. Nicknames can collide; emblems can’t. Tapping one opens fingerprint verification.',
+      n4h: 'Public vs private', n4: 'The public channel is full-width posts with “Public” before the input. Private chat uses bubbles in lock blue. You can tell them apart at a glance, so nothing goes to the wrong place.',
+      nav: ['Nearby', 'Private', 'Places', 'Me'],
+      names: { zh: 'Lovelace', lb: 'Darwin', ss: 'Curie', me: 'Me' },
+      today: 'Today', direct: 'direct', hops: n => `${n} hops`, broadcast: 'Broadcast to 3 direct phones',
+      posts: [
+        ['lb', '14:18', 'Building 2 has lost power. The lobby has emergency lights, come over here.', 0],
+        ['ss', '14:21', 'Does anyone know if the community clinic is open? My grandmother needs her blood pressure checked.', 2],
+        ['zh', '14:24', 'The clinic is open and handing out bottled water. I just came back from there.', 1],
+        ['ss2', '14:27', 'The road by the east gate is knee-deep in water. Don’t use the east gate.', 3],
+        ['lb', '14:30', 'Got it. The west gate is clear, let’s meet there.', 0],
+      ],
+      dmDay: 'Today · end-to-end encrypted, relaying phones can’t read it',
+      dm: ['Where are you? I’m at the clinic entrance.', 'I’m at the west gate with a power bank. Coming to you.', 'OK, I’m wearing a red jacket.', 'I can’t reach my mom by phone. Do you have signal?'],
+      states: ['Sending', 'Relayed', 'Delivered', 'Read'], failed: 'Not delivered · ', retry: 'Retry', viaHops: ' · 2 hops',
+      dmSub: 'Nearby · relayed by 1 phone', dmVerified: 'Nearby · verified in person',
+      dmBand: n => `<span class="pulse"></span><span><b>2</b> hops to ${n}</span><span class="sep">|</span><span>Direct <b>3</b></span><span class="ago">4s ago</span>`,
+      dmPh: n => `Message ${n}…`, fpTitle: n => `Verify ${n}`,
+      scanning: 'Scanning · <b>0</b> people', scanned: t => `for ${t}`, justNow: 'just now', direct1: 'Direct <b>1</b>',
+      emptyTitle: 'Nobody nearby yet', emptyLede: 'Bluetooth is on. Anyone within a few dozen meters connects automatically.',
+      joinedTitle: 'Connected to 1 person', joinedLede: n => `${n} can now see what you send. The more people nearby, the farther messages travel.`,
+      toast: n => `<b>${n}</b> is in range · direct`,
+      sim: 'Prototype demo: simulate someone in range', reset: 'Reset demo',
+    },
+  };
+  let lang = 'zh';
+  try { if (localStorage.getItem('oc-proto-lang') === 'en') lang = 'en'; } catch (e) {}
+  const S = () => STR[lang];
+
+  // ---------- theme switch ----------
+  const themeBtns = document.querySelectorAll('#theme-seg button');
+  themeBtns.forEach(b => b.addEventListener('click', () => {
+    const t = b.dataset.t;
+    if (t) document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme');
+    themeBtns.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+
+  // ---------- emblems: deterministic symmetric 5x5 pattern + hue from key ----------
+  function hash(str) {
+    let h = 2166136261 >>> 0; const out = [];
+    for (let r = 0; r < 8; r++) {
+      for (const c of str + r) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+      out.push(h);
+    }
+    return out;
+  }
+  function emblem(key, size = 28) {
+    const hs = hash(key), hue = hs[0] % 360, cells = [];
+    let bits = hs[1] ^ hs[2];
+    for (let y = 0; y < 5; y++) for (let x = 0; x < 3; x++) {
+      if (bits & 1) { cells.push([x, y]); if (x < 2) cells.push([4 - x, y]); }
+      bits >>>= 1;
+    }
+    const rects = cells.map(([x, y]) => `<rect x="${2 + x * 4}" y="${2 + y * 4}" width="4" height="4"/>`).join('');
+    return `<svg class="emblem" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><g style="fill:hsl(${hue} 62% var(--em-l))">${rects}</g></svg>`;
+  }
+  const hueOf = key => hash(key)[0] % 360;
+  const fingerprint = key => hash(key).map(n => n.toString(16).toUpperCase().padStart(8, '0').slice(0, 4));
+
+  const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const now = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+
+  // Keys stay fixed across languages, so each person keeps the same emblem.
+  const keys = { zh: 'a1f4c09e77b2', lb: '5d02be91c3aa', ss: 'e88713f0b45c', ss2: '0c3b9e21d7f8', me: '9b17aa30e6d1' };
+  const nameOf = who => S().names[who === 'ss2' ? 'ss' : who];
+  const tagOf = who => '#' + keys[who].slice(0, 4);
+  const nameTag = who => `${esc(nameOf(who))}<span class="tag">${tagOf(who)}</span>`;
+  const plainName = who => nameOf(who) + tagOf(who);
+
+  // ---------- nav ----------
+  const navIcons = [
+    '<path d="M4 12a8 8 0 0 1 16 0M8 12a4 4 0 0 1 8 0" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>',
+    '<rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/>',
+    '<path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2" fill="currentColor"/>',
+    '<circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2"/>',
+  ];
+  function renderNav() {
+    document.querySelectorAll('.nav').forEach(nav => {
+      nav.innerHTML = S().nav.map((k, i) =>
+        `<span class="${i === 0 ? 'on' : ''}"><svg viewBox="0 0 24 24">${navIcons[i]}</svg>${k}${i === 1 ? '<em class="badge">2</em>' : ''}</span>`).join('');
+    });
+  }
+
+  // ---------- public channel ----------
+  const pubFeed = document.getElementById('pub-feed');
+  function postHTML(who, time, text, hops) {
+    const key = keys[who], mine = who === 'me';
+    return `<article class="post${mine ? ' mine' : ''}">
+      ${emblem(key)}
+      <div class="who"><span class="name" style="color:${mine ? 'var(--ink)' : `hsl(${hueOf(key)} 62% var(--em-l))`}">${nameTag(who)}</span><span class="time">${time}</span></div>
+      <div class="text">${esc(text)}</div>
+      <div class="hops">${mine ? S().broadcast : hops === 0 ? S().direct : S().hops(hops)}</div>
+    </article>`;
+  }
+  function renderPublic() {
+    pubFeed.innerHTML = `<div class="dayline">${S().today}</div>` + S().posts.map(([w, t, x, h]) => postHTML(w, t, x, h)).join('');
+  }
+  const pubInput = document.getElementById('pub-input');
+  function sendPublic() {
+    const t = pubInput.value.trim(); if (!t) return;
+    pubFeed.insertAdjacentHTML('beforeend', postHTML('me', now(), t, 0));
+    pubInput.value = ''; pubFeed.scrollTop = pubFeed.scrollHeight;
+  }
+  document.getElementById('pub-send').addEventListener('click', sendPublic);
+  pubInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendPublic(); } });
+
+  // ---------- private chat ----------
+  const dmFeed = document.getElementById('dm-feed');
+  let verified = false;
+  function pathHTML(step, fail) {
+    let h = '';
+    for (let i = 0; i < 4; i++) {
+      h += `<i class="${i <= step ? 'on' : ''}"></i>`;
+      if (i < 3) h += `<s class="${i < step ? 'on' : ''}"></s>`;
+    }
+    return `<span class="path${fail ? ' fail' : ''}" aria-hidden="true">${h}</span>`;
+  }
+  function outMsg(text, time, step, fail) {
+    const el = document.createElement('div');
+    el.className = 'msg out';
+    const s = S();
+    el.innerHTML = `<div class="bubble">${esc(text)}</div><div class="meta"><span>${time}</span>${pathHTML(step, fail)}<span class="state${fail ? ' fail' : ''}">${fail ? s.failed : s.states[step]}${fail ? `<button class="retry" type="button">${s.retry}</button>` : step >= 2 ? s.viaHops : ''}</span></div>`;
+    return el;
+  }
+  const inMsg = (text, time, hops) => `<div class="msg in"><div class="bubble">${esc(text)}</div><div class="meta"><span>${time}</span><span>${S().hops(hops)}</span></div></div>`;
+  const scrollDm = () => { const f = dmFeed.parentElement; f.scrollTop = f.scrollHeight; };
+  function renderDm() {
+    const s = S(), n = nameTag('zh');
+    document.getElementById('dm-name').innerHTML = n;
+    document.getElementById('dm-sub').textContent = verified ? s.dmVerified : s.dmSub;
+    document.getElementById('dm-band').innerHTML = s.dmBand(n);
+    document.getElementById('dm-input').placeholder = s.dmPh(plainName('zh'));
+    document.getElementById('fp-title').innerHTML = s.fpTitle(n);
+    document.getElementById('dm-emblem').setAttribute('aria-label', s.fpTitle(plainName('zh')));
+    dmFeed.innerHTML = `<div class="dayline">${s.dmDay}</div>` + inMsg(s.dm[0], '14:25', 2);
+    dmFeed.append(outMsg(s.dm[1], '14:26', 3));
+    dmFeed.insertAdjacentHTML('beforeend', inMsg(s.dm[2], '14:27', 2));
+    dmFeed.append(outMsg(s.dm[3], '14:29', 0, true));
+    scrollDm();
+  }
+  dmFeed.addEventListener('click', e => {
+    if (!e.target.classList.contains('retry')) return;
+    const old = e.target.closest('.msg'), text = old.querySelector('.bubble').textContent;
+    old.remove(); deliver(text);
+  });
+  function deliver(text) {
+    let step = 0, el = outMsg(text, now(), 0);
+    dmFeed.append(el); scrollDm();
+    const tick = () => {
+      if (!el.isConnected) return; // feed was re-rendered (language switch)
+      step++;
+      const next = outMsg(text, now(), step);
+      el.replaceWith(next); el = next;
+      if (step < 3) setTimeout(tick, step === 2 ? 1800 : 1100);
+    };
+    setTimeout(tick, 900);
+  }
+  const dmInput = document.getElementById('dm-input');
+  function sendDm() { const t = dmInput.value.trim(); if (!t) return; dmInput.value = ''; deliver(t); }
+  document.getElementById('dm-send').addEventListener('click', sendDm);
+  dmInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendDm(); } });
+
+  // fingerprint sheet
+  const sheet = document.getElementById('fp-sheet');
+  document.getElementById('dm-emblem').innerHTML = emblem(keys.zh, 36);
+  document.getElementById('fp-emblem').innerHTML = emblem(keys.zh, 112);
+  document.getElementById('fp-digits').innerHTML = fingerprint(keys.zh).map(g => `<span>${g}</span>`).join('');
+  document.getElementById('dm-emblem').addEventListener('click', () => { sheet.hidden = false; document.getElementById('fp-ok').focus(); });
+  document.getElementById('fp-close').addEventListener('click', () => { sheet.hidden = true; });
+  document.getElementById('fp-ok').addEventListener('click', () => {
+    sheet.hidden = true; verified = true;
+    document.getElementById('dm-sub').textContent = S().dmVerified;
+  });
+
+  // ---------- nobody nearby ----------
+  const phoneEmpty = document.getElementById('p-empty');
+  const simBtn = document.getElementById('sim-join');
+  const scanEl = document.getElementById('scan-time');
+  let secs = 192, joined = false, scanning = null;
+  const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  function startScan() {
+    clearInterval(scanning);
+    scanning = setInterval(() => { secs++; scanEl.textContent = S().scanned(fmt(secs)); }, 1000);
+  }
+  function renderEmpty() {
+    const s = S();
+    document.getElementById('blip').classList.toggle('show', joined);
+    document.getElementById('empty-band').classList.toggle('idle', !joined);
+    document.getElementById('empty-band-text').innerHTML = joined ? s.direct1 : s.scanning;
+    scanEl.textContent = joined ? s.justNow : s.scanned(fmt(secs));
+    document.getElementById('empty-title').textContent = joined ? s.joinedTitle : s.emptyTitle;
+    document.getElementById('empty-lede').textContent = joined ? s.joinedLede(plainName('lb')) : s.emptyLede;
+    simBtn.textContent = joined ? s.reset : s.sim;
+  }
+  simBtn.addEventListener('click', () => {
+    joined = !joined;
+    if (joined) {
+      clearInterval(scanning);
+      const t = document.createElement('div');
+      t.className = 'toast'; t.setAttribute('role', 'status');
+      t.innerHTML = `${emblem(keys.lb, 24)}<span>${S().toast(nameTag('lb'))}</span>`;
+      phoneEmpty.append(t); setTimeout(() => t.remove(), 2600);
+    } else { secs = 0; startScan(); }
+    renderEmpty();
+  });
+
+  // ---------- language ----------
+  const langBtns = document.querySelectorAll('[data-l]');
+  function applyLang() {
+    const s = S();
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = s[el.dataset.i18n]; });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = s[el.dataset.i18nHtml]; });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = s[el.dataset.i18nPh]; });
+    langBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.l === lang)));
+    renderNav(); renderPublic(); renderDm(); renderEmpty();
+  }
+  langBtns.forEach(b => b.addEventListener('click', () => {
+    lang = b.dataset.l;
+    try { localStorage.setItem('oc-proto-lang', lang); } catch (e) {}
+    applyLang();
+  }));
+
+  applyLang();
+  startScan();
+})();
+</script>

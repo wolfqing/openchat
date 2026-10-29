@@ -67,6 +67,9 @@ class MeshService : Service(), ChatController {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    // Notification text follows the in-app language from the next service start.
+    override fun attachBaseContext(newBase: Context) = super.attachBaseContext(AppLanguage.wrap(newBase))
+
     override fun onCreate() {
         super.onCreate()
         createChannels()
@@ -160,7 +163,7 @@ class MeshService : Service(), ChatController {
             ChatRepository.rememberName(senderHex, nickname)
             ChatRepository.add(ChatMessage(messageId, conv, nickname, senderHex, text, timestamp, mine = false))
             if (ChatRepository.openConversation == conv) engine.sendReadReceipt(senderHex, messageId)
-            else notifyPrivate(nickname, text)
+            else notifyPrivate(PeerLabel.mesh(nickname, senderHex).toString(), text)
         }
 
         override fun onDelivered(peerHex: String, messageId: String) =

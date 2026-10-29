@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_status">网络状态</string>
+    <string name="channel_messages">私信</string>
+    <string name="status_running">正在通过蓝牙连接附近的手机</string>
+
+    <!-- onboarding -->
+    <string name="onboard_title">没网，也能聊。</string>
+    <string name="onboard_body">停电、地震、台风、基站挤爆、在山里或飞机上，手机没有信号时，openchat 用蓝牙把附近的手机连成一张网，消息一台传一台。</string>
+    <string name="onboard_no_account">不用注册，不要手机号，没有服务器。</string>
+    <string name="onboard_start">开始</string>
+    <string name="onboard_next">下一步会请你允许使用蓝牙，用来发现附近的人。</string>
+    <string name="safety_title">请先知道</string>
+    <string name="safety_body">· 「附近」频道是公开的，范围内所有人都能看到。\n· 私信是加密的，但附近的人能看出你在用这个 App，也能长期认出同一台手机。\n· 本软件未经完整的独立安全审计。如果被识别出来会有严重后果，请不要依赖它。\n· 连点三下顶部标题，立刻清空所有数据。</string>
+
+    <!-- main shell -->
+    <string name="tab_nearby">附近</string>
+    <string name="tab_private">私信</string>
+    <string name="tab_location">位置频道</string>
+    <string name="tab_me">我</string>
+    <string name="ok">好</string>
+    <string name="wiped">已清空。你现在是一个新身份：%1$s</string>
+    <string name="banner_need_permission">需要蓝牙权限才能发现附近的人</string>
+    <string name="banner_bt_off">蓝牙已关闭，点这里打开</string>
+    <string name="banner_starting">正在启动…</string>
+    <string name="banner_searching">正在寻找附近的人…</string>
+    <plurals name="banner_connected">
+        <item quantity="other">已连上附近 %d 人</item>
+    </plurals>
+
+    <!-- chat -->
+    <string name="nearby_empty_alone">附近还没有人。\n打开 openchat 的手机靠近到几十米内，就会自动连上。\n同一网络里的 bitchat 用户也能收到你的消息。</string>
+    <plurals name="nearby_empty_peers">
+        <item quantity="other">附近有 %d 人。发一句话，大家都能看到。</item>
+    </plurals>
+    <string name="nearby_placeholder">对附近所有人说…</string>
+    <string name="state_sending">发送中</string>
+    <string name="state_sent">已发出</string>
+    <string name="state_delivered">已送达</string>
+    <string name="state_read">已读</string>
+    <string name="state_failed">发送失败</string>
+    <string name="send">发送</string>
+    <string name="back">返回</string>
+
+    <!-- private -->
+    <string name="dm_status_here">在附近 · 加密私信</string>
+    <string name="dm_status_away">不在附近 · 消息会在对方回来后送达</string>
+    <string name="dm_empty">和 %1$s 的私信是端到端加密的，中间转发的手机看不到内容。</string>
+    <string name="dm_placeholder">写给 %1$s…</string>
+    <string name="dm_list_empty">附近的人会出现在这里。\n点一下名字就能发加密私信。</string>
+    <string name="dm_direct">就在身边</string>
+    <string name="dm_relayed">经其他手机转发可达</string>
+    <string name="dm_away">不在附近</string>
+
+    <!-- location channels -->
+    <string name="geo_intro">有网络时，可以和同一地区的人聊天，距离不限于蓝牙范围。每个地区用一个独立的匿名身份。</string>
+    <string name="geo_use_location">使用我的大致位置</string>
+    <string name="geo_level_block">街区</string>
+    <string name="geo_level_neighborhood">社区</string>
+    <string name="geo_level_city">城市</string>
+    <string name="geo_level_province">省</string>
+    <string name="geo_level_region">区域</string>
+    <plurals name="geo_online">
+        <item quantity="other">%d 人在线</item>
+    </plurals>
+    <string name="geo_refresh">刷新位置</string>
+    <string name="geo_elsewhere">去别的地区看看</string>
+    <string name="geo_hint">geohash，如 wtw3s</string>
+    <string name="geo_enter">进入</string>
+    <string name="geo_teleport_note">你不在那里，所以别人会看到你的名字旁有 ✈ 标记。</string>
+    <string name="geo_joined">已加入</string>
+    <string name="geo_connecting">正在连接网络…</string>
+    <plurals name="geo_recent">
+        <item quantity="other">公开频道 · 近 5 分钟 %d 人</item>
+    </plurals>
+    <string name="geo_leave">退出</string>
+    <string name="geo_empty">这是 #%1$s 的公开频道，需要联网。附近用 bitchat 的人也在这里。</string>
+    <string name="geo_placeholder">对 #%1$s 说…</string>
+
+    <!-- me -->
+    <string name="me_name">我的名字</string>
+    <string name="save">保存</string>
+    <string name="me_seen_as">"附近的人看到的是 "</string>
+    <string name="me_suffix_note">名字可以重名，# 后面的四位是你的设备 ID，用来区分同名的人。</string>
+    <string name="me_language">语言</string>
+    <string name="lang_system">跟随系统</string>
+    <string name="me_share_title">把 openchat 传给身边的人</string>
+    <string name="me_share_body">不需要应用商店，也不需要网络。可以用蓝牙、快速分享（附近分享）或其他方式直接发送安装包。</string>
+    <string name="me_share_button">分享安装包</string>
+    <string name="me_fp_title">身份指纹</string>
+    <string name="me_fp_body">当面核对这串字符，可以确认对方真的是你认识的人。</string>
+    <string name="me_device_id">设备 ID：%1$s</string>
+    <string name="me_about">openchat 兼容 bitchat 网络。开源，MIT 许可证。</string>
+</resources>
