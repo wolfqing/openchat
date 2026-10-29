@@ -11,6 +11,12 @@ sealed class Conversation(val key: String) {
     object Mesh : Conversation("mesh")
     data class Private(val peerHex: String) : Conversation("dm:$peerHex")
     data class Geo(val geohash: String) : Conversation("geo:$geohash")
+    /** Private chat with a location-channel persona, under my persona for that cell (§15.5). */
+    data class GeoPrivate(val geohash: String, val pubkey: String) : Conversation("gdm:$geohash:$pubkey") {
+        companion object {
+            fun parse(key: String): GeoPrivate? = key.removePrefix("gdm:").split(':').takeIf { key.startsWith("gdm:") && it.size == 2 }?.let { GeoPrivate(it[0], it[1]) }
+        }
+    }
 }
 
 /** Order matters: a state only ever moves forward. QUEUED and CARRIED come from the outbox (§13). */
@@ -52,7 +58,7 @@ data class PeerLabel(val name: String, val suffix: String) {
         fun mesh(nickname: String?, peerHex: String) = PeerLabel(clean(nickname), suffix(peerHex.take(4)))
         fun nostr(nickname: String?, pubkeyHex: String) = PeerLabel(clean(nickname), suffix(pubkeyHex.takeLast(4)))
         fun of(m: ChatMessage) =
-            if (m.conversation.startsWith("geo:")) nostr(m.senderName, m.senderKey) else mesh(m.senderName, m.senderKey)
+            if (m.conversation.startsWith("geo:") || m.conversation.startsWith("gdm:")) nostr(m.senderName, m.senderKey) else mesh(m.senderName, m.senderKey)
     }
 }
 
@@ -96,6 +102,7 @@ interface ChatController {
     fun joinGeo(geohash: String, teleported: Boolean)
     fun leaveGeo(geohash: String)
     fun sendGeo(geohash: String, text: String)
+    fun sendGeoPrivate(geohash: String, pubkey: String, text: String)
     /** Leaves a note at the device's building-level cell; false when the place is unknown. */
     fun dropNote(text: String): Boolean
     fun watchNotes(cell: String?)

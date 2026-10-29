@@ -37,6 +37,7 @@ import org.openchat.android.mesh.MeshListener
 import org.openchat.android.mesh.MeshPeer
 import org.openchat.android.mesh.Scheduler
 import org.openchat.android.nostr.Geohash
+import org.openchat.android.nostr.NostrKey
 import org.openchat.android.nostr.RelayDirectory
 import org.openchat.android.ui.MainActivity
 
@@ -110,7 +111,9 @@ class MeshService : Service(), ChatController {
         Social.state.value.favorites.values.forEach { f -> f.noiseKeyHex.hexToBytes()?.let { noiseKeys[Identity.peerIdFor(it).toHex()] = it } }
         nostrSeenStore = SealedFile(this, "nostr-seen.bin")
         nostrSeenStore.read()?.let { nostrSeen.addAll(String(it, Charsets.UTF_8).split('\n').filter { id -> id.isNotEmpty() }) }
-        nostr = NostrDirect(identity.nostrSeed) { sender, content, createdAt, _ -> handler.post { onNostrDirect(sender, content, createdAt) } }
+        nostr = NostrDirect(identity.nostrSeed, { sender, content, createdAt, _ -> handler.post { onNostrDirect(sender, content, createdAt) } }) { g, sender, content, createdAt ->
+            handler.post { onGeoPrivate(g, sender, content, createdAt) }
+        }
         nostr.start()
         ble = BleTransport(this, handler) { engine }
         geo = GeoChannels(RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText()), identity.nostrSeed, { engine.identity.nickname }) { from, text ->
@@ -337,6 +340,8 @@ class MeshService : Service(), ChatController {
     }
 
     override fun markRead(peerHex: String, messageIds: List<String>) {
+        // A location-channel chat passes its whole conversation key.
+        Conversation.GeoPrivate.parse(peerHex)?.let { c -> handler.post { markGeoRead(c.geohash, c.pubkey, messageIds) }; return }
         handler.post { messageIds.forEach { sendRead(peerHex, it) } }
     }
 
@@ -386,8 +391,54 @@ class MeshService : Service(), ChatController {
         return qr.nickname
     }
 
-    override fun joinGeo(geohash: String, teleported: Boolean) = geo.join(geohash.lowercase(), teleported)
-    override fun leaveGeo(geohash: String) = geo.leave(geohash)
+    override fun joinGeo(geohash: String, teleported: Boolean) {
+        val g = geohash.lowercase()
+        geo.join(g, teleported)
+        nostr.addInbox(g, NostrKey.forGeohash(engine.identity.nostrSeed, g))
+    }
+
+    override fun leaveGeo(geohash: String) { geo.leave(geohash); nostr.removeInbox(geohash) }
+
+    override fun sendGeoPrivate(geohash: String, pubkey: String, text: String) {
+        val me = NostrKey.forGeohash(engine.identity.nostrSeed, geohash)
+        val conv = Conversation.GeoPrivate(geohash, pubkey).key
+        val now = System.currentTimeMillis()
+        org.openchat.android.core.splitUtf8(text, PrivateMessage.MAX_CONTENT_BYTES).forEachIndexed { i, part ->
+            val mid = java.util.UUID.randomUUID().toString().uppercase()
+            NostrEmbedded.privateMessageAnonymous(mid, part, now)?.let { nostr.send(pubkey, it, from = me) }
+            ChatRepository.add(ChatMessage(mid, conv, engine.identity.nickname, me.publicKeyHex, part, now + i, mine = true, state = DeliveryState.SENT))
+        }
+    }
+
+    /** A private message to one of my location-channel personas (§15.5). */
+    private fun onGeoPrivate(geohash: String, senderPubkey: String, content: String, createdAt: Long) {
+        if (senderPubkey in Social.state.value.geoBlocked) return
+        val d = NostrEmbedded.decode(content) ?: return
+        val me = NostrKey.forGeohash(engine.identity.nostrSeed, geohash)
+        val conv = Conversation.GeoPrivate(geohash, senderPubkey).key
+        when (d.payload.type) {
+            NoisePayloadType.PRIVATE_MESSAGE -> {
+                val pm = PrivateMessage.decode(d.payload.body) ?: return
+                NostrEmbedded.receiptAnonymous(NoisePayloadType.DELIVERED, pm.messageId, System.currentTimeMillis())?.let { nostr.send(senderPubkey, it, paced = true, from = me) }
+                if (!nostrSeen.add(pm.messageId)) return
+                while (nostrSeen.size > 1000) nostrSeen.remove(nostrSeen.first())
+                nostrSeenStore.write(nostrSeen.joinToString("\n").toByteArray(Charsets.UTF_8))
+                // Their name, if they spoke in the channel; otherwise anon plus the key suffix.
+                val nick = ChatRepository.messages.value[Conversation.Geo(geohash).key]?.lastOrNull { it.senderKey == senderPubkey }?.senderName.orEmpty()
+                ChatRepository.rememberName(senderPubkey, nick)
+                ChatRepository.add(ChatMessage(pm.messageId, conv, nick, senderPubkey, pm.content, minOf(createdAt * 1000, System.currentTimeMillis()), mine = false))
+                if (ChatRepository.openConversation == conv) markGeoRead(geohash, senderPubkey, listOf(pm.messageId))
+                else notifyPrivate(PeerLabel.nostr(nick, senderPubkey).toString() + " · #" + geohash, pm.content)
+            }
+            NoisePayloadType.DELIVERED -> ChatRepository.setState(conv, String(d.payload.body, Charsets.UTF_8), DeliveryState.DELIVERED)
+            NoisePayloadType.READ_RECEIPT -> ChatRepository.setState(conv, String(d.payload.body, Charsets.UTF_8), DeliveryState.READ)
+        }
+    }
+
+    private fun markGeoRead(geohash: String, pubkey: String, ids: List<String>) {
+        val me = NostrKey.forGeohash(engine.identity.nostrSeed, geohash)
+        ids.forEach { id -> NostrEmbedded.receiptAnonymous(NoisePayloadType.READ_RECEIPT, id, System.currentTimeMillis())?.let { nostr.send(pubkey, it, paced = true, from = me) } }
+    }
     override fun sendGeo(geohash: String, text: String) = geo.send(geohash, text)
 
     override fun dropNote(text: String): Boolean {

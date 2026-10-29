@@ -19,7 +19,10 @@ import java.util.concurrent.TimeUnit
 class NostrDirect(
     @Volatile private var seed: ByteArray,
     private val onOpened: (senderPubkey: String, content: String, createdAt: Long, wrapId: String) -> Unit,
+    /** A wrap opened by a location-channel persona rather than the account key (§15.5). */
+    private val onOpenedInbox: (geohash: String, senderPubkey: String, content: String, createdAt: Long) -> Unit = { _, _, _, _ -> },
 ) {
+    private val inboxes = java.util.concurrent.ConcurrentHashMap<String, NostrKey>() // geohash -> per-cell key
     @Volatile var key: NostrKey = keyFor(seed)
         private set
     val npub get() = Bech32.npub(key.publicKeyHex)
@@ -38,8 +41,21 @@ class NostrDirect(
         pool.subscribe(SUB, RELAYS, filter)
     }
 
-    fun send(recipientHex: String, content: String, paced: Boolean = false) {
-        val ev = PrivateEnvelope.create(content, recipientHex, key, System.currentTimeMillis() / 1000)
+    /** Also receive wraps addressed to this location-channel persona. */
+    fun addInbox(geohash: String, cellKey: NostrKey) {
+        if (inboxes.put(geohash, cellKey)?.publicKeyHex == cellKey.publicKeyHex) return
+        pool.subscribe(inboxSub(geohash), RELAYS, JSONObject()
+            .put("kinds", JSONArray().put(PrivateEnvelope.KIND_WRAP))
+            .put("#p", JSONArray().put(cellKey.publicKeyHex))
+            .put("since", System.currentTimeMillis() / 1000 - 2 * 86_400))
+    }
+
+    fun removeInbox(geohash: String) { if (inboxes.remove(geohash) != null) pool.unsubscribe(inboxSub(geohash)) }
+
+    private fun inboxSub(geohash: String) = "dm-$geohash"
+
+    fun send(recipientHex: String, content: String, paced: Boolean = false, from: NostrKey = key) {
+        val ev = PrivateEnvelope.create(content, recipientHex, from, System.currentTimeMillis() / 1000)
         if (!paced) { pool.publish(RELAYS, ev); return }
         val now = System.currentTimeMillis()
         val at = synchronized(this) { maxOf(now, nextSlot).also { nextSlot = it + ACK_SPACING_MS } }
@@ -48,6 +64,7 @@ class NostrDirect(
 
     fun reset(newSeed: ByteArray) {
         pool.unsubscribe(SUB)
+        inboxes.keys.toList().forEach { removeInbox(it) }
         seed = newSeed
         key = keyFor(newSeed)
         start()
@@ -56,8 +73,15 @@ class NostrDirect(
     fun close() = pool.closeAll()
 
     private fun onEvent(relay: String, ev: NostrEvent) {
-        val opened = PrivateEnvelope.open(ev, key) ?: return
-        onOpened(opened.senderPubkey, opened.content, opened.createdAt, ev.id)
+        val p = ev.tag("p") ?: return
+        if (p == key.publicKeyHex) {
+            val opened = PrivateEnvelope.open(ev, key) ?: return
+            onOpened(opened.senderPubkey, opened.content, opened.createdAt, ev.id)
+            return
+        }
+        val (geohash, cellKey) = inboxes.entries.firstOrNull { it.value.publicKeyHex == p }?.toPair() ?: return
+        val opened = PrivateEnvelope.open(ev, cellKey) ?: return
+        onOpenedInbox(geohash, opened.senderPubkey, opened.content, opened.createdAt)
     }
 
     companion object {

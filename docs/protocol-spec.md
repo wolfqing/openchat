@@ -620,6 +620,16 @@ favorites' npubs, and favorite notices only from the npub they announce
 and from a peer ID it has met. A received message is answered with
 `delivered` and, when shown, `readReceipt`, one envelope per 1.2 s.
 
+### 15.5 Private messages in location channels
+
+Tapping a name in a location channel opens a private chat carried the same
+way (§15.3, same four relays) but between the two per-cell personas (§9):
+the sender wraps under its key for that cell, to the other's cell pubkey,
+and each side subscribes to kind 1059 with `#p` = its own cell key while
+in the channel. The embedded packet (§15.2) has no recipient and a sender
+ID that is random for every envelope, so the persona cannot be linked to
+the device. `delivered` and `readReceipt` come back the same way.
+
 ## 16. In-person verification (v0.5)
 
 ### 16.1 QR link

@@ -142,4 +142,6 @@
     <string name="tor_on">已連線。中繼伺服器看不到你的 IP 位址。藍牙不受影響。</string>
     <string name="tor_starting">正在啟動 Tor…連網聊天會等它就緒，不會未經保護就送出。</string>
     <string name="tor_off">已關閉。中繼營運者能看到你的 IP 位址，包括經網際網路傳送的私訊。</string>
+    <string name="geo_dm_status">#%1$s · 經網際網路加密送達</string>
+    <string name="geo_dm_empty">和 %1$s 的訊息端對端加密，經網際網路送達。對方只能看到你在 #%2$s 用的匿名身分。</string>
 </resources>

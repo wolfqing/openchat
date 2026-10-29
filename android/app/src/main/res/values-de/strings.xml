@@ -146,4 +146,6 @@
     <string name="tor_on">Verbunden. Relays sehen deine IP-Adresse nicht. Bluetooth ist nicht betroffen.</string>
     <string name="tor_starting">Tor startet… Internet-Chats warten, bis es bereit ist, damit nichts ungeschützt rausgeht.</string>
     <string name="tor_off">Aus. Relay-Betreiber sehen deine IP-Adresse, auch bei privaten Nachrichten übers Internet.</string>
+    <string name="geo_dm_status">#%1$s · übers Internet, verschlüsselt</string>
+    <string name="geo_dm_empty">Nachrichten mit %1$s sind Ende-zu-Ende-verschlüsselt und gehen übers Internet. Sie sehen dich nur unter deinem anonymen Namen für #%2$s.</string>
 </resources>

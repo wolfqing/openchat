@@ -20,7 +20,19 @@ object NostrEmbedded {
     fun receipt(type: Int, messageId: String, senderId: ByteArray, recipientId: ByteArray, nowMs: Long): String? =
         wrap(NoisePayload(type, messageId.toByteArray(Charsets.UTF_8)), senderId, recipientId, nowMs)
 
-    private fun wrap(payload: NoisePayload, senderId: ByteArray, recipientId: ByteArray, nowMs: Long): String? {
+    /**
+     * Location-channel form (§15.5): no recipient, and a sender ID that is random per
+     * envelope, so the per-area persona cannot be linked to the device's peer ID.
+     */
+    fun privateMessageAnonymous(messageId: String, content: String, nowMs: Long): String? {
+        val body = PrivateMessage(messageId, content).encode() ?: return null
+        return wrap(NoisePayload(NoisePayloadType.PRIVATE_MESSAGE, body), org.openchat.android.crypto.Crypto.randomBytes(8), null, nowMs)
+    }
+
+    fun receiptAnonymous(type: Int, messageId: String, nowMs: Long): String? =
+        wrap(NoisePayload(type, messageId.toByteArray(Charsets.UTF_8)), org.openchat.android.crypto.Crypto.randomBytes(8), null, nowMs)
+
+    private fun wrap(payload: NoisePayload, senderId: ByteArray, recipientId: ByteArray?, nowMs: Long): String? {
         val p = Packet(type = MessageType.NOISE_ENCRYPTED, senderId = senderId, recipientId = recipientId, timestamp = nowMs, payload = payload.encode())
         val bytes = PacketCodec.encode(p) ?: return null
         return PREFIX + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)

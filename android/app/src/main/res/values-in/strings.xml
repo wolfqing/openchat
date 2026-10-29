@@ -142,4 +142,6 @@
     <string name="tor_on">Terhubung. Relay tidak bisa melihat alamat IP Anda. Bluetooth tidak terpengaruh.</string>
     <string name="tor_starting">Memulai Tor… obrolan internet menunggu hingga siap, jadi tak ada yang keluar tanpa perlindungan.</string>
     <string name="tor_off">Mati. Operator relay bisa melihat alamat IP Anda, termasuk untuk pesan pribadi lewat internet.</string>
+    <string name="geo_dm_status">#%1$s · lewat internet, terenkripsi</string>
+    <string name="geo_dm_empty">Pesan dengan %1$s terenkripsi ujung ke ujung dan lewat internet. Ia hanya melihat nama anonim Anda untuk #%2$s.</string>
 </resources>

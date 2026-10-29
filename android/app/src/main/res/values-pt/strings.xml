@@ -150,4 +150,6 @@
     <string name="tor_on">Conectado. Os relays não veem seu endereço IP. O Bluetooth não é afetado.</string>
     <string name="tor_starting">Iniciando o Tor… as conversas pela internet esperam até ele ficar pronto, então nada sai sem proteção.</string>
     <string name="tor_off">Desligado. Operadores de relay veem seu endereço IP, inclusive em mensagens privadas pela internet.</string>
+    <string name="geo_dm_status">#%1$s · pela internet, criptografado</string>
+    <string name="geo_dm_empty">As mensagens com %1$s são criptografadas de ponta a ponta e vão pela internet. A pessoa só vê seu nome anônimo de #%2$s.</string>
 </resources>

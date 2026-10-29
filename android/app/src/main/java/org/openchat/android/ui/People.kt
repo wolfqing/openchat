@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.openchat.android.R
 import org.openchat.android.app.ChatRepository
+import org.openchat.android.app.Conversation
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.app.Social
 import org.openchat.android.app.TorState
@@ -46,7 +47,7 @@ import org.openchat.android.core.toHex
 /** Who a tap on a name refers to: a mesh peer (by peer ID) or a location-channel sender (by Nostr key). */
 sealed class PersonRef {
     data class Mesh(val peerHex: String, val nickname: String?) : PersonRef()
-    data class Geo(val pubkey: String, val nickname: String?) : PersonRef()
+    data class Geo(val pubkey: String, val nickname: String?, val geohash: String) : PersonRef()
 }
 
 fun meshFingerprint(peerHex: String): String? =
@@ -112,6 +113,12 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                     }
                     is PersonRef.Geo -> {
                         val blocked = person.pubkey in social.geoBlocked
+                        if (!blocked) {
+                            FilledTonalButton(
+                                onClick = { onDismiss(); onMessage(Conversation.GeoPrivate(person.geohash, person.pubkey).key) },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text(stringResource(R.string.peer_message)) }
+                        }
                         OutlinedButton(
                             onClick = { if (blocked) Social.unblockGeo(person.pubkey) else Social.blockGeo(person.pubkey, person.nickname ?: "anon") },
                             modifier = Modifier.fillMaxWidth(),

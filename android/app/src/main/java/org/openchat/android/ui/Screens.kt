@@ -256,6 +256,10 @@ fun MainScreen(
     val openRequest by ChatRepository.openRequest.collectAsState()
     LaunchedEffect(openRequest) { openRequest?.let { openChat = it; ChatRepository.requestOpen(null) } }
     person?.let { p -> PersonSheet(p, onDismiss = { person = null }, onMessage = { openChat = Conversation.Private(it).key }) }
+    Conversation.GeoPrivate.parse(openChat ?: "")?.let { c ->
+        GeoPrivateChatScreen(c, onBack = { openChat = null }, onPanic = onPanic)
+        return
+    }
 
     val chat = openChat
     if (chat != null && chat.startsWith("dm:")) {
@@ -276,7 +280,7 @@ fun MainScreen(
                 Tab.entries.forEach { t ->
                     val count = when (t) {
                         Tab.NEARBY -> unread[Conversation.Mesh.key] ?: 0
-                        Tab.PRIVATE -> unread.filterKeys { it.startsWith("dm:") }.values.sum()
+                        Tab.PRIVATE -> unread.filterKeys { it.startsWith("dm:") || it.startsWith("gdm:") }.values.sum()
                         Tab.LOCATION -> unread.filterKeys { it.startsWith("geo:") }.values.sum()
                         Tab.ME -> 0
                     }
@@ -307,7 +311,7 @@ fun MainScreen(
                     onSend = { ChatRepository.controller?.sendPublic(it) },
                     onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) person = PersonRef.Mesh(m.senderKey, m.senderName) },
                 )
-                Tab.PRIVATE -> PrivateList(onOpen = { openChat = Conversation.Private(it).key })
+                Tab.PRIVATE -> PrivateList(onOpen = { openChat = if (it.startsWith("gdm:")) it else Conversation.Private(it).key })
                 Tab.LOCATION -> LocationPane(onRequestLocation, onOpen = { openChat = Conversation.Geo(it).key })
                 Tab.ME -> MePane(onShareApp, onLanguage, onScan)
             }
@@ -391,7 +395,7 @@ fun ChatPane(
     val list = all[conversation].orEmpty().filter { m ->
         when {
             m.mine -> true
-            conversation.startsWith("geo:") -> m.senderKey !in social.geoBlocked
+            conversation.startsWith("geo:") || conversation.startsWith("gdm:") -> m.senderKey !in social.geoBlocked
             else -> !social.isBlockedPeer(m.senderKey)
         }
     }
@@ -631,7 +635,7 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
         }
     }
     Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (!conversation.startsWith("geo:")) MediaButtons(conversation)
+        if (!conversation.startsWith("geo:") && !conversation.startsWith("gdm:")) MediaButtons(conversation)
         OutlinedTextField(
             value = text, onValueChange = { if (it.length <= 1000) set(it) },
             placeholder = { Text(placeholder) },
@@ -694,6 +698,41 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
     }
 }
 
+/** Private chat with someone met in a location channel, over Nostr under my persona for that cell. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GeoPrivateChatScreen(c: Conversation.GeoPrivate, onBack: () -> Unit, onPanic: () -> Unit) {
+    val names by ChatRepository.names.collectAsState()
+    val label = PeerLabel.nostr(names[c.pubkey], c.pubkey)
+    val readSent = remember { HashSet<String>() }
+    BackHandler(onBack = onBack)
+    LaunchedEffect(c) { ChatRepository.controller?.joinGeo(c.geohash, teleported = ChatRepository.geo.value.locationGeohash?.startsWith(c.geohash) != true) }
+    Scaffold(topBar = {
+        TopAppBar(
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
+            title = {
+                Column {
+                    PanicTitle(labelText(label), onPanic)
+                    Text(stringResource(R.string.geo_dm_status, c.geohash), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+        )
+    }) { padding ->
+        Box(Modifier.padding(padding)) {
+            ChatPane(
+                conversation = c.key,
+                emptyText = stringResource(R.string.geo_dm_empty, label.toString(), c.geohash),
+                placeholder = stringResource(R.string.dm_placeholder, label.toString()),
+                onSend = { ChatRepository.controller?.sendGeoPrivate(c.geohash, c.pubkey, it) },
+                onVisible = { list ->
+                    val unreadIds = list.filter { !it.mine && !it.system && readSent.add(it.id) }.map { it.id }
+                    if (unreadIds.isNotEmpty()) ChatRepository.controller?.markRead(c.key, unreadIds)
+                },
+            )
+        }
+    }
+}
+
 @Composable
 private fun PrivateList(onOpen: (String) -> Unit) {
     val peers by ChatRepository.peers.collectAsState()
@@ -704,13 +743,29 @@ private fun PrivateList(onOpen: (String) -> Unit) {
     val social by Social.state.collectAsState()
     val withHistory = all.keys.filter { it.startsWith("dm:") }.map { it.removePrefix("dm:") }
     val ids = (peers.map { it.peerIdHex } + withHistory).distinct().filter { it != me.myPeerHex }
-    if (ids.isEmpty()) {
+    val geoChats = all.keys.filter { it.startsWith("gdm:") }
+    if (ids.isEmpty() && geoChats.isEmpty()) {
         Box(Modifier.fillMaxSize()) {
             Text(stringResource(R.string.dm_list_empty), Modifier.align(Alignment.Center).padding(32.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
     LazyColumn {
+        items(geoChats, key = { it }) { key ->
+            val c = Conversation.GeoPrivate.parse(key)!!
+            val last = all[key]?.lastOrNull()
+            Row(Modifier.fillMaxWidth().clickable { onOpen(key) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(10.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                Spacer(Modifier.size(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(buildAnnotatedString { append(labelText(PeerLabel.nostr(names[c.pubkey], c.pubkey))); append("  #" + c.geohash) }, fontWeight = FontWeight.SemiBold)
+                    Text(last?.text.orEmpty(), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                }
+                val n = unread[key] ?: 0
+                if (n > 0) Badge { Text("$n") }
+            }
+            HorizontalDivider()
+        }
         items(ids, key = { it }) { hex ->
             val peer = peers.firstOrNull { it.peerIdHex == hex }
             val last = all["dm:$hex"]?.lastOrNull()
@@ -833,7 +888,7 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
     val geo by ChatRepository.geo.collectAsState()
     var person by remember { mutableStateOf<PersonRef?>(null) }
     BackHandler(onBack = onBack)
-    person?.let { PersonSheet(it, onDismiss = { person = null }, onMessage = {}) }
+    person?.let { PersonSheet(it, onDismiss = { person = null }, onMessage = { key -> ChatRepository.requestOpen(key) }) }
     Scaffold(topBar = {
         TopAppBar(
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
@@ -853,7 +908,7 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
                 emptyText = stringResource(R.string.geo_empty, geohash),
                 placeholder = stringResource(R.string.geo_placeholder, geohash),
                 onSend = { ChatRepository.controller?.sendGeo(geohash, it) },
-                onSenderClick = { m -> person = PersonRef.Geo(m.senderKey, m.senderName) },
+                onSenderClick = { m -> person = PersonRef.Geo(m.senderKey, m.senderName, geohash) },
             )
         }
     }

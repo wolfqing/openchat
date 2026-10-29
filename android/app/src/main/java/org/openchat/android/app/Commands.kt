@@ -38,7 +38,7 @@ object Commands {
     fun run(text: String, conversation: String, myName: String, people: List<Person>, dmPeer: Person?): Outcome {
         val cmd = text.substringBefore(' ').lowercase()
         val args = text.substringAfter(' ', "").trim()
-        val geo = conversation.startsWith("geo:")
+        val geo = conversation.startsWith("geo:") || conversation.startsWith("gdm:")
         fun find(name: String): Person? {
             val n = name.removePrefix("@").lowercase()
             if (n.isEmpty()) return null

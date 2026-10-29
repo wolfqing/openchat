@@ -150,4 +150,6 @@
     <string name="tor_on">Conectado. Los relés no ven tu dirección IP. Bluetooth no se ve afectado.</string>
     <string name="tor_starting">Iniciando Tor… los chats por internet esperan a que esté listo, así nada sale sin protección.</string>
     <string name="tor_off">Apagado. Los operadores de relés pueden ver tu IP, también en mensajes privados por internet.</string>
+    <string name="geo_dm_status">#%1$s · por internet, cifrado</string>
+    <string name="geo_dm_empty">Los mensajes con %1$s van cifrados de extremo a extremo por internet. Solo te ve con tu nombre anónimo de #%2$s.</string>
 </resources>

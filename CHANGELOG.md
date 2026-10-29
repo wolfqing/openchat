@@ -89,6 +89,11 @@
   per ABI). 36 MB → 9.5 MB. Still signed with the local debug key, so it
   installs over earlier previews. The shrunk build has not been run on a
   device yet.
+- Private messages in location channels, as bitchat sends them
+  ([spec §15.5](docs/protocol-spec.md)). Tap a name in a location channel,
+  then Private message: end-to-end encrypted over Nostr between the two
+  anonymous per-area identities, with receipts. These chats are listed in
+  the Private tab with their area. 1 new test.
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.4.0 (preview) — 2026-10-29

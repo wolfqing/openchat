@@ -150,4 +150,6 @@
     <string name="tor_on">Connecté. Les relais ne voient pas votre adresse IP. Le Bluetooth n\'est pas concerné.</string>
     <string name="tor_starting">Démarrage de Tor… les discussions par internet attendent qu\'il soit prêt : rien ne sort sans protection.</string>
     <string name="tor_off">Désactivé. Les opérateurs de relais voient votre adresse IP, y compris pour les messages privés par internet.</string>
+    <string name="geo_dm_status">#%1$s · par internet, chiffré</string>
+    <string name="geo_dm_empty">Les messages avec %1$s sont chiffrés de bout en bout et passent par internet. Vous n\'apparaissez que sous votre nom anonyme de #%2$s.</string>
 </resources>

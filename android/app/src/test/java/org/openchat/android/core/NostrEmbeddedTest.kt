@@ -31,4 +31,15 @@ class NostrEmbeddedTest {
         assertNull(NostrEmbedded.decode("bitchat1:!!"))
         assertNull(NostrEmbedded.decode("hello"))
     }
+
+    @Test
+    fun locationChannelFormHasNoRecipientAndARandomSender() {
+        val a = NostrEmbedded.decode(NostrEmbedded.privateMessageAnonymous("ID-3", "hi", 1L)!!)!!
+        val b = NostrEmbedded.decode(NostrEmbedded.privateMessageAnonymous("ID-3", "hi", 1L)!!)!!
+        assertNull(a.recipientId)
+        assertEquals(false, a.senderId.contentEquals(b.senderId))
+        assertEquals(PrivateMessage("ID-3", "hi"), PrivateMessage.decode(a.payload.body))
+        val r = NostrEmbedded.decode(NostrEmbedded.receiptAnonymous(NoisePayloadType.DELIVERED, "ID-3", 1L)!!)!!
+        assertEquals(NoisePayloadType.DELIVERED, r.payload.type)
+    }
 }

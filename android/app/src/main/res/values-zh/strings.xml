@@ -153,4 +153,6 @@
     <string name="tor_on">已连接。中继服务器看不到你的 IP 地址。蓝牙不受影响。</string>
     <string name="tor_starting">正在启动 Tor…联网聊天会等它就绪，不会未经保护就发出去。</string>
     <string name="tor_off">已关闭。中继运营者能看到你的 IP 地址，包括经互联网发送的私信。</string>
+    <string name="geo_dm_status">#%1$s · 经互联网加密送达</string>
+    <string name="geo_dm_empty">和 %1$s 的消息端到端加密，经互联网送达。对方只能看到你在 #%2$s 用的匿名身份。</string>
 </resources>
