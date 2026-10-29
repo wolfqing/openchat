@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hindi. Machine-drafted; needs a native speaker's review. -->
+<resources>
+    <string name="channel_status">नेटवर्क की स्थिति</string>
+    <string name="channel_messages">निजी संदेश</string>
+    <string name="status_running">ब्लूटूथ से आस-पास के फ़ोनों से जुड़ रहा है</string>
+    <string name="onboard_title">सिग्नल नहीं? फिर भी चैट करें।</string>
+    <string name="onboard_body">जब आपके फ़ोन में सिग्नल न हो (बिजली गुल, भूकंप, तूफ़ान, भीड़ से जाम मोबाइल टावर, पहाड़ों में या हवाई जहाज़ में), तब openchat ब्लूटूथ से आस-पास के फ़ोनों को जोड़ता है और हर संदेश एक फ़ोन से दूसरे फ़ोन तक पहुँचाता है।</string>
+    <string name="onboard_no_account">न साइन-अप, न फ़ोन नंबर, न सर्वर।</string>
+    <string name="onboard_start">शुरू करें</string>
+    <string name="onboard_next">आगे आपसे ब्लूटूथ की अनुमति माँगी जाएगी, ताकि ऐप आस-पास के लोगों को ढूँढ सके।</string>
+    <string name="safety_title">शुरू करने से पहले</string>
+    <string name="safety_body">· \"आस-पास\" चैनल सार्वजनिक है। दायरे में मौजूद हर कोई इसे देख सकता है।\n· निजी संदेश एन्क्रिप्टेड हैं, लेकिन आस-पास के लोग जान सकते हैं कि आप यह ऐप इस्तेमाल करते हैं, और समय के साथ उसी फ़ोन को पहचान सकते हैं।\n· इस ऐप का अभी तक पूरा स्वतंत्र सुरक्षा ऑडिट नहीं हुआ है। अगर पहचाने जाने से आप गंभीर ख़तरे में पड़ सकते हैं, तो इस पर भरोसा न करें।\n· सारा डेटा एक साथ मिटाने के लिए ऊपर के शीर्षक पर तीन बार टैप करें।</string>
+    <string name="tab_nearby">आस-पास</string>
+    <string name="tab_private">निजी</string>
+    <string name="tab_location">स्थान</string>
+    <string name="tab_me">मैं</string>
+    <string name="ok">ठीक है</string>
+    <string name="wiped">सब मिटा दिया गया। आपकी नई पहचान: %1$s</string>
+    <string name="banner_need_permission">आस-पास के लोगों को ढूँढने के लिए ब्लूटूथ की अनुमति चाहिए</string>
+    <string name="banner_bt_off">ब्लूटूथ बंद है। चालू करने के लिए यहाँ टैप करें</string>
+    <string name="banner_starting">शुरू हो रहा है…</string>
+    <string name="banner_searching">आस-पास के लोगों को ढूँढ रहा है…</string>
+    <plurals name="banner_connected">
+        <item quantity="one">आस-पास %d व्यक्ति से जुड़े</item>
+        <item quantity="other">आस-पास %d लोगों से जुड़े</item>
+    </plurals>
+    <string name="nearby_empty_alone">आस-पास अभी कोई नहीं है।\nopenchat चला रहे फ़ोन कुछ दर्जन मीटर के भीतर अपने-आप जुड़ जाते हैं।\nउसी मेश पर bitchat इस्तेमाल करने वाले भी आपके संदेश पा सकते हैं।</string>
+    <plurals name="nearby_empty_peers">
+        <item quantity="one">आस-पास %d व्यक्ति है। कुछ लिखें, सब देख सकते हैं।</item>
+        <item quantity="other">आस-पास %d लोग हैं। कुछ लिखें, सब देख सकते हैं।</item>
+    </plurals>
+    <string name="nearby_placeholder">आस-पास सभी से कुछ कहें…</string>
+    <string name="state_sending">भेजा जा रहा है</string>
+    <string name="state_sent">भेजा गया</string>
+    <string name="state_delivered">पहुँच गया</string>
+    <string name="state_read">पढ़ लिया</string>
+    <string name="state_failed">नहीं भेजा जा सका</string>
+    <string name="send">भेजें</string>
+    <string name="back">वापस</string>
+    <string name="dm_status_here">आस-पास · एन्क्रिप्टेड</string>
+    <string name="dm_status_away">आस-पास नहीं · लौटने पर संदेश पहुँच जाएँगे</string>
+    <string name="dm_empty">%1$s के साथ संदेश एंड-टू-एंड एन्क्रिप्टेड हैं। बीच में संदेश आगे बढ़ाने वाले फ़ोन इन्हें नहीं पढ़ सकते।</string>
+    <string name="dm_placeholder">%1$s को संदेश…</string>
+    <string name="dm_list_empty">आस-पास के लोग यहाँ दिखेंगे।\nएन्क्रिप्टेड संदेश भेजने के लिए किसी नाम पर टैप करें।</string>
+    <string name="dm_direct">बिल्कुल पास</string>
+    <string name="dm_relayed">दूसरे फ़ोनों के ज़रिए पहुँच में</string>
+    <string name="dm_away">आस-पास नहीं</string>
+    <string name="geo_intro">इंटरनेट होने पर आप ब्लूटूथ की पहुँच से आगे, उसी इलाके के लोगों से चैट कर सकते हैं। हर इलाके के लिए एक अलग गुमनाम पहचान इस्तेमाल होती है।</string>
+    <string name="geo_use_location">मेरी अनुमानित लोकेशन इस्तेमाल करें</string>
+    <string name="geo_level_block">ब्लॉक</string>
+    <string name="geo_level_neighborhood">मोहल्ला</string>
+    <string name="geo_level_city">शहर</string>
+    <string name="geo_level_province">राज्य</string>
+    <string name="geo_level_region">क्षेत्र</string>
+    <plurals name="geo_online">
+        <item quantity="one">%d ऑनलाइन</item>
+        <item quantity="other">%d ऑनलाइन</item>
+    </plurals>
+    <string name="geo_refresh">लोकेशन रीफ़्रेश करें</string>
+    <string name="geo_elsewhere">किसी दूसरे इलाके में जाएँ</string>
+    <string name="geo_hint">geohash, जैसे wtw3s</string>
+    <string name="geo_enter">जाएँ</string>
+    <string name="geo_teleport_note">आप वहाँ नहीं हैं, इसलिए दूसरों को आपके नाम के पास ✈ दिखेगा।</string>
+    <string name="geo_joined">जुड़ गए</string>
+    <string name="geo_connecting">जुड़ रहा है…</string>
+    <plurals name="geo_recent">
+        <item quantity="one">सार्वजनिक चैनल · पिछले 5 मिनट में %d व्यक्ति</item>
+        <item quantity="other">सार्वजनिक चैनल · पिछले 5 मिनट में %d लोग</item>
+    </plurals>
+    <string name="geo_leave">छोड़ें</string>
+    <string name="geo_empty">यह #%1$s का सार्वजनिक चैनल है और इसके लिए इंटरनेट चाहिए। आस-पास के bitchat उपयोगकर्ता भी यहाँ हैं।</string>
+    <string name="geo_placeholder">#%1$s में कुछ कहें…</string>
+    <string name="me_name">मेरा नाम</string>
+    <string name="save">सहेजें</string>
+    <string name="me_seen_as">"आस-पास के लोगों को दिखता है: "</string>
+    <string name="me_suffix_note">नाम दोहराए जा सकते हैं। # के बाद के चार अक्षर आपकी डिवाइस ID से आते हैं और एक जैसे नाम वाले लोगों में फ़र्क़ करते हैं।</string>
+    <string name="me_language">भाषा</string>
+    <string name="lang_system">सिस्टम की भाषा</string>
+    <string name="me_share_title">openchat को आस-पास के लोगों तक पहुँचाएँ</string>
+    <string name="me_share_body">न ऐप स्टोर चाहिए, न इंटरनेट। इंस्टॉलर सीधे ब्लूटूथ, Quick Share या किसी और तरीके से भेजें।</string>
+    <string name="me_share_button">इंस्टॉलर शेयर करें</string>
+    <string name="me_fp_title">पहचान फ़िंगरप्रिंट</string>
+    <string name="me_fp_body">आमने-सामने इन अक्षरों का मिलान करें, ताकि पक्का हो सके कि सामने वाला सच में वही व्यक्ति है जिसे आप जानते हैं।</string>
+    <string name="me_device_id">डिवाइस ID: %1$s</string>
+    <string name="me_about">openchat, bitchat नेटवर्क के साथ काम करता है। ओपन सोर्स, MIT लाइसेंस।</string>
+</resources>

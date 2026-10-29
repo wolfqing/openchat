@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Japanese. Machine-drafted; needs a native speaker's review. -->
+<resources>
+    <string name="channel_status">ネットワーク状態</string>
+    <string name="channel_messages">プライベートメッセージ</string>
+    <string name="status_running">Bluetoothで近くのスマホに接続中</string>
+    <string name="onboard_title">圏外でも、話せる。</string>
+    <string name="onboard_body">スマホが圏外のとき（停電、地震、台風、基地局の混雑、山の中や機内など）、openchatはBluetoothで近くのスマホをつなぎ、メッセージをスマホからスマホへ届けます。</string>
+    <string name="onboard_no_account">登録不要。電話番号もサーバーも要りません。</string>
+    <string name="onboard_start">はじめる</string>
+    <string name="onboard_next">次に、近くの人を見つけるためのBluetoothの許可を求められます。</string>
+    <string name="safety_title">はじめる前に</string>
+    <string name="safety_body">・「近く」チャンネルは公開です。範囲内の全員に見えます。\n・プライベートメッセージは暗号化されますが、近くの人はあなたがこのアプリを使っていることに気づけますし、同じスマホを見分け続けることもできます。\n・このアプリはまだ完全な第三者セキュリティ監査を受けていません。身元が知られると深刻な危険がある場合は、頼らないでください。\n・上部のタイトルを3回タップすると、すべてのデータを一度に消去します。</string>
+    <string name="tab_nearby">近く</string>
+    <string name="tab_private">プライベート</string>
+    <string name="tab_location">地域</string>
+    <string name="tab_me">自分</string>
+    <string name="ok">OK</string>
+    <string name="wiped">消去しました。新しいID: %1$s</string>
+    <string name="banner_need_permission">近くの人を見つけるにはBluetoothの許可が必要です</string>
+    <string name="banner_bt_off">Bluetoothがオフです。タップしてオンにする</string>
+    <string name="banner_starting">起動中…</string>
+    <string name="banner_searching">近くの人を探しています…</string>
+    <plurals name="banner_connected">
+        <item quantity="other">近くの%d人と接続中</item>
+    </plurals>
+    <string name="nearby_empty_alone">まだ近くに誰もいません。\nopenchatを使っているスマホは、数十メートル以内なら自動でつながります。\n同じメッシュにいるbitchatユーザーもメッセージを受け取れます。</string>
+    <plurals name="nearby_empty_peers">
+        <item quantity="other">近くに%d人います。発言すると全員に見えます。</item>
+    </plurals>
+    <string name="nearby_placeholder">近くの全員に話しかける…</string>
+    <string name="state_sending">送信中</string>
+    <string name="state_sent">送信済み</string>
+    <string name="state_delivered">配信済み</string>
+    <string name="state_read">既読</string>
+    <string name="state_failed">未送信</string>
+    <string name="send">送信</string>
+    <string name="back">戻る</string>
+    <string name="dm_status_here">近くにいます · 暗号化</string>
+    <string name="dm_status_away">近くにいません · 戻ってきたら届きます</string>
+    <string name="dm_empty">%1$sとのメッセージはエンドツーエンドで暗号化されます。中継するスマホには読めません。</string>
+    <string name="dm_placeholder">%1$sにメッセージ…</string>
+    <string name="dm_list_empty">近くの人がここに表示されます。\n名前をタップすると暗号化メッセージを送れます。</string>
+    <string name="dm_direct">すぐそば</string>
+    <string name="dm_relayed">他のスマホ経由で届く</string>
+    <string name="dm_away">近くにいない</string>
+    <string name="geo_intro">インターネットにつながっていれば、Bluetoothの範囲を超えて同じ地域の人とチャットできます。地域ごとに別の匿名IDを使います。</string>
+    <string name="geo_use_location">おおよその現在地を使う</string>
+    <string name="geo_level_block">街区</string>
+    <string name="geo_level_neighborhood">近所</string>
+    <string name="geo_level_city">市区町村</string>
+    <string name="geo_level_province">都道府県</string>
+    <string name="geo_level_region">地方</string>
+    <plurals name="geo_online">
+        <item quantity="other">%d人オンライン</item>
+    </plurals>
+    <string name="geo_refresh">現在地を更新</string>
+    <string name="geo_elsewhere">別の地域へ行く</string>
+    <string name="geo_hint">geohash（例: wtw3s）</string>
+    <string name="geo_enter">移動</string>
+    <string name="geo_teleport_note">その場所にいないため、ほかの人にはあなたの名前の横に✈が表示されます。</string>
+    <string name="geo_joined">参加中</string>
+    <string name="geo_connecting">接続中…</string>
+    <plurals name="geo_recent">
+        <item quantity="other">公開チャンネル · 直近5分で%d人</item>
+    </plurals>
+    <string name="geo_leave">退出</string>
+    <string name="geo_empty">#%1$sの公開チャンネルです。インターネット接続が必要です。近くのbitchatユーザーもここにいます。</string>
+    <string name="geo_placeholder">#%1$sに話しかける…</string>
+    <string name="me_name">自分の名前</string>
+    <string name="save">保存</string>
+    <string name="me_seen_as">"近くの人に見える名前: "</string>
+    <string name="me_suffix_note">名前は重複することがあります。#の後ろの4文字は端末IDから作られ、同じ名前の人を区別します。</string>
+    <string name="me_language">言語</string>
+    <string name="lang_system">システムに従う</string>
+    <string name="me_share_title">近くの人にopenchatを渡す</string>
+    <string name="me_share_body">アプリストアもインターネットも不要です。Bluetooth、Quick Share（ニアバイシェア）などでインストーラーを直接送れます。</string>
+    <string name="me_share_button">インストーラーを共有</string>
+    <string name="me_fp_title">IDフィンガープリント</string>
+    <string name="me_fp_body">会ったときにこの文字列を見比べて、相手が本当に知っている人か確認しましょう。</string>
+    <string name="me_device_id">端末ID: %1$s</string>
+    <string name="me_about">openchatはbitchatネットワークと互換性があります。オープンソース、MITライセンス。</string>
+</resources>

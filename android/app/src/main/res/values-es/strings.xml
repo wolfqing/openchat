@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Spanish. Machine-drafted; needs a native speaker's review. -->
+<resources>
+    <string name="channel_status">Estado de la red</string>
+    <string name="channel_messages">Mensajes privados</string>
+    <string name="status_running">Conectando con teléfonos cercanos por Bluetooth</string>
+    <string name="onboard_title">¿Sin señal? Chatea igual.</string>
+    <string name="onboard_body">Cuando tu teléfono no tiene señal (un apagón, un terremoto, un tifón, una antena saturada, en la montaña o en un avión), openchat conecta los teléfonos cercanos por Bluetooth y pasa cada mensaje de teléfono en teléfono.</string>
+    <string name="onboard_no_account">Sin registro, sin número de teléfono, sin servidor.</string>
+    <string name="onboard_start">Empezar</string>
+    <string name="onboard_next">A continuación se te pedirá permiso de Bluetooth para que la app encuentre a gente cerca.</string>
+    <string name="safety_title">Antes de empezar</string>
+    <string name="safety_body">· El canal «Cerca» es público. Todos los que estén al alcance pueden verlo.\n· Los mensajes privados están cifrados, pero la gente cercana puede saber que usas esta app y reconocer el mismo teléfono con el tiempo.\n· Esta app aún no ha pasado una auditoría de seguridad independiente completa. Si ser identificado te pondría en grave peligro, no confíes en ella.\n· Toca tres veces el título de arriba para borrar todos los datos de una vez.</string>
+    <string name="tab_nearby">Cerca</string>
+    <string name="tab_private">Privado</string>
+    <string name="tab_location">Lugar</string>
+    <string name="tab_me">Yo</string>
+    <string name="ok">Aceptar</string>
+    <string name="wiped">Borrado. Tu nueva identidad: %1$s</string>
+    <string name="banner_need_permission">Se necesita permiso de Bluetooth para encontrar gente cerca</string>
+    <string name="banner_bt_off">El Bluetooth está apagado. Toca aquí para activarlo</string>
+    <string name="banner_starting">Iniciando…</string>
+    <string name="banner_searching">Buscando gente cerca…</string>
+    <plurals name="banner_connected">
+        <item quantity="one">Conectado con %d persona cerca</item>
+        <item quantity="many">Conectado con %d personas cerca</item>
+        <item quantity="other">Conectado con %d personas cerca</item>
+    </plurals>
+    <string name="nearby_empty_alone">Todavía no hay nadie cerca.\nLos teléfonos con openchat se conectan solos a unas decenas de metros.\nLos usuarios de bitchat en la misma red mesh también pueden recibir tus mensajes.</string>
+    <plurals name="nearby_empty_peers">
+        <item quantity="one">%d persona cerca. Escribe algo y todos lo verán.</item>
+        <item quantity="many">%d personas cerca. Escribe algo y todos lo verán.</item>
+        <item quantity="other">%d personas cerca. Escribe algo y todos lo verán.</item>
+    </plurals>
+    <string name="nearby_placeholder">Di algo a todos los que están cerca…</string>
+    <string name="state_sending">Enviando</string>
+    <string name="state_sent">Enviado</string>
+    <string name="state_delivered">Entregado</string>
+    <string name="state_read">Leído</string>
+    <string name="state_failed">No enviado</string>
+    <string name="send">Enviar</string>
+    <string name="back">Atrás</string>
+    <string name="dm_status_here">Cerca · cifrado</string>
+    <string name="dm_status_away">No está cerca · los mensajes se entregarán cuando vuelva</string>
+    <string name="dm_empty">Los mensajes con %1$s están cifrados de extremo a extremo. Los teléfonos que los retransmiten no pueden leerlos.</string>
+    <string name="dm_placeholder">Mensaje para %1$s…</string>
+    <string name="dm_list_empty">Aquí aparecerá la gente cercana.\nToca un nombre para enviar un mensaje cifrado.</string>
+    <string name="dm_direct">Justo a tu lado</string>
+    <string name="dm_relayed">Accesible a través de otros teléfonos</string>
+    <string name="dm_away">No está cerca</string>
+    <string name="geo_intro">Con conexión a internet puedes chatear con gente de la misma zona, más allá del alcance del Bluetooth. Cada zona usa su propia identidad anónima.</string>
+    <string name="geo_use_location">Usar mi ubicación aproximada</string>
+    <string name="geo_level_block">Manzana</string>
+    <string name="geo_level_neighborhood">Barrio</string>
+    <string name="geo_level_city">Ciudad</string>
+    <string name="geo_level_province">Provincia</string>
+    <string name="geo_level_region">Región</string>
+    <plurals name="geo_online">
+        <item quantity="one">%d en línea</item>
+        <item quantity="many">%d en línea</item>
+        <item quantity="other">%d en línea</item>
+    </plurals>
+    <string name="geo_refresh">Actualizar ubicación</string>
+    <string name="geo_elsewhere">Visitar otra zona</string>
+    <string name="geo_hint">geohash, p. ej. wtw3s</string>
+    <string name="geo_enter">Ir</string>
+    <string name="geo_teleport_note">No estás allí, así que los demás verán ✈ junto a tu nombre.</string>
+    <string name="geo_joined">Unido</string>
+    <string name="geo_connecting">Conectando…</string>
+    <plurals name="geo_recent">
+        <item quantity="one">Canal público · %d persona en los últimos 5 minutos</item>
+        <item quantity="many">Canal público · %d personas en los últimos 5 minutos</item>
+        <item quantity="other">Canal público · %d personas en los últimos 5 minutos</item>
+    </plurals>
+    <string name="geo_leave">Salir</string>
+    <string name="geo_empty">Este es el canal público de #%1$s y necesita conexión a internet. Los usuarios de bitchat cercanos también están aquí.</string>
+    <string name="geo_placeholder">Di algo en #%1$s…</string>
+    <string name="me_name">Mi nombre</string>
+    <string name="save">Guardar</string>
+    <string name="me_seen_as">"La gente cercana ve: "</string>
+    <string name="me_suffix_note">Los nombres pueden repetirse. Los cuatro caracteres después de # salen del ID de tu dispositivo y distinguen a personas con el mismo nombre.</string>
+    <string name="me_language">Idioma</string>
+    <string name="lang_system">Idioma del sistema</string>
+    <string name="me_share_title">Pasa openchat a la gente cercana</string>
+    <string name="me_share_body">No hace falta tienda de apps ni internet. Envía el instalador directamente por Bluetooth, Quick Share o cualquier otro medio.</string>
+    <string name="me_share_button">Compartir instalador</string>
+    <string name="me_fp_title">Huella de identidad</string>
+    <string name="me_fp_body">Compara estos caracteres en persona para confirmar que alguien es realmente quien conoces.</string>
+    <string name="me_device_id">ID del dispositivo: %1$s</string>
+    <string name="me_about">openchat funciona con la red bitchat. Código abierto, licencia MIT.</string>
+</resources>

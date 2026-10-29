@@ -10,7 +10,12 @@ import java.util.Locale
  * nothing about the user's identity. With nothing saved the app starts in English.
  */
 object AppLanguage {
-    enum class Choice(val tag: String?) { SYSTEM(null), ZH("zh"), EN("en") }
+    /** [label] is the language's own name, shown untranslated; SYSTEM takes its label from resources. */
+    enum class Choice(val tag: String?, val label: String?) {
+        SYSTEM(null, null), EN("en", "English"), ZH("zh-Hans", "简体中文"), ZH_HANT("zh-Hant", "繁體中文"),
+        ES("es", "Español"), FR("fr", "Français"), DE("de", "Deutsch"), PT("pt", "Português"), RU("ru", "Русский"),
+        AR("ar", "العربية"), HI("hi", "हिन्दी"), JA("ja", "日本語"), KO("ko", "한국어"),
+    }
 
     private const val PREFS = "ui"
     private const val KEY = "language"

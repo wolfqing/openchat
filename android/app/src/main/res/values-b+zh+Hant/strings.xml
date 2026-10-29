@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Traditional Chinese. Machine-drafted; needs a native speaker's review. -->
+<resources>
+    <string name="channel_status">網路狀態</string>
+    <string name="channel_messages">私訊</string>
+    <string name="status_running">正在透過藍牙連接附近的手機</string>
+    <string name="onboard_title">沒網路，也能聊。</string>
+    <string name="onboard_body">停電、地震、颱風、基地台塞爆、在山裡或飛機上，手機沒有訊號時，openchat 用藍牙把附近的手機連成一張網，訊息一台傳一台。</string>
+    <string name="onboard_no_account">不用註冊，不需要手機號碼，沒有伺服器。</string>
+    <string name="onboard_start">開始</string>
+    <string name="onboard_next">下一步會請你允許使用藍牙，用來發現附近的人。</string>
+    <string name="safety_title">請先了解</string>
+    <string name="safety_body">· 「附近」頻道是公開的，範圍內所有人都看得到。\n· 私訊有加密，但附近的人看得出你在用這個 App，也能長期認出同一支手機。\n· 本軟體未經完整的獨立安全稽核。如果被認出來會有嚴重後果，請不要依賴它。\n· 連點三下頂部標題，立刻清除所有資料。</string>
+    <string name="tab_nearby">附近</string>
+    <string name="tab_private">私訊</string>
+    <string name="tab_location">位置頻道</string>
+    <string name="tab_me">我</string>
+    <string name="ok">好</string>
+    <string name="wiped">已清除。你現在是一個新身分：%1$s</string>
+    <string name="banner_need_permission">需要藍牙權限才能發現附近的人</string>
+    <string name="banner_bt_off">藍牙已關閉，點這裡開啟</string>
+    <string name="banner_starting">正在啟動…</string>
+    <string name="banner_searching">正在尋找附近的人…</string>
+    <plurals name="banner_connected">
+        <item quantity="other">已連上附近 %d 人</item>
+    </plurals>
+    <string name="nearby_empty_alone">附近還沒有人。\n開著 openchat 的手機靠近到幾十公尺內，就會自動連上。\n同一網路裡的 bitchat 使用者也能收到你的訊息。</string>
+    <plurals name="nearby_empty_peers">
+        <item quantity="other">附近有 %d 人。說一句話，大家都看得到。</item>
+    </plurals>
+    <string name="nearby_placeholder">對附近所有人說…</string>
+    <string name="state_sending">傳送中</string>
+    <string name="state_sent">已送出</string>
+    <string name="state_delivered">已送達</string>
+    <string name="state_read">已讀</string>
+    <string name="state_failed">傳送失敗</string>
+    <string name="send">傳送</string>
+    <string name="back">返回</string>
+    <string name="dm_status_here">在附近 · 加密私訊</string>
+    <string name="dm_status_away">不在附近 · 訊息會在對方回來後送達</string>
+    <string name="dm_empty">和 %1$s 的私訊是端對端加密的，中間轉傳的手機看不到內容。</string>
+    <string name="dm_placeholder">寫給 %1$s…</string>
+    <string name="dm_list_empty">附近的人會出現在這裡。\n點一下名字就能傳加密私訊。</string>
+    <string name="dm_direct">就在身邊</string>
+    <string name="dm_relayed">經其他手機轉傳可達</string>
+    <string name="dm_away">不在附近</string>
+    <string name="geo_intro">有網路時，可以和同一地區的人聊天，距離不限於藍牙範圍。每個地區用一個獨立的匿名身分。</string>
+    <string name="geo_use_location">使用我的大概位置</string>
+    <string name="geo_level_block">街區</string>
+    <string name="geo_level_neighborhood">社區</string>
+    <string name="geo_level_city">城市</string>
+    <string name="geo_level_province">省</string>
+    <string name="geo_level_region">區域</string>
+    <plurals name="geo_online">
+        <item quantity="other">%d 人在線上</item>
+    </plurals>
+    <string name="geo_refresh">重新整理位置</string>
+    <string name="geo_elsewhere">去別的地區看看</string>
+    <string name="geo_hint">geohash，例如 wtw3s</string>
+    <string name="geo_enter">進入</string>
+    <string name="geo_teleport_note">你不在那裡，所以別人會看到你的名字旁有 ✈ 標記。</string>
+    <string name="geo_joined">已加入</string>
+    <string name="geo_connecting">正在連線…</string>
+    <plurals name="geo_recent">
+        <item quantity="other">公開頻道 · 近 5 分鐘 %d 人</item>
+    </plurals>
+    <string name="geo_leave">退出</string>
+    <string name="geo_empty">這是 #%1$s 的公開頻道，需要連網。附近用 bitchat 的人也在這裡。</string>
+    <string name="geo_placeholder">對 #%1$s 說…</string>
+    <string name="me_name">我的名字</string>
+    <string name="save">儲存</string>
+    <string name="me_seen_as">"附近的人看到的是 "</string>
+    <string name="me_suffix_note">名字可以重複，# 後面的四碼來自你的裝置 ID，用來區分同名的人。</string>
+    <string name="me_language">語言</string>
+    <string name="lang_system">跟隨系統</string>
+    <string name="me_share_title">把 openchat 傳給身邊的人</string>
+    <string name="me_share_body">不需要應用程式商店，也不需要網路。可以用藍牙、快速分享（鄰近分享）或其他方式直接傳送安裝檔。</string>
+    <string name="me_share_button">分享安裝檔</string>
+    <string name="me_fp_title">身分指紋</string>
+    <string name="me_fp_body">當面核對這串字元，可以確認對方真的是你認識的人。</string>
+    <string name="me_device_id">裝置 ID：%1$s</string>
+    <string name="me_about">openchat 相容 bitchat 網路。開源，MIT 授權。</string>
+</resources>

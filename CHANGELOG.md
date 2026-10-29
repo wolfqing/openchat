@@ -8,9 +8,16 @@
 - The main colour is now signal orange (`#FF7840`) on near-black, the
   dark palette of the prototype. It replaces the green from v0.1.
 - New launcher icon: "OPEN" over "CHAT" in a 5x7 pixel face, orange on
-  black, drawn as a vector so it stays sharp. It also serves as the
-  Android 13 themed icon. Preview:
+  black, drawn as a vector so it stays sharp. The letters are as large as
+  a round mask allows without clipping. It also serves as the Android 13
+  themed icon. Preview, as a round launcher shows it:
   [docs/design/app-icon-preview.png](docs/design/app-icon-preview.png).
+- Ten more languages: Traditional Chinese, Spanish, French, German,
+  Portuguese (Brazil), Russian, Arabic (right to left), Hindi, Japanese
+  and Korean, alongside English and Simplified Chinese. The picker lists
+  each language in its own script and wraps onto several rows. Phones set
+  to Taiwan or Hong Kong Chinese get Traditional. The new translations are
+  machine-drafted and need review by native speakers.
 
 ## Android v0.2.0 (preview) — 2026-10-28
 

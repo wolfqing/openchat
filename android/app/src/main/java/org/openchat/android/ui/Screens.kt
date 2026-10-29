@@ -8,6 +8,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -118,19 +120,17 @@ fun OpenChatTheme(content: @Composable () -> Unit) {
 @Composable
 private fun plural(@PluralsRes id: Int, count: Int): String = LocalContext.current.resources.getQuantityString(id, count, count)
 
-/** System default, 中文 or English. Choosing one restarts the screen in that language. */
-@OptIn(ExperimentalMaterial3Api::class)
+/** System default plus each supported language. Choosing one restarts the screen in that language. */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun LanguagePicker(onLanguage: (AppLanguage.Choice) -> Unit) {
     val current = AppLanguage.get(LocalContext.current)
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         AppLanguage.Choice.entries.forEach { c ->
             FilterChip(
                 selected = c == current,
                 onClick = { if (c != current) onLanguage(c) },
-                label = {
-                    Text(stringResource(when (c) { AppLanguage.Choice.SYSTEM -> R.string.lang_system; AppLanguage.Choice.ZH -> R.string.lang_zh; AppLanguage.Choice.EN -> R.string.lang_en }))
-                },
+                label = { Text(c.label ?: stringResource(R.string.lang_system)) },
             )
         }
     }
