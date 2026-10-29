@@ -3,7 +3,9 @@ package org.openchat.android.ui
 import androidx.activity.compose.BackHandler
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -95,6 +97,7 @@ import org.openchat.android.app.Conversation
 import org.openchat.android.app.DeliveryState
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.app.Social
+import org.openchat.android.core.Mentions
 import org.openchat.android.nostr.Geohash
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -391,7 +394,11 @@ fun ChatPane(
                 }
             }
         }
-        Composer(conversation, placeholder, onSend)
+        val peers by ChatRepository.peers.collectAsState()
+        val people = if (conversation.startsWith("geo:")) {
+            list.filter { !it.mine }.distinctBy { it.senderKey }.map { PeerLabel.of(it) }
+        } else peers.map { PeerLabel.mesh(it.nickname, it.peerIdHex) }
+        Composer(conversation, placeholder, people, onSend)
     }
 }
 
@@ -408,9 +415,10 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = if (m.mine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+            border = if (m.mentionsMe) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
             modifier = Modifier.widthIn(max = 300.dp),
         ) {
-            Text(m.text, Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
+            Text(withMentions(m.text), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
         }
         val status = if (m.mine) " · " + stringResource(
             when (m.state) {
@@ -420,6 +428,23 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
             },
         ) else ""
         Text(time + status, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Message text with every @mention set in the accent colour. */
+@Composable
+private fun withMentions(text: String): AnnotatedString {
+    val ranges = Mentions.ranges(text)
+    if (ranges.isEmpty()) return AnnotatedString(text)
+    val accent = MaterialTheme.colorScheme.primary
+    return buildAnnotatedString {
+        var at = 0
+        for (r in ranges) {
+            append(text.substring(at, r.first))
+            withStyle(SpanStyle(color = accent, fontWeight = FontWeight.SemiBold)) { append(text.substring(r.first, r.last + 1)) }
+            at = r.last + 1
+        }
+        append(text.substring(at))
     }
 }
 
@@ -436,11 +461,24 @@ private fun stampText(ts: Long): String {
 private val drafts = HashMap<String, String>()
 
 @Composable
-private fun Composer(conversation: String, placeholder: String, onSend: (String) -> Unit) {
+private fun Composer(conversation: String, placeholder: String, people: List<PeerLabel>, onSend: (String) -> Unit) {
     var text by remember(conversation) { mutableStateOf(drafts[conversation].orEmpty()) }
     fun set(t: String) { text = t; if (t.isEmpty()) drafts.remove(conversation) else drafts[conversation] = t }
     val send = { val t = text.trim(); if (t.isNotEmpty()) { onSend(t); set("") } }
     HorizontalDivider()
+    val typing = Mentions.typing(text)
+    if (typing != null) {
+        val matches = people.filter { it.toString().lowercase().startsWith(typing.lowercase()) }.take(6)
+        if (matches.isNotEmpty()) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp)) {
+                matches.forEach { p ->
+                    // A name shared with someone else gets its #suffix, so the mention is unambiguous.
+                    val token = if (people.count { it.name.equals(p.name, ignoreCase = true) } > 1) p.toString() else p.name
+                    TextButton(onClick = { set(text.substring(0, text.lastIndexOf('@')) + "@" + token + " ") }) { Text(labelText(p)) }
+                }
+            }
+        }
+    }
     Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(
             value = text, onValueChange = { if (it.length <= 1000) set(it) },

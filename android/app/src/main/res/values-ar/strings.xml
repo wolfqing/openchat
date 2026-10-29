@@ -112,4 +112,5 @@
     <string name="peer_geo_note">الحظر هنا يُخفي هذا الاسم في قنوات المواقع. كل منطقة تستخدم مفتاحًا مختلفًا، لذا لا يتبعه إلى مناطق أخرى.</string>
     <string name="peer_more">المزيد</string>
     <string name="me_blocked_title">المحظورون</string>
+    <string name="mention_notify">ذكرك %1$s</string>
 </resources>

@@ -29,6 +29,10 @@
   block applies to that sender's key in that area only. Blocked people are
   listed on the Me tab with Unblock. The list is sealed on disk and wiped by
   the triple tap. 1 new test.
+- @mentions. "@name" and "@name#abcd" are set in orange; a message that
+  mentions me gets an orange outline and a notification when that chat is
+  not open (only the suffixed form counts when someone nearby shares my
+  name). Typing "@" in any composer offers the names around. 3 new tests.
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.4.0 (preview) — 2026-10-29

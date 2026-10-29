@@ -92,4 +92,5 @@
     <string name="peer_geo_note">在這裡封鎖，會在地區頻道中隱藏這個人。每個地區用不同的金鑰，所以不會跟到別的地區。</string>
     <string name="peer_more">更多</string>
     <string name="me_blocked_title">已封鎖的人</string>
+    <string name="mention_notify">%1$s 提到了你</string>
 </resources>

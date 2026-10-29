@@ -26,6 +26,7 @@ data class ChatMessage(
     val mine: Boolean,
     val state: DeliveryState = DeliveryState.SENT,
     val teleported: Boolean = false, // geohash sender says it is not in the cell
+    val mentionsMe: Boolean = false,
 )
 
 /**

@@ -92,4 +92,5 @@
     <string name="peer_geo_note">ここでブロックすると地域チャンネルでこの名前を隠します。地域ごとに鍵が違うため、他の地域には及びません。</string>
     <string name="peer_more">その他</string>
     <string name="me_blocked_title">ブロック中の人</string>
+    <string name="mention_notify">%1$sがあなたをメンションしました</string>
 </resources>

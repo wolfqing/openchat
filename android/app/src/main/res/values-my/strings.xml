@@ -92,4 +92,5 @@
     <string name="peer_geo_note">ဤနေရာတွင် ပိတ်ဆို့ပါက ဒေသချန်နယ်များတွင် ဤအမည်ကို ဖျောက်ထားမည်။ ဒေသတစ်ခုစီ သော့ကွဲပြားသဖြင့် အခြားနေရာတွင် မသက်ရောက်ပါ။</string>
     <string name="peer_more">နောက်ထပ်</string>
     <string name="me_blocked_title">ပိတ်ဆို့ထားသူများ</string>
+    <string name="mention_notify">%1$s က သင့်ကို ဖော်ပြခဲ့သည်</string>
 </resources>

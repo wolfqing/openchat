@@ -20,6 +20,7 @@ import android.os.HandlerThread
 import android.os.IBinder
 import android.os.SystemClock
 import org.openchat.android.R
+import org.openchat.android.core.Mentions
 import org.openchat.android.core.sha256
 import org.openchat.android.core.toHex
 import org.openchat.android.mesh.BleTransport
@@ -93,7 +94,9 @@ class MeshService : Service(), ChatController {
         Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)) } }
         engine.isBlocked = { key -> sha256(key).toHex() in Social.state.value.blocked }
         ble = BleTransport(this, handler) { engine }
-        geo = GeoChannels(RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText()), identity.nostrSeed) { engine.identity.nickname }
+        geo = GeoChannels(RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText()), identity.nostrSeed, { engine.identity.nickname }) { from, text ->
+            notifyMention(from, text)
+        }
         ChatRepository.controller = this
         registerReceiver(btReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
         handler.post {
@@ -169,7 +172,11 @@ class MeshService : Service(), ChatController {
         }
 
         override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long) {
-            ChatRepository.add(ChatMessage("$senderHex-$timestamp", Conversation.Mesh.key, nickname, senderHex, text, timestamp, mine = false))
+            val me = engine.identity
+            val ambiguous = ChatRepository.peers.value.any { it.peerIdHex != me.peerIdHex && it.nickname.equals(me.nickname, ignoreCase = true) }
+            val mentioned = Mentions.mentionsMe(text, me.nickname, me.peerIdHex.take(4), ambiguous)
+            ChatRepository.add(ChatMessage("$senderHex-$timestamp", Conversation.Mesh.key, nickname, senderHex, text, timestamp, mine = false, mentionsMe = mentioned))
+            if (mentioned && ChatRepository.openConversation != Conversation.Mesh.key) notifyMention(PeerLabel.mesh(nickname, senderHex).toString(), text)
         }
 
         override fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) {
@@ -314,6 +321,8 @@ class MeshService : Service(), ChatController {
             .build()
         try { getSystemService(NotificationManager::class.java).notify(notifySeq++, n) } catch (e: SecurityException) { }
     }
+
+    private fun notifyMention(from: String, text: String) = notifyPrivate(getString(R.string.mention_notify, from), text)
 
     private fun builder(channel: String): Notification.Builder {
         val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, channel) else @Suppress("DEPRECATION") Notification.Builder(this)

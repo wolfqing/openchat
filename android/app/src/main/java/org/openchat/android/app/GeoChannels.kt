@@ -2,6 +2,7 @@ package org.openchat.android.app
 
 import org.json.JSONArray
 import org.json.JSONObject
+import org.openchat.android.core.Mentions
 import org.openchat.android.nostr.NostrEvent
 import org.openchat.android.nostr.NostrKey
 import org.openchat.android.nostr.RelayDirectory
@@ -16,6 +17,7 @@ class GeoChannels(
     private val directory: RelayDirectory,
     @Volatile private var seed: ByteArray,
     private val nickname: () -> String,
+    private val onMention: (from: String, text: String) -> Unit = { _, _ -> },
 ) {
     private class Joined(val relays: List<String>, val teleported: Boolean, val key: NostrKey)
 
@@ -83,12 +85,18 @@ class GeoChannels(
         if (ev.pubkey in Social.state.value.geoBlocked) return publishStatus()
         if (ev.kind == NostrEvent.KIND_GEOHASH_MESSAGE && ev.content.isNotBlank()) {
             val teleported = ev.tags.any { it.size >= 2 && it[0] == "t" && it[1] == "teleport" }
+            val mine = ev.pubkey == j.key.publicKeyHex
+            val mentioned = !mine && Mentions.mentionsMe(ev.content, nickname(), j.key.publicKeyHex.takeLast(4), ambiguous = false)
+            val conv = Conversation.Geo(g).key
+            if (mentioned && ev.createdAt >= nowS - 300 && ChatRepository.openConversation != conv && ChatRepository.messages.value[conv].orEmpty().none { it.id == ev.id }) {
+                onMention(PeerLabel.nostr(ev.tag("n"), ev.pubkey).toString() + " · #" + g, ev.content.take(200))
+            }
             ChatRepository.add(
                 ChatMessage(
                     id = ev.id, conversation = Conversation.Geo(g).key,
                     senderName = ev.tag("n")?.take(32).orEmpty(), senderKey = ev.pubkey,
                     text = ev.content.take(2000), timestamp = minOf(ev.createdAt, nowS) * 1000,
-                    mine = ev.pubkey == j.key.publicKeyHex, teleported = teleported,
+                    mine = mine, teleported = teleported, mentionsMe = mentioned,
                 ),
             )
         }

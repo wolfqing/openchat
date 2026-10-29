@@ -92,4 +92,5 @@
     <string name="peer_geo_note">Memblokir di sini menyembunyikan nama ini di kanal wilayah. Tiap wilayah memakai kunci berbeda, jadi tidak berlaku di tempat lain.</string>
     <string name="peer_more">Lainnya</string>
     <string name="me_blocked_title">Diblokir</string>
+    <string name="mention_notify">%1$s menyebut Anda</string>
 </resources>

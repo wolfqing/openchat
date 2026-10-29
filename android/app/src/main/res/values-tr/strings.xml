@@ -96,4 +96,5 @@
     <string name="peer_geo_note">Burada engellemek bu adı konum kanallarında gizler. Her bölge farklı anahtar kullandığından başka yerde geçerli olmaz.</string>
     <string name="peer_more">Daha fazla</string>
     <string name="me_blocked_title">Engellenenler</string>
+    <string name="mention_notify">%1$s senden bahsetti</string>
 </resources>

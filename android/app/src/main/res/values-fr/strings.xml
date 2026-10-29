@@ -100,4 +100,5 @@
     <string name="peer_geo_note">Bloquer ici masque ce nom dans les canaux de zone. Chaque zone utilise une autre clé : le blocage ne le suit pas ailleurs.</string>
     <string name="peer_more">Plus</string>
     <string name="me_blocked_title">Bloqués</string>
+    <string name="mention_notify">%1$s vous a mentionné</string>
 </resources>

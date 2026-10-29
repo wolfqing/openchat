@@ -104,4 +104,5 @@
     <string name="peer_geo_note">Блокировка здесь скрывает это имя в каналах местности. У каждой местности свой ключ, поэтому в других местах она не действует.</string>
     <string name="peer_more">Ещё</string>
     <string name="me_blocked_title">Заблокированные</string>
+    <string name="mention_notify">%1$s упомянул(а) вас</string>
 </resources>

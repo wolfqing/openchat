@@ -96,4 +96,5 @@
     <string name="peer_geo_note">Blockieren hier blendet diesen Namen in Ortskanälen aus. Jedes Gebiet nutzt einen anderen Schlüssel, daher gilt es nicht anderswo.</string>
     <string name="peer_more">Mehr</string>
     <string name="me_blocked_title">Blockiert</string>
+    <string name="mention_notify">%1$s hat dich erwähnt</string>
 </resources>

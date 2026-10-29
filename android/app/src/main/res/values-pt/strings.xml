@@ -100,4 +100,5 @@
     <string name="peer_geo_note">Bloquear aqui oculta este nome nos canais de região. Cada região usa outra chave, então não vale em outros lugares.</string>
     <string name="peer_more">Mais</string>
     <string name="me_blocked_title">Bloqueados</string>
+    <string name="mention_notify">%1$s mencionou você</string>
 </resources>

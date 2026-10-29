@@ -103,4 +103,5 @@
     <string name="peer_geo_note">在这里屏蔽，会在地区频道中隐藏这个人。每个地区用不同的密钥，所以不会跟到别的地区。</string>
     <string name="peer_more">更多</string>
     <string name="me_blocked_title">已屏蔽的人</string>
+    <string name="mention_notify">%1$s 提到了你</string>
 </resources>

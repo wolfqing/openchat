@@ -96,4 +96,5 @@
     <string name="peer_geo_note">مسدود کردن در اینجا این نام را در کانال‌های منطقه پنهان می‌کند. هر منطقه کلید متفاوتی دارد، پس در جای دیگر اعمال نمی‌شود.</string>
     <string name="peer_more">بیشتر</string>
     <string name="me_blocked_title">مسدودشده‌ها</string>
+    <string name="mention_notify">%1$s از شما نام برد</string>
 </resources>

@@ -96,4 +96,5 @@
     <string name="peer_geo_note">यहाँ ब्लॉक करने से यह नाम क्षेत्र चैनलों में छिप जाता है। हर क्षेत्र की अलग कुंजी होती है, इसलिए यह दूसरी जगह लागू नहीं होता।</string>
     <string name="peer_more">और</string>
     <string name="me_blocked_title">ब्लॉक किए गए</string>
+    <string name="mention_notify">%1$s ने आपका ज़िक्र किया</string>
 </resources>

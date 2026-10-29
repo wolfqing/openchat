@@ -109,4 +109,5 @@
     <string name="peer_geo_note">Blocking here hides this name in location channels. Each area uses a different key, so it does not follow them elsewhere.</string>
     <string name="peer_more">More</string>
     <string name="me_blocked_title">Blocked</string>
+    <string name="mention_notify">%1$s mentioned you</string>
 </resources>

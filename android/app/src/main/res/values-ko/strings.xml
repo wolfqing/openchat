@@ -92,4 +92,5 @@
     <string name="peer_geo_note">여기서 차단하면 지역 채널에서 이 이름이 숨겨집니다. 지역마다 키가 달라 다른 지역에는 적용되지 않습니다.</string>
     <string name="peer_more">더보기</string>
     <string name="me_blocked_title">차단한 사람</string>
+    <string name="mention_notify">%1$s님이 회원님을 언급했습니다</string>
 </resources>

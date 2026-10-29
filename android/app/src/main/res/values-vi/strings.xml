@@ -92,4 +92,5 @@
     <string name="peer_geo_note">Chặn ở đây sẽ ẩn tên này trong kênh khu vực. Mỗi khu vực dùng khóa khác nhau nên không áp dụng ở nơi khác.</string>
     <string name="peer_more">Thêm</string>
     <string name="me_blocked_title">Đã chặn</string>
+    <string name="mention_notify">%1$s đã nhắc đến bạn</string>
 </resources>
