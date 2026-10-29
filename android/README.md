@@ -59,6 +59,12 @@ The APK lands in `app/build/outputs/apk/debug/app-debug.apk`. minSdk 26
   (zlib level 5, raw DEFLATE) and iOS output must match byte for byte.
 - **BLE layer only compiles.** Connection limits, MTU handling and
   background behaviour need real devices, especially across vendors.
+- **Courier metadata.** A private message to someone out of reach is
+  sealed and handed to up to three nearby phones. They cannot read it or
+  see who sent it, but each of them learns that a message exists for a
+  recipient tag that rotates daily, and the sender's own packet names
+  the sender. The same trade-off bitchat makes for delivery rate. Nothing
+  about carried mail for others is shown to the carrier beyond a count.
 - **Android lint**: no errors; warnings remain (dependency versions, obsolete SDK checks, monochrome icon).
 - The debug APK is signed with a local debug key, so a later release build
   will not install over it.

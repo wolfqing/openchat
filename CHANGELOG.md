@@ -1,6 +1,6 @@
 # Changelog
 
-## Android, unreleased
+## Android v0.4.0 (preview) — 2026-10-29
 
 - Store-and-forward, wire-compatible with bitchat's courier path
   ([docs/protocol-spec.md §13](docs/protocol-spec.md)). A private message
@@ -17,6 +17,10 @@
 - 11 new unit tests: upstream's golden courier vectors (TLV, recipient
   tag, signing pre-image), the Noise X seal, a three-phone carry-and-
   handover run, and outbox persistence. 50 tests in all.
+- README now states what a courier learns about the mail it carries.
+- versionCode 6, versionName 0.4.0. Installs over v0.3.1.
+- Release: <https://github.com/wolfqing/openchat/releases/tag/v0.4.0>,
+  APK SHA-256 `0a2ae15e0b835a40e93252fc399cd8773205a52d6402c2e9d63979150f3209e8`.
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.3.1 (preview) — 2026-10-28
