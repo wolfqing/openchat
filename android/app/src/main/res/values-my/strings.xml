@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Burmese. Machine-drafted; needs a native speaker's review. -->
+<resources>
+    <string name="channel_status">ကွန်ရက် အခြေအနေ</string>
+    <string name="channel_messages">သီးသန့် မက်ဆေ့ချ်များ</string>
+    <string name="status_running">အနီးရှိ ဖုန်းများနှင့် ဘလူးတုသ်ဖြင့် ချိတ်ဆက်နေသည်</string>
+    <string name="onboard_title">လိုင်းမမိလည်း စကားပြောနိုင်သည်။</string>
+    <string name="onboard_body">ဖုန်းလိုင်းမမိသည့်အခါ (မီးပြတ်ခြင်း၊ ငလျင်၊ မုန်တိုင်း၊ ဆက်သွယ်ရေးတာဝါ ပြည့်ကျပ်ခြင်း၊ တောင်ပေါ် သို့မဟုတ် လေယာဉ်ပေါ်)၊ openchat သည် အနီးရှိ ဖုန်းများကို ဘလူးတုသ်ဖြင့် ချိတ်ဆက်ပြီး မက်ဆေ့ချ်တိုင်းကို ဖုန်းတစ်လုံးမှ တစ်လုံးသို့ ဆင့်ကမ်းပို့ပေးသည်။</string>
+    <string name="onboard_no_account">အကောင့်ဖွင့်ရန်မလို၊ ဖုန်းနံပါတ်မလို၊ ဆာဗာမရှိ။</string>
+    <string name="onboard_start">စတင်မည်</string>
+    <string name="onboard_next">နောက်တစ်ဆင့်တွင် အနီးရှိလူများကို ရှာနိုင်ရန် ဘလူးတုသ် ခွင့်ပြုချက် တောင်းပါမည်။</string>
+    <string name="safety_title">မစတင်မီ</string>
+    <string name="safety_body">· \"အနီးအနား\" ချန်နယ်သည် အများသုံးဖြစ်ပြီး အကွာအဝေးအတွင်းရှိ လူတိုင်း မြင်နိုင်သည်။\n· သီးသန့် မက်ဆေ့ချ်များကို ကုဒ်ဝှက်ထားသော်လည်း အနီးရှိလူများက သင်ဤအက်ပ်ကို သုံးနေကြောင်း သိနိုင်ပြီး တူညီသောဖုန်းကို အချိန်ကြာလာသည်နှင့်အမျှ မှတ်မိနိုင်သည်။\n· ဤအက်ပ်ကို လွတ်လပ်သော လုံခြုံရေးစစ်ဆေးမှု အပြည့်အစုံ မပြုလုပ်ရသေးပါ။ သင့်ကို ဖော်ထုတ်ခံရပါက အန္တရာယ်ကြီးကြီးမားမား ကျရောက်နိုင်လျှင် ၎င်းကို အားမကိုးပါနှင့်။\n· ဒေတာအားလုံးကို တစ်ပြိုင်နက် ဖျက်ရန် အပေါ်ဆုံးရှိ ခေါင်းစဉ်ကို သုံးကြိမ် နှိပ်ပါ။</string>
+    <string name="tab_nearby">အနီးအနား</string>
+    <string name="tab_private">သီးသန့်</string>
+    <string name="tab_location">တည်နေရာ</string>
+    <string name="tab_me">ကျွန်ုပ်</string>
+    <string name="ok">အိုကေ</string>
+    <string name="wiped">ဖျက်ပြီးပါပြီ။ သင်၏ အမှတ်အသားအသစ်: %1$s</string>
+    <string name="banner_need_permission">အနီးရှိလူများကို ရှာရန် ဘလူးတုသ် ခွင့်ပြုချက် လိုအပ်သည်</string>
+    <string name="banner_bt_off">ဘလူးတုသ် ပိတ်ထားသည်။ ဖွင့်ရန် ဤနေရာကို နှိပ်ပါ</string>
+    <string name="banner_starting">စတင်နေသည်…</string>
+    <string name="banner_searching">အနီးရှိလူများကို ရှာနေသည်…</string>
+    <plurals name="banner_connected">
+        <item quantity="other">အနီးရှိ လူ %d ဦးနှင့် ချိတ်ဆက်ထားသည်</item>
+    </plurals>
+    <string name="nearby_empty_alone">အနီးတွင် မည်သူမျှ မရှိသေးပါ။\nopenchat ဖွင့်ထားသော ဖုန်းများသည် မီတာ ဆယ်ဂဏန်းအတွင်း အလိုအလျောက် ချိတ်ဆက်သည်။\nတူညီသော ကွန်ရက်ရှိ bitchat အသုံးပြုသူများလည်း သင့်မက်ဆေ့ချ်ကို လက်ခံရရှိနိုင်သည်။</string>
+    <plurals name="nearby_empty_peers">
+        <item quantity="other">အနီးတွင် လူ %d ဦး ရှိသည်။ တစ်ခုခုရေးလိုက်ပါ၊ အားလုံး မြင်ရပါမည်။</item>
+    </plurals>
+    <string name="nearby_placeholder">အနီးရှိ လူအားလုံးကို တစ်ခုခု ပြောပါ…</string>
+    <string name="state_sending">ပို့နေသည်</string>
+    <string name="state_sent">ပို့ပြီး</string>
+    <string name="state_delivered">ရောက်ပြီ</string>
+    <string name="state_read">ဖတ်ပြီး</string>
+    <string name="state_failed">မပို့ရသေး</string>
+    <string name="send">ပို့ရန်</string>
+    <string name="back">နောက်သို့</string>
+    <string name="dm_status_here">အနီးတွင် · ကုဒ်ဝှက်ထားသည်</string>
+    <string name="dm_status_away">အနီးတွင် မရှိ · ပြန်ရောက်လာသည့်အခါ မက်ဆေ့ချ် ရောက်ပါမည်</string>
+    <string name="dm_empty">%1$s နှင့် မက်ဆေ့ချ်များကို အစမှအဆုံး ကုဒ်ဝှက်ထားသည်။ ဆင့်ပို့သော ဖုန်းများ ဖတ်၍မရပါ။</string>
+    <string name="dm_placeholder">%1$s ထံ မက်ဆေ့ချ်…</string>
+    <string name="dm_list_empty">အနီးရှိလူများ ဤနေရာတွင် ပေါ်လာပါမည်။\nကုဒ်ဝှက်ထားသော မက်ဆေ့ချ် ပို့ရန် အမည်တစ်ခုကို နှိပ်ပါ။</string>
+    <string name="dm_direct">သင့်အနားတွင်ပင်</string>
+    <string name="dm_relayed">အခြားဖုန်းများမှတစ်ဆင့် ဆက်သွယ်နိုင်သည်</string>
+    <string name="dm_away">အနီးတွင် မရှိ</string>
+    <string name="geo_intro">အင်တာနက်ရှိလျှင် ဘလူးတုသ် အကွာအဝေးထက်ကျော်၍ ဒေသတူရှိ လူများနှင့် စကားပြောနိုင်သည်။ ဒေသတစ်ခုစီသည် သီးခြား အမည်မသိ အမှတ်အသားကို သုံးသည်။</string>
+    <string name="geo_use_location">ကျွန်ုပ်၏ ခန့်မှန်းတည်နေရာကို သုံးမည်</string>
+    <string name="geo_level_block">ဘလောက်</string>
+    <string name="geo_level_neighborhood">ရပ်ကွက်</string>
+    <string name="geo_level_city">မြို့</string>
+    <string name="geo_level_province">ပြည်နယ်/တိုင်း</string>
+    <string name="geo_level_region">ဒေသ</string>
+    <plurals name="geo_online">
+        <item quantity="other">အွန်လိုင်း %d ဦး</item>
+    </plurals>
+    <string name="geo_refresh">တည်နေရာ ပြန်ယူမည်</string>
+    <string name="geo_elsewhere">အခြားဒေသသို့ သွားမည်</string>
+    <string name="geo_hint">geohash ဥပမာ wtw3s</string>
+    <string name="geo_enter">သွားမည်</string>
+    <string name="geo_teleport_note">သင်ထိုနေရာတွင် မရှိသဖြင့် အခြားသူများက သင့်အမည်ဘေးတွင် ✈ ကို မြင်ရပါမည်။</string>
+    <string name="geo_joined">ဝင်ရောက်ပြီး</string>
+    <string name="geo_connecting">ချိတ်ဆက်နေသည်…</string>
+    <plurals name="geo_recent">
+        <item quantity="other">အများသုံး ချန်နယ် · နောက်ဆုံး ၅ မိနစ်အတွင်း လူ %d ဦး</item>
+    </plurals>
+    <string name="geo_leave">ထွက်မည်</string>
+    <string name="geo_empty">ဤသည်မှာ #%1$s ၏ အများသုံး ချန်နယ်ဖြစ်ပြီး အင်တာနက် လိုအပ်သည်။ အနီးရှိ bitchat အသုံးပြုသူများလည်း ဤနေရာတွင် ရှိသည်။</string>
+    <string name="geo_placeholder">#%1$s တွင် တစ်ခုခု ပြောပါ…</string>
+    <string name="me_name">ကျွန်ုပ်၏အမည်</string>
+    <string name="save">သိမ်းမည်</string>
+    <string name="me_seen_as">"အနီးရှိလူများ မြင်ရသည့်အမည်: "</string>
+    <string name="me_suffix_note">အမည်များ ထပ်နိုင်သည်။ # နောက်ရှိ စာလုံးလေးလုံးသည် သင့်စက်ပစ္စည်း ID မှ လာပြီး အမည်တူသူများကို ခွဲခြားပေးသည်။</string>
+    <string name="me_language">ဘာသာစကား</string>
+    <string name="lang_system">စနစ်အတိုင်း</string>
+    <string name="me_share_title">openchat ကို အနီးရှိလူများထံ ဝေမျှပါ</string>
+    <string name="me_share_body">အက်ပ်စတိုး သို့မဟုတ် အင်တာနက် မလိုပါ။ ထည့်သွင်းဖိုင်ကို ဘလူးတုသ်၊ Quick Share သို့မဟုတ် အခြားနည်းဖြင့် တိုက်ရိုက် ပို့ပါ။</string>
+    <string name="me_share_button">ထည့်သွင်းဖိုင် ဝေမျှမည်</string>
+    <string name="me_fp_title">အမှတ်အသား လက်ဗွေ</string>
+    <string name="me_fp_body">တစ်ဖက်လူသည် သင်သိသောသူ အမှန်ဖြစ်ကြောင်း သေချာစေရန် ဤစာလုံးများကို မျက်နှာချင်းဆိုင် တိုက်ကြည့်ပါ။</string>
+    <string name="me_device_id">စက်ပစ္စည်း ID: %1$s</string>
+    <string name="me_about">openchat သည် bitchat ကွန်ရက်နှင့် တွဲသုံးနိုင်သည်။ open source၊ MIT လိုင်စင်။</string>
+</resources>

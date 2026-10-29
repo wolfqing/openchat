@@ -12,8 +12,9 @@
   a round mask allows without clipping. It also serves as the Android 13
   themed icon. Preview, as a round launcher shows it:
   [docs/design/app-icon-preview.png](docs/design/app-icon-preview.png).
-- Ten more languages: Traditional Chinese, Spanish, French, German,
-  Portuguese (Brazil), Russian, Arabic (right to left), Hindi, Japanese
+- Sixteen more languages: Traditional Chinese, Spanish, French, German,
+  Portuguese (Brazil), Russian, Ukrainian, Turkish, Arabic and Persian
+  (both right to left), Hindi, Indonesian, Vietnamese, Burmese, Japanese
   and Korean, alongside English and Simplified Chinese. The picker lists
   each language in its own script and wraps onto several rows. Phones set
   to Taiwan or Hong Kong Chinese get Traditional. The new translations are

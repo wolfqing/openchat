@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Turkish. Machine-drafted; needs a native speaker's review. -->
+<resources>
+    <string name="channel_status">Ağ durumu</string>
+    <string name="channel_messages">Özel mesajlar</string>
+    <string name="status_running">Bluetooth ile yakındaki telefonlara bağlanılıyor</string>
+    <string name="onboard_title">Şebeke yok mu? Yine de sohbet et.</string>
+    <string name="onboard_body">Telefonun çekmediğinde (elektrik kesintisi, deprem, tayfun, aşırı yüklenmiş baz istasyonu, dağda ya da uçakta), openchat yakındaki telefonları Bluetooth ile birbirine bağlar ve her mesajı telefondan telefona iletir.</string>
+    <string name="onboard_no_account">Kayıt yok, telefon numarası yok, sunucu yok.</string>
+    <string name="onboard_start">Başla</string>
+    <string name="onboard_next">Sonraki adımda, uygulamanın yakındaki kişileri bulabilmesi için Bluetooth izni istenecek.</string>
+    <string name="safety_title">Başlamadan önce</string>
+    <string name="safety_body">· \"Yakında\" kanalı herkese açıktır. Menzildeki herkes görebilir.\n· Özel mesajlar şifrelidir, ancak yakındakiler bu uygulamayı kullandığını anlayabilir ve aynı telefonu zamanla tanıyabilir.\n· Bu uygulama henüz kapsamlı bir bağımsız güvenlik denetiminden geçmedi. Kimliğinin ortaya çıkması seni ciddi tehlikeye sokacaksa ona güvenme.\n· Tüm verileri tek seferde silmek için üstteki başlığa üç kez dokun.</string>
+    <string name="tab_nearby">Yakında</string>
+    <string name="tab_private">Özel</string>
+    <string name="tab_location">Konum</string>
+    <string name="tab_me">Ben</string>
+    <string name="ok">Tamam</string>
+    <string name="wiped">Silindi. Yeni kimliğin: %1$s</string>
+    <string name="banner_need_permission">Yakındaki kişileri bulmak için Bluetooth izni gerekiyor</string>
+    <string name="banner_bt_off">Bluetooth kapalı. Açmak için buraya dokun</string>
+    <string name="banner_starting">Başlatılıyor…</string>
+    <string name="banner_searching">Yakındaki kişiler aranıyor…</string>
+    <plurals name="banner_connected">
+        <item quantity="one">Yakındaki %d kişiye bağlı</item>
+        <item quantity="other">Yakındaki %d kişiye bağlı</item>
+    </plurals>
+    <string name="nearby_empty_alone">Henüz yakında kimse yok.\nopenchat çalıştıran telefonlar birkaç on metre içinde otomatik olarak bağlanır.\nAynı ağdaki bitchat kullanıcıları da mesajlarını alabilir.</string>
+    <plurals name="nearby_empty_peers">
+        <item quantity="one">Yakında %d kişi var. Bir şey yaz, herkes görsün.</item>
+        <item quantity="other">Yakında %d kişi var. Bir şey yaz, herkes görsün.</item>
+    </plurals>
+    <string name="nearby_placeholder">Yakındaki herkese bir şey söyle…</string>
+    <string name="state_sending">Gönderiliyor</string>
+    <string name="state_sent">Gönderildi</string>
+    <string name="state_delivered">İletildi</string>
+    <string name="state_read">Okundu</string>
+    <string name="state_failed">Gönderilemedi</string>
+    <string name="send">Gönder</string>
+    <string name="back">Geri</string>
+    <string name="dm_status_here">Yakında · şifreli</string>
+    <string name="dm_status_away">Yakında değil · mesajlar geri geldiğinde iletilecek</string>
+    <string name="dm_empty">%1$s ile mesajlar uçtan uca şifrelidir. Onları aktaran telefonlar okuyamaz.</string>
+    <string name="dm_placeholder">%1$s için mesaj…</string>
+    <string name="dm_list_empty">Yakındaki kişiler burada görünür.\nŞifreli mesaj göndermek için bir isme dokun.</string>
+    <string name="dm_direct">Hemen yanında</string>
+    <string name="dm_relayed">Diğer telefonlar üzerinden ulaşılabilir</string>
+    <string name="dm_away">Yakında değil</string>
+    <string name="geo_intro">İnternet bağlantın varsa, Bluetooth menzilinin ötesinde aynı bölgedeki kişilerle sohbet edebilirsin. Her bölge ayrı bir anonim kimlik kullanır.</string>
+    <string name="geo_use_location">Yaklaşık konumumu kullan</string>
+    <string name="geo_level_block">Blok</string>
+    <string name="geo_level_neighborhood">Mahalle</string>
+    <string name="geo_level_city">Şehir</string>
+    <string name="geo_level_province">İl</string>
+    <string name="geo_level_region">Bölge</string>
+    <plurals name="geo_online">
+        <item quantity="one">%d çevrimiçi</item>
+        <item quantity="other">%d çevrimiçi</item>
+    </plurals>
+    <string name="geo_refresh">Konumu yenile</string>
+    <string name="geo_elsewhere">Başka bir bölgeye git</string>
+    <string name="geo_hint">geohash, ör. wtw3s</string>
+    <string name="geo_enter">Git</string>
+    <string name="geo_teleport_note">Orada değilsin, bu yüzden diğerleri adının yanında ✈ görecek.</string>
+    <string name="geo_joined">Katıldın</string>
+    <string name="geo_connecting">Bağlanılıyor…</string>
+    <plurals name="geo_recent">
+        <item quantity="one">Herkese açık kanal · son 5 dakikada %d kişi</item>
+        <item quantity="other">Herkese açık kanal · son 5 dakikada %d kişi</item>
+    </plurals>
+    <string name="geo_leave">Ayrıl</string>
+    <string name="geo_empty">Bu, #%1$s için herkese açık kanaldır ve internet bağlantısı gerektirir. Yakındaki bitchat kullanıcıları da burada.</string>
+    <string name="geo_placeholder">#%1$s kanalına bir şey söyle…</string>
+    <string name="me_name">Adım</string>
+    <string name="save">Kaydet</string>
+    <string name="me_seen_as">"Yakındakiler seni şöyle görür: "</string>
+    <string name="me_suffix_note">İsimler tekrarlanabilir. # işaretinden sonraki dört karakter cihaz kimliğinden gelir ve aynı isimli kişileri ayırt eder.</string>
+    <string name="me_language">Dil</string>
+    <string name="lang_system">Sistem dili</string>
+    <string name="me_share_title">openchat\'i yakınındakilere ulaştır</string>
+    <string name="me_share_body">Uygulama mağazası ya da internet gerekmez. Kurulum dosyasını doğrudan Bluetooth, Quick Share veya başka bir yolla gönder.</string>
+    <string name="me_share_button">Kurulum dosyasını paylaş</string>
+    <string name="me_fp_title">Kimlik parmak izi</string>
+    <string name="me_fp_body">Karşındakinin gerçekten tanıdığın kişi olduğundan emin olmak için bu karakterleri yüz yüze karşılaştır.</string>
+    <string name="me_device_id">Cihaz kimliği: %1$s</string>
+    <string name="me_about">openchat, bitchat ağıyla çalışır. Açık kaynak, MIT lisansı.</string>
+</resources>
