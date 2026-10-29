@@ -19,6 +19,13 @@
   each language in its own script and wraps onto several rows. Phones set
   to Taiwan or Hong Kong Chinese get Traditional. The new translations are
   machine-drafted and need review by native speakers.
+- UI review fixes: the system Back button now returns from a private or
+  location chat instead of leaving the app; own message bubbles use light
+  text (they were orange on brown); text-field borders are visible; the
+  language picker is a dropdown rather than nineteen chips above the
+  welcome headline; the status band is quiet grey, with the connected
+  count in monospaced signal orange, and keeps the red warning colours
+  only for missing permission or Bluetooth off.
 
 ## Android v0.2.0 (preview) — 2026-10-28
 

@@ -1,5 +1,6 @@
 package org.openchat.android.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -8,8 +9,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,6 +31,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
@@ -43,7 +43,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -106,13 +107,13 @@ private val SignalSoft = Color(0xFF3A1A0C)
 fun OpenChatTheme(content: @Composable () -> Unit) {
     val scheme = darkColorScheme(
         primary = Signal, onPrimary = Color(0xFF1A0A03),
-        primaryContainer = SignalSoft, onPrimaryContainer = Signal,
+        primaryContainer = SignalSoft, onPrimaryContainer = Color(0xFFEDF1EF),
         secondary = Signal, onSecondary = Color(0xFF1A0A03),
         secondaryContainer = SignalSoft, onSecondaryContainer = Signal,
         background = Color(0xFF0B0D0D), onBackground = Color(0xFFEDF1EF),
         surface = Color(0xFF0B0D0D), onSurface = Color(0xFFEDF1EF),
         surfaceVariant = Color(0xFF121616), onSurfaceVariant = Color(0xFF9AA4A3),
-        outline = Color(0xFF262D2D), outlineVariant = Color(0xFF262D2D),
+        outline = Color(0xFF4A5555), outlineVariant = Color(0xFF262D2D),
     )
     MaterialTheme(colorScheme = scheme, content = content)
 }
@@ -120,18 +121,24 @@ fun OpenChatTheme(content: @Composable () -> Unit) {
 @Composable
 private fun plural(@PluralsRes id: Int, count: Int): String = LocalContext.current.resources.getQuantityString(id, count, count)
 
-/** System default plus each supported language. Choosing one restarts the screen in that language. */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+/** One button naming the current language; a menu lists the rest. Choosing one restarts the screen in that language. */
 @Composable
 fun LanguagePicker(onLanguage: (AppLanguage.Choice) -> Unit) {
     val current = AppLanguage.get(LocalContext.current)
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        AppLanguage.Choice.entries.forEach { c ->
-            FilterChip(
-                selected = c == current,
-                onClick = { if (c != current) onLanguage(c) },
-                label = { Text(c.label ?: stringResource(R.string.lang_system)) },
-            )
+    var open by remember { mutableStateOf(false) }
+    val system = stringResource(R.string.lang_system)
+    Box {
+        OutlinedButton(onClick = { open = true }) {
+            Text(current.label ?: system)
+            Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            AppLanguage.Choice.entries.forEach { c ->
+                DropdownMenuItem(
+                    text = { Text(c.label ?: system, fontWeight = if (c == current) FontWeight.Bold else FontWeight.Normal) },
+                    onClick = { open = false; if (c != current) onLanguage(c) },
+                )
+            }
         }
     }
 }
@@ -145,7 +152,7 @@ fun OnboardingScreen(onStart: () -> Unit, onLanguage: (AppLanguage.Choice) -> Un
             Modifier.fillMaxSize().padding(28.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Center,
         ) {
-            LanguagePicker(onLanguage)
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) { LanguagePicker(onLanguage) }
             Spacer(Modifier.height(24.dp))
             Text(stringResource(R.string.onboard_title), fontSize = 34.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(16.dp))
@@ -315,13 +322,22 @@ private fun StatusBanner(missing: Boolean, btOn: Boolean, running: Boolean, peer
         else -> plural(R.plurals.banner_connected, peers) to null
     }
     val warn = missing || !btOn
+    val connected = !warn && running && peers > 0
     Box(
         Modifier.fillMaxWidth()
-            .background(if (warn) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer)
+            .background(if (warn) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant)
             .let { if (action != null) it.clickable { action() } else it }
             .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
-        Text(text, fontSize = 14.sp, color = if (warn) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(
+            text, fontSize = 14.sp,
+            fontFamily = if (connected) FontFamily.Monospace else null,
+            color = when {
+                warn -> MaterialTheme.colorScheme.onErrorContainer
+                connected -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
     }
 }
 
@@ -419,6 +435,7 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
     val label = PeerLabel.mesh(peer?.nickname ?: names[peerHex], peerHex)
     val name = label.toString()
     val readSent = remember { HashSet<String>() }
+    BackHandler(onBack = onBack)
     Scaffold(topBar = {
         TopAppBar(
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
@@ -538,6 +555,7 @@ private fun levelLabel(level: Geohash.Level): Int = when (level) {
 @Composable
 fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
     val geo by ChatRepository.geo.collectAsState()
+    BackHandler(onBack = onBack)
     Scaffold(topBar = {
         TopAppBar(
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
