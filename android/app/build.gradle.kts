@@ -14,6 +14,8 @@ android {
         targetSdk = 35
         versionCode = 6
         versionName = "0.4.0"
+        // Tor ships native code per ABI; phones are ARM, x86_64 is for the emulator.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
     }
 
     buildTypes {
@@ -44,6 +46,8 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("com.google.zxing:core:3.5.3")
+    implementation("info.guardianproject:tor-android:0.4.8.16")
+    implementation("info.guardianproject:jtorctl:0.4.5.7")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }
 
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))

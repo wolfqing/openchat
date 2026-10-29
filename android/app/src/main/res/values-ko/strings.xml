@@ -138,4 +138,8 @@
     <string name="media_too_big">블루투스로 보내기에 너무 큽니다.</string>
     <string name="media_geo_unsupported">사진과 음성 메시지는 근처와 개인 채팅에서 됩니다.</string>
     <string name="media_private_unsupported">보내지 않음: 아직 연결되지 않았거나 상대 앱이 암호화된 사진·음성을 받을 수 없습니다.</string>
+    <string name="tor_title">인터넷 트래픽을 Tor로 전송</string>
+    <string name="tor_on">연결됨. 릴레이는 IP 주소를 볼 수 없습니다. 블루투스에는 영향이 없습니다.</string>
+    <string name="tor_starting">Tor 시작 중… 준비될 때까지 인터넷 채팅은 기다리므로 보호 없이 나가는 것은 없습니다.</string>
+    <string name="tor_off">꺼짐. 릴레이 운영자가 IP 주소를 볼 수 있으며, 인터넷으로 보낸 개인 메시지도 마찬가지입니다.</string>
 </resources>

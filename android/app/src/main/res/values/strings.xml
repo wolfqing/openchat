@@ -155,4 +155,8 @@
     <string name="media_too_big">That is too big to send over Bluetooth.</string>
     <string name="media_geo_unsupported">Photos and voice notes work in Nearby and private chats.</string>
     <string name="media_private_unsupported">Not sent: this person is not connected yet, or their app can\'t receive encrypted photos and voice notes.</string>
+    <string name="tor_title">Route internet traffic through Tor</string>
+    <string name="tor_on">Connected. Relays cannot see your IP address. Bluetooth is not affected.</string>
+    <string name="tor_starting">Starting Tor… Internet chats wait until it is ready, so nothing goes out unprotected.</string>
+    <string name="tor_off">Off. Relay operators can see your IP address, including for private messages over the internet.</string>
 </resources>

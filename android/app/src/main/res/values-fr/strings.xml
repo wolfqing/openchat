@@ -146,4 +146,8 @@
     <string name="media_too_big">Trop volumineux pour être envoyé par Bluetooth.</string>
     <string name="media_geo_unsupported">Photos et messages vocaux marchent dans « À proximité » et les discussions privées.</string>
     <string name="media_private_unsupported">Non envoyé : pas encore connecté, ou son appli ne reçoit pas les photos et vocaux chiffrés.</string>
+    <string name="tor_title">Faire passer le trafic internet par Tor</string>
+    <string name="tor_on">Connecté. Les relais ne voient pas votre adresse IP. Le Bluetooth n\'est pas concerné.</string>
+    <string name="tor_starting">Démarrage de Tor… les discussions par internet attendent qu\'il soit prêt : rien ne sort sans protection.</string>
+    <string name="tor_off">Désactivé. Les opérateurs de relais voient votre adresse IP, y compris pour les messages privés par internet.</string>
 </resources>

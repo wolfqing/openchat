@@ -146,4 +146,8 @@
     <string name="media_too_big">Es demasiado grande para enviarlo por Bluetooth.</string>
     <string name="media_geo_unsupported">Fotos y notas de voz funcionan en Cerca y chats privados.</string>
     <string name="media_private_unsupported">No enviado: aún no hay conexión o su app no recibe fotos ni notas de voz cifradas.</string>
+    <string name="tor_title">Enviar el tráfico de internet por Tor</string>
+    <string name="tor_on">Conectado. Los relés no ven tu dirección IP. Bluetooth no se ve afectado.</string>
+    <string name="tor_starting">Iniciando Tor… los chats por internet esperan a que esté listo, así nada sale sin protección.</string>
+    <string name="tor_off">Apagado. Los operadores de relés pueden ver tu IP, también en mensajes privados por internet.</string>
 </resources>

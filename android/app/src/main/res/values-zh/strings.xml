@@ -149,4 +149,8 @@
     <string name="media_too_big">文件太大，无法经蓝牙发送。</string>
     <string name="media_geo_unsupported">照片和语音只能在「附近」和私聊中发送。</string>
     <string name="media_private_unsupported">未发送：对方还没连上，或对方的应用不支持加密照片和语音。</string>
+    <string name="tor_title">经 Tor 转发联网流量</string>
+    <string name="tor_on">已连接。中继服务器看不到你的 IP 地址。蓝牙不受影响。</string>
+    <string name="tor_starting">正在启动 Tor…联网聊天会等它就绪，不会未经保护就发出去。</string>
+    <string name="tor_off">已关闭。中继运营者能看到你的 IP 地址，包括经互联网发送的私信。</string>
 </resources>

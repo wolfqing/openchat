@@ -150,4 +150,8 @@
     <string name="media_too_big">Завеликий для Bluetooth.</string>
     <string name="media_geo_unsupported">Фото й голосові працюють у «Поруч» та особистих чатах.</string>
     <string name="media_private_unsupported">Не надіслано: ще немає з\'єднання або застосунок не приймає зашифровані фото й голосові.</string>
+    <string name="tor_title">Пускати інтернет-трафік через Tor</string>
+    <string name="tor_on">Під\'єднано. Релеї не бачать вашої IP-адреси. Bluetooth не зачеплено.</string>
+    <string name="tor_starting">Запуск Tor… інтернет-чати чекають на готовність, тож нічого не йде без захисту.</string>
+    <string name="tor_off">Вимкнено. Оператори релеїв бачать вашу IP-адресу, зокрема для особистих повідомлень через інтернет.</string>
 </resources>

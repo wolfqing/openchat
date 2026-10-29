@@ -142,4 +142,8 @@
     <string name="media_too_big">Das ist zu groß für Bluetooth.</string>
     <string name="media_geo_unsupported">Fotos und Sprachnachrichten gehen in „In der Nähe“ und privaten Chats.</string>
     <string name="media_private_unsupported">Nicht gesendet: noch nicht verbunden, oder die App kann keine verschlüsselten Fotos und Sprachnachrichten empfangen.</string>
+    <string name="tor_title">Internetverkehr über Tor leiten</string>
+    <string name="tor_on">Verbunden. Relays sehen deine IP-Adresse nicht. Bluetooth ist nicht betroffen.</string>
+    <string name="tor_starting">Tor startet… Internet-Chats warten, bis es bereit ist, damit nichts ungeschützt rausgeht.</string>
+    <string name="tor_off">Aus. Relay-Betreiber sehen deine IP-Adresse, auch bei privaten Nachrichten übers Internet.</string>
 </resources>

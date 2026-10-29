@@ -1,6 +1,5 @@
 package org.openchat.android.nostr
 
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
@@ -16,10 +15,11 @@ import java.util.concurrent.TimeUnit
  * replayed subscriptions on reconnect, exponential backoff, event dedup.
  */
 class RelayPool(private val onEvent: (relay: String, event: NostrEvent) -> Unit) {
-    private val client = OkHttpClient.Builder()
-        .pingInterval(30, TimeUnit.SECONDS)
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .build()
+    init {
+        // A route change (Tor on, off or ready) drops every socket; wanted relays reconnect on the new route.
+        NetRoute.onChange { sockets.values.forEach { it.cancel() } }
+    }
+    private val pending = ConcurrentHashMap<String, MutableList<String>>() // relay -> events waiting for the socket
     private val timer = Executors.newSingleThreadScheduledExecutor()
     private val sockets = ConcurrentHashMap<String, WebSocket>()
     private val connected = ConcurrentHashMap.newKeySet<String>()
@@ -55,12 +55,12 @@ class RelayPool(private val onEvent: (relay: String, event: NostrEvent) -> Unit)
         relays.forEach { r ->
             ensure(r)
             if (connected.contains(r)) sockets[r]?.send(msg)
-            else timer.schedule({ sockets[r]?.send(msg) }, 3, TimeUnit.SECONDS)
+            else pending.getOrPut(r) { java.util.Collections.synchronizedList(ArrayList()) }.let { q -> if (q.size < 50) q.add(msg) }
         }
     }
 
     fun closeAll() {
-        wanted.clear(); subs.clear()
+        wanted.clear(); subs.clear(); pending.clear()
         sockets.values.forEach { it.close(1000, null) }
         sockets.clear(); connected.clear()
     }
@@ -68,6 +68,11 @@ class RelayPool(private val onEvent: (relay: String, event: NostrEvent) -> Unit)
     private fun ensure(relay: String) {
         wanted.add(relay)
         if (sockets.containsKey(relay)) return
+        val client = NetRoute.client() ?: run {
+            // Tor is wanted but not up yet: wait rather than go clearnet.
+            timer.schedule({ if (wanted.contains(relay)) ensure(relay) }, 3, TimeUnit.SECONDS)
+            return
+        }
         val ws = client.newWebSocket(Request.Builder().url(relay).build(), Listener(relay))
         sockets[relay] = ws
     }
@@ -79,6 +84,7 @@ class RelayPool(private val onEvent: (relay: String, event: NostrEvent) -> Unit)
             connected.add(relay)
             backoff.remove(relay)
             subs.forEach { (id, v) -> if (relay in v.first) webSocket.send(req(id, v.second)) }
+            pending.remove(relay)?.let { q -> synchronized(q) { q.forEach { webSocket.send(it) } } }
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
@@ -90,12 +96,13 @@ class RelayPool(private val onEvent: (relay: String, event: NostrEvent) -> Unit)
             if (fresh && event.isValid()) onEvent(relay, event)
         }
 
-        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) = dropped()
-        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) = dropped()
+        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) = dropped(webSocket)
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) = dropped(webSocket)
 
-        private fun dropped() {
+        private fun dropped(webSocket: WebSocket) {
+            // A socket replaced after a route change must not unseat its successor.
+            if (!sockets.remove(relay, webSocket)) return
             connected.remove(relay)
-            sockets.remove(relay)
             if (!wanted.contains(relay)) return
             val delay = minOf((backoff[relay] ?: 1_000L) * 2, 300_000L)
             backoff[relay] = delay

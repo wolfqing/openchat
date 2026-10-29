@@ -138,4 +138,8 @@
     <string name="media_too_big">Bluetoothで送るには大きすぎます。</string>
     <string name="media_geo_unsupported">写真とボイスメモは「近く」と個別チャットで使えます。</string>
     <string name="media_private_unsupported">送信していません：まだ接続されていないか、相手のアプリが暗号化された写真や音声を受け取れません。</string>
+    <string name="tor_title">インターネット通信をTor経由にする</string>
+    <string name="tor_on">接続済み。リレーからあなたのIPアドレスは見えません。Bluetoothには影響しません。</string>
+    <string name="tor_starting">Torを起動中… 準備ができるまでインターネットのチャットは待機し、保護なしで送られることはありません。</string>
+    <string name="tor_off">オフ。リレー運営者はあなたのIPアドレスを見られます。インターネット経由のプライベートメッセージも同様です。</string>
 </resources>

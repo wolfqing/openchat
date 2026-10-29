@@ -138,4 +138,8 @@
     <string name="media_too_big">Terlalu besar untuk dikirim lewat Bluetooth.</string>
     <string name="media_geo_unsupported">Foto dan pesan suara bisa di Sekitar dan obrolan pribadi.</string>
     <string name="media_private_unsupported">Tidak terkirim: belum terhubung, atau aplikasinya tidak bisa menerima foto dan pesan suara terenkripsi.</string>
+    <string name="tor_title">Lewatkan lalu lintas internet melalui Tor</string>
+    <string name="tor_on">Terhubung. Relay tidak bisa melihat alamat IP Anda. Bluetooth tidak terpengaruh.</string>
+    <string name="tor_starting">Memulai Tor… obrolan internet menunggu hingga siap, jadi tak ada yang keluar tanpa perlindungan.</string>
+    <string name="tor_off">Mati. Operator relay bisa melihat alamat IP Anda, termasuk untuk pesan pribadi lewat internet.</string>
 </resources>

@@ -142,4 +142,8 @@
     <string name="media_too_big">यह ब्लूटूथ से भेजने के लिए बहुत बड़ा है।</string>
     <string name="media_geo_unsupported">फ़ोटो और वॉइस नोट आस-पास और निजी चैट में काम करते हैं।</string>
     <string name="media_private_unsupported">नहीं भेजा: वे अभी जुड़े नहीं हैं, या उनका ऐप एन्क्रिप्टेड फ़ोटो और वॉइस नोट नहीं ले सकता।</string>
+    <string name="tor_title">इंटरनेट ट्रैफ़िक Tor से भेजें</string>
+    <string name="tor_on">जुड़ा है। रिले आपका IP पता नहीं देख सकते। ब्लूटूथ पर असर नहीं।</string>
+    <string name="tor_starting">Tor शुरू हो रहा है… इंटरनेट चैट तैयार होने तक रुकती हैं, ताकि कुछ भी बिना सुरक्षा न जाए।</string>
+    <string name="tor_off">बंद। रिले चलाने वाले आपका IP पता देख सकते हैं, इंटरनेट से भेजे निजी संदेशों में भी।</string>
 </resources>

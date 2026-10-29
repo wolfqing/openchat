@@ -142,4 +142,8 @@
     <string name="media_too_big">Bluetooth ile göndermek için çok büyük.</string>
     <string name="media_geo_unsupported">Fotoğraf ve sesli notlar Yakında ve özel sohbetlerde çalışır.</string>
     <string name="media_private_unsupported">Gönderilmedi: henüz bağlı değil ya da uygulaması şifreli fotoğraf ve sesli not alamıyor.</string>
+    <string name="tor_title">İnternet trafiğini Tor üzerinden yönlendir</string>
+    <string name="tor_on">Bağlı. Röleler IP adresinizi göremez. Bluetooth etkilenmez.</string>
+    <string name="tor_starting">Tor başlatılıyor… İnternet sohbetleri hazır olana dek bekler, hiçbir şey korumasız çıkmaz.</string>
+    <string name="tor_off">Kapalı. Röle işletmecileri IP adresinizi görebilir, internet üzerinden özel mesajlarda da.</string>
 </resources>

@@ -138,4 +138,8 @@
     <string name="media_too_big">檔案太大，無法經藍牙傳送。</string>
     <string name="media_geo_unsupported">照片和語音只能在「附近」和私聊中傳送。</string>
     <string name="media_private_unsupported">未傳送：對方還沒連上，或對方的應用不支援加密照片和語音。</string>
+    <string name="tor_title">經 Tor 轉送連網流量</string>
+    <string name="tor_on">已連線。中繼伺服器看不到你的 IP 位址。藍牙不受影響。</string>
+    <string name="tor_starting">正在啟動 Tor…連網聊天會等它就緒，不會未經保護就送出。</string>
+    <string name="tor_off">已關閉。中繼營運者能看到你的 IP 位址，包括經網際網路傳送的私訊。</string>
 </resources>

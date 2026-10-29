@@ -138,4 +138,8 @@
     <string name="media_too_big">Quá lớn để gửi qua Bluetooth.</string>
     <string name="media_geo_unsupported">Ảnh và tin nhắn thoại dùng được ở Gần đây và trò chuyện riêng.</string>
     <string name="media_private_unsupported">Chưa gửi: người này chưa kết nối, hoặc ứng dụng của họ không nhận ảnh và thoại mã hóa.</string>
+    <string name="tor_title">Định tuyến lưu lượng internet qua Tor</string>
+    <string name="tor_on">Đã kết nối. Relay không thấy địa chỉ IP của bạn. Bluetooth không bị ảnh hưởng.</string>
+    <string name="tor_starting">Đang khởi động Tor… trò chuyện qua internet sẽ chờ đến khi sẵn sàng, không gì đi ra mà không được bảo vệ.</string>
+    <string name="tor_off">Tắt. Người vận hành relay thấy được địa chỉ IP của bạn, kể cả với tin nhắn riêng qua internet.</string>
 </resources>

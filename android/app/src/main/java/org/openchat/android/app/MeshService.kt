@@ -63,6 +63,7 @@ class MeshService : Service(), ChatController {
     private lateinit var stateStore: MeshStateStore
     private lateinit var socialStore: SealedFile
     private lateinit var nostr: NostrDirect
+    private lateinit var tor: Tor
     private lateinit var nostrSeenStore: SealedFile
     private val nostrSeen = LinkedHashSet<String>() // message IDs already shown from Nostr, kept across restarts
     // Noise static keys by peer ID, readable from the UI thread (the engine's maps are not).
@@ -99,6 +100,9 @@ class MeshService : Service(), ChatController {
         val identity = store.loadOrCreate()
         engine = MeshEngine(identity, scheduler, { link, bytes -> ble.write(link, bytes) }, listener)
         stateStore.load()?.let { s -> engine.importState(s); s.known.forEach { (hex, k) -> noiseKeys[hex] = k.noiseKey } }
+        // Route relay traffic before any relay socket opens (§19).
+        tor = Tor(this) { s -> ChatRepository.updateGeo { it.copy(tor = s) } }
+        tor.apply()
         socialStore = SealedFile(this, "social.bin")
         socialStore.read()?.let { Social.deserialize(it) }?.let { Social.load(it) }
         Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)) } }
@@ -138,6 +142,7 @@ class MeshService : Service(), ChatController {
         }
         geo.close()
         nostr.close()
+        tor.stop()
         ChatRepository.updateMesh { it.copy(running = false, links = 0) }
         super.onDestroy()
     }
@@ -154,6 +159,7 @@ class MeshService : Service(), ChatController {
 
     private fun periodic() {
         publishStatus()
+        tor.poll()
         handler.postDelayed({ periodic() }, 5_000)
     }
 
@@ -407,6 +413,8 @@ class MeshService : Service(), ChatController {
         handler.post { if (peerHex != null) engine.sendPrivateFile(peerHex, file) else engine.sendPublicFile(file) }
         return 0
     }
+
+    override fun setTor(on: Boolean) = tor.setWanted(on)
 
     override fun watchNotes(cell: String?) = geo.watchNotes(cell?.take(NOTE_PRECISION))
 

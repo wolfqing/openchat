@@ -684,3 +684,14 @@ and the Ed25519 key of its announce. openchat sends its own `0x21`
 announce capabilities. It never sends media unencrypted to one person; it
 does accept the signed directed `fileTransfer` older clients send.
 
+## 19. Tor (v0.5)
+
+All relay WebSockets (location channels, notes, private messages over
+Nostr) go through Tor by default, using Guardian Project's tor-android
+(tor 0.4.8) in-process and its SOCKS port; host names are resolved by Tor.
+It is fail-closed: while Tor is wanted but not ready no relay socket is
+opened and outgoing events wait. Turning Tor off in the Me tab connects
+directly, and the tab says relay operators then see the device's address.
+The Bluetooth mesh never uses the internet. No bridges or pluggable
+transports yet, so Tor cannot start where it is blocked.
+

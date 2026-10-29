@@ -76,6 +76,7 @@ data class GeoStatus(
     val participants: Map<String, Int> = emptyMap(),
     val notesCell: String? = null,          // building-level cell whose notes are listed
     val notes: List<LocationNote> = emptyList(),
+    val tor: TorState = TorState.STARTING,
 )
 
 /** UI-facing actions; the running MeshService installs itself here. */
@@ -100,6 +101,7 @@ interface ChatController {
     fun watchNotes(cell: String?)
     /** Sends a photo or voice note into a Nearby or private chat; returns a reason string resource on refusal, or 0. */
     fun sendMedia(conversation: String, bytes: ByteArray, mime: String): Int
+    fun setTor(on: Boolean)
     fun refreshLocation()
     fun panic()
 }

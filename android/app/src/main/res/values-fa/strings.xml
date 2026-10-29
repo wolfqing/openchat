@@ -142,4 +142,8 @@
     <string name="media_too_big">برای ارسال با بلوتوث خیلی بزرگ است.</string>
     <string name="media_geo_unsupported">عکس و پیام صوتی در «نزدیک» و گفتگوهای خصوصی کار می‌کند.</string>
     <string name="media_private_unsupported">ارسال نشد: هنوز متصل نیست یا برنامه‌اش عکس و پیام صوتی رمزگذاری‌شده نمی‌پذیرد.</string>
+    <string name="tor_title">عبور ترافیک اینترنت از Tor</string>
+    <string name="tor_on">وصل است. رله‌ها نشانی IP شما را نمی‌بینند. بلوتوث تأثیری نمی‌پذیرد.</string>
+    <string name="tor_starting">در حال راه‌اندازی Tor… گفتگوهای اینترنتی منتظر می‌مانند تا چیزی بی‌محافظ خارج نشود.</string>
+    <string name="tor_off">خاموش. گردانندگان رله نشانی IP شما را می‌بینند، از جمله برای پیام‌های خصوصی اینترنتی.</string>
 </resources>

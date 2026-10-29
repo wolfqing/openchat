@@ -69,6 +69,12 @@
   Received files are type-checked by their first bytes and kept in the
   cache the triple tap wipes. Needs the microphone permission, asked on
   first use. 5 new tests.
+- Tor ([spec §19](docs/protocol-spec.md)). Relay traffic goes through Tor
+  (Guardian Project's tor-android 0.4.8.16, BSD-3-Clause, in-process) by
+  default, fail-closed: nothing connects until Tor is up. A switch on the Me
+  tab turns it off and says what that exposes. Relay sends now queue until
+  the socket opens instead of being dropped after 3 s. The APK grows to
+  about 36 MB (Tor for arm64, armv7 and x86_64). 1 new test.
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.4.0 (preview) — 2026-10-29

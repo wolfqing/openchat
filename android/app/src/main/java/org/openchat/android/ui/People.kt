@@ -13,6 +13,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,6 +39,7 @@ import org.openchat.android.R
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.app.Social
+import org.openchat.android.app.TorState
 import org.openchat.android.core.sha256
 import org.openchat.android.core.toHex
 
@@ -159,6 +161,23 @@ fun VerifySection(onScan: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
         FilledTonalButton(onClick = { show = true }) { Text(stringResource(R.string.verify_show)) }
         OutlinedButton(onClick = onScan) { Text(stringResource(R.string.verify_scan)) }
+    }
+}
+
+/** Tor routing for relay traffic: on by default, fail-closed (§19). */
+@Composable
+fun TorSection() {
+    val geo by ChatRepository.geo.collectAsState()
+    val on = geo.tor != TorState.OFF
+    Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.tor_title), fontWeight = FontWeight.SemiBold)
+            Text(
+                stringResource(when (geo.tor) { TorState.ON -> R.string.tor_on; TorState.STARTING -> R.string.tor_starting; TorState.OFF -> R.string.tor_off }),
+                fontSize = 13.sp, color = if (geo.tor == TorState.OFF) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(checked = on, onCheckedChange = { ChatRepository.controller?.setTor(it) })
     }
 }
 
