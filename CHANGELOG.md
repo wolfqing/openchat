@@ -1,6 +1,6 @@
 # Changelog
 
-## Android, unreleased
+## Android v0.5.0 (preview) — 2026-10-29
 
 - History sync, wire-compatible with bitchat's `requestSync` gossip
   ([docs/protocol-spec.md §14](docs/protocol-spec.md)). Every phone keeps
@@ -97,7 +97,12 @@
 - Your own relays for private messages (Me tab, up to 8, `.onion` allowed),
   used alongside the four built-in ones, so blocking those four host names
   does not end private messages over the internet. 1 new test. 94 tests.
-- Not yet checked on a device or against a bitchat phone.
+- versionCode 7, versionName 0.5.0. Installs over v0.4.0 (same debug key).
+  94 unit tests pass.
+- Release: <https://github.com/wolfqing/openchat/releases/tag/v0.5.0>,
+  APK SHA-256 `e1512de2fbe499921e2a523322416e2fb389f19dcf14dff7d5761e77ac083f1d`.
+- Not yet checked on a device or against a bitchat phone. This is the first
+  R8-shrunk build; it has not been launched anywhere yet.
 
 ## Android v0.4.0 (preview) — 2026-10-29
 
