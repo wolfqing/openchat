@@ -1,6 +1,6 @@
 # Changelog
 
-## Android, unreleased
+## Android v0.2.0 (preview) — 2026-10-28
 
 - Every nickname now carries a `#xxxx` suffix: the first four hex digits
   of the peer ID on the mesh, or the last four of the Nostr pubkey in
@@ -12,6 +12,12 @@
   is on the first screen and in the Me tab. All UI text moved to string
   resources. Notification text follows the choice from the next start of
   the background service.
+- versionCode 3, versionName 0.2.0. Installs over v0.1.x. 39 unit tests
+  pass.
+- Release: <https://github.com/wolfqing/openchat/releases/tag/v0.2.0>,
+  APK SHA-256
+  `24c489a08487955770ffcfc603e66325a5c5646f9ac5298c118ed86a864827c2`.
+- Not yet checked on a device.
 
 ## UI direction and prototype — 2026-10-28
 
