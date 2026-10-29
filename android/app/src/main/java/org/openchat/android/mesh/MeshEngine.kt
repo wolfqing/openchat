@@ -3,11 +3,13 @@ package org.openchat.android.mesh
 import org.openchat.android.core.Announcement
 import org.openchat.android.core.CourierEnvelope
 import org.openchat.android.core.Deduplicator
+import org.openchat.android.core.FilePacket
 import org.openchat.android.core.FragmentAssembler
 import org.openchat.android.core.Fragmenter
 import org.openchat.android.core.GcsFilter
 import org.openchat.android.core.MessageType
 import org.openchat.android.core.PacketId
+import org.openchat.android.core.AuthPeerState
 import org.openchat.android.core.SyncRequest
 import org.openchat.android.core.SyncTypes
 import org.openchat.android.core.VerifyQr
@@ -64,6 +66,8 @@ interface MeshListener {
     fun onCarried(peerHex: String, messageId: String) {}
     /** Outbox, carried mail or remembered keys changed; the owner should persist [MeshEngine.exportState]. */
     fun onStateChanged() {}
+    /** An image or voice note arrived, public or private (§18). Already type-checked. */
+    fun onFile(senderHex: String, nickname: String, file: FilePacket, isPrivate: Boolean, timestamp: Long) {}
     /** The peer proved it holds the keys from the verification QR we scanned (§16.2). */
     fun onVerified(peerHex: String) {}
 }
@@ -120,6 +124,7 @@ class MeshEngine(
     private val acked = LinkedHashMap<String, Int>() // message ID -> best receipt seen (1 delivered, 2 read)
     private val pendingAcks = HashMap<String, MutableSet<String>>()
     private val pendingVerify = HashMap<String, ByteArray>() // peer hex -> challenge nonce
+    private val peerCaps = HashMap<String, Long>() // from authenticated peer state, per peer (§18.2)
     // History sync (§14).
     private val history = LinkedHashMap<String, Packet>() // packet ID hex -> verified public message
     private var myAnnounce: Packet? = null
@@ -170,7 +175,7 @@ class MeshEngine(
         identity = newIdentity
         peers.clear(); sessions.clear(); pendingNoise.clear(); lastHandshakeStart.clear(); earlyCiphertexts.clear()
         known.clear(); outbox.clear(); carried.clear(); seenIds.clear(); acked.clear(); pendingAcks.clear()
-        history.clear(); pendingVerify.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
+        history.clear(); pendingVerify.clear(); peerCaps.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
         pendingRelays.values.forEach { it.cancel() }; pendingRelays.clear()
         dedup.clear()
         assembler = FragmentAssembler(clock = scheduler::now)
@@ -281,7 +286,7 @@ class MeshEngine(
         if (!force && now < nextAnnounceDue) return
         if (now - lastAnnounce < 1000) return
         val neighbors = links.values.mapNotNull { it.peerHex?.hexToBytes() }.distinctBy { it.toHex() }
-        val payload = Announcement(identity.nickname, identity.noise.publicKey, identity.signing.publicKey, neighbors).encode() ?: return
+        val payload = Announcement(identity.nickname, identity.noise.publicKey, identity.signing.publicKey, neighbors, AuthPeerState.CAP_PRIVATE_MEDIA).encode() ?: return
         val p = sign(Packet(type = MessageType.ANNOUNCE, senderId = identity.peerId, timestamp = now, payload = payload)) ?: return
         dedup.markIfNew(Deduplicator.key(p))
         myAnnounce = p
@@ -334,6 +339,7 @@ class MeshEngine(
             MessageType.NOISE_ENCRYPTED -> if (forMe) { handleEncrypted(senderHex, p.payload); return }
             MessageType.COURIER_ENVELOPE -> if (forMe) { handleCourier(p, linkId); return }
             MessageType.REQUEST_SYNC -> { if (forMe || p.isBroadcast) handleSyncRequest(p, linkId); return }
+            MessageType.FILE_TRANSFER -> if (p.isBroadcast || forMe) { if (!handleFile(p, forMe)) return; if (forMe) return }
         }
         // Reassembled packets were already relayed as fragments.
         if (relayable && linkId != null) maybeRelay(p, linkId)
@@ -412,6 +418,40 @@ class MeshEngine(
         if (peer != null && !p.isRsr) peer.lastSeen = scheduler.now()
         if (p.isBroadcast) storeHistory(p)
         listener.onPublicMessage(hex, peer?.nickname ?: known[hex]!!.nickname, text, p.timestamp)
+        return true
+    }
+
+    // ---------------------------------------------------------------- media (§18)
+
+    /** Encrypted private media is sent only to a peer that said, inside the session, it can take it. */
+    fun canSendPrivateFile(peerHex: String) =
+        hasSession(peerHex) && (peerCaps[peerHex] ?: 0L) and AuthPeerState.CAP_PRIVATE_MEDIA != 0L
+
+    fun sendPrivateFile(peerHex: String, file: FilePacket): Boolean {
+        if (!canSendPrivateFile(peerHex)) return false
+        val body = file.encode() ?: return false
+        sendNoise(peerHex, NoisePayload(NoisePayloadType.PRIVATE_FILE, body).encode())
+        return true
+    }
+
+    fun sendPublicFile(file: FilePacket): Boolean {
+        val body = file.encode() ?: return false
+        val p = sign(Packet(type = MessageType.FILE_TRANSFER, senderId = identity.peerId, timestamp = scheduler.now(), payload = body)) ?: return false
+        dedup.markIfNew(Deduplicator.key(p))
+        broadcast(p, exclude = null)
+        return true
+    }
+
+    /** A signed fileTransfer: broadcast, or the legacy unencrypted form addressed to us. */
+    private fun handleFile(p: Packet, forMe: Boolean): Boolean {
+        val hex = p.senderId.toHex()
+        val peer = peers[hex]
+        val signingKey = peer?.signingKey ?: known[hex]?.signingKey ?: return false
+        if (!verify(p, signingKey)) return false
+        if (!isFresh(p, scheduler.now())) return false
+        if ((peer?.noiseKey ?: known[hex]?.noiseKey)?.let(isBlocked) == true) return true
+        val file = FilePacket.decode(p.payload)?.takeIf { it.kind != null } ?: return true
+        listener.onFile(hex, peer?.nickname ?: known[hex]!!.nickname, file, isPrivate = forMe, timestamp = p.timestamp)
         return true
     }
 
@@ -560,6 +600,8 @@ class MeshEngine(
         val s = Session(null).also { it.send = send; it.recv = recv; it.establishedAt = scheduler.now() }
         sessions[peerHex] = s
         listener.onSessionEstablished(peerHex)
+        // Tell the peer, inside the session, that it may send us encrypted media (§18.2).
+        sendNoise(peerHex, NoisePayload(NoisePayloadType.AUTHENTICATED_PEER_STATE, AuthPeerState.encode(AuthPeerState.CAP_PRIVATE_MEDIA, identity.signing.publicKey)).encode())
         earlyCiphertexts.remove(peerHex)?.forEach { handleEncrypted(peerHex, it) }
         flushIfPossible(peerHex)
     }
@@ -609,6 +651,15 @@ class MeshEngine(
             }
             NoisePayloadType.DELIVERED -> { val id = String(payload.body, Charsets.UTF_8); if (settle(id, 1)) listener.onDelivered(peerHex, id) }
             NoisePayloadType.READ_RECEIPT -> { val id = String(payload.body, Charsets.UTF_8); if (settle(id, 2)) listener.onRead(peerHex, id) }
+            NoisePayloadType.AUTHENTICATED_PEER_STATE -> {
+                val (caps, key) = AuthPeerState.decode(payload.body) ?: return
+                if (peers[peerHex]?.signingKey?.contentEquals(key) == true) peerCaps[peerHex] = caps
+            }
+            NoisePayloadType.PRIVATE_FILE, NoisePayloadType.PRIVATE_FILE_PRERELEASE -> {
+                if (noiseKeyOf(peerHex)?.let(isBlocked) == true) return
+                val file = FilePacket.decode(payload.body)?.takeIf { it.kind != null } ?: return
+                listener.onFile(peerHex, nickname, file, isPrivate = true, timestamp = scheduler.now())
+            }
             NoisePayloadType.VERIFY_CHALLENGE -> {
                 val (keyHex, nonce) = VerifyQr.parseChallenge(payload.body) ?: return
                 if (!keyHex.equals(identity.noise.publicKey.toHex(), ignoreCase = true)) return

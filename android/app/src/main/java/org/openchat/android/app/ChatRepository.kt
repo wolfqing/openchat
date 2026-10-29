@@ -28,6 +28,8 @@ data class ChatMessage(
     val teleported: Boolean = false, // geohash sender says it is not in the cell
     val mentionsMe: Boolean = false,
     val system: Boolean = false, // a local line (command output), never sent
+    val attachment: String? = null, // path of an image or voice note in the media cache (§18)
+    val audio: Boolean = false,
 )
 
 /**
@@ -96,6 +98,8 @@ interface ChatController {
     /** Leaves a note at the device's building-level cell; false when the place is unknown. */
     fun dropNote(text: String): Boolean
     fun watchNotes(cell: String?)
+    /** Sends a photo or voice note into a Nearby or private chat; returns a reason string resource on refusal, or 0. */
+    fun sendMedia(conversation: String, bytes: ByteArray, mime: String): Int
     fun refreshLocation()
     fun panic()
 }

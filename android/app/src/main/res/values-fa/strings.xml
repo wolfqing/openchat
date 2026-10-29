@@ -136,4 +136,10 @@
     <string name="notes_empty">در ۲۴ ساعت گذشته یادداشتی اینجا نیست.</string>
     <string name="note_dropped">📍 یادداشت اینجا گذاشته شد — پس از ۲۴ ساعت محو می‌شود</string>
     <string name="note_no_location">گذاشتن یادداشت به مکان شما نیاز دارد — ابتدا در زبانه منطقه فعالش کنید</string>
+    <string name="media_photo">عکس</string>
+    <string name="media_voice">پیام صوتی</string>
+    <string name="media_recording">در حال ضبط… برای ارسال ■ را بزنید</string>
+    <string name="media_too_big">برای ارسال با بلوتوث خیلی بزرگ است.</string>
+    <string name="media_geo_unsupported">عکس و پیام صوتی در «نزدیک» و گفتگوهای خصوصی کار می‌کند.</string>
+    <string name="media_private_unsupported">ارسال نشد: هنوز متصل نیست یا برنامه‌اش عکس و پیام صوتی رمزگذاری‌شده نمی‌پذیرد.</string>
 </resources>

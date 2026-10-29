@@ -140,4 +140,10 @@
     <string name="notes_empty">No hay notas aquí en las últimas 24 horas.</string>
     <string name="note_dropped">📍 nota dejada aquí — desaparece en 24 h</string>
     <string name="note_no_location">dejar una nota requiere tu ubicación — actívala primero en la pestaña Zona</string>
+    <string name="media_photo">Foto</string>
+    <string name="media_voice">Nota de voz</string>
+    <string name="media_recording">Grabando… toca ■ para enviar</string>
+    <string name="media_too_big">Es demasiado grande para enviarlo por Bluetooth.</string>
+    <string name="media_geo_unsupported">Fotos y notas de voz funcionan en Cerca y chats privados.</string>
+    <string name="media_private_unsupported">No enviado: aún no hay conexión o su app no recibe fotos ni notas de voz cifradas.</string>
 </resources>

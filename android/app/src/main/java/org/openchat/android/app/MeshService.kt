@@ -20,6 +20,7 @@ import android.os.HandlerThread
 import android.os.IBinder
 import android.os.SystemClock
 import org.openchat.android.R
+import org.openchat.android.core.FilePacket
 import org.openchat.android.core.Mentions
 import org.openchat.android.core.NoisePayloadType
 import org.openchat.android.core.NostrEmbedded
@@ -213,6 +214,18 @@ class MeshService : Service(), ChatController {
         override fun onCarried(peerHex: String, messageId: String) =
             ChatRepository.setState(Conversation.Private(peerHex).key, messageId, DeliveryState.CARRIED)
 
+        override fun onFile(senderHex: String, nickname: String, file: FilePacket, isPrivate: Boolean, timestamp: Long) {
+            val kind = file.kind ?: return
+            val stored = Media.store(this@MeshService, file.content, FilePacket.extension(file.mimeType))
+            val conv = if (isPrivate) Conversation.Private(senderHex).key else Conversation.Mesh.key
+            ChatRepository.rememberName(senderHex, nickname)
+            ChatRepository.add(ChatMessage("file-${stored.nameWithoutExtension}", conv, nickname, senderHex, "", minOf(timestamp, System.currentTimeMillis()), mine = false,
+                attachment = stored.absolutePath, audio = kind == FilePacket.Kind.AUDIO))
+            if (isPrivate && ChatRepository.openConversation != conv) {
+                notifyPrivate(PeerLabel.mesh(nickname, senderHex).toString(), getString(if (kind == FilePacket.Kind.AUDIO) R.string.media_voice else R.string.media_photo))
+            }
+        }
+
         override fun onVerified(peerHex: String) {
             engine.noiseKeyOf(peerHex)?.let { Social.setVerified(sha256(it).toHex(), true) }
         }
@@ -375,6 +388,24 @@ class MeshService : Service(), ChatController {
         val cell = ChatRepository.geo.value.locationGeohash?.take(NOTE_PRECISION) ?: return false
         geo.dropNote(cell, text)
         return true
+    }
+
+    override fun sendMedia(conversation: String, bytes: ByteArray, mime: String): Int {
+        if (bytes.size > Media.MAX_SEND_BYTES) return R.string.media_too_big
+        if (conversation.startsWith("geo:")) return R.string.media_geo_unsupported
+        val file = FilePacket((if (mime.startsWith("audio")) "voice_" else "img_") + java.util.UUID.randomUUID() + "." + FilePacket.extension(mime), mime, bytes)
+        val kind = file.kind ?: return R.string.media_too_big
+        val peerHex = conversation.removePrefix("dm:").takeIf { conversation.startsWith("dm:") }
+        if (peerHex != null && !java.util.concurrent.FutureTask { engine.canSendPrivateFile(peerHex) }.also { handler.post(it) }.get()) {
+            return R.string.media_private_unsupported
+        }
+        val stored = Media.store(this, bytes, FilePacket.extension(mime))
+        val id = engine.identity
+        val now = System.currentTimeMillis()
+        ChatRepository.add(ChatMessage("file-${stored.nameWithoutExtension}", conversation, id.nickname, id.peerIdHex, "", now, mine = true,
+            attachment = stored.absolutePath, audio = kind == FilePacket.Kind.AUDIO))
+        handler.post { if (peerHex != null) engine.sendPrivateFile(peerHex, file) else engine.sendPublicFile(file) }
+        return 0
     }
 
     override fun watchNotes(cell: String?) = geo.watchNotes(cell?.take(NOTE_PRECISION))

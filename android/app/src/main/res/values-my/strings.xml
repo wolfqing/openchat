@@ -132,4 +132,10 @@
     <string name="notes_empty">လွန်ခဲ့သော ၂၄ နာရီအတွင်း ဒီမှာ မှတ်စုမရှိပါ။</string>
     <string name="note_dropped">📍 ဒီမှာ မှတ်စုထားခဲ့ပြီ — ၂၄ နာရီတွင် ပျောက်မည်</string>
     <string name="note_no_location">မှတ်စုထားရန် သင့်တည်နေရာ လိုသည် — ဒေသ တဘ်တွင် အရင်ဖွင့်ပါ</string>
+    <string name="media_photo">ဓာတ်ပုံ</string>
+    <string name="media_voice">အသံမှတ်စု</string>
+    <string name="media_recording">အသံဖမ်းနေသည်… ပို့ရန် ■ ကိုနှိပ်ပါ</string>
+    <string name="media_too_big">ဘလူးတုသ်ဖြင့် ပို့ရန် အရမ်းကြီးသည်။</string>
+    <string name="media_geo_unsupported">ဓာတ်ပုံနှင့် အသံမှတ်စုကို အနီးအနားနှင့် သီးသန့်ချက်တင်တွင် ပို့နိုင်သည်။</string>
+    <string name="media_private_unsupported">မပို့ရသေးပါ- မချိတ်ဆက်ရသေး သို့မဟုတ် ၎င်း၏အက်ပ်က ကုဒ်ဝှက်ဓာတ်ပုံနှင့် အသံကို မလက်ခံနိုင်ပါ။</string>
 </resources>

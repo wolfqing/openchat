@@ -147,7 +147,7 @@ Signed types in v0.1: `announce`, `message`, `leave`. `noiseHandshake`,
 | `0x11` | noiseEncrypted | send, receive, relay |
 | `0x20` | fragment | send, receive, relay |
 | `0x21` | requestSync | send, receive; never relayed (§14) |
-| `0x22` | fileTransfer | relay only |
+| `0x22` | fileTransfer | send, receive, relay (§18) |
 | `0x23`–`0x29`, `0x2C` | boardPost, prekeyBundle, groupMessage, ping, pong, nostrCarrier, voiceFrame, announceV2 | relay only |
 
 A relay forwards unknown types it can parse under the normal rules (§7).
@@ -317,7 +317,7 @@ First byte is the payload type, the rest is its body.
 | `0x08` | voice frame | not in v0.1 |
 | `0x10`, `0x11` | verify challenge, response | §16.2 |
 | `0x12` | vouch | not in v0.1 |
-| `0x20` (also `0x09`) | private file | not in v0.1 |
+| `0x20` (also `0x09`) | private file | §18.2 |
 | `0x21` | authenticated peer state | version `0x01`, then TLVs `0x01` capabilities (1–8 bytes), `0x02` Ed25519 key (32) |
 
 Message IDs are UUID strings. A receiver sends `delivered` on receipt and
@@ -381,7 +381,7 @@ ID) and keeps running. This is local behaviour and needs no wire support.
 - courier envelope v2 (sealed to a one-time prekey, TLV `0x05`): openchat
   carries and hands over such envelopes but cannot open one addressed to it
 - the bridge courier drop (envelopes parked on Nostr relays)
-- files, images, voice, groups, boards, prekeys, ping/pong, source-route
+- files other than images and audio, live push-to-talk voice, groups, boards, prekeys, ping/pong, source-route
   origination, peer ID rotation (`announceV2`, still a draft upstream)
 
 ## 13. Store-and-forward (v0.4)
@@ -657,4 +657,30 @@ building-level cell (geohash precision 8), with tags `["g", cell]`,
 `#g` = the cell and its eight neighbours, limit 200, and drops expired
 notes itself since relays need not. In a location channel `/drop <text>`
 leaves a note at the device's own building cell.
+
+## 18. Photos and voice notes (v0.5)
+
+### 18.1 File TLV
+
+`0x01` file name (UTF-8), `0x02` size (4 bytes BE), `0x03` MIME type,
+`0x04` content. Type 1 byte; length 2 bytes BE except content, whose length
+is 4 bytes BE (a receiver falls back to 2 bytes when 4 overrun the data).
+Content is capped at 1 MiB. openchat accepts only images (JPEG, PNG, GIF,
+WebP) and audio (MP4/M4A, AAC, MP3, WAV, Ogg) whose first bytes match the
+declared type, and sends JPEG photos re-encoded to ≤ 720 px and voice notes
+as AAC in MP4 (`audio/mp4`, ≤ 30 s), both ≤ 96 KiB. File names follow
+upstream: `img_<UUID>.jpg`, `voice_<UUID>.m4a`.
+
+### 18.2 Public and private
+
+Public: a signed broadcast `fileTransfer` (`0x22`) packet whose payload is
+the TLV, verified, relayed and fragmented like a public message, but not
+history-synced. Private: Noise payload `privateFile` (`0x20`; `0x09` is
+accepted from prerelease iOS and never sent) carrying the TLV. openchat
+sends it only to a peer that, inside the current session, sent
+`authenticatedPeerState` (`0x21`) with capability bit 8 (private media)
+and the Ed25519 key of its announce. openchat sends its own `0x21`
+(capabilities = bit 8) on every completed session and sets bit 8 in its
+announce capabilities. It never sends media unencrypted to one person; it
+does accept the signed directed `fileTransfer` older clients send.
 

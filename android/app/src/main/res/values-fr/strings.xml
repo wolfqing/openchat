@@ -140,4 +140,10 @@
     <string name="notes_empty">Aucune note ici depuis 24 heures.</string>
     <string name="note_dropped">📍 note laissée ici — elle s\'efface en 24 h</string>
     <string name="note_no_location">laisser une note demande votre position — activez-la d\'abord dans l\'onglet Zone</string>
+    <string name="media_photo">Photo</string>
+    <string name="media_voice">Message vocal</string>
+    <string name="media_recording">Enregistrement… touchez ■ pour envoyer</string>
+    <string name="media_too_big">Trop volumineux pour être envoyé par Bluetooth.</string>
+    <string name="media_geo_unsupported">Photos et messages vocaux marchent dans « À proximité » et les discussions privées.</string>
+    <string name="media_private_unsupported">Non envoyé : pas encore connecté, ou son appli ne reçoit pas les photos et vocaux chiffrés.</string>
 </resources>

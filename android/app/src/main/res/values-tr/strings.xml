@@ -136,4 +136,10 @@
     <string name="notes_empty">Son 24 saatte burada not yok.</string>
     <string name="note_dropped">📍 not bırakıldı — 24 saatte kaybolur</string>
     <string name="note_no_location">not bırakmak için konumunuz gerekir — önce Konum sekmesinde açın</string>
+    <string name="media_photo">Fotoğraf</string>
+    <string name="media_voice">Sesli not</string>
+    <string name="media_recording">Kaydediliyor… göndermek için ■</string>
+    <string name="media_too_big">Bluetooth ile göndermek için çok büyük.</string>
+    <string name="media_geo_unsupported">Fotoğraf ve sesli notlar Yakında ve özel sohbetlerde çalışır.</string>
+    <string name="media_private_unsupported">Gönderilmedi: henüz bağlı değil ya da uygulaması şifreli fotoğraf ve sesli not alamıyor.</string>
 </resources>

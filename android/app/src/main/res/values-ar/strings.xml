@@ -152,4 +152,10 @@
     <string name="notes_empty">لا توجد ملاحظات هنا خلال آخر 24 ساعة.</string>
     <string name="note_dropped">📍 تُركت الملاحظة هنا — تختفي بعد 24 ساعة</string>
     <string name="note_no_location">ترك ملاحظة يتطلب موقعك — فعّله في تبويب الموقع أولًا</string>
+    <string name="media_photo">صورة</string>
+    <string name="media_voice">رسالة صوتية</string>
+    <string name="media_recording">جارٍ التسجيل… اضغط ■ للإرسال</string>
+    <string name="media_too_big">هذا أكبر من أن يُرسل عبر البلوتوث.</string>
+    <string name="media_geo_unsupported">الصور والرسائل الصوتية متاحة في «القريبون» والمحادثات الخاصة.</string>
+    <string name="media_private_unsupported">لم يُرسل: هذا الشخص غير متصل بعد، أو تطبيقه لا يستقبل الصور والرسائل الصوتية المشفرة.</string>
 </resources>

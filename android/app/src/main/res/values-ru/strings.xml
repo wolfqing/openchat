@@ -144,4 +144,10 @@
     <string name="notes_empty">За последние 24 часа здесь заметок нет.</string>
     <string name="note_dropped">📍 заметка оставлена — исчезнет через 24 ч</string>
     <string name="note_no_location">для заметки нужно местоположение — сначала включите его на вкладке «Местность»</string>
+    <string name="media_photo">Фото</string>
+    <string name="media_voice">Голосовое</string>
+    <string name="media_recording">Запись… нажмите ■, чтобы отправить</string>
+    <string name="media_too_big">Слишком большой для Bluetooth.</string>
+    <string name="media_geo_unsupported">Фото и голосовые работают в «Рядом» и личных чатах.</string>
+    <string name="media_private_unsupported">Не отправлено: ещё нет соединения или приложение собеседника не принимает зашифрованные фото и голосовые.</string>
 </resources>

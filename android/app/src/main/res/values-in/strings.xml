@@ -132,4 +132,10 @@
     <string name="notes_empty">Tidak ada catatan di sini dalam 24 jam terakhir.</string>
     <string name="note_dropped">📍 catatan ditinggalkan — hilang dalam 24 jam</string>
     <string name="note_no_location">meninggalkan catatan perlu lokasi Anda — aktifkan dulu di tab Wilayah</string>
+    <string name="media_photo">Foto</string>
+    <string name="media_voice">Pesan suara</string>
+    <string name="media_recording">Merekam… ketuk ■ untuk kirim</string>
+    <string name="media_too_big">Terlalu besar untuk dikirim lewat Bluetooth.</string>
+    <string name="media_geo_unsupported">Foto dan pesan suara bisa di Sekitar dan obrolan pribadi.</string>
+    <string name="media_private_unsupported">Tidak terkirim: belum terhubung, atau aplikasinya tidak bisa menerima foto dan pesan suara terenkripsi.</string>
 </resources>

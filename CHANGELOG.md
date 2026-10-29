@@ -60,6 +60,15 @@
   and the eight cells around it, and has a box to leave one. `/drop` does
   the same from a location channel. Notes are Nostr kind 1 events with a
   24-hour NIP-40 expiry. 3 new tests.
+- Photos and voice notes in Nearby and private chats, in bitchat's file
+  format ([spec §18](docs/protocol-spec.md)). + picks a photo (re-encoded
+  to a small JPEG); 🎙 records up to 30 s, ■ sends. Public media is a signed
+  broadcast; private media goes only inside the Noise session, and only to
+  a peer that says in that session it can take it (openchat now sends that
+  `0x21` peer state, so bitchat phones will send it encrypted photos too).
+  Received files are type-checked by their first bytes and kept in the
+  cache the triple tap wipes. Needs the microphone permission, asked on
+  first use. 5 new tests.
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.4.0 (preview) — 2026-10-29

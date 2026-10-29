@@ -132,4 +132,10 @@
     <string name="notes_empty">過去24時間、ここにメモはありません。</string>
     <string name="note_dropped">📍 ここにメモを残しました。24時間で消えます</string>
     <string name="note_no_location">メモを残すには位置情報が必要です。先に「地域」タブで使ってください</string>
+    <string name="media_photo">写真</string>
+    <string name="media_voice">ボイスメモ</string>
+    <string name="media_recording">録音中… ■で送信</string>
+    <string name="media_too_big">Bluetoothで送るには大きすぎます。</string>
+    <string name="media_geo_unsupported">写真とボイスメモは「近く」と個別チャットで使えます。</string>
+    <string name="media_private_unsupported">送信していません：まだ接続されていないか、相手のアプリが暗号化された写真や音声を受け取れません。</string>
 </resources>

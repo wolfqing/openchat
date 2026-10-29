@@ -49,6 +49,8 @@ class Recorder : MeshListener {
     val queued = ArrayList<String>()
     val carried = ArrayList<String>()
     val verified = ArrayList<String>()
+    val files = ArrayList<Pair<String, Boolean>>() // mime, private
+    override fun onFile(senderHex: String, nickname: String, file: org.openchat.android.core.FilePacket, isPrivate: Boolean, timestamp: Long) { files += file.mimeType.orEmpty() to isPrivate }
     override fun onVerified(peerHex: String) { verified += peerHex }
     override fun onPeersChanged(peers: List<MeshPeer>) { this.peers = peers }
     override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long) { publics += "$nickname:$text" }
@@ -338,5 +340,25 @@ class MeshEngineTest {
         alice.sendVerifyChallenge(carol.myPeerHex)
         net.scheduler.advance(5_000)
         assertEquals(listOf(carol.myPeerHex), net.recorders["alice"]!!.verified)
+    }
+
+    @Test
+    fun photosTravelPubliclyAndPrivately() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        val jpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte()) + ByteArray(3000) { (it * 7).toByte() }
+        val photo = org.openchat.android.core.FilePacket("img_x.jpg", "image/jpeg", jpeg)
+        assertTrue(alice.sendPublicFile(photo))
+        net.scheduler.advance(10_000)
+        assertEquals(listOf("image/jpeg" to false), net.recorders["carol"]!!.files)
+        // Private media needs a session in which carol said she takes it.
+        assertEquals(false, alice.canSendPrivateFile(carol.myPeerHex))
+        alice.sendPrivate(carol.myPeerHex, "hi")
+        net.scheduler.advance(5_000)
+        assertTrue(alice.canSendPrivateFile(carol.myPeerHex))
+        assertTrue(alice.sendPrivateFile(carol.myPeerHex, photo))
+        net.scheduler.advance(10_000)
+        assertEquals(listOf("image/jpeg" to false, "image/jpeg" to true), net.recorders["carol"]!!.files)
+        assertEquals(1, net.recorders["bob"]!!.files.size) // the relay saw only the public one
     }
 }

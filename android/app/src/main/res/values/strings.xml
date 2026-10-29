@@ -149,4 +149,10 @@
     <string name="notes_empty">No notes here in the last 24 hours.</string>
     <string name="note_dropped">📍 note left here — it fades in 24 h</string>
     <string name="note_no_location">leaving a note needs your location — use it on the Location tab first</string>
+    <string name="media_photo">Photo</string>
+    <string name="media_voice">Voice note</string>
+    <string name="media_recording">Recording… tap ■ to send</string>
+    <string name="media_too_big">That is too big to send over Bluetooth.</string>
+    <string name="media_geo_unsupported">Photos and voice notes work in Nearby and private chats.</string>
+    <string name="media_private_unsupported">Not sent: this person is not connected yet, or their app can\'t receive encrypted photos and voice notes.</string>
 </resources>

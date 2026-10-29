@@ -140,4 +140,10 @@
     <string name="notes_empty">Nenhum recado aqui nas últimas 24 horas.</string>
     <string name="note_dropped">📍 recado deixado aqui — some em 24 h</string>
     <string name="note_no_location">deixar um recado precisa da sua localização — ative primeiro na aba Região</string>
+    <string name="media_photo">Foto</string>
+    <string name="media_voice">Mensagem de voz</string>
+    <string name="media_recording">Gravando… toque ■ para enviar</string>
+    <string name="media_too_big">É grande demais para enviar por Bluetooth.</string>
+    <string name="media_geo_unsupported">Fotos e mensagens de voz funcionam em Por perto e conversas privadas.</string>
+    <string name="media_private_unsupported">Não enviado: a pessoa ainda não está conectada ou o app dela não recebe fotos e áudios criptografados.</string>
 </resources>

@@ -143,4 +143,10 @@
     <string name="notes_empty">过去 24 小时这里没有留言。</string>
     <string name="note_dropped">📍 已在这里留言，24 小时后消失</string>
     <string name="note_no_location">留言需要你的位置，请先在「地区」页使用位置</string>
+    <string name="media_photo">照片</string>
+    <string name="media_voice">语音</string>
+    <string name="media_recording">录音中…点 ■ 发送</string>
+    <string name="media_too_big">文件太大，无法经蓝牙发送。</string>
+    <string name="media_geo_unsupported">照片和语音只能在「附近」和私聊中发送。</string>
+    <string name="media_private_unsupported">未发送：对方还没连上，或对方的应用不支持加密照片和语音。</string>
 </resources>

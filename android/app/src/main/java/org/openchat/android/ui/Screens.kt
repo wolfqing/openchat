@@ -17,6 +17,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.Image
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.graphics.asImageBitmap
+import android.media.MediaPlayer
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,6 +40,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
@@ -94,6 +102,8 @@ import org.openchat.android.app.AppLanguage
 import org.openchat.android.app.ChatMessage
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Commands
+import org.openchat.android.app.Media
+import org.openchat.android.app.VoiceRecorder
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.DeliveryState
 import org.openchat.android.app.PeerLabel
@@ -446,7 +456,11 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
             border = if (m.mentionsMe) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
             modifier = Modifier.widthIn(max = 300.dp),
         ) {
-            Text(withMentions(m.text), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
+            when {
+                m.attachment != null && m.audio -> VoiceNote(m.attachment)
+                m.attachment != null -> PhotoView(m.attachment)
+                else -> Text(withMentions(m.text), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
+            }
         }
         val status = if (m.mine) " · " + stringResource(
             when (m.state) {
@@ -456,6 +470,60 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
             },
         ) else ""
         Text(time + status, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Photo picker and a tap-to-start, tap-to-send voice recorder (§18). */
+@Composable
+private fun MediaButtons(conversation: String) {
+    val ctx = LocalContext.current
+    val recorder = remember { VoiceRecorder(ctx) }
+    var recording by remember { mutableStateOf(false) }
+    fun send(bytes: ByteArray?, mime: String) {
+        val reason = if (bytes == null) R.string.media_too_big else ChatRepository.controller?.sendMedia(conversation, bytes, mime) ?: 0
+        if (reason != 0) ChatRepository.addLocal(conversation, ctx.getString(reason))
+    }
+    fun stopAndSend() { recording = false; recorder.stop()?.let { f -> send(f.readBytes(), "audio/mp4"); f.delete() } }
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> uri?.let { send(Media.jpegFrom(ctx, it), "image/jpeg") } }
+    val mic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) recording = recorder.start() }
+    DisposableEffect(conversation) { onDispose { recorder.cancel() } }
+    LaunchedEffect(recording) { if (recording) { kotlinx.coroutines.delay(Media.MAX_VOICE_MS.toLong()); if (recording) stopAndSend() } }
+    if (!recording) {
+        IconButton(onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
+            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.media_photo))
+        }
+    }
+    IconButton(onClick = {
+        if (recording) stopAndSend()
+        else if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) recording = recorder.start()
+        else mic.launch(android.Manifest.permission.RECORD_AUDIO)
+    }) {
+        Text(if (recording) "■" else "🎙", color = if (recording) MaterialTheme.colorScheme.error else Color.Unspecified, fontSize = 20.sp)
+    }
+    if (recording) Text(stringResource(R.string.media_recording), fontSize = 12.sp, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(end = 8.dp))
+}
+
+@Composable
+private fun PhotoView(path: String) {
+    val bmp = remember(path) { Media.thumbnail(path)?.asImageBitmap() }
+    if (bmp == null) Text("🖼", Modifier.padding(12.dp))
+    else Image(bmp, contentDescription = stringResource(R.string.media_photo), modifier = Modifier.widthIn(max = 260.dp).heightIn(max = 320.dp).padding(4.dp))
+}
+
+@Composable
+private fun VoiceNote(path: String) {
+    var player by remember { mutableStateOf<MediaPlayer?>(null) }
+    val duration = remember(path) {
+        try { MediaPlayer().run { setDataSource(path); prepare(); duration.also { release() } } } catch (e: Exception) { 0 }
+    }
+    DisposableEffect(path) { onDispose { player?.release() } }
+    Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = {
+            val p = player
+            if (p != null) { p.release(); player = null }
+            else player = try { MediaPlayer().apply { setDataSource(path); setOnCompletionListener { it.release(); player = null }; prepare(); start() } } catch (e: Exception) { null }
+        }) { Text(if (player != null) "■" else "▶", fontSize = 18.sp) }
+        Text(stringResource(R.string.media_voice) + " · " + "%d:%02d".format(duration / 60_000, (duration / 1000) % 60), fontSize = 14.sp, modifier = Modifier.padding(end = 12.dp))
     }
 }
 
@@ -563,6 +631,7 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
         }
     }
     Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (!conversation.startsWith("geo:")) MediaButtons(conversation)
         OutlinedTextField(
             value = text, onValueChange = { if (it.length <= 1000) set(it) },
             placeholder = { Text(placeholder) },

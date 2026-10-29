@@ -144,4 +144,10 @@
     <string name="notes_empty">За останні 24 години тут нотаток немає.</string>
     <string name="note_dropped">📍 нотатку залишено — зникне за 24 год</string>
     <string name="note_no_location">для нотатки потрібне місцеположення — спершу увімкніть його на вкладці «Місцевість»</string>
+    <string name="media_photo">Фото</string>
+    <string name="media_voice">Голосове</string>
+    <string name="media_recording">Запис… натисніть ■, щоб надіслати</string>
+    <string name="media_too_big">Завеликий для Bluetooth.</string>
+    <string name="media_geo_unsupported">Фото й голосові працюють у «Поруч» та особистих чатах.</string>
+    <string name="media_private_unsupported">Не надіслано: ще немає з\'єднання або застосунок не приймає зашифровані фото й голосові.</string>
 </resources>
