@@ -94,6 +94,9 @@
   then Private message: end-to-end encrypted over Nostr between the two
   anonymous per-area identities, with receipts. These chats are listed in
   the Private tab with their area. 1 new test.
+- Your own relays for private messages (Me tab, up to 8, `.onion` allowed),
+  used alongside the four built-in ones, so blocking those four host names
+  does not end private messages over the internet. 1 new test. 94 tests.
 - Not yet checked on a device or against a bitchat phone.
 
 ## Android v0.4.0 (preview) — 2026-10-29

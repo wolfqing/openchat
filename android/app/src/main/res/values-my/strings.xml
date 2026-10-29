@@ -144,4 +144,9 @@
     <string name="tor_off">ပိတ်ထားသည်။ ရီလေးလုပ်ကိုင်သူများက သင့် IP လိပ်စာကို မြင်နိုင်သည်၊ အင်တာနက်မှ သီးသန့်စာများအတွက်ပါ။</string>
     <string name="geo_dm_status">#%1$s · အင်တာနက်မှ၊ ကုဒ်ဝှက်ထား</string>
     <string name="geo_dm_empty">%1$s နှင့် စာများကို အဆုံးမှအဆုံး ကုဒ်ဝှက်ပြီး အင်တာနက်မှ ပို့သည်။ ၎င်းက #%2$s ရှိ သင့်အမည်မသိအမည်ကိုသာ မြင်ရသည်။</string>
+    <string name="relays_title">သီးသန့်စာများအတွက် နောက်ထပ် ရီလေးများ</string>
+    <string name="relays_body">အင်တာနက်မှ ပို့ချိန် မူလ ရီလေး ၄ ခုနှင့်အတူ သုံးသဖြင့် ထို ၄ ခု ပိတ်ခံရလည်း မပြတ်ပါ။ အများဆုံး ၈ ခု၊ .onion လိပ်စာများ Tor ဖြင့် အလုပ်လုပ်သည်။</string>
+    <string name="relays_add">ထည့်ရန်</string>
+    <string name="relays_remove">ဖယ်ရန်</string>
+    <string name="relays_invalid">ရီလေး လိပ်စာ မဟုတ်ပါ။ wss://host ကိုသုံးပါ၊ .onion အတွက် ws://… ရသည်။</string>
 </resources>

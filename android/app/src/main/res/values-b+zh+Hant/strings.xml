@@ -144,4 +144,9 @@
     <string name="tor_off">已關閉。中繼營運者能看到你的 IP 位址，包括經網際網路傳送的私訊。</string>
     <string name="geo_dm_status">#%1$s · 經網際網路加密送達</string>
     <string name="geo_dm_empty">和 %1$s 的訊息端對端加密，經網際網路送達。對方只能看到你在 #%2$s 用的匿名身分。</string>
+    <string name="relays_title">私訊的自訂中繼</string>
+    <string name="relays_body">經網際網路傳私訊時，和內建的 4 個中繼一起使用；就算那 4 個被封，私訊也不會斷。最多 8 個，開啟 Tor 時可以用 .onion 位址。</string>
+    <string name="relays_add">新增</string>
+    <string name="relays_remove">移除</string>
+    <string name="relays_invalid">不是有效的中繼位址。請用 wss://主機名稱，.onion 可用 ws://。</string>
 </resources>

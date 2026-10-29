@@ -33,21 +33,30 @@ class NostrDirect(
 
     val connected get() = pool.connectedCount > 0
 
-    fun start() {
-        val filter = JSONObject()
-            .put("kinds", JSONArray().put(PrivateEnvelope.KIND_WRAP))
-            .put("#p", JSONArray().put(key.publicKeyHex))
-            .put("since", System.currentTimeMillis() / 1000 - 2 * 86_400) // wraps carry a time ±15 min off
-        pool.subscribe(SUB, RELAYS, filter)
+    /** Built-in relays plus the user's own (§15.4), so blocking four host names does not end private messages. */
+    @Volatile private var relays: List<String> = RELAYS
+
+    private fun wraps(pubkey: String) = JSONObject()
+        .put("kinds", JSONArray().put(PrivateEnvelope.KIND_WRAP))
+        .put("#p", JSONArray().put(pubkey))
+        .put("since", System.currentTimeMillis() / 1000 - 2 * 86_400) // wraps carry a time ±15 min off
+
+    fun start() = pool.subscribe(SUB, relays, wraps(key.publicKeyHex))
+
+    fun setExtraRelays(extra: List<String>) {
+        val next = (RELAYS + extra).distinct()
+        if (next == relays) return
+        relays = next
+        // Re-subscribe from scratch so a removed relay is also closed.
+        pool.unsubscribe(SUB); inboxes.keys.forEach { pool.unsubscribe(inboxSub(it)) }
+        pool.subscribe(SUB, relays, wraps(key.publicKeyHex))
+        inboxes.forEach { (g, k) -> pool.subscribe(inboxSub(g), relays, wraps(k.publicKeyHex)) }
     }
 
     /** Also receive wraps addressed to this location-channel persona. */
     fun addInbox(geohash: String, cellKey: NostrKey) {
         if (inboxes.put(geohash, cellKey)?.publicKeyHex == cellKey.publicKeyHex) return
-        pool.subscribe(inboxSub(geohash), RELAYS, JSONObject()
-            .put("kinds", JSONArray().put(PrivateEnvelope.KIND_WRAP))
-            .put("#p", JSONArray().put(cellKey.publicKeyHex))
-            .put("since", System.currentTimeMillis() / 1000 - 2 * 86_400))
+        pool.subscribe(inboxSub(geohash), relays, wraps(cellKey.publicKeyHex))
     }
 
     fun removeInbox(geohash: String) { if (inboxes.remove(geohash) != null) pool.unsubscribe(inboxSub(geohash)) }
@@ -56,10 +65,10 @@ class NostrDirect(
 
     fun send(recipientHex: String, content: String, paced: Boolean = false, from: NostrKey = key) {
         val ev = PrivateEnvelope.create(content, recipientHex, from, System.currentTimeMillis() / 1000)
-        if (!paced) { pool.publish(RELAYS, ev); return }
+        if (!paced) { pool.publish(relays, ev); return }
         val now = System.currentTimeMillis()
         val at = synchronized(this) { maxOf(now, nextSlot).also { nextSlot = it + ACK_SPACING_MS } }
-        pacer.schedule({ pool.publish(RELAYS, ev) }, at - now, TimeUnit.MILLISECONDS)
+        pacer.schedule({ pool.publish(relays, ev) }, at - now, TimeUnit.MILLISECONDS)
     }
 
     fun reset(newSeed: ByteArray) {
@@ -94,5 +103,20 @@ class NostrDirect(
             NostrKey.forGeohash(Crypto.hmacSha256(seed, "openchat-nostr-account".toByteArray(Charsets.US_ASCII)), "account")
 
         fun npubToHex(npub: String) = Bech32.npubToHex(npub)
+
+        const val MAX_EXTRA_RELAYS = 8
+
+        /** A usable relay address, normalised, or null. Plain ws:// is allowed only for .onion. */
+        fun normalizeRelay(input: String): String? {
+            val s = input.trim().trimEnd('/').let { if ("://" in it) it else "wss://$it" }
+            val uri = try { java.net.URI(s) } catch (e: Exception) { return null }
+            val host = uri.host?.lowercase() ?: return null
+            if (!host.contains('.') || s.length > 200 || uri.userInfo != null) return null
+            return when (uri.scheme?.lowercase()) {
+                "wss" -> "wss://" + host + (if (uri.port > 0) ":${uri.port}" else "") + (uri.rawPath ?: "")
+                "ws" -> if (host.endsWith(".onion")) "ws://" + host + (if (uri.port > 0) ":${uri.port}" else "") + (uri.rawPath ?: "") else null
+                else -> null
+            }
+        }
     }
 }

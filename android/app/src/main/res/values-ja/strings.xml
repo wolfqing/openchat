@@ -144,4 +144,9 @@
     <string name="tor_off">オフ。リレー運営者はあなたのIPアドレスを見られます。インターネット経由のプライベートメッセージも同様です。</string>
     <string name="geo_dm_status">#%1$s · インターネット経由・暗号化</string>
     <string name="geo_dm_empty">%1$s とのメッセージはエンドツーエンド暗号化され、インターネット経由で届きます。相手には #%2$s での匿名の名前しか見えません。</string>
+    <string name="relays_title">プライベートメッセージ用の追加リレー</string>
+    <string name="relays_body">内蔵の4つのリレーと併用します。4つが遮断されても途切れません。最大8件。.onionアドレスはTor経由で使えます。</string>
+    <string name="relays_add">追加</string>
+    <string name="relays_remove">削除</string>
+    <string name="relays_invalid">リレーのアドレスではありません。wss://ホスト名、.onionならws://…を使ってください。</string>
 </resources>

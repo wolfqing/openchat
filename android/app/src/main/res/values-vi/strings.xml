@@ -144,4 +144,9 @@
     <string name="tor_off">Tắt. Người vận hành relay thấy được địa chỉ IP của bạn, kể cả với tin nhắn riêng qua internet.</string>
     <string name="geo_dm_status">#%1$s · qua internet, đã mã hóa</string>
     <string name="geo_dm_empty">Tin nhắn với %1$s được mã hóa đầu cuối và đi qua internet. Họ chỉ thấy tên ẩn danh của bạn ở #%2$s.</string>
+    <string name="relays_title">Relay bổ sung cho tin nhắn riêng</string>
+    <string name="relays_body">Dùng cùng bốn relay có sẵn, nên chặn bốn cái đó cũng không cắt được bạn. Tối đa 8; địa chỉ .onion chạy qua Tor.</string>
+    <string name="relays_add">Thêm</string>
+    <string name="relays_remove">Xóa</string>
+    <string name="relays_invalid">Không phải địa chỉ relay. Dùng wss://host, hoặc ws://… cho .onion.</string>
 </resources>

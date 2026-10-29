@@ -144,4 +144,9 @@
     <string name="tor_off">Mati. Operator relay bisa melihat alamat IP Anda, termasuk untuk pesan pribadi lewat internet.</string>
     <string name="geo_dm_status">#%1$s · lewat internet, terenkripsi</string>
     <string name="geo_dm_empty">Pesan dengan %1$s terenkripsi ujung ke ujung dan lewat internet. Ia hanya melihat nama anonim Anda untuk #%2$s.</string>
+    <string name="relays_title">Relay tambahan untuk pesan pribadi</string>
+    <string name="relays_body">Dipakai bersama empat relay bawaan, jadi pemblokiran keempatnya tidak memutus Anda. Maksimal 8; alamat .onion bekerja lewat Tor.</string>
+    <string name="relays_add">Tambah</string>
+    <string name="relays_remove">Hapus</string>
+    <string name="relays_invalid">Bukan alamat relay. Gunakan wss://host, atau ws://… untuk .onion.</string>
 </resources>

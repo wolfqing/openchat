@@ -615,7 +615,9 @@ Account envelopes use `wss://relay.damus.io`, `wss://nos.lol`,
 `wss://relay.primal.net` and `wss://offchain.pub`, subscribing to kind
 1059 with `#p` = my key since two days ago. openchat sends over Nostr only
 to a mutual favorite who is not reachable on the mesh while a relay is
-connected; otherwise §13 applies. It accepts Nostr messages only from
+connected; otherwise §13 applies. The user may add up to eight relays of
+their own (`wss://`, or `ws://` for `.onion` only), used together with the
+four for both subscribing and publishing. It accepts Nostr messages only from
 favorites' npubs, and favorite notices only from the npub they announce
 and from a peer ID it has met. A received message is answered with
 `delivered` and, when shown, `readReceipt`, one envelope per 1.2 s.

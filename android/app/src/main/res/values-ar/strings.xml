@@ -164,4 +164,9 @@
     <string name="tor_off">متوقف. يمكن لمشغلي المرحّلات رؤية عنوان IP الخاص بك، بما في ذلك للرسائل الخاصة عبر الإنترنت.</string>
     <string name="geo_dm_status">#%1$s · عبر الإنترنت، مشفّر</string>
     <string name="geo_dm_empty">الرسائل مع %1$s مشفرة طرفيًا وتمر عبر الإنترنت. لا يرى إلا اسمك المجهول في #%2$s.</string>
+    <string name="relays_title">مرحّلات إضافية للرسائل الخاصة</string>
+    <string name="relays_body">تُستخدم مع المرحّلات الأربعة المدمجة عند إرسال الرسائل عبر الإنترنت، فلا ينقطع الاتصال إن حُجبت. حتى 8؛ عناوين .onion تعمل عبر Tor.</string>
+    <string name="relays_add">إضافة</string>
+    <string name="relays_remove">إزالة</string>
+    <string name="relays_invalid">ليس عنوان مرحّل. استخدم wss://host، أو ws://… لعناوين .onion.</string>
 </resources>

@@ -148,4 +148,9 @@
     <string name="tor_off">خاموش. گردانندگان رله نشانی IP شما را می‌بینند، از جمله برای پیام‌های خصوصی اینترنتی.</string>
     <string name="geo_dm_status">#%1$s · از طریق اینترنت، رمزگذاری‌شده</string>
     <string name="geo_dm_empty">پیام‌ها با %1$s رمزگذاری سرتاسری دارند و از اینترنت می‌روند. او فقط نام ناشناس شما در #%2$s را می‌بیند.</string>
+    <string name="relays_title">رله‌های اضافی برای پیام‌های خصوصی</string>
+    <string name="relays_body">همراه با چهار رله داخلی استفاده می‌شوند تا مسدود شدن آن‌ها ارتباط را قطع نکند. حداکثر ۸؛ نشانی‌های ‎.onion با Tor کار می‌کنند.</string>
+    <string name="relays_add">افزودن</string>
+    <string name="relays_remove">حذف</string>
+    <string name="relays_invalid">نشانی رله نیست. از wss://host یا برای ‎.onion از ws://… استفاده کنید.</string>
 </resources>

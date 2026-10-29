@@ -152,4 +152,9 @@
     <string name="tor_off">Apagado. Los operadores de relés pueden ver tu IP, también en mensajes privados por internet.</string>
     <string name="geo_dm_status">#%1$s · por internet, cifrado</string>
     <string name="geo_dm_empty">Los mensajes con %1$s van cifrados de extremo a extremo por internet. Solo te ve con tu nombre anónimo de #%2$s.</string>
+    <string name="relays_title">Relés extra para mensajes privados</string>
+    <string name="relays_body">Se usan junto a los cuatro relés integrados, así bloquear esos cuatro no te deja incomunicado. Hasta 8; las direcciones .onion funcionan con Tor.</string>
+    <string name="relays_add">Añadir</string>
+    <string name="relays_remove">Quitar</string>
+    <string name="relays_invalid">No es una dirección de relé. Usa wss://host, o ws://… para .onion.</string>
 </resources>

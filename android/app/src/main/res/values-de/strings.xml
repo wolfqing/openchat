@@ -148,4 +148,9 @@
     <string name="tor_off">Aus. Relay-Betreiber sehen deine IP-Adresse, auch bei privaten Nachrichten übers Internet.</string>
     <string name="geo_dm_status">#%1$s · übers Internet, verschlüsselt</string>
     <string name="geo_dm_empty">Nachrichten mit %1$s sind Ende-zu-Ende-verschlüsselt und gehen übers Internet. Sie sehen dich nur unter deinem anonymen Namen für #%2$s.</string>
+    <string name="relays_title">Zusätzliche Relays für private Nachrichten</string>
+    <string name="relays_body">Werden zusätzlich zu den vier eingebauten Relays genutzt, damit eine Sperre dieser vier dich nicht abschneidet. Bis zu 8; .onion-Adressen gehen über Tor.</string>
+    <string name="relays_add">Hinzufügen</string>
+    <string name="relays_remove">Entfernen</string>
+    <string name="relays_invalid">Keine Relay-Adresse. wss://host verwenden, für .onion auch ws://….</string>
 </resources>

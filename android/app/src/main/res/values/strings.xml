@@ -161,4 +161,9 @@
     <string name="tor_off">Off. Relay operators can see your IP address, including for private messages over the internet.</string>
     <string name="geo_dm_status">#%1$s · over the internet, encrypted</string>
     <string name="geo_dm_empty">Messages with %1$s are end-to-end encrypted and go over the internet. They see you only under your anonymous name for #%2$s.</string>
+    <string name="relays_title">Extra relays for private messages</string>
+    <string name="relays_body">Used alongside the four built-in relays when messages go over the internet, so blocking those four does not cut you off. Up to 8; .onion addresses work through Tor.</string>
+    <string name="relays_add">Add</string>
+    <string name="relays_remove">Remove</string>
+    <string name="relays_invalid">Not a relay address. Use wss://host, or ws://… for .onion.</string>
 </resources>

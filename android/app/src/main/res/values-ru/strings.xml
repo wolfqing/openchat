@@ -156,4 +156,9 @@
     <string name="tor_off">Выключено. Операторы релеев видят ваш IP-адрес, в том числе для личных сообщений через интернет.</string>
     <string name="geo_dm_status">#%1$s · через интернет, зашифровано</string>
     <string name="geo_dm_empty">Сообщения с %1$s защищены сквозным шифрованием и идут через интернет. Вас видят только под анонимным именем для #%2$s.</string>
+    <string name="relays_title">Дополнительные релеи для личных сообщений</string>
+    <string name="relays_body">Используются вместе с четырьмя встроенными, так что их блокировка не отрежет вас. До 8; адреса .onion работают через Tor.</string>
+    <string name="relays_add">Добавить</string>
+    <string name="relays_remove">Удалить</string>
+    <string name="relays_invalid">Это не адрес релея. Используйте wss://host, для .onion — ws://….</string>
 </resources>

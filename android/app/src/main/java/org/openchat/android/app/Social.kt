@@ -30,6 +30,7 @@ data class SocialState(
     val geoBlocked: Map<String, String> = emptyMap(), // Nostr pubkey hex -> name, location channels only
     val favorites: Map<String, Favorite> = emptyMap(),
     val verified: Set<String> = emptySet(),
+    val relays: List<String> = emptyList(), // extra Nostr relays for private messages (§15.4)
 ) {
     fun isBlockedPeer(peerHex: String) = blocked.keys.any { it.startsWith(peerHex) }
     fun fingerprintOf(peerHex: String): String? =
@@ -61,6 +62,9 @@ object Social {
         it.copy(favorites = if (f == null) it.favorites - fingerprint else it.favorites + (fingerprint to f))
     }
 
+    fun addRelay(url: String) = change { if (url in it.relays || it.relays.size >= NostrDirect.MAX_EXTRA_RELAYS) it else it.copy(relays = it.relays + url) }
+    fun removeRelay(url: String) = change { it.copy(relays = it.relays - url) }
+
     fun wipe() { _state.value = SocialState() }
 
     fun serialize(s: SocialState): ByteArray {
@@ -75,6 +79,7 @@ object Social {
                 .put("theirs", f.theyFavorited).put("mine", f.mine))
         }
         o.put("favorites", favs)
+        o.put("relays", JSONArray(s.relays))
         return o.toString().toByteArray(Charsets.UTF_8)
     }
 
@@ -90,6 +95,10 @@ object Social {
             Favorite(f.getString("noise"), f.getString("nick"), f.optString("npub").ifEmpty { null }, f.optBoolean("theirs"), f.optBoolean("mine", true))
         }.orEmpty()
         val ver = o.optJSONArray("verified")
-        SocialState(map("blocked"), map("geoBlocked"), favorites, (0 until (ver?.length() ?: 0)).map { ver!!.getString(it) }.toSet())
+        val rel = o.optJSONArray("relays")
+        SocialState(
+            map("blocked"), map("geoBlocked"), favorites, (0 until (ver?.length() ?: 0)).map { ver!!.getString(it) }.toSet(),
+            (0 until (rel?.length() ?: 0)).map { rel!!.getString(it) },
+        )
     } catch (e: Exception) { null }
 }

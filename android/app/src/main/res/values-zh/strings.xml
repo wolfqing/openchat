@@ -155,4 +155,9 @@
     <string name="tor_off">已关闭。中继运营者能看到你的 IP 地址，包括经互联网发送的私信。</string>
     <string name="geo_dm_status">#%1$s · 经互联网加密送达</string>
     <string name="geo_dm_empty">和 %1$s 的消息端到端加密，经互联网送达。对方只能看到你在 #%2$s 用的匿名身份。</string>
+    <string name="relays_title">私信的自定义中继</string>
+    <string name="relays_body">经互联网发私信时，和内置的 4 个中继一起使用；就算那 4 个被封，私信也不会断。最多 8 个，开启 Tor 时可以用 .onion 地址。</string>
+    <string name="relays_add">添加</string>
+    <string name="relays_remove">移除</string>
+    <string name="relays_invalid">不是有效的中继地址。请用 wss://主机名，.onion 可用 ws://。</string>
 </resources>

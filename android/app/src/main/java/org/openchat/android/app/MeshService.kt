@@ -106,7 +106,7 @@ class MeshService : Service(), ChatController {
         tor.apply()
         socialStore = SealedFile(this, "social.bin")
         socialStore.read()?.let { Social.deserialize(it) }?.let { Social.load(it) }
-        Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)) } }
+        Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)); nostr.setExtraRelays(s.relays) } }
         engine.isBlocked = { key -> sha256(key).toHex() in Social.state.value.blocked }
         Social.state.value.favorites.values.forEach { f -> f.noiseKeyHex.hexToBytes()?.let { noiseKeys[Identity.peerIdFor(it).toHex()] = it } }
         nostrSeenStore = SealedFile(this, "nostr-seen.bin")
@@ -114,6 +114,7 @@ class MeshService : Service(), ChatController {
         nostr = NostrDirect(identity.nostrSeed, { sender, content, createdAt, _ -> handler.post { onNostrDirect(sender, content, createdAt) } }) { g, sender, content, createdAt ->
             handler.post { onGeoPrivate(g, sender, content, createdAt) }
         }
+        nostr.setExtraRelays(Social.state.value.relays)
         nostr.start()
         ble = BleTransport(this, handler) { engine }
         geo = GeoChannels(RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText()), identity.nostrSeed, { engine.identity.nickname }) { from, text ->

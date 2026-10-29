@@ -13,6 +13,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import org.openchat.android.R
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
+import org.openchat.android.app.NostrDirect
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.app.Social
 import org.openchat.android.app.TorState
@@ -185,6 +187,32 @@ fun TorSection() {
             )
         }
         Switch(checked = on, onCheckedChange = { ChatRepository.controller?.setTor(it) })
+    }
+}
+
+/** The user's own relays for private messages, on top of the four built in (§15.4). */
+@Composable
+fun RelaySection() {
+    val social by Social.state.collectAsState()
+    var draft by remember { mutableStateOf("") }
+    var bad by remember { mutableStateOf(false) }
+    Text(stringResource(R.string.relays_title), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 24.dp))
+    Text(stringResource(R.string.relays_body), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    social.relays.forEach { r ->
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(r, Modifier.weight(1f), fontFamily = FontFamily.Monospace, fontSize = 13.sp)
+            TextButton(onClick = { Social.removeRelay(r) }) { Text(stringResource(R.string.relays_remove)) }
+        }
+    }
+    if (social.relays.size < NostrDirect.MAX_EXTRA_RELAYS) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(draft, { draft = it.take(200); bad = false }, placeholder = { Text("wss://relay.example.org") }, singleLine = true, modifier = Modifier.weight(1f), isError = bad)
+            TextButton(enabled = draft.isNotBlank(), onClick = {
+                val url = NostrDirect.normalizeRelay(draft)
+                if (url == null) bad = true else { Social.addRelay(url); draft = "" }
+            }) { Text(stringResource(R.string.relays_add)) }
+        }
+        if (bad) Text(stringResource(R.string.relays_invalid), fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
     }
 }
 

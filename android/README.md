@@ -28,6 +28,8 @@ bitchat-android source was never read.
 | IRC-style commands: `/msg /who /clear /hug /slap /block /unblock /fav /unfav /drop /help` | `app/Commands.kt` |
 | Favorites, and private messages over Nostr between mutual favorites in bitchat's envelope (spec §15) | `nostr/PrivateEnvelope.kt`, `core/NostrEmbedded.kt`, `app/NostrDirect.kt` |
 | Location notes that fade after 24 h (spec §17) | `app/GeoChannels.kt` |
+| Private messages in location channels, between per-area personas (spec §15.5) | `app/NostrDirect.kt`, `app/MeshService.kt` |
+| Up to 8 extra relays of your own for private messages | `app/NostrDirect.kt`, `ui/People.kt` |
 | Photos and voice notes, public or Noise-encrypted private (spec §18) | `core/FilePacket.kt`, `app/Media.kt` |
 | Relay traffic through Tor by default, fail-closed (spec §19) | `nostr/NetRoute.kt`, `app/Tor.kt` |
 
@@ -45,7 +47,9 @@ echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
-The APK lands in `app/build/outputs/apk/debug/app-debug.apk`. minSdk 26
+The APK lands in `app/build/outputs/apk/debug/app-debug.apk`. Previews are
+published from `./gradlew :app:assembleRelease` (R8-shrunk, ARM only, about
+9.5 MB, signed with the local debug key). minSdk 26
 (Android 8.0), targetSdk 35.
 
 ## Tests

@@ -144,4 +144,9 @@
     <string name="tor_off">꺼짐. 릴레이 운영자가 IP 주소를 볼 수 있으며, 인터넷으로 보낸 개인 메시지도 마찬가지입니다.</string>
     <string name="geo_dm_status">#%1$s · 인터넷으로, 암호화</string>
     <string name="geo_dm_empty">%1$s 님과의 메시지는 종단간 암호화되어 인터넷으로 전달됩니다. 상대는 #%2$s에서의 익명 이름만 봅니다.</string>
+    <string name="relays_title">개인 메시지용 추가 릴레이</string>
+    <string name="relays_body">내장 릴레이 4개와 함께 사용되어, 그 4개가 차단돼도 끊기지 않습니다. 최대 8개, .onion 주소는 Tor로 작동합니다.</string>
+    <string name="relays_add">추가</string>
+    <string name="relays_remove">삭제</string>
+    <string name="relays_invalid">릴레이 주소가 아닙니다. wss://host를 쓰고, .onion은 ws://…도 됩니다.</string>
 </resources>

@@ -152,4 +152,9 @@
     <string name="tor_off">Désactivé. Les opérateurs de relais voient votre adresse IP, y compris pour les messages privés par internet.</string>
     <string name="geo_dm_status">#%1$s · par internet, chiffré</string>
     <string name="geo_dm_empty">Les messages avec %1$s sont chiffrés de bout en bout et passent par internet. Vous n\'apparaissez que sous votre nom anonyme de #%2$s.</string>
+    <string name="relays_title">Relais supplémentaires pour les messages privés</string>
+    <string name="relays_body">Utilisés en plus des quatre relais intégrés : bloquer ces quatre ne vous coupe pas. Jusqu\'à 8 ; les adresses .onion passent par Tor.</string>
+    <string name="relays_add">Ajouter</string>
+    <string name="relays_remove">Retirer</string>
+    <string name="relays_invalid">Adresse de relais invalide. Utilisez wss://hôte, ou ws://… pour .onion.</string>
 </resources>

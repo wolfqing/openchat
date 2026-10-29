@@ -148,4 +148,9 @@
     <string name="tor_off">बंद। रिले चलाने वाले आपका IP पता देख सकते हैं, इंटरनेट से भेजे निजी संदेशों में भी।</string>
     <string name="geo_dm_status">#%1$s · इंटरनेट से, एन्क्रिप्टेड</string>
     <string name="geo_dm_empty">%1$s के साथ संदेश एंड-टू-एंड एन्क्रिप्टेड हैं और इंटरनेट से जाते हैं। वे आपको केवल #%2$s के आपके अनाम नाम से देखते हैं।</string>
+    <string name="relays_title">निजी संदेशों के लिए अतिरिक्त रिले</string>
+    <string name="relays_body">चार बिल्ट-इन रिले के साथ इस्तेमाल होते हैं, ताकि उन्हें ब्लॉक करने पर भी संपर्क न टूटे। अधिकतम 8; .onion पते Tor से चलते हैं।</string>
+    <string name="relays_add">जोड़ें</string>
+    <string name="relays_remove">हटाएँ</string>
+    <string name="relays_invalid">यह रिले पता नहीं है। wss://host लिखें, .onion के लिए ws://… भी चलेगा।</string>
 </resources>

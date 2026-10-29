@@ -148,4 +148,9 @@
     <string name="tor_off">Kapalı. Röle işletmecileri IP adresinizi görebilir, internet üzerinden özel mesajlarda da.</string>
     <string name="geo_dm_status">#%1$s · internet üzerinden, şifreli</string>
     <string name="geo_dm_empty">%1$s ile mesajlar uçtan uca şifrelidir ve internet üzerinden gider. Sizi yalnızca #%2$s için anonim adınızla görür.</string>
+    <string name="relays_title">Özel mesajlar için ek röleler</string>
+    <string name="relays_body">Dört yerleşik röleyle birlikte kullanılır; o dördü engellense de kopmazsınız. En fazla 8; .onion adresleri Tor ile çalışır.</string>
+    <string name="relays_add">Ekle</string>
+    <string name="relays_remove">Kaldır</string>
+    <string name="relays_invalid">Röle adresi değil. wss://host kullanın, .onion için ws://… da olur.</string>
 </resources>
