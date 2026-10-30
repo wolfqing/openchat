@@ -1,5 +1,132 @@
 # Changelog
 
+## Android v0.5.0 (preview) — 2026-10-29
+
+- History sync, wire-compatible with bitchat's `requestSync` gossip
+  ([docs/protocol-spec.md §14](docs/protocol-spec.md)). Every phone keeps
+  the last 15 minutes of public messages (up to 1000) and the latest
+  announce of each peer. Five seconds after a neighbour is identified, and
+  every 15 s after that, it sends the neighbour a Golomb-coded set of the
+  packet IDs it holds; the neighbour replies with the signed packets that
+  are missing, marked `IS_RSR` with TTL 0. So someone who arrives late, or
+  walks from one group to another, sees what was said before. Replies are
+  accepted only from a neighbour asked within the last 30 s, answered at
+  most 8 times per peer per 30 s, and verified like any other message;
+  a departed sender's remembered key still verifies its old messages.
+- The history is stored with the sealed mesh state (format v2, reads v1)
+  and wiped by the triple tap.
+- Only announces and public messages are synced. Fragments, files, group
+  messages, prekey bundles and board posts stay out of scope.
+- 10 new unit tests: packet ID, GCS bitstream against the spec, false-
+  positive rate, newest-first trimming, request TLV encode/decode and
+  tolerance, type flags, a late joiner receiving history one hop from the
+  author, an unsolicited reply being dropped, and history persistence.
+  60 tests in all.
+- Block. Tap a name in a chat for a person card: private message or
+  block. A blocked mesh peer's public and private messages, including
+  courier mail, are dropped without a receipt, so they are not told; the
+  phone still relays their packets for others. In location channels the
+  block applies to that sender's key in that area only. Blocked people are
+  listed on the Me tab with Unblock. The list is sealed on disk and wiped by
+  the triple tap. 1 new test.
+- @mentions. "@name" and "@name#abcd" are set in orange; a message that
+  mentions me gets an orange outline and a notification when that chat is
+  not open (only the suffixed form counts when someone nearby shares my
+  name). Typing "@" in any composer offers the names around. 3 new tests.
+- In-person verification, compatible with bitchat's `bitchat://verify`
+  QR ([spec §16](docs/protocol-spec.md)). The Me tab shows a signed code
+  valid for five minutes and scans others (camera via
+  zxing-android-embedded, Apache-2.0). A valid scan marks that identity
+  verified, and if the person is in range a Noise challenge makes them
+  prove they hold the key. Verified names show ✓. The person card shows the
+  full fingerprint with "They match, mark as verified" for a manual check.
+  5 new tests.
+- IRC-style commands in every composer, with suggestions as you type "/":
+  `/msg`, `/who`, `/clear`, `/hug`, `/slap` (same wording as bitchat, so
+  bitchat users see the same line), `/block`, `/unblock`, `/fav`, `/unfav`
+  and `/help`. Replies are local lines in that chat and are never sent.
+  3 new tests.
+- Favorites, and private messages over the internet between mutual
+  favorites, wire-compatible with bitchat ([spec §15](docs/protocol-spec.md)).
+  Favoriting sends a `[FAVORITED]:npub` notice; once both sides have
+  favorited each other, a private message to someone out of Bluetooth range
+  goes over Nostr relays in bitchat's private envelope (kind 1059/13/14,
+  `v2:` XChaCha20-Poly1305). Receipts come back the same way. The envelope
+  code opens both recorded bitchat envelopes from upstream's test fixtures.
+  Favorites show ★ in the private list; the chat title says "over the
+  internet". 7 new tests.
+- Location notes, as bitchat leaves them ([spec §17](docs/protocol-spec.md)):
+  the Location tab lists notes left in the last 24 hours at this building
+  and the eight cells around it, and has a box to leave one. `/drop` does
+  the same from a location channel. Notes are Nostr kind 1 events with a
+  24-hour NIP-40 expiry. 3 new tests.
+- Photos and voice notes in Nearby and private chats, in bitchat's file
+  format ([spec §18](docs/protocol-spec.md)). + picks a photo (re-encoded
+  to a small JPEG); 🎙 records up to 30 s, ■ sends. Public media is a signed
+  broadcast; private media goes only inside the Noise session, and only to
+  a peer that says in that session it can take it (openchat now sends that
+  `0x21` peer state, so bitchat phones will send it encrypted photos too).
+  Received files are type-checked by their first bytes and kept in the
+  cache the triple tap wipes. Needs the microphone permission, asked on
+  first use. 5 new tests.
+- Tor ([spec §19](docs/protocol-spec.md)). Relay traffic goes through Tor
+  (Guardian Project's tor-android 0.4.8.16, BSD-3-Clause, in-process) by
+  default, fail-closed: nothing connects until Tor is up. A switch on the Me
+  tab turns it off and says what that exposes. Relay sends now queue until
+  the socket opens instead of being dropped after 3 s. The APK grows to
+  about 36 MB (Tor for arm64, armv7 and x86_64). 1 new test.
+- Announces no longer list neighbours, so a listener cannot read the local
+  social graph off the air (upstream made the same change on its own).
+- Peer ID rotation ([spec §20](docs/protocol-spec.md)): implemented and
+  checked against upstream's draft vectors, but not switched on. Upstream
+  has not shipped it in either client, and a rotating ID would make an
+  openchat phone invisible to every bitchat phone. 4 new tests.
+- 92 unit tests in all. New dependencies: zxing core and
+  zxing-android-embedded (Apache-2.0), tor-android and jtorctl (BSD-3).
+- Smaller download. Previews are now the release build: R8-shrunk
+  (classes 11 MB → 1.4 MB), ARM only (the x86_64 Tor library was for the
+  emulator), native libraries compressed in the APK (Tor 7.6 MB → 3.1 MB
+  per ABI). 36 MB → 9.5 MB. Still signed with the local debug key, so it
+  installs over earlier previews. The shrunk build has not been run on a
+  device yet.
+- Private messages in location channels, as bitchat sends them
+  ([spec §15.5](docs/protocol-spec.md)). Tap a name in a location channel,
+  then Private message: end-to-end encrypted over Nostr between the two
+  anonymous per-area identities, with receipts. These chats are listed in
+  the Private tab with their area. 1 new test.
+- Your own relays for private messages (Me tab, up to 8, `.onion` allowed),
+  used alongside the four built-in ones, so blocking those four host names
+  does not end private messages over the internet. 1 new test. 94 tests.
+- versionCode 7, versionName 0.5.0. Installs over v0.4.0 (same debug key).
+  94 unit tests pass.
+- Release: <https://github.com/wolfqing/openchat/releases/tag/v0.5.0>,
+  APK SHA-256 `e1512de2fbe499921e2a523322416e2fb389f19dcf14dff7d5761e77ac083f1d`.
+- Not yet checked on a device or against a bitchat phone. This is the first
+  R8-shrunk build; it has not been launched anywhere yet.
+
+## Android v0.4.0 (preview) — 2026-10-29
+
+- Store-and-forward, wire-compatible with bitchat's courier path
+  ([docs/protocol-spec.md §13](docs/protocol-spec.md)). A private message
+  for someone out of reach waits in an outbox for 24 h and is also sealed
+  (one-way Noise X to their static key) and handed to up to three nearby
+  phones, which carry it and hand it over when they meet the recipient.
+  Carried mail spreads by spray-and-wait and is opaque to the carrier.
+  openchat also carries mail deposited by others (40 envelopes, 2 per
+  depositor). Receipts clear the outbox; resends and courier copies are
+  delivered once. Outbox, carried mail and remembered peer keys are
+  sealed on disk like the identity and wiped by the triple tap.
+- Message states "Waiting for them" and "Carried by others" in every
+  language; the Me tab shows how many sealed envelopes the phone carries.
+- 11 new unit tests: upstream's golden courier vectors (TLV, recipient
+  tag, signing pre-image), the Noise X seal, a three-phone carry-and-
+  handover run, and outbox persistence. 50 tests in all.
+- README now states what a courier learns about the mail it carries.
+- versionCode 6, versionName 0.4.0. Installs over v0.3.1.
+- Release: <https://github.com/wolfqing/openchat/releases/tag/v0.4.0>,
+  APK SHA-256 `0a2ae15e0b835a40e93252fc399cd8773205a52d6402c2e9d63979150f3209e8`.
+- Not yet checked on a device or against a bitchat phone.
+
 ## Android v0.3.1 (preview) — 2026-10-28
 
 - Bottom bar icons: Nearby is now a three-node mesh, Private a lock. They

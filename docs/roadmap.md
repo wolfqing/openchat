@@ -61,8 +61,12 @@ wire protocol (peer ID rotation) faster than this fork can follow.
 
 ## Phase 2 — Android and a real scenario
 
-- Android: fork bitchat-android under its license, or re-implement from the
-  whitepaper if GPL-3.0 is not acceptable for this project.
+- Android: **done first, out of order.** Written from scratch in Kotlin
+  against [protocol-spec.md](protocol-spec.md), MIT. The GPL-3.0
+  bitchat-android source was never read and is not used; see
+  [CONTRIBUTING.md](../CONTRIBUTING.md) for the clean-room rule that keeps
+  it that way. Previews since v0.1.0 (2026-10-28), not yet verified against
+  a stock bitchat phone.
 - Pilot in one predictable scenario: a disaster-preparedness drill, a large
   event, or a known congested venue. Measure whether strangers actually form
   a mesh and whether the three-tap claim survives contact with real users.

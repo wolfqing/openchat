@@ -20,6 +20,15 @@ import android.os.HandlerThread
 import android.os.IBinder
 import android.os.SystemClock
 import org.openchat.android.R
+import org.openchat.android.core.FilePacket
+import org.openchat.android.core.Mentions
+import org.openchat.android.core.NoisePayloadType
+import org.openchat.android.core.NostrEmbedded
+import org.openchat.android.core.PrivateMessage
+import org.openchat.android.core.VerifyQr
+import org.openchat.android.core.hexToBytes
+import org.openchat.android.core.sha256
+import org.openchat.android.core.toHex
 import org.openchat.android.mesh.BleTransport
 import org.openchat.android.mesh.Cancellable
 import org.openchat.android.mesh.Identity
@@ -28,6 +37,7 @@ import org.openchat.android.mesh.MeshListener
 import org.openchat.android.mesh.MeshPeer
 import org.openchat.android.mesh.Scheduler
 import org.openchat.android.nostr.Geohash
+import org.openchat.android.nostr.NostrKey
 import org.openchat.android.nostr.RelayDirectory
 import org.openchat.android.ui.MainActivity
 
@@ -40,6 +50,7 @@ class MeshService : Service(), ChatController {
         private const val CHANNEL_STATUS = "mesh-status"
         private const val CHANNEL_MESSAGES = "messages"
         private const val NOTIFICATION_ID = 1
+        private const val NOTE_PRECISION = 8 // building level, as bitchat
 
         fun start(context: Context) {
             val i = Intent(context, MeshService::class.java)
@@ -50,6 +61,15 @@ class MeshService : Service(), ChatController {
     private lateinit var thread: HandlerThread
     private lateinit var handler: Handler
     private lateinit var store: IdentityStore
+    private lateinit var stateStore: MeshStateStore
+    private lateinit var socialStore: SealedFile
+    private lateinit var nostr: NostrDirect
+    private lateinit var tor: Tor
+    private lateinit var nostrSeenStore: SealedFile
+    private val nostrSeen = LinkedHashSet<String>() // message IDs already shown from Nostr, kept across restarts
+    // Noise static keys by peer ID, readable from the UI thread (the engine's maps are not).
+    private val noiseKeys = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
+    private val saveState = Runnable { stateStore.save(engine.exportState()) }
     private lateinit var engine: MeshEngine
     private lateinit var ble: BleTransport
     private lateinit var geo: GeoChannels
@@ -77,10 +97,29 @@ class MeshService : Service(), ChatController {
         thread = HandlerThread("mesh").apply { start() }
         handler = Handler(thread.looper)
         store = IdentityStore(this)
+        stateStore = MeshStateStore(this)
         val identity = store.loadOrCreate()
         engine = MeshEngine(identity, scheduler, { link, bytes -> ble.write(link, bytes) }, listener)
+        stateStore.load()?.let { s -> engine.importState(s); s.known.forEach { (hex, k) -> noiseKeys[hex] = k.noiseKey } }
+        // Route relay traffic before any relay socket opens (§19).
+        tor = Tor(this) { s -> ChatRepository.updateGeo { it.copy(tor = s) } }
+        tor.apply()
+        socialStore = SealedFile(this, "social.bin")
+        socialStore.read()?.let { Social.deserialize(it) }?.let { Social.load(it) }
+        Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)); nostr.setExtraRelays(s.relays) } }
+        engine.isBlocked = { key -> sha256(key).toHex() in Social.state.value.blocked }
+        Social.state.value.favorites.values.forEach { f -> f.noiseKeyHex.hexToBytes()?.let { noiseKeys[Identity.peerIdFor(it).toHex()] = it } }
+        nostrSeenStore = SealedFile(this, "nostr-seen.bin")
+        nostrSeenStore.read()?.let { nostrSeen.addAll(String(it, Charsets.UTF_8).split('\n').filter { id -> id.isNotEmpty() }) }
+        nostr = NostrDirect(identity.nostrSeed, { sender, content, createdAt, _ -> handler.post { onNostrDirect(sender, content, createdAt) } }) { g, sender, content, createdAt ->
+            handler.post { onGeoPrivate(g, sender, content, createdAt) }
+        }
+        nostr.setExtraRelays(Social.state.value.relays)
+        nostr.start()
         ble = BleTransport(this, handler) { engine }
-        geo = GeoChannels(RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText()), identity.nostrSeed) { engine.identity.nickname }
+        geo = GeoChannels(RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText()), identity.nostrSeed, { engine.identity.nickname }) { from, text ->
+            notifyMention(from, text)
+        }
         ChatRepository.controller = this
         registerReceiver(btReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
         handler.post {
@@ -106,6 +145,8 @@ class MeshService : Service(), ChatController {
             thread.quitSafely()
         }
         geo.close()
+        nostr.close()
+        tor.stop()
         ChatRepository.updateMesh { it.copy(running = false, links = 0) }
         super.onDestroy()
     }
@@ -122,6 +163,7 @@ class MeshService : Service(), ChatController {
 
     private fun periodic() {
         publishStatus()
+        tor.poll()
         handler.postDelayed({ periodic() }, 5_000)
     }
 
@@ -129,7 +171,7 @@ class MeshService : Service(), ChatController {
     private fun publishStatus() {
         val id = engine.identity
         ChatRepository.updateMesh {
-            it.copy(bluetoothOn = ble.isEnabled, running = bleStarted, links = engine.linkCount, myNickname = id.nickname, myPeerHex = id.peerIdHex, fingerprint = id.fingerprint)
+            it.copy(bluetoothOn = ble.isEnabled, running = bleStarted, links = engine.linkCount, myNickname = id.nickname, myPeerHex = id.peerIdHex, fingerprint = id.fingerprint, carriedCount = engine.carriedCount)
         }
         val now = System.currentTimeMillis()
         if (now - lastHeartbeat > 5 * 60_000) { lastHeartbeat = now; geo.heartbeatAll() }
@@ -150,20 +192,24 @@ class MeshService : Service(), ChatController {
 
     private val listener = object : MeshListener {
         override fun onPeersChanged(peers: List<MeshPeer>) {
+            peers.forEach { noiseKeys[it.peerIdHex] = it.noisePublicKey }
             ChatRepository.setPeers(peers)
             ChatRepository.updateMesh { it.copy(links = engine.linkCount) }
         }
 
         override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long) {
-            ChatRepository.add(ChatMessage("$senderHex-$timestamp", Conversation.Mesh.key, nickname, senderHex, text, timestamp, mine = false))
+            val me = engine.identity
+            val ambiguous = ChatRepository.peers.value.any { it.peerIdHex != me.peerIdHex && it.nickname.equals(me.nickname, ignoreCase = true) }
+            val mentioned = Mentions.mentionsMe(text, me.nickname, me.peerIdHex.take(4), ambiguous)
+            ChatRepository.add(ChatMessage("$senderHex-$timestamp", Conversation.Mesh.key, nickname, senderHex, text, timestamp, mine = false, mentionsMe = mentioned))
+            if (mentioned && ChatRepository.openConversation != Conversation.Mesh.key) notifyMention(PeerLabel.mesh(nickname, senderHex).toString(), text)
         }
 
         override fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) {
-            val conv = Conversation.Private(senderHex).key
-            ChatRepository.rememberName(senderHex, nickname)
-            ChatRepository.add(ChatMessage(messageId, conv, nickname, senderHex, text, timestamp, mine = false))
-            if (ChatRepository.openConversation == conv) engine.sendReadReceipt(senderHex, messageId)
-            else notifyPrivate(PeerLabel.mesh(nickname, senderHex).toString(), text)
+            val key = engine.noiseKeyOf(senderHex)?.also { noiseKeys[senderHex] = it }
+            val notice = NostrEmbedded.parseFavoriteNotice(text)
+            if (notice != null) { key?.let { favoriteNoticeFrom(it, nickname, notice.first, notice.second) }; return }
+            deliverPrivate(senderHex, nickname, messageId, text, timestamp)
         }
 
         override fun onDelivered(peerHex: String, messageId: String) =
@@ -171,6 +217,94 @@ class MeshService : Service(), ChatController {
 
         override fun onRead(peerHex: String, messageId: String) =
             ChatRepository.setState(Conversation.Private(peerHex).key, messageId, DeliveryState.READ)
+
+        override fun onQueued(peerHex: String, messageId: String) =
+            ChatRepository.setState(Conversation.Private(peerHex).key, messageId, DeliveryState.QUEUED)
+
+        override fun onCarried(peerHex: String, messageId: String) =
+            ChatRepository.setState(Conversation.Private(peerHex).key, messageId, DeliveryState.CARRIED)
+
+        override fun onFile(senderHex: String, nickname: String, file: FilePacket, isPrivate: Boolean, timestamp: Long) {
+            val kind = file.kind ?: return
+            val stored = Media.store(this@MeshService, file.content, FilePacket.extension(file.mimeType))
+            val conv = if (isPrivate) Conversation.Private(senderHex).key else Conversation.Mesh.key
+            ChatRepository.rememberName(senderHex, nickname)
+            ChatRepository.add(ChatMessage("file-${stored.nameWithoutExtension}", conv, nickname, senderHex, "", minOf(timestamp, System.currentTimeMillis()), mine = false,
+                attachment = stored.absolutePath, audio = kind == FilePacket.Kind.AUDIO))
+            if (isPrivate && ChatRepository.openConversation != conv) {
+                notifyPrivate(PeerLabel.mesh(nickname, senderHex).toString(), getString(if (kind == FilePacket.Kind.AUDIO) R.string.media_voice else R.string.media_photo))
+            }
+        }
+
+        override fun onVerified(peerHex: String) {
+            engine.noiseKeyOf(peerHex)?.let { Social.setVerified(sha256(it).toHex(), true) }
+        }
+
+        // Coalesce bursts of changes into one write.
+        override fun onStateChanged() { handler.removeCallbacks(saveState); handler.postDelayed(saveState, 500) }
+    }
+
+    private fun deliverPrivate(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) {
+        val conv = Conversation.Private(senderHex).key
+        ChatRepository.rememberName(senderHex, nickname)
+        ChatRepository.add(ChatMessage(messageId, conv, nickname, senderHex, text, timestamp, mine = false))
+        if (ChatRepository.openConversation == conv) sendRead(senderHex, messageId)
+        else notifyPrivate(PeerLabel.mesh(nickname, senderHex).toString(), text)
+    }
+
+    // ------------------------------------------------------------------ favorites over Nostr (§15)
+
+    private fun mutualNpubHex(peerHex: String): String? =
+        Social.state.value.favoriteOf(peerHex)?.takeIf { it.mine && it.theyFavorited }?.theirNpub?.let { NostrDirect.npubToHex(it) }
+
+    private fun sendRead(peerHex: String, messageId: String) {
+        val viaNostr = if (engine.isReachable(peerHex)) null else mutualNpubHex(peerHex)
+        if (viaNostr == null) { engine.sendReadReceipt(peerHex, messageId); return }
+        NostrEmbedded.receipt(NoisePayloadType.READ_RECEIPT, messageId, engine.identity.peerId, peerHex.hexToBytes()!!, System.currentTimeMillis())
+            ?.let { nostr.send(viaNostr, it, paced = true) }
+    }
+
+    /** They favorited or unfavorited us; remember their npub so we can reach them over Nostr. */
+    private fun favoriteNoticeFrom(noiseKey: ByteArray, nickname: String, on: Boolean, npub: String) {
+        if (NostrDirect.npubToHex(npub) == null) return
+        val fp = sha256(noiseKey).toHex()
+        val peerHex = Identity.peerIdFor(noiseKey).toHex()
+        val old = Social.state.value.favorites[fp]
+        val f = (old ?: Favorite(noiseKey.toHex(), nickname, mine = false)).copy(nickname = nickname, theirNpub = npub, theyFavorited = on)
+        Social.putFavorite(fp, if (!f.mine && !f.theyFavorited) null else f)
+        ChatRepository.rememberName(peerHex, nickname)
+        ChatRepository.addLocal(Conversation.Private(peerHex).key, getString(if (on) R.string.fav_they_on else R.string.fav_they_off, PeerLabel.mesh(nickname, peerHex).toString()))
+    }
+
+    private fun onNostrDirect(senderPubkey: String, content: String, createdAt: Long) {
+        val d = NostrEmbedded.decode(content) ?: return
+        val social = Social.state.value
+        val fav = social.favorites.values.firstOrNull { it.theirNpub?.let { n -> NostrDirect.npubToHex(n) } == senderPubkey }
+        val noiseKey = fav?.noiseKeyHex?.hexToBytes()
+            ?: noiseKeys[d.senderId.toHex()]?.takeIf { Identity.peerIdFor(it).contentEquals(d.senderId) } ?: return
+        if (sha256(noiseKey).toHex() in social.blocked) return
+        val peerHex = Identity.peerIdFor(noiseKey).toHex()
+        val nickname = fav?.nickname ?: ChatRepository.names.value[peerHex] ?: peerHex.take(8)
+        when (d.payload.type) {
+            NoisePayloadType.PRIVATE_MESSAGE -> {
+                val pm = PrivateMessage.decode(d.payload.body) ?: return
+                val notice = NostrEmbedded.parseFavoriteNotice(pm.content)
+                if (notice != null) {
+                    // The notice must come from the npub it announces.
+                    if (NostrDirect.npubToHex(notice.second) == senderPubkey) favoriteNoticeFrom(noiseKey, nickname, notice.first, notice.second)
+                    return
+                }
+                if (fav == null) return // only favorites may write over Nostr
+                NostrEmbedded.receipt(NoisePayloadType.DELIVERED, pm.messageId, engine.identity.peerId, d.senderId, System.currentTimeMillis())
+                    ?.let { nostr.send(senderPubkey, it, paced = true) }
+                if (!nostrSeen.add(pm.messageId)) return
+                while (nostrSeen.size > 1000) nostrSeen.remove(nostrSeen.first())
+                nostrSeenStore.write(nostrSeen.joinToString("\n").toByteArray(Charsets.UTF_8))
+                deliverPrivate(peerHex, nickname, pm.messageId, pm.content, minOf(createdAt * 1000, System.currentTimeMillis()))
+            }
+            NoisePayloadType.DELIVERED -> ChatRepository.setState(Conversation.Private(peerHex).key, String(d.payload.body, Charsets.UTF_8), DeliveryState.DELIVERED)
+            NoisePayloadType.READ_RECEIPT -> ChatRepository.setState(Conversation.Private(peerHex).key, String(d.payload.body, Charsets.UTF_8), DeliveryState.READ)
+        }
     }
 
     // ------------------------------------------------------------------ ChatController
@@ -185,17 +319,31 @@ class MeshService : Service(), ChatController {
     override fun sendPrivate(peerHex: String, text: String) {
         handler.post {
             val id = engine.identity
+            val npubHex = if (engine.isReachable(peerHex) || !nostr.connected) null else mutualNpubHex(peerHex)
+            if (npubHex != null) {
+                // Apart, but mutual favorites: over the internet (§15).
+                val now = System.currentTimeMillis()
+                org.openchat.android.core.splitUtf8(text, org.openchat.android.core.PrivateMessage.MAX_CONTENT_BYTES).forEachIndexed { i, part ->
+                    val mid = java.util.UUID.randomUUID().toString().uppercase()
+                    NostrEmbedded.privateMessage(mid, part, id.peerId, peerHex.hexToBytes()!!, now)?.let { nostr.send(npubHex, it) }
+                    ChatRepository.add(ChatMessage(mid, Conversation.Private(peerHex).key, id.nickname, id.peerIdHex, part, now + i, mine = true, state = DeliveryState.SENT))
+                }
+                return@post
+            }
             val ids = engine.sendPrivate(peerHex, text)
             val parts = org.openchat.android.core.splitUtf8(text, org.openchat.android.core.PrivateMessage.MAX_CONTENT_BYTES)
             val now = System.currentTimeMillis()
             ids.zip(parts).forEachIndexed { i, (mid, part) ->
-                ChatRepository.add(ChatMessage(mid, Conversation.Private(peerHex).key, id.nickname, id.peerIdHex, part, now + i, mine = true, state = DeliveryState.SENT))
+                val state = when (engine.outboxState(mid)) { 2 -> DeliveryState.CARRIED; 1 -> DeliveryState.QUEUED; else -> DeliveryState.SENT }
+                ChatRepository.add(ChatMessage(mid, Conversation.Private(peerHex).key, id.nickname, id.peerIdHex, part, now + i, mine = true, state = state))
             }
         }
     }
 
     override fun markRead(peerHex: String, messageIds: List<String>) {
-        handler.post { messageIds.forEach { engine.sendReadReceipt(peerHex, it) } }
+        // A location-channel chat passes its whole conversation key.
+        Conversation.GeoPrivate.parse(peerHex)?.let { c -> handler.post { markGeoRead(c.geohash, c.pubkey, messageIds) }; return }
+        handler.post { messageIds.forEach { sendRead(peerHex, it) } }
     }
 
     override fun setNickname(name: String) {
@@ -207,9 +355,120 @@ class MeshService : Service(), ChatController {
         }
     }
 
-    override fun joinGeo(geohash: String, teleported: Boolean) = geo.join(geohash.lowercase(), teleported)
-    override fun leaveGeo(geohash: String) = geo.leave(geohash)
+    override fun noiseKey(peerHex: String): ByteArray? = noiseKeys[peerHex]
+
+    override fun myVerifyUrl(): String {
+        val id = engine.identity
+        return VerifyQr.build(id.noise.publicKey, id.signing, id.nickname, null, System.currentTimeMillis() / 1000).toUrl()
+    }
+
+    override fun setFavorite(peerHex: String, nickname: String, on: Boolean) {
+        val key = noiseKeys[peerHex] ?: return
+        val fp = sha256(key).toHex()
+        val old = Social.state.value.favorites[fp]
+        Social.putFavorite(fp, if (on) (old ?: Favorite(key.toHex(), nickname)).copy(mine = true) else old?.takeIf { it.theyFavorited }?.copy(mine = false))
+        // Tell them, with our npub, so they can reach us over Nostr once it is mutual.
+        handler.post {
+            val notice = NostrEmbedded.favoriteNotice(on, nostr.npub)
+            val theirs = old?.theirNpub?.let { NostrDirect.npubToHex(it) }
+            if (engine.isReachable(peerHex) || theirs == null) engine.sendPrivate(peerHex, notice)
+            else NostrEmbedded.privateMessage(java.util.UUID.randomUUID().toString().uppercase(), notice, engine.identity.peerId, peerHex.hexToBytes()!!, System.currentTimeMillis())
+                ?.let { nostr.send(theirs, it) }
+        }
+    }
+
+    override fun myNpub(): String = nostr.npub
+
+    override fun verifyScanned(url: String): String? {
+        val qr = VerifyQr.verify(url.trim(), System.currentTimeMillis() / 1000) ?: return null
+        val key = qr.noiseKeyHex.hexToBytes() ?: return null
+        if (key.contentEquals(engine.identity.noise.publicKey)) return null
+        Social.setVerified(sha256(key).toHex(), true)
+        val peerHex = org.openchat.android.mesh.Identity.peerIdFor(key).toHex()
+        noiseKeys.putIfAbsent(peerHex, key)
+        ChatRepository.rememberName(peerHex, qr.nickname)
+        // If they are around, make them prove they hold the key the QR names.
+        handler.post { engine.sendVerifyChallenge(peerHex) }
+        return qr.nickname
+    }
+
+    override fun joinGeo(geohash: String, teleported: Boolean) {
+        val g = geohash.lowercase()
+        geo.join(g, teleported)
+        nostr.addInbox(g, NostrKey.forGeohash(engine.identity.nostrSeed, g))
+    }
+
+    override fun leaveGeo(geohash: String) { geo.leave(geohash); nostr.removeInbox(geohash) }
+
+    override fun sendGeoPrivate(geohash: String, pubkey: String, text: String) {
+        val me = NostrKey.forGeohash(engine.identity.nostrSeed, geohash)
+        val conv = Conversation.GeoPrivate(geohash, pubkey).key
+        val now = System.currentTimeMillis()
+        org.openchat.android.core.splitUtf8(text, PrivateMessage.MAX_CONTENT_BYTES).forEachIndexed { i, part ->
+            val mid = java.util.UUID.randomUUID().toString().uppercase()
+            NostrEmbedded.privateMessageAnonymous(mid, part, now)?.let { nostr.send(pubkey, it, from = me) }
+            ChatRepository.add(ChatMessage(mid, conv, engine.identity.nickname, me.publicKeyHex, part, now + i, mine = true, state = DeliveryState.SENT))
+        }
+    }
+
+    /** A private message to one of my location-channel personas (§15.5). */
+    private fun onGeoPrivate(geohash: String, senderPubkey: String, content: String, createdAt: Long) {
+        if (senderPubkey in Social.state.value.geoBlocked) return
+        val d = NostrEmbedded.decode(content) ?: return
+        val me = NostrKey.forGeohash(engine.identity.nostrSeed, geohash)
+        val conv = Conversation.GeoPrivate(geohash, senderPubkey).key
+        when (d.payload.type) {
+            NoisePayloadType.PRIVATE_MESSAGE -> {
+                val pm = PrivateMessage.decode(d.payload.body) ?: return
+                NostrEmbedded.receiptAnonymous(NoisePayloadType.DELIVERED, pm.messageId, System.currentTimeMillis())?.let { nostr.send(senderPubkey, it, paced = true, from = me) }
+                if (!nostrSeen.add(pm.messageId)) return
+                while (nostrSeen.size > 1000) nostrSeen.remove(nostrSeen.first())
+                nostrSeenStore.write(nostrSeen.joinToString("\n").toByteArray(Charsets.UTF_8))
+                // Their name, if they spoke in the channel; otherwise anon plus the key suffix.
+                val nick = ChatRepository.messages.value[Conversation.Geo(geohash).key]?.lastOrNull { it.senderKey == senderPubkey }?.senderName.orEmpty()
+                ChatRepository.rememberName(senderPubkey, nick)
+                ChatRepository.add(ChatMessage(pm.messageId, conv, nick, senderPubkey, pm.content, minOf(createdAt * 1000, System.currentTimeMillis()), mine = false))
+                if (ChatRepository.openConversation == conv) markGeoRead(geohash, senderPubkey, listOf(pm.messageId))
+                else notifyPrivate(PeerLabel.nostr(nick, senderPubkey).toString() + " · #" + geohash, pm.content)
+            }
+            NoisePayloadType.DELIVERED -> ChatRepository.setState(conv, String(d.payload.body, Charsets.UTF_8), DeliveryState.DELIVERED)
+            NoisePayloadType.READ_RECEIPT -> ChatRepository.setState(conv, String(d.payload.body, Charsets.UTF_8), DeliveryState.READ)
+        }
+    }
+
+    private fun markGeoRead(geohash: String, pubkey: String, ids: List<String>) {
+        val me = NostrKey.forGeohash(engine.identity.nostrSeed, geohash)
+        ids.forEach { id -> NostrEmbedded.receiptAnonymous(NoisePayloadType.READ_RECEIPT, id, System.currentTimeMillis())?.let { nostr.send(pubkey, it, paced = true, from = me) } }
+    }
     override fun sendGeo(geohash: String, text: String) = geo.send(geohash, text)
+
+    override fun dropNote(text: String): Boolean {
+        val cell = ChatRepository.geo.value.locationGeohash?.take(NOTE_PRECISION) ?: return false
+        geo.dropNote(cell, text)
+        return true
+    }
+
+    override fun sendMedia(conversation: String, bytes: ByteArray, mime: String): Int {
+        if (bytes.size > Media.MAX_SEND_BYTES) return R.string.media_too_big
+        if (conversation.startsWith("geo:")) return R.string.media_geo_unsupported
+        val file = FilePacket((if (mime.startsWith("audio")) "voice_" else "img_") + java.util.UUID.randomUUID() + "." + FilePacket.extension(mime), mime, bytes)
+        val kind = file.kind ?: return R.string.media_too_big
+        val peerHex = conversation.removePrefix("dm:").takeIf { conversation.startsWith("dm:") }
+        if (peerHex != null && !java.util.concurrent.FutureTask { engine.canSendPrivateFile(peerHex) }.also { handler.post(it) }.get()) {
+            return R.string.media_private_unsupported
+        }
+        val stored = Media.store(this, bytes, FilePacket.extension(mime))
+        val id = engine.identity
+        val now = System.currentTimeMillis()
+        ChatRepository.add(ChatMessage("file-${stored.nameWithoutExtension}", conversation, id.nickname, id.peerIdHex, "", now, mine = true,
+            attachment = stored.absolutePath, audio = kind == FilePacket.Kind.AUDIO))
+        handler.post { if (peerHex != null) engine.sendPrivateFile(peerHex, file) else engine.sendPublicFile(file) }
+        return 0
+    }
+
+    override fun setTor(on: Boolean) = tor.setWanted(on)
+
+    override fun watchNotes(cell: String?) = geo.watchNotes(cell?.take(NOTE_PRECISION))
 
     @SuppressLint("MissingPermission")
     override fun refreshLocation() {
@@ -235,15 +494,22 @@ class MeshService : Service(), ChatController {
      */
     override fun panic() {
         ChatRepository.wipe()
+        Social.wipe()
+        noiseKeys.clear()
         val nm = getSystemService(NotificationManager::class.java)
         nm.cancelAll()
         startInForeground()
         handler.post {
+            handler.removeCallbacks(saveState)
+            stateStore.destroy()
+            socialStore.delete()
             store.destroy()
             val fresh = Identity.generate()
             store.save(fresh)
             engine.resetIdentity(fresh)
             geo.reset(fresh.nostrSeed)
+            nostr.reset(fresh.nostrSeed)
+            nostrSeen.clear(); nostrSeenStore.delete()
             cacheDir.listFiles()?.forEach { it.deleteRecursively() }
             publishStatus()
         }
@@ -282,6 +548,8 @@ class MeshService : Service(), ChatController {
             .build()
         try { getSystemService(NotificationManager::class.java).notify(notifySeq++, n) } catch (e: SecurityException) { }
     }
+
+    private fun notifyMention(from: String, text: String) = notifyPrivate(getString(R.string.mention_notify, from), text)
 
     private fun builder(channel: String): Notification.Builder {
         val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, channel) else @Suppress("DEPRECATION") Notification.Builder(this)

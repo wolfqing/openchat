@@ -12,13 +12,23 @@ android {
         applicationId = "org.openchat.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "0.3.1"
+        versionCode = 7
+        versionName = "0.5.0"
     }
 
     buildTypes {
+        // Tor ships native code per ABI. Phones are ARM; x86_64 is only for the emulator.
+        debug {
+            ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
+        }
+        // The published preview: shrunk by R8, ARM only, still signed with the local debug key
+        // so it installs over earlier previews.
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
+            ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         }
     }
     compileOptions {
@@ -32,6 +42,9 @@ android {
         compose = true
     }
     packaging {
+        // Compress native libraries inside the APK: much smaller to pass phone to phone over
+        // Bluetooth, at the cost of unpacking them once on install.
+        jniLibs.useLegacyPackaging = true
         resources.excludes += setOf("META-INF/versions/9/OSGI-INF/MANIFEST.MF", "META-INF/DEPENDENCIES")
     }
     testOptions {
@@ -43,6 +56,10 @@ dependencies {
     implementation("org.bouncycastle:bcprov-jdk18on:1.79")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("com.google.zxing:core:3.5.3")
+    implementation("info.guardianproject:tor-android:0.4.8.16")
+    implementation("info.guardianproject:jtorctl:0.4.5.7")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }
 
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
     implementation("androidx.compose.ui:ui")

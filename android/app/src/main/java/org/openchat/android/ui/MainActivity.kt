@@ -12,6 +12,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import org.openchat.android.app.ApkShare
 import org.openchat.android.app.AppLanguage
 import org.openchat.android.app.MeshService
@@ -19,6 +21,12 @@ import org.openchat.android.app.MeshService
 class MainActivity : ComponentActivity() {
     private val onboarded = mutableStateOf(false)
     private val missingPermissions = mutableStateOf(false)
+    private val scanResult = mutableStateOf<String?>(null) // "" = rejected, else the verified nickname
+
+    private val scanLauncher = registerForActivityResult(ScanContract()) { r ->
+        val text = r.contents ?: return@registerForActivityResult
+        scanResult.value = org.openchat.android.app.ChatRepository.controller?.verifyScanned(text) ?: ""
+    }
 
     private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         refreshPermissionState()
@@ -59,6 +67,11 @@ class MainActivity : ComponentActivity() {
                         onRequestLocation = ::requestLocation,
                         onShareApp = { startActivity(ApkShare.intent(this)) },
                         onLanguage = ::setLanguage,
+                        onScan = {
+                            scanLauncher.launch(ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setBeepEnabled(false).setOrientationLocked(false).setPrompt(""))
+                        },
+                        scanResult = scanResult.value,
+                        onScanResultSeen = { scanResult.value = null },
                     )
                 }
             }

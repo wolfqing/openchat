@@ -4,6 +4,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.openchat.android.core.MessageType
+import org.openchat.android.core.Packet
+import org.openchat.android.core.PacketCodec
+import org.openchat.android.crypto.Crypto
 import java.util.PriorityQueue
 import kotlin.random.Random
 
@@ -42,11 +46,19 @@ class Recorder : MeshListener {
     val delivered = ArrayList<String>()
     val reads = ArrayList<String>()
     var peers: List<MeshPeer> = emptyList()
+    val queued = ArrayList<String>()
+    val carried = ArrayList<String>()
+    val verified = ArrayList<String>()
+    val files = ArrayList<Pair<String, Boolean>>() // mime, private
+    override fun onFile(senderHex: String, nickname: String, file: org.openchat.android.core.FilePacket, isPrivate: Boolean, timestamp: Long) { files += file.mimeType.orEmpty() to isPrivate }
+    override fun onVerified(peerHex: String) { verified += peerHex }
     override fun onPeersChanged(peers: List<MeshPeer>) { this.peers = peers }
     override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long) { publics += "$nickname:$text" }
     override fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) { privates += messageId to text }
     override fun onDelivered(peerHex: String, messageId: String) { delivered += messageId }
     override fun onRead(peerHex: String, messageId: String) { reads += messageId }
+    override fun onQueued(peerHex: String, messageId: String) { queued += messageId }
+    override fun onCarried(peerHex: String, messageId: String) { carried += messageId }
 }
 
 /** Wires engines together with in-memory links; each write is delivered after a small delay. */
@@ -78,6 +90,13 @@ class SimNetwork(val scheduler: VirtualScheduler, private val maxWrite: Int = 18
         edges["$b/$lb"] = a to la
         engines[a]!!.onLinkUp(la, maxWrite)
         engines[b]!!.onLinkUp(lb, maxWrite)
+    }
+
+    fun disconnect(a: String, b: String) {
+        val la = "to-$b"; val lb = "to-$a"
+        edges.remove("$a/$la"); edges.remove("$b/$lb")
+        engines[a]!!.onLinkDown(la)
+        engines[b]!!.onLinkDown(lb)
     }
 }
 
@@ -178,5 +197,170 @@ class MeshEngineTest {
         net.engines["carol"]!!.onLinkDown("to-bob")
         net.scheduler.advance(70_000)
         assertEquals(listOf("bob"), net.recorders["alice"]!!.peers.map { it.nickname })
+    }
+
+    /**
+     * Store-and-forward (§13): alice knows carol, loses her, writes to her while only
+     * bob is around; bob carries the sealed envelope, later meets carol and hands it
+     * over; carol's receipt reaches alice when they meet again.
+     */
+    @Test
+    fun courierCarriesMailToAbsentPeer() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "bob", "carol").forEach { net.node(it).start() }
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!; val carol = net.engines["carol"]!!
+        net.connect("alice", "carol")
+        net.scheduler.advance(5_000)
+        net.disconnect("alice", "carol")
+        net.scheduler.advance(70_000) // carol expires from alice's peer table but her key is remembered
+        assertTrue(net.recorders["alice"]!!.peers.none { it.nickname == "carol" })
+
+        net.connect("alice", "bob")
+        net.scheduler.advance(5_000)
+        val ids = alice.sendPrivate(carol.myPeerHex, "see you at the north gate")
+        net.scheduler.advance(3_000)
+        assertEquals(ids, net.recorders["alice"]!!.queued)
+        assertEquals(ids, net.recorders["alice"]!!.carried)
+        assertEquals(1, bob.carriedCount)
+        assertEquals(2, alice.outboxState(ids[0]))
+        assertTrue(net.recorders["bob"]!!.privates.isEmpty())
+
+        net.disconnect("alice", "bob")
+        net.scheduler.advance(70_000)
+        net.connect("bob", "carol")
+        net.scheduler.advance(5_000)
+        assertEquals(listOf(ids[0] to "see you at the north gate"), net.recorders["carol"]!!.privates)
+        assertEquals(0, bob.carriedCount)
+        assertTrue(net.recorders["alice"]!!.delivered.isEmpty())
+
+        // The receipt waits for alice; the outbox copy is kept meanwhile and cleared on receipt.
+        assertEquals(1, alice.outboxCount)
+        net.disconnect("bob", "carol")
+        net.scheduler.advance(70_000)
+        net.connect("alice", "carol")
+        net.scheduler.advance(8_000)
+        assertEquals(ids, net.recorders["alice"]!!.delivered)
+        assertEquals(0, alice.outboxCount)
+        // A second copy of the same message must not surface twice.
+        assertEquals(1, net.recorders["carol"]!!.privates.size)
+    }
+
+    @Test
+    fun outboxSurvivesExportImport() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "carol").forEach { net.node(it).start() }
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        net.connect("alice", "carol"); net.scheduler.advance(5_000)
+        net.disconnect("alice", "carol"); net.scheduler.advance(70_000)
+        val ids = alice.sendPrivate(carol.myPeerHex, "kept across restarts")
+        val bytes = alice.exportState().serialize()
+        val restored = MeshState.deserialize(bytes)!!
+        assertEquals(1, restored.outbox.size)
+        assertEquals(ids[0], restored.outbox[0].messageId)
+        assertTrue(restored.known.containsKey(carol.myPeerHex))
+    }
+
+    @Test
+    fun lateJoinerGetsPublicHistory() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "bob", "carol").forEach { net.node(it).start() }
+        net.connect("alice", "bob"); net.scheduler.advance(10_000)
+        val alice = net.engines["alice"]!!
+        alice.sendPublic("first"); alice.sendPublic("second")
+        net.scheduler.advance(20_000)
+        assertEquals(listOf("alice:first", "alice:second"), net.recorders["bob"]!!.publics)
+        // Carol arrives after the fact, one hop from bob and never in range of alice.
+        // A Golomb-coded set has ~1 % false positives, so one round can miss a message;
+        // the next round's filter maps differently and picks it up.
+        net.connect("bob", "carol"); net.scheduler.advance(40_000)
+        assertEquals(listOf("alice:first", "alice:second"), net.recorders["carol"]!!.publics.sorted())
+        // Carol now carries the history herself, and alice gets nothing back she already has.
+        assertEquals(2, net.engines["carol"]!!.historyCount)
+        assertEquals(emptyList<String>(), net.recorders["alice"]!!.publics)
+        // Later rounds re-send nothing: the filter covers what carol holds, so 30 s of
+        // announces and sync requests on two links stays small.
+        val sent = net.bytesSent
+        net.scheduler.advance(30_000)
+        assertEquals(2, net.recorders["carol"]!!.publics.size)
+        assertTrue("sent ${net.bytesSent - sent}", net.bytesSent - sent < 6_000)
+    }
+
+    @Test
+    fun unsolicitedSyncReplyIsDropped() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "bob").forEach { net.node(it).start() }
+        net.connect("alice", "bob"); net.scheduler.advance(10_000)
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        val plain = Packet(type = MessageType.MESSAGE, senderId = alice.identity.peerId, timestamp = net.scheduler.now(), payload = "replayed".toByteArray())
+        val signed = plain.copy(signature = Crypto.ed25519Sign(alice.identity.signing.privateKey, PacketCodec.signingBytes(plain)!!))
+        // A reply-marked copy on a link bob never asked over is ignored; the same packet unmarked is fine.
+        bob.onLinkUp("rogue", 182)
+        bob.onBytes("rogue", PacketCodec.encode(signed.copy(ttl = 0, isRsr = true))!!)
+        net.scheduler.advance(1_000)
+        assertEquals(emptyList<String>(), net.recorders["bob"]!!.publics)
+        bob.onBytes("rogue", PacketCodec.encode(signed)!!)
+        net.scheduler.advance(1_000)
+        assertEquals(listOf("alice:replayed"), net.recorders["bob"]!!.publics)
+    }
+
+    @Test
+    fun historySurvivesExportImport() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "bob").forEach { net.node(it).start() }
+        net.connect("alice", "bob"); net.scheduler.advance(10_000)
+        net.engines["alice"]!!.sendPublic("remember me")
+        net.scheduler.advance(2_000)
+        val bob = net.engines["bob"]!!
+        val restored = MeshState.deserialize(bob.exportState().serialize())!!
+        assertEquals(1, restored.history.size)
+        assertEquals("remember me", String(restored.history[0].payload))
+        assertTrue(restored.history[0].signature != null)
+    }
+
+    @Test
+    fun blockedSenderIsHiddenButStillRelayed() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!; val carol = net.engines["carol"]!!
+        val aliceKey = alice.identity.noise.publicKey
+        bob.isBlocked = { it.contentEquals(aliceKey) }
+        alice.sendPublic("hello all")
+        alice.sendPrivate(bob.myPeerHex, "hello bob")
+        net.scheduler.advance(10_000)
+        assertEquals(emptyList<String>(), net.recorders["bob"]!!.publics)
+        assertEquals(0, net.recorders["bob"]!!.privates.size)
+        assertEquals(0, net.recorders["alice"]!!.delivered.size) // no receipt tells alice she is blocked
+        assertEquals(listOf("alice:hello all"), net.recorders["carol"]!!.publics) // bob still relays
+        carol.sendPublic("hi")
+        net.scheduler.advance(2_000)
+        assertEquals(listOf("carol:hi"), net.recorders["bob"]!!.publics)
+    }
+
+    @Test
+    fun verifyChallengeIsAnsweredOverNoise() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        alice.sendVerifyChallenge(carol.myPeerHex)
+        net.scheduler.advance(5_000)
+        assertEquals(listOf(carol.myPeerHex), net.recorders["alice"]!!.verified)
+    }
+
+    @Test
+    fun photosTravelPubliclyAndPrivately() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        val jpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte()) + ByteArray(3000) { (it * 7).toByte() }
+        val photo = org.openchat.android.core.FilePacket("img_x.jpg", "image/jpeg", jpeg)
+        assertTrue(alice.sendPublicFile(photo))
+        net.scheduler.advance(10_000)
+        assertEquals(listOf("image/jpeg" to false), net.recorders["carol"]!!.files)
+        // Private media needs a session in which carol said she takes it.
+        assertEquals(false, alice.canSendPrivateFile(carol.myPeerHex))
+        alice.sendPrivate(carol.myPeerHex, "hi")
+        net.scheduler.advance(5_000)
+        assertTrue(alice.canSendPrivateFile(carol.myPeerHex))
+        assertTrue(alice.sendPrivateFile(carol.myPeerHex, photo))
+        net.scheduler.advance(10_000)
+        assertEquals(listOf("image/jpeg" to false, "image/jpeg" to true), net.recorders["carol"]!!.files)
+        assertEquals(1, net.recorders["bob"]!!.files.size) // the relay saw only the public one
     }
 }

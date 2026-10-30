@@ -13,6 +13,9 @@
     <!-- Nostr location channels -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Voice notes (recorded only while the button is held on) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <!-- Keep the mesh relaying with the screen off -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
