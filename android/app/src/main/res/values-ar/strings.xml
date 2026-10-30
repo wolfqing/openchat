@@ -170,4 +170,16 @@
     <string name="relays_add">إضافة</string>
     <string name="relays_remove">إزالة</string>
     <string name="relays_invalid">ليس عنوان مرحّل. استخدم wss://host، أو ws://… لعناوين .onion.</string>
+    <string name="notify_quiet_message">رسالة جديدة</string>
+    <string name="notify_quiet_mention">ذكرك أحدهم</string>
+    <string name="notify_previews_title">إظهار الأسماء والنص في الإشعارات</string>
+    <string name="notify_previews_off">متوقف: يقول الإشعار فقط إن شيئًا وصل، فلا يكشف الهاتف المقفل محادثاتك لمن يحمله.</string>
+    <string name="notify_previews_on">مفعّل: تظهر الأسماء وبداية كل رسالة في الإشعارات. شاشة القفل تبقى تُظهر فقط أن شيئًا وصل.</string>
+    <string name="media_tap_to_show">اضغط للعرض</string>
+    <string name="share_channel">مشاركة</string>
+    <string name="share_channel_text">انضم إلى قناة #%1$s على bitchat أو openchat: bitchat://geohash/%1$s — أو اكتب #%1$s في قنوات المواقع.</string>
+    <string name="share_channel_warn_title">هذه منطقة صغيرة</string>
+    <string name="share_channel_warn_body">تغطي #%1$s حيًّا أو أقل. من ينقل هذا النص، مثل شركة الاتصالات أو التطبيق الذي تشارك عبره، سيعرف المكان الذي يهمك.</string>
+    <string name="share_anyway">شارك على أي حال</string>
+    <string name="cancel">إلغاء</string>
 </resources>

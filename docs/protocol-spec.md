@@ -744,3 +744,41 @@ once both bitchat clients ship them:
   `0x01` epoch (4), `0x02` tags (64), `0x03` capabilities, `0x04` bridge
   geohash. Received v2 announces are relayed and otherwise ignored.
 
+## 21. Privacy and flood protection (v0.6)
+
+### 21.1 Rate limit on incoming public messages
+
+Two token buckets, as bitchat: one per sender (capacity 5, refill 1/s)
+and one per normalised text (capacity 3, refill 0.5/s; lower case, URL
+query and fragment dropped, whitespace collapsed, first 256 characters).
+At most 2000 buckets each, idle ones (10 min) evicted first. A message over
+either limit is not shown; the mesh still relays it. History that arrives by
+sync (§14) or as a relay's stored backlog (events older than 60 s) is not
+limited, since it comes in a burst by design.
+
+### 21.2 Proof of work in location channels
+
+Outgoing kind 20000 messages carry a NIP-13 `["nonce", <16 hex>, <target>]`
+tag mined to 8 leading zero bits of the event ID (2 s budget, then half
+the difficulty with 150 ms, down to 0). An incoming event's work counts
+only if its ID really has the committed number of zero bits; 8 or more
+bits skip the per-sender bucket, never the per-text one. Work is never
+required.
+
+### 21.3 Notifications
+
+By default a notification says only "New message" or "Someone mentioned
+you": no sender, place or text. The user may turn previews on; the lock
+screen still gets the quiet form (`VISIBILITY_PRIVATE` with that public
+version). A panic wipe turns previews off again.
+
+### 21.4 Received photos
+
+A received photo is shown as coarse blocks (about 12 across) until tapped.
+
+### 21.5 Sharing a location channel
+
+A plain-text invite with a `bitchat://geohash/<cell>` link, which both
+apps open. Cells of 6 characters or more (a neighbourhood or smaller) ask
+for confirmation first, since whoever carries the text learns the place.
+

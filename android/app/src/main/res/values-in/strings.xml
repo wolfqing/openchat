@@ -150,4 +150,16 @@
     <string name="relays_add">Tambah</string>
     <string name="relays_remove">Hapus</string>
     <string name="relays_invalid">Bukan alamat relay. Gunakan wss://host, atau ws://… untuk .onion.</string>
+    <string name="notify_quiet_message">Pesan baru</string>
+    <string name="notify_quiet_mention">Seseorang menyebut Anda</string>
+    <string name="notify_previews_title">Tampilkan nama dan isi di notifikasi</string>
+    <string name="notify_previews_off">Mati: notifikasi hanya memberi tahu ada yang masuk, jadi ponsel terkunci tidak membeberkan obrolan Anda.</string>
+    <string name="notify_previews_on">Nyala: nama dan awal pesan tampil di notifikasi. Layar kunci tetap hanya menunjukkan ada yang masuk.</string>
+    <string name="media_tap_to_show">Ketuk untuk menampilkan</string>
+    <string name="share_channel">Bagikan</string>
+    <string name="share_channel_text">gabung kanal #%1$s di bitchat atau openchat: bitchat://geohash/%1$s — atau ketik #%1$s di kanal wilayah.</string>
+    <string name="share_channel_warn_title">Ini wilayah kecil</string>
+    <string name="share_channel_warn_body">#%1$s sekitar satu lingkungan atau lebih kecil. Siapa pun yang membawa teks ini, seperti operator atau aplikasi yang Anda pakai berbagi, tahu tempat mana yang Anda minati.</string>
+    <string name="share_anyway">Tetap bagikan</string>
+    <string name="cancel">Batal</string>
 </resources>

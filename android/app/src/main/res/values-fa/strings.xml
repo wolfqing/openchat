@@ -154,4 +154,16 @@
     <string name="relays_add">افزودن</string>
     <string name="relays_remove">حذف</string>
     <string name="relays_invalid">نشانی رله نیست. از wss://host یا برای ‎.onion از ws://… استفاده کنید.</string>
+    <string name="notify_quiet_message">پیام جدید</string>
+    <string name="notify_quiet_mention">کسی از شما نام برد</string>
+    <string name="notify_previews_title">نمایش نام و متن در اعلان‌ها</string>
+    <string name="notify_previews_off">خاموش: اعلان فقط می‌گوید چیزی رسیده تا گوشی قفل‌شده گفتگوهایتان را به دیگران نشان ندهد.</string>
+    <string name="notify_previews_on">روشن: نام‌ها و ابتدای هر پیام در اعلان‌ها دیده می‌شود. صفحه قفل همچنان فقط رسیدن چیزی را نشان می‌دهد.</string>
+    <string name="media_tap_to_show">برای نمایش بزنید</string>
+    <string name="share_channel">اشتراک</string>
+    <string name="share_channel_text">به کانال #%1$s در bitchat یا openchat بپیوندید: bitchat://geohash/%1$s — یا #%1$s را در کانال‌های منطقه وارد کنید.</string>
+    <string name="share_channel_warn_title">این منطقه کوچکی است</string>
+    <string name="share_channel_warn_body">#%1$s حدود یک محله یا کمتر است. هر کس این متن را جابه‌جا کند، مثل اپراتور یا برنامه‌ای که با آن به اشتراک می‌گذارید، می‌فهمد کدام مکان برایتان مهم است.</string>
+    <string name="share_anyway">به هر حال اشتراک بگذار</string>
+    <string name="cancel">لغو</string>
 </resources>

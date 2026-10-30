@@ -31,6 +31,7 @@ import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +41,7 @@ import org.openchat.android.R
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.NostrDirect
+import org.openchat.android.app.NotificationPrivacy
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.app.Social
 import org.openchat.android.app.TorState
@@ -170,6 +172,20 @@ fun VerifySection(onScan: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
         FilledTonalButton(onClick = { show = true }) { Text(stringResource(R.string.verify_show)) }
         OutlinedButton(onClick = onScan) { Text(stringResource(R.string.verify_scan)) }
+    }
+}
+
+/** Whether notifications may show sender and text; off by default (§21.3). */
+@Composable
+fun NotificationSection() {
+    val ctx = LocalContext.current
+    var show by remember { mutableStateOf(NotificationPrivacy.showPreviews(ctx)) }
+    Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.notify_previews_title), fontWeight = FontWeight.SemiBold)
+            Text(stringResource(if (show) R.string.notify_previews_on else R.string.notify_previews_off), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = show, onCheckedChange = { show = it; NotificationPrivacy.setShowPreviews(ctx, it) })
     }
 }
 

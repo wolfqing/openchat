@@ -154,4 +154,16 @@
     <string name="relays_add">Ekle</string>
     <string name="relays_remove">Kaldır</string>
     <string name="relays_invalid">Röle adresi değil. wss://host kullanın, .onion için ws://… da olur.</string>
+    <string name="notify_quiet_message">Yeni mesaj</string>
+    <string name="notify_quiet_mention">Biri sizden bahsetti</string>
+    <string name="notify_previews_title">Bildirimlerde ad ve metni göster</string>
+    <string name="notify_previews_off">Kapalı: bildirim yalnızca bir şey geldiğini söyler; kilitli telefon sohbetlerinizi eline geçirene göstermez.</string>
+    <string name="notify_previews_on">Açık: bildirimlerde ad ve mesajın başı görünür. Kilit ekranı yine yalnızca bir şey geldiğini gösterir.</string>
+    <string name="media_tap_to_show">Göstermek için dokunun</string>
+    <string name="share_channel">Paylaş</string>
+    <string name="share_channel_text">bitchat veya openchat\'te #%1$s kanalına katıl: bitchat://geohash/%1$s — ya da konum kanallarında #%1$s yaz.</string>
+    <string name="share_channel_warn_title">Bu küçük bir alan</string>
+    <string name="share_channel_warn_body">#%1$s aşağı yukarı bir mahalle ya da daha küçük. Bu metni taşıyan (operatörünüz veya paylaştığınız uygulama) hangi yerle ilgilendiğinizi öğrenir.</string>
+    <string name="share_anyway">Yine de paylaş</string>
+    <string name="cancel">İptal</string>
 </resources>

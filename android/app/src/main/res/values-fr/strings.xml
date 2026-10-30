@@ -158,4 +158,16 @@
     <string name="relays_add">Ajouter</string>
     <string name="relays_remove">Retirer</string>
     <string name="relays_invalid">Adresse de relais invalide. Utilisez wss://hôte, ou ws://… pour .onion.</string>
+    <string name="notify_quiet_message">Nouveau message</string>
+    <string name="notify_quiet_mention">Quelqu\'un vous a mentionné</string>
+    <string name="notify_previews_title">Afficher noms et texte dans les notifications</string>
+    <string name="notify_previews_off">Désactivé : la notification dit seulement que quelque chose est arrivé ; un téléphone verrouillé ne dévoile pas vos discussions.</string>
+    <string name="notify_previews_on">Activé : noms et début des messages apparaissent dans les notifications. L\'écran verrouillé n\'indique toujours qu\'une arrivée.</string>
+    <string name="media_tap_to_show">Touchez pour afficher</string>
+    <string name="share_channel">Partager</string>
+    <string name="share_channel_text">rejoins le canal #%1$s sur bitchat ou openchat : bitchat://geohash/%1$s — ou tape #%1$s dans les canaux de zone.</string>
+    <string name="share_channel_warn_title">C\'est une petite zone</string>
+    <string name="share_channel_warn_body">#%1$s couvre environ un quartier ou moins. Qui transporte ce texte, comme votre opérateur ou l\'appli de partage, saura quel lieu vous intéresse.</string>
+    <string name="share_anyway">Partager quand même</string>
+    <string name="cancel">Annuler</string>
 </resources>

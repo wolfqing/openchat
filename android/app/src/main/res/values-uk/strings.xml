@@ -162,4 +162,16 @@
     <string name="relays_add">Додати</string>
     <string name="relays_remove">Видалити</string>
     <string name="relays_invalid">Це не адреса релея. Використовуйте wss://host, для .onion — ws://….</string>
+    <string name="notify_quiet_message">Нове повідомлення</string>
+    <string name="notify_quiet_mention">Вас згадали</string>
+    <string name="notify_previews_title">Показувати імена й текст у сповіщеннях</string>
+    <string name="notify_previews_off">Вимкнено: сповіщення лише каже, що щось надійшло, тож заблокований телефон не видасть ваші розмови.</string>
+    <string name="notify_previews_on">Увімкнено: у сповіщеннях видно імена й початок повідомлень. Екран блокування, як і раніше, лише повідомляє про нове.</string>
+    <string name="media_tap_to_show">Торкніться, щоб показати</string>
+    <string name="share_channel">Поділитися</string>
+    <string name="share_channel_text">заходь у канал #%1$s у bitchat чи openchat: bitchat://geohash/%1$s — або введи #%1$s у каналах місцевості.</string>
+    <string name="share_channel_warn_title">Це невелика ділянка</string>
+    <string name="share_channel_warn_body">#%1$s — це приблизно квартал або менше. Той, хто передає цей текст (оператор зв\'язку, застосунок для надсилання), дізнається, яке місце вас цікавить.</string>
+    <string name="share_anyway">Усе одно поділитися</string>
+    <string name="cancel">Скасувати</string>
 </resources>

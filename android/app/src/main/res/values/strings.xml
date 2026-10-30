@@ -168,4 +168,16 @@
     <string name="relays_add">Add</string>
     <string name="relays_remove">Remove</string>
     <string name="relays_invalid">Not a relay address. Use wss://host, or ws://… for .onion.</string>
+    <string name="notify_quiet_message">New message</string>
+    <string name="notify_quiet_mention">Someone mentioned you</string>
+    <string name="notify_previews_title">Show names and text in notifications</string>
+    <string name="notify_previews_off">Off: a notification only says that something arrived, so a locked phone does not read your chats out to whoever holds it.</string>
+    <string name="notify_previews_on">On: names and the start of each message appear in notifications. The lock screen still shows only that something arrived.</string>
+    <string name="media_tap_to_show">Tap to show</string>
+    <string name="share_channel">Share</string>
+    <string name="share_channel_text">join the #%1$s channel on bitchat or openchat: bitchat://geohash/%1$s — or type #%1$s under location channels.</string>
+    <string name="share_channel_warn_title">This is a small area</string>
+    <string name="share_channel_warn_body">#%1$s covers about a neighbourhood or less. Whoever carries this text, such as your phone carrier or the app you share it with, learns which place you care about.</string>
+    <string name="share_anyway">Share anyway</string>
+    <string name="cancel">Cancel</string>
 </resources>

@@ -158,4 +158,16 @@
     <string name="relays_add">Añadir</string>
     <string name="relays_remove">Quitar</string>
     <string name="relays_invalid">No es una dirección de relé. Usa wss://host, o ws://… para .onion.</string>
+    <string name="notify_quiet_message">Mensaje nuevo</string>
+    <string name="notify_quiet_mention">Alguien te mencionó</string>
+    <string name="notify_previews_title">Mostrar nombres y texto en las notificaciones</string>
+    <string name="notify_previews_off">Apagado: la notificación solo avisa de que llegó algo, así un teléfono bloqueado no muestra tus chats a quien lo tenga.</string>
+    <string name="notify_previews_on">Encendido: aparecen nombres y el inicio de cada mensaje. La pantalla de bloqueo sigue mostrando solo que llegó algo.</string>
+    <string name="media_tap_to_show">Toca para ver</string>
+    <string name="share_channel">Compartir</string>
+    <string name="share_channel_text">únete al canal #%1$s en bitchat u openchat: bitchat://geohash/%1$s — o escribe #%1$s en los canales de zona.</string>
+    <string name="share_channel_warn_title">Es una zona pequeña</string>
+    <string name="share_channel_warn_body">#%1$s abarca un barrio o menos. Quien transporte este texto, como tu operador o la app con la que lo compartas, sabrá qué lugar te interesa.</string>
+    <string name="share_anyway">Compartir igualmente</string>
+    <string name="cancel">Cancelar</string>
 </resources>

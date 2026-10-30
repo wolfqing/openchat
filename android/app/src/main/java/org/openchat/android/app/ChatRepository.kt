@@ -160,6 +160,12 @@ object ChatRepository {
 
     fun clearUnread(conversation: String) = _unread.update { it - conversation }
 
+    /** A message sent before its final ID existed (location channels mine proof of work first). */
+    fun replaceId(conversation: String, oldId: String, newId: String, state: DeliveryState) = _messages.update { all ->
+        val list = all[conversation] ?: return@update all
+        all + (conversation to list.map { if (it.id == oldId) it.copy(id = newId, state = state) else it })
+    }
+
     fun addLocal(conversation: String, text: String) {
         val now = System.currentTimeMillis()
         add(ChatMessage("local-$now-${text.hashCode()}", conversation, "", "", text, now, mine = true, system = true))

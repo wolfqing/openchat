@@ -56,7 +56,7 @@ class Recorder : MeshListener {
     override fun onFile(senderHex: String, nickname: String, file: org.openchat.android.core.FilePacket, isPrivate: Boolean, timestamp: Long) { files += file.mimeType.orEmpty() to isPrivate }
     override fun onVerified(peerHex: String) { verified += peerHex }
     override fun onPeersChanged(peers: List<MeshPeer>) { this.peers = peers }
-    override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long) { publics += "$nickname:$text" }
+    override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean) { publics += "$nickname:$text" }
     override fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) { privates += messageId to text }
     override fun onDelivered(peerHex: String, messageId: String) { delivered += messageId }
     override fun onRead(peerHex: String, messageId: String) { reads += messageId }

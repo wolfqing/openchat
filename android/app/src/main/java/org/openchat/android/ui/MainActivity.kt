@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
         onboarded.value = prefs.getBoolean("onboarded", false)
         refreshPermissionState()
         if (onboarded.value && !missingPermissions.value) MeshService.start(this)
+        if (onboarded.value) openLink(intent)
 
         setContent {
             OpenChatTheme {
@@ -76,6 +77,22 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        openLink(intent)
+    }
+
+    /** `bitchat://geohash/<cell>` from a shared invite (§21.5) opens that location channel. */
+    private fun openLink(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (uri.scheme != "bitchat" || uri.host != "geohash") return
+        val cell = uri.pathSegments.firstOrNull()?.lowercase() ?: return
+        if (!org.openchat.android.nostr.Geohash.isValid(cell) || cell.length < 2) return
+        val here = org.openchat.android.app.ChatRepository.geo.value.locationGeohash
+        org.openchat.android.app.ChatRepository.controller?.joinGeo(cell, teleported = here?.startsWith(cell) != true)
+        org.openchat.android.app.ChatRepository.requestOpen(org.openchat.android.app.Conversation.Geo(cell).key)
     }
 
     override fun onResume() {
