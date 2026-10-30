@@ -22,6 +22,7 @@ import android.os.HandlerThread
 import android.os.IBinder
 import android.os.SystemClock
 import org.openchat.android.R
+import org.openchat.android.core.BoardPost
 import org.openchat.android.core.FilePacket
 import org.openchat.android.core.Mentions
 import org.openchat.android.core.NoisePayloadType
@@ -70,6 +71,11 @@ class MeshService : Service(), ChatController {
     private lateinit var socialStore: SealedFile
     private lateinit var nostr: NostrDirect
     private lateinit var tor: Tor
+    private lateinit var groups: GroupManager
+    private lateinit var bridge: Bridge
+    private val vouching = Vouching { engine }
+    private lateinit var liveVoice: LiveVoice
+    @Volatile private var capture: Pair<LiveCapture, String>? = null // recording now, and its chat
     private lateinit var nostrSeenStore: SealedFile
     private val publicLimiter = RateLimiter()
     private val nostrSeen = LinkedHashSet<String>() // message IDs already shown from Nostr, kept across restarts
@@ -125,6 +131,7 @@ class MeshService : Service(), ChatController {
             override fun pending(linkId: String) = ble.pending(linkId)
         }, listener)
         stateStore.load()?.let { s -> engine.importState(s); s.known.forEach { (hex, k) -> noiseKeys[hex] = k.noiseKey } }
+        publishBoard()
         // Route relay traffic before any relay socket opens (§19).
         tor = Tor(this) { s -> ChatRepository.updateGeo { it.copy(tor = s) } }
         tor.apply()
@@ -142,11 +149,18 @@ class MeshService : Service(), ChatController {
         nostr.setExtraRelays(Social.state.value.relays)
         nostr.start()
         // Installed only now that everything it touches exists.
-        Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)); nostr.setExtraRelays(s.relays) } }
+        Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)); nostr.setExtraRelays(s.relays); vouching.attemptAll() } }
         ble = BleTransport(this, handler) { engine }
-        geo = GeoChannels(RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText()), identity.nostrSeed, { engine.identity.nickname }) { from, text ->
+        val directory = RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText())
+        bridge = Bridge(this, directory, { engine }, { geo }, { task -> handler.post(task) }) { s -> ChatRepository.setBridge(s) }
+        geo = GeoChannels(directory, identity.nostrSeed, { engine.identity.nickname }) { from, text ->
             notifyMention(from, text)
         }
+        liveVoice = LiveVoice(this, handler)
+        geo.onLive = { ev, g -> handler.post { bridge.onChannelEvent(ev, g) } }
+        geo.onOfflineSend = { ev, g -> handler.post { bridge.uplinkChannelEvent(ev, g) } }
+        groups = GroupManager(this, SealedFile(this, "groups.bin"), { engine }) { from, text -> notifyPrivate(from, text) }
+        handler.post { groups.load() }
         ChatRepository.controller = this
         registerReceiver(btReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
         handler.post {
@@ -183,6 +197,7 @@ class MeshService : Service(), ChatController {
         }
         geo.close()
         nostr.close()
+        bridge.close()
         tor.stop()
         ChatRepository.updateMesh { it.copy(running = false, links = 0) }
         super.onDestroy()
@@ -200,6 +215,7 @@ class MeshService : Service(), ChatController {
 
     private fun periodic() {
         publishStatus()
+        bridge.tick()
         tor.poll()
         handler.postDelayed({ periodic() }, 5_000)
     }
@@ -232,10 +248,12 @@ class MeshService : Service(), ChatController {
             peers.forEach { noiseKeys[it.peerIdHex] = it.noisePublicKey }
             ChatRepository.setPeers(peers)
             ChatRepository.updateMesh { it.copy(links = engine.linkCount) }
+            vouching.attemptAll() // a capability-bearing announce can land after the session
         }
 
         override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean) {
             // Synced history arrives in a burst by design; only live traffic is limited.
+            bridge.onRadioMessage(senderHex, timestamp, text)
             if (!replayed && !publicLimiter.allow("mesh:$senderHex", text)) return
             val me = engine.identity
             val ambiguous = ChatRepository.peers.value.any { it.peerIdHex != me.peerIdHex && it.nickname.equals(me.nickname, ignoreCase = true) }
@@ -266,6 +284,8 @@ class MeshService : Service(), ChatController {
         override fun onFile(senderHex: String, nickname: String, file: FilePacket, isPrivate: Boolean, timestamp: Long) {
             val kind = file.kind ?: return
             val stored = Media.store(this@MeshService, file.content, FilePacket.extension(file.mimeType))
+            // The finished note of a live burst we already show takes over that bubble (§29).
+            if (kind == FilePacket.Kind.AUDIO && liveVoice.absorb(senderHex, isPrivate, file.fileName, stored)) return
             val conv = if (isPrivate) Conversation.Private(senderHex).key else Conversation.Mesh.key
             ChatRepository.rememberName(senderHex, nickname)
             ChatRepository.add(ChatMessage("file-${stored.nameWithoutExtension}", conv, nickname, senderHex, "", minOf(timestamp, System.currentTimeMillis()), mine = false,
@@ -275,9 +295,38 @@ class MeshService : Service(), ChatController {
             }
         }
 
+        override fun onGroupState(peerHex: String, sessionKey: ByteArray, invite: Boolean, payload: ByteArray) =
+            groups.onState(peerHex, sessionKey, invite, payload)
+
+        override fun onGroupMessage(payload: ByteArray, timestamp: Long) = groups.onMessage(payload, timestamp)
+
+        override fun onCarrier(senderHex: String, payload: ByteArray, directed: Boolean) = bridge.onCarrier(senderHex, payload, directed)
+
+        override fun onDrop(envelope: ByteArray, recipientTagHex: String, expiresAt: Long) = bridge.deposit(envelope, recipientTagHex, expiresAt)
+
+        override fun onBoardChanged(arrived: BoardPost?, live: Boolean) {
+            publishBoard()
+            arrived ?: return
+            ChatRepository.addBoardUnseen()
+            // Only something happening now earns a line in the chat; synced history just counts.
+            if (arrived.urgent && live && System.currentTimeMillis() - arrived.createdAt < 10 * 60_000L) {
+                // The post carries a signing key, not a peer ID; name it by peer only if we have met them.
+                val who = engine.peersSnapshot().firstOrNull { it.signingPublicKey.contentEquals(arrived.authorKey) }
+                    ?.let { PeerLabel.mesh(it.nickname, it.peerIdHex).toString() } ?: arrived.nickname
+                ChatRepository.addLocal(Conversation.Mesh.key, getString(R.string.board_urgent_line, who, arrived.content.take(200)))
+            }
+        }
+
         override fun onVerified(peerHex: String) {
             engine.noiseKeyOf(peerHex)?.let { Social.setVerified(sha256(it).toHex(), true) }
         }
+
+        override fun onSessionEstablished(peerHex: String) { vouching.attempt(peerHex) }
+
+        override fun onVoiceFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean) =
+            liveVoice.onFrame(senderHex, nickname, content, isPrivate)
+
+        override fun onVouch(peerHex: String, sessionKey: ByteArray, signingKey: ByteArray, batch: ByteArray) = vouching.receive(sessionKey, signingKey, batch)
 
         // Coalesce bursts of changes into one write.
         override fun onStateChanged() { handler.removeCallbacks(saveState); handler.postDelayed(saveState, 500) }
@@ -364,7 +413,7 @@ class MeshService : Service(), ChatController {
         val id = engine.identity
         val now = System.currentTimeMillis()
         ChatRepository.add(ChatMessage("${id.peerIdHex}-$now", Conversation.Mesh.key, id.nickname, id.peerIdHex, text, now, mine = true))
-        handler.post { engine.sendPublic(text) }
+        handler.post { engine.sendPublic(text).takeIf { it > 0 }?.let { bridge.outgoing(text, it) } }
     }
 
     override fun sendPrivate(peerHex: String, text: String) {
@@ -501,10 +550,10 @@ class MeshService : Service(), ChatController {
         return true
     }
 
-    override fun sendMedia(conversation: String, bytes: ByteArray, mime: String): Int {
+    override fun sendMedia(conversation: String, bytes: ByteArray, mime: String, fileName: String?): Int {
         if (bytes.size > Media.MAX_SEND_BYTES) return R.string.media_too_big
         if (conversation.startsWith("geo:")) return R.string.media_geo_unsupported
-        val file = FilePacket((if (mime.startsWith("audio")) "voice_" else "img_") + java.util.UUID.randomUUID() + "." + FilePacket.extension(mime), mime, bytes)
+        val file = FilePacket(fileName ?: ((if (mime.startsWith("audio")) "voice_" else "img_") + java.util.UUID.randomUUID() + "." + FilePacket.extension(mime)), mime, bytes)
         val kind = file.kind ?: return R.string.media_too_big
         val peerHex = conversation.removePrefix("dm:").takeIf { conversation.startsWith("dm:") }
         // The capability check reads engine state and the copy touches disk: both belong on the mesh
@@ -524,7 +573,69 @@ class MeshService : Service(), ChatController {
         return 0
     }
 
+    override fun startVoice(conversation: String): Boolean {
+        capture?.first?.cancel()
+        // Live where a burst can go: Nearby, or a private chat with a session up (§29).
+        val peerHex = conversation.removePrefix("dm:").takeIf { conversation.startsWith("dm:") }
+        val live = LiveVoicePrefs.enabled(this) && (conversation == Conversation.Mesh.key || peerHex != null)
+        val c = LiveCapture(this, live) { packet -> handler.post { engine.sendVoiceFrame(peerHex, packet) } }
+        if (!c.start()) return false
+        capture = c to conversation
+        return true
+    }
+
+    override fun finishVoice(): Boolean {
+        val (c, conversation) = capture ?: return false
+        capture = null
+        val f = c.finish() ?: return false
+        val bytes = f.readBytes().also { f.delete() }
+        val reason = sendMedia(conversation, bytes, "audio/mp4", f.name)
+        if (reason != 0) ChatRepository.addLocal(conversation, getString(reason))
+        return true
+    }
+
+    override fun cancelVoice() { capture?.first?.cancel(); capture = null }
+
     override fun setTor(on: Boolean) = tor.setWanted(on)
+
+    override fun setBridge(on: Boolean) { handler.post { bridge.setEnabled(on) } }
+
+    override fun postToBoard(text: String, urgent: Boolean, days: Int): Boolean =
+        java.util.concurrent.FutureTask { engine.postToBoard(text, urgent, days) }.also { handler.post(it) }.get()
+    override fun deleteBoardPost(idHex: String) { handler.post { engine.deleteBoardPost(idHex) } }
+
+    /** The board as the UI shows it: urgent first, then newest. Runs on the mesh thread. */
+    private fun publishBoard() {
+        val me = engine.identity.signing.publicKey
+        ChatRepository.setBoard(engine.boardPosts().map { p ->
+            BoardItem(p.idHex, p.nickname, p.authorKey.toHex(), p.content, p.createdAt, p.expiresAt, p.urgent, p.authorKey.contentEquals(me), p.geohash)
+        }.sortedWith(compareByDescending<BoardItem> { it.urgent }.thenByDescending { it.createdAt }))
+    }
+
+    override fun ping(peerHex: String, label: String, conversation: String) {
+        handler.post {
+            engine.ping(peerHex) { r ->
+                ChatRepository.addLocal(conversation, when {
+                    r == null -> getString(R.string.cmd_ping_none, label)
+                    r.hops == null -> getString(R.string.cmd_pong, label, r.rttMs.toInt())
+                    r.hops == 1 -> getString(R.string.cmd_pong_direct, label, r.rttMs.toInt())
+                    else -> getString(R.string.cmd_pong_hops, label, r.rttMs.toInt(), r.hops)
+                })
+            }
+        }
+    }
+
+    override fun estimatePath(peerHex: String): List<String>? = java.util.concurrent.FutureTask {
+        val names = engine.peersSnapshot().associate { it.peerIdHex to it.nickname }
+        engine.estimatePath(peerHex)?.map { hex -> PeerLabel.mesh(names[hex], hex).toString() }
+    }.also { handler.post(it) }.get()
+
+    override fun createGroup(name: String): String? =
+        java.util.concurrent.FutureTask { groups.create(name) }.also { handler.post(it) }.get()
+    override fun groupInvite(idHex: String, peerHex: String) { handler.post { groups.invite(idHex, peerHex) } }
+    override fun groupRemove(idHex: String, fingerprint: String) { handler.post { groups.remove(idHex, fingerprint) } }
+    override fun groupLeave(idHex: String) { handler.post { groups.leave(idHex) } }
+    override fun sendGroup(idHex: String, text: String) { handler.post { groups.send(idHex, text) } }
 
     override fun watchNotes(cell: String?) = geo.watchNotes(cell?.take(NOTE_PRECISION))
 
@@ -551,6 +662,7 @@ class MeshService : Service(), ChatController {
      * no timelines, no channels, no caches. No confirmation by design.
      */
     override fun panic() {
+        cancelVoice()
         ChatRepository.wipe()
         NotificationPrivacy.reset(this)
         Social.wipe()
@@ -564,6 +676,9 @@ class MeshService : Service(), ChatController {
         tor.wipeAndRestart(Handler(mainLooper), delayMs = 2_000L + (Math.random() * 6_000).toLong())
         handler.post {
             handler.removeCallbacks(saveState)
+            bridge.wipe()
+            groups.wipe()
+            liveVoice.wipe()
             stateStore.destroy()
             socialStore.delete()
             store.destroy()

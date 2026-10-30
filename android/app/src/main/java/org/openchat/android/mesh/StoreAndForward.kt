@@ -2,6 +2,7 @@ package org.openchat.android.mesh
 
 import org.openchat.android.core.ByteReader
 import org.openchat.android.core.ByteWriter
+import org.openchat.android.core.BoardStore
 import org.openchat.android.core.CourierEnvelope
 import org.openchat.android.core.Packet
 import org.openchat.android.core.PacketCodec
@@ -36,7 +37,13 @@ class MeshState(
     val outbox: List<QueuedMessage>,
     val carried: List<CarriedEnvelope>,
     val history: List<Packet> = emptyList(),
+    val board: List<BoardStore.Entry> = emptyList(), // signed posts and tombstones (§23)
+    val localPrekeys: ByteArray? = null, // our one-time prekey privates (§27)
+    val bundles: List<StoredBundle> = emptyList(), // others' verified prekey bundles
 ) {
+    /** A cached bundle with what we already spent of it. */
+    class StoredBundle(val packet: Packet, val used: Set<Long>, val assigned: Map<String, Long>)
+
     fun serialize(): ByteArray {
         val w = ByteWriter(1024)
         w.u8(VERSION)
@@ -63,11 +70,23 @@ class MeshState(
         val frames = history.mapNotNull { PacketCodec.encode(it) }
         w.u16(frames.size)
         for (f in frames) { w.u16(f.size).bytes(f) }
+        val boards = board.mapNotNull { e -> PacketCodec.encode(e.packet)?.let { it to e.retainUntil } }
+        w.u16(boards.size)
+        for ((f, until) in boards) { w.u16(f.size).bytes(f); w.u64(until) }
+        val local = localPrekeys ?: ByteArray(0)
+        w.u16(local.size).bytes(local)
+        val stored = bundles.mapNotNull { b -> PacketCodec.encode(b.packet)?.let { it to b } }
+        w.u16(stored.size)
+        for ((f, b) in stored) {
+            w.u16(f.size).bytes(f)
+            w.u8(b.used.size); b.used.forEach { w.u32(it) }
+            w.u8(b.assigned.size); b.assigned.forEach { (id, k) -> str(w, id); w.u32(k) }
+        }
         return w.toByteArray()
     }
 
     companion object {
-        private const val VERSION = 2
+        private const val VERSION = 4
 
         private fun str(w: ByteWriter, s: String) { val b = s.toByteArray(Charsets.UTF_8); w.u16(b.size).bytes(b) }
         private fun str(r: ByteReader): String? { val n = r.u16() ?: return null; return String(r.bytes(n) ?: return null, Charsets.UTF_8) }
@@ -113,7 +132,28 @@ class MeshState(
                     PacketCodec.decode(frame)?.let { history.add(it) }
                 }
             }
-            return MeshState(known, outbox, carried, history)
+            val board = ArrayList<BoardStore.Entry>()
+            if (version >= 3) {
+                repeat(r.u16() ?: return null) {
+                    val frame = r.bytes(r.u16() ?: return null) ?: return null
+                    val until = r.u64() ?: return null
+                    PacketCodec.decode(frame)?.let { board.add(BoardStore.Entry(it, until)) }
+                }
+            }
+            var local: ByteArray? = null
+            val bundles = ArrayList<StoredBundle>()
+            if (version >= 4) {
+                local = r.bytes(r.u16() ?: return null)?.takeIf { it.isNotEmpty() }
+                repeat(r.u16() ?: return null) {
+                    val frame = r.bytes(r.u16() ?: return null) ?: return null
+                    val used = HashSet<Long>()
+                    repeat(r.u8() ?: return null) { used.add(r.u32() ?: return null) }
+                    val assigned = LinkedHashMap<String, Long>()
+                    repeat(r.u8() ?: return null) { val id = str(r) ?: return null; assigned[id] = r.u32() ?: return null }
+                    PacketCodec.decode(frame)?.let { bundles.add(StoredBundle(it, used, assigned)) }
+                }
+            }
+            return MeshState(known, outbox, carried, history, board, local, bundles)
         }
     }
 }

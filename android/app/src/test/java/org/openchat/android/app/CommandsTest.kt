@@ -53,4 +53,15 @@ class CommandsTest {
         assertTrue("/drop" in Commands.available("geo:wtw3s"))
         assertFalse("/drop" in Commands.available("mesh"))
     }
+
+    @Test
+    fun payChecksTheTokenAndGuardsSharedChats() {
+        val token = "cashuA" + java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(
+            """{"token":[{"mint":"https://mint.example.com","proofs":[{"amount":21,"id":"x","secret":"s","C":"c"}]}],"unit":"sat"}""".toByteArray())
+        assertEquals(Commands.Outcome.Local(Commands.Note.PAY_NOT_TOKEN), run("/pay hello"))
+        assertEquals(Commands.Outcome.Local(Commands.Note.PAY_INVALID), run("/pay cashuB" + "A".repeat(20)))
+        assertEquals(Commands.Outcome.Local(Commands.Note.PAY_CONFIRM_PUBLIC), run("/pay $token"))
+        assertEquals(Commands.Outcome.Pay(token, "21 sat", false), run("/pay $token public"))
+        assertEquals(Commands.Outcome.Pay(token, "21 sat", true), run("/pay cashu:$token", conv = "dm:0011223344556677"))
+    }
 }
