@@ -170,4 +170,37 @@
     <string name="share_channel_warn_body">#%1$s cobre mais ou menos um bairro ou menos. Quem levar este texto, como a operadora ou o app usado para compartilhar, saberá qual lugar te interessa.</string>
     <string name="share_anyway">Compartilhar mesmo assim</string>
     <string name="cancel">Cancelar</string>
+    <string name="cmd_help_group">/group create nome · /group invite @nome · /group remove @nome · /group leave · /group list — grupos privados</string>
+    <string name="group_new">Novo grupo</string>
+    <string name="group_name_hint">Nome do grupo</string>
+    <string name="group_new_note">Até 16 pessoas que você encontrar por perto. Só membros conseguem ler; você decide quem entra.</string>
+    <string name="group_create">Criar</string>
+    <plurals name="group_members">
+        <item quantity="one">%d membro</item>
+        <item quantity="other">%d membros</item>
+    </plurals>
+    <string name="group_status">%1$s · criptografia de ponta a ponta</string>
+    <string name="group_members_title">Membros</string>
+    <string name="group_empty">Só membros leem este grupo. As mensagens viajam pela malha como as públicas, seladas com a chave do grupo, e chegam aos membros ao alcance.</string>
+    <string name="group_placeholder">Mensagem para #%1$s…</string>
+    <string name="group_you">você</string>
+    <string name="group_creator">criador</string>
+    <string name="group_remove">Remover</string>
+    <string name="group_invite_title">Convidar alguém por perto</string>
+    <string name="group_invite">Convidar</string>
+    <string name="group_none_nearby">Ninguém por perto para convidar.</string>
+    <string name="group_creator_manages">Só o criador pode convidar ou remover pessoas.</string>
+    <string name="group_leave">Sair do grupo</string>
+    <string name="group_created">#%1$s criado. Abra Membros para convidar pessoas por perto.</string>
+    <string name="group_creator_only">só o criador do grupo pode fazer isso</string>
+    <string name="group_not_connected">%1$s precisa estar por perto e conectado</string>
+    <string name="group_already">%1$s já está no grupo</string>
+    <string name="group_full">um grupo comporta no máximo %1$d pessoas</string>
+    <string name="group_invited">%1$s convidado para #%2$s; a chave do grupo mudou</string>
+    <string name="group_removed_member">%1$s removido; a chave mudou e não lerá as novas mensagens</string>
+    <string name="group_left">você saiu de #%1$s</string>
+    <string name="group_removed_from">você foi removido de #%1$s</string>
+    <string name="group_joined">%2$s adicionou você a #%1$s</string>
+    <string name="group_none">você não está em nenhum grupo</string>
+    <string name="group_open_first">abra primeiro a conversa do grupo</string>
 </resources>

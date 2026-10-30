@@ -182,4 +182,37 @@
     <string name="share_channel_warn_body">تغطي #%1$s حيًّا أو أقل. من ينقل هذا النص، مثل شركة الاتصالات أو التطبيق الذي تشارك عبره، سيعرف المكان الذي يهمك.</string>
     <string name="share_anyway">شارك على أي حال</string>
     <string name="cancel">إلغاء</string>
+    <string name="cmd_help_group">/group create name · /group invite @name · /group remove @name · /group leave · /group list — مجموعات خاصة</string>
+    <string name="group_new">مجموعة جديدة</string>
+    <string name="group_name_hint">اسم المجموعة</string>
+    <string name="group_new_note">حتى 16 شخصًا تلتقيهم بالقرب منك. لا يقرؤها إلا الأعضاء، وأنت تقرر من ينضم.</string>
+    <string name="group_create">إنشاء</string>
+    <plurals name="group_members">
+        <item quantity="one">%d أعضاء</item>
+        <item quantity="other">%d أعضاء</item>
+    </plurals>
+    <string name="group_status">%1$s · مشفّرة طرفيًا</string>
+    <string name="group_members_title">الأعضاء</string>
+    <string name="group_empty">لا يقرأ هذه المجموعة إلا أعضاؤها. تنتقل الرسائل عبر الشبكة كالرسائل العامة، مشفرة بمفتاح المجموعة، وتصل إلى الأعضاء ضمن النطاق.</string>
+    <string name="group_placeholder">راسل #%1$s…</string>
+    <string name="group_you">أنت</string>
+    <string name="group_creator">المنشئ</string>
+    <string name="group_remove">إزالة</string>
+    <string name="group_invite_title">ادعُ شخصًا قريبًا</string>
+    <string name="group_invite">دعوة</string>
+    <string name="group_none_nearby">لا أحد قريب لدعوته.</string>
+    <string name="group_creator_manages">المنشئ وحده يدعو الأشخاص أو يزيلهم.</string>
+    <string name="group_leave">مغادرة المجموعة</string>
+    <string name="group_created">تم إنشاء #%1$s. افتح «الأعضاء» لدعوة من حولك.</string>
+    <string name="group_creator_only">وحده منشئ المجموعة يستطيع ذلك</string>
+    <string name="group_not_connected">يجب أن يكون %1$s قريبًا ومتصلًا لدعوته</string>
+    <string name="group_already">%1$s موجود في المجموعة بالفعل</string>
+    <string name="group_full">تتسع المجموعة لـ %1$d أشخاص كحد أقصى</string>
+    <string name="group_invited">تمت دعوة %1$s إلى #%2$s؛ تغيّر مفتاح المجموعة</string>
+    <string name="group_removed_member">تمت إزالة %1$s؛ تغيّر المفتاح فلن يقرأ الرسائل الجديدة</string>
+    <string name="group_left">غادرت #%1$s</string>
+    <string name="group_removed_from">تمت إزالتك من #%1$s</string>
+    <string name="group_joined">أضافك %2$s إلى #%1$s</string>
+    <string name="group_none">لست في أي مجموعة</string>
+    <string name="group_open_first">افتح محادثة المجموعة أولًا</string>
 </resources>

@@ -162,4 +162,37 @@
     <string name="share_channel_warn_body">#%1$s chỉ khoảng một khu phố hoặc nhỏ hơn. Ai chuyển đoạn văn này, như nhà mạng hay ứng dụng bạn dùng để chia sẻ, sẽ biết bạn quan tâm nơi nào.</string>
     <string name="share_anyway">Vẫn chia sẻ</string>
     <string name="cancel">Hủy</string>
+    <string name="cmd_help_group">/group create tên · /group invite @tên · /group remove @tên · /group leave · /group list — nhóm riêng</string>
+    <string name="group_new">Nhóm mới</string>
+    <string name="group_name_hint">Tên nhóm</string>
+    <string name="group_new_note">Tối đa 16 người bạn gặp ở gần. Chỉ thành viên đọc được; bạn quyết định ai được vào.</string>
+    <string name="group_create">Tạo</string>
+    <plurals name="group_members">
+        <item quantity="one">%d thành viên</item>
+        <item quantity="other">%d thành viên</item>
+    </plurals>
+    <string name="group_status">%1$s · mã hóa đầu cuối</string>
+    <string name="group_members_title">Thành viên</string>
+    <string name="group_empty">Chỉ thành viên đọc được nhóm này. Tin nhắn đi qua mạng lưới như tin công khai, được niêm phong bằng khóa nhóm và đến các thành viên trong tầm.</string>
+    <string name="group_placeholder">Nhắn vào #%1$s…</string>
+    <string name="group_you">bạn</string>
+    <string name="group_creator">người tạo</string>
+    <string name="group_remove">Mời ra</string>
+    <string name="group_invite_title">Mời người ở gần</string>
+    <string name="group_invite">Mời</string>
+    <string name="group_none_nearby">Không có ai ở gần để mời.</string>
+    <string name="group_creator_manages">Chỉ người tạo mới mời hoặc mời ra được.</string>
+    <string name="group_leave">Rời nhóm</string>
+    <string name="group_created">Đã tạo #%1$s. Mở Thành viên để mời người ở gần.</string>
+    <string name="group_creator_only">chỉ người tạo nhóm mới làm được</string>
+    <string name="group_not_connected">%1$s phải ở gần và đang kết nối mới mời được</string>
+    <string name="group_already">%1$s đã ở trong nhóm</string>
+    <string name="group_full">một nhóm tối đa %1$d người</string>
+    <string name="group_invited">đã mời %1$s vào #%2$s; khóa nhóm đã đổi</string>
+    <string name="group_removed_member">đã mời %1$s ra; khóa đã đổi nên họ không đọc được tin mới</string>
+    <string name="group_left">đã rời #%1$s</string>
+    <string name="group_removed_from">bạn đã bị mời ra khỏi #%1$s</string>
+    <string name="group_joined">%2$s đã thêm bạn vào #%1$s</string>
+    <string name="group_none">bạn chưa ở nhóm nào</string>
+    <string name="group_open_first">hãy mở cuộc trò chuyện của nhóm trước</string>
 </resources>

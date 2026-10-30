@@ -70,6 +70,7 @@ class MeshService : Service(), ChatController {
     private lateinit var socialStore: SealedFile
     private lateinit var nostr: NostrDirect
     private lateinit var tor: Tor
+    private lateinit var groups: GroupManager
     private lateinit var nostrSeenStore: SealedFile
     private val publicLimiter = RateLimiter()
     private val nostrSeen = LinkedHashSet<String>() // message IDs already shown from Nostr, kept across restarts
@@ -142,6 +143,8 @@ class MeshService : Service(), ChatController {
         geo = GeoChannels(RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText()), identity.nostrSeed, { engine.identity.nickname }) { from, text ->
             notifyMention(from, text)
         }
+        groups = GroupManager(this, SealedFile(this, "groups.bin"), { engine }) { from, text -> notifyPrivate(from, text) }
+        handler.post { groups.load() }
         ChatRepository.controller = this
         registerReceiver(btReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
         handler.post {
@@ -269,6 +272,11 @@ class MeshService : Service(), ChatController {
                 notifyPrivate(PeerLabel.mesh(nickname, senderHex).toString(), getString(if (kind == FilePacket.Kind.AUDIO) R.string.media_voice else R.string.media_photo))
             }
         }
+
+        override fun onGroupState(peerHex: String, sessionKey: ByteArray, invite: Boolean, payload: ByteArray) =
+            groups.onState(peerHex, sessionKey, invite, payload)
+
+        override fun onGroupMessage(payload: ByteArray, timestamp: Long) = groups.onMessage(payload, timestamp)
 
         override fun onVerified(peerHex: String) {
             engine.noiseKeyOf(peerHex)?.let { Social.setVerified(sha256(it).toHex(), true) }
@@ -521,6 +529,13 @@ class MeshService : Service(), ChatController {
 
     override fun setTor(on: Boolean) = tor.setWanted(on)
 
+    override fun createGroup(name: String): String? =
+        java.util.concurrent.FutureTask { groups.create(name) }.also { handler.post(it) }.get()
+    override fun groupInvite(idHex: String, peerHex: String) { handler.post { groups.invite(idHex, peerHex) } }
+    override fun groupRemove(idHex: String, fingerprint: String) { handler.post { groups.remove(idHex, fingerprint) } }
+    override fun groupLeave(idHex: String) { handler.post { groups.leave(idHex) } }
+    override fun sendGroup(idHex: String, text: String) { handler.post { groups.send(idHex, text) } }
+
     override fun watchNotes(cell: String?) = geo.watchNotes(cell?.take(NOTE_PRECISION))
 
     @SuppressLint("MissingPermission")
@@ -555,6 +570,7 @@ class MeshService : Service(), ChatController {
         startInForeground()
         handler.post {
             handler.removeCallbacks(saveState)
+            groups.wipe()
             stateStore.destroy()
             socialStore.delete()
             store.destroy()

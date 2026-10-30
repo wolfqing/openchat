@@ -322,7 +322,7 @@ First byte is the payload type, the rest is its body.
 | `0x01` | privateMessage | TLVs: `0x00` message ID (UTF-8 ≤ 255), `0x01` content (UTF-8 ≤ 255). 1-byte type, 1-byte length. Both required |
 | `0x02` | readReceipt | original message ID, UTF-8 |
 | `0x03` | delivered | message ID, UTF-8 |
-| `0x06`, `0x07` | group invite, key update | not in v0.1 |
+| `0x06`, `0x07` | group invite, key update | §22.2 |
 | `0x08` | voice frame | not in v0.1 |
 | `0x10`, `0x11` | verify challenge, response | §16.2 |
 | `0x12` | vouch | not in v0.1 |
@@ -390,7 +390,7 @@ ID) and keeps running. This is local behaviour and needs no wire support.
 - courier envelope v2 (sealed to a one-time prekey, TLV `0x05`): openchat
   carries and hands over such envelopes but cannot open one addressed to it
 - the bridge courier drop (envelopes parked on Nostr relays)
-- files other than images and audio, live push-to-talk voice, groups, boards, prekeys, ping/pong, source-route
+- files other than images and audio, live push-to-talk voice, boards, prekeys, ping/pong, source-route
   origination, peer ID rotation (`announceV2`, still a draft upstream)
 
 ## 13. Store-and-forward (v0.4)
@@ -781,4 +781,49 @@ A received photo is shown as coarse blocks (about 12 across) until tapped.
 A plain-text invite with a `bitchat://geohash/<cell>` link, which both
 apps open. Cells of 6 characters or more (a neighbourhood or smaller) ask
 for confirmation first, since whoever carries the text learns the place.
+
+## 22. Private groups (v0.6)
+
+Creator-managed groups of at most 16, as bitchat's v1: the creator signs
+the roster and the key; messages are sealed with the group key and flooded
+like public messages. Group TLVs below use a 1-byte type and a **2-byte**
+big-endian length; unknown types are skipped.
+
+### 22.1 Group state
+
+| Type | Value |
+|---|---|
+| `0x01` | group ID, 16 random bytes |
+| `0x02` | name, UTF-8 (≤ 40 characters) |
+| `0x03` | key, 32 bytes, for this epoch |
+| `0x04` | epoch, BE32, starts at 1 and rises on every roster change |
+| `0x05` | roster: count byte, then per member the 32-byte fingerprint (SHA-256 of the Noise key), the 32-byte Ed25519 key, a length byte and the nickname (≤ 64 bytes, cut on a character boundary) |
+| `0x06` | creator fingerprint, 32 bytes |
+| `0x07` | Ed25519 signature by the creator over `"bitchat-group-v1"` ‖ group ID ‖ BE32 epoch ‖ SHA-256(key) ‖ SHA-256(roster bytes) ‖ SHA-256(name) |
+
+### 22.2 Invites and key updates
+
+State travels only inside a Noise session (§8.3): `groupInvite` (`0x06`) to
+a new member, `groupKeyUpdate` (`0x07`) to the others. A receiver accepts it
+only if the session peer's fingerprint is the creator fingerprint, the
+signature verifies with the creator's key in the roster, it is in the
+roster itself, and, for a group it already holds, the creator (fingerprint
+and key) is unchanged and the epoch does not go down. A valid state without
+the receiver in the roster removes the group. Every invite and removal
+draws a new random key and raises the epoch; a removed member is sent that
+state with an all-zero key so it learns it is out. Leaving is local. Members
+who are away when the key changes miss it (v1 limitation, as upstream).
+
+### 22.3 Group messages (`0x25`)
+
+Broadcast, unsigned outer packet, TTL 7, relayed like a public message.
+Payload TLVs: `0x01` group ID, `0x02` BE32 epoch, `0x03` 12-byte nonce,
+`0x04` ciphertext ‖ 16-byte tag. ChaCha20-Poly1305 with the epoch key and
+additional data group ID ‖ BE32 epoch. Inside: `0x01` message ID, `0x02`
+sender Ed25519 key, `0x03` nickname, `0x04` BE64 timestamp ms, `0x05`
+content, `0x06` Ed25519 signature over `"bitchat-group-msg-v1"` ‖ group ID ‖
+BE32 epoch ‖ message ID ‖ BE64 timestamp ‖ content. A member shows a message
+only for the current epoch, with a valid signature from a key in the roster,
+not its own, not blocked. Group messages are kept for history sync (§14,
+type bit 10, newest 200, 900 s) so members who were away catch up.
 

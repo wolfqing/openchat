@@ -162,4 +162,37 @@
     <string name="share_channel_warn_body">#%1$s 大約是一個街區或更小的範圍。經手這段文字的人或服務（例如電信業者、你用來分享的應用）會知道你關心的是哪裡。</string>
     <string name="share_anyway">仍然分享</string>
     <string name="cancel">取消</string>
+    <string name="cmd_help_group">/group create 名字 · /group invite @名字 · /group remove @名字 · /group leave · /group list — 私密群組</string>
+    <string name="group_new">新增群組</string>
+    <string name="group_name_hint">群組名稱</string>
+    <string name="group_new_note">最多 16 人，只能邀請身邊遇到的人。只有成員能看到內容，由你決定誰在群裡。</string>
+    <string name="group_create">建立</string>
+    <plurals name="group_members">
+        <item quantity="one">%d 名成員</item>
+        <item quantity="other">%d 名成員</item>
+    </plurals>
+    <string name="group_status">%1$s · 端對端加密</string>
+    <string name="group_members_title">成員</string>
+    <string name="group_empty">只有成員能看到這個群組。訊息像公開訊息一樣經網狀網傳遞，但用群組金鑰加密，範圍內的成員都能收到。</string>
+    <string name="group_placeholder">傳到 #%1$s…</string>
+    <string name="group_you">你</string>
+    <string name="group_creator">群主</string>
+    <string name="group_remove">移出</string>
+    <string name="group_invite_title">邀請身邊的人</string>
+    <string name="group_invite">邀請</string>
+    <string name="group_none_nearby">身邊沒有可以邀請的人。</string>
+    <string name="group_creator_manages">只有群主能邀請或移出成員。</string>
+    <string name="group_leave">退出群組</string>
+    <string name="group_created">已建立 #%1$s。點「成員」邀請身邊的人。</string>
+    <string name="group_creator_only">只有群主能這樣做</string>
+    <string name="group_not_connected">%1$s 需要在身邊並已連線才能邀請</string>
+    <string name="group_already">%1$s 已經在群裡了</string>
+    <string name="group_full">群組最多 %1$d 人</string>
+    <string name="group_invited">已邀請 %1$s 加入 #%2$s，群組金鑰已更換</string>
+    <string name="group_removed_member">已移出 %1$s；群組金鑰已更換，對方讀不到新訊息</string>
+    <string name="group_left">已退出 #%1$s</string>
+    <string name="group_removed_from">你被移出了 #%1$s</string>
+    <string name="group_joined">%2$s 把你加入了 #%1$s</string>
+    <string name="group_none">你還沒有加入任何群組</string>
+    <string name="group_open_first">請先打開這個群組的聊天</string>
 </resources>

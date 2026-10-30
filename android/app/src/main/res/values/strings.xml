@@ -180,4 +180,37 @@
     <string name="share_channel_warn_body">#%1$s covers about a neighbourhood or less. Whoever carries this text, such as your phone carrier or the app you share it with, learns which place you care about.</string>
     <string name="share_anyway">Share anyway</string>
     <string name="cancel">Cancel</string>
+    <string name="cmd_help_group">/group create name · /group invite @name · /group remove @name · /group leave · /group list — private groups</string>
+    <string name="group_new">New group</string>
+    <string name="group_name_hint">Group name</string>
+    <string name="group_new_note">Up to 16 people you meet nearby. Only members can read it; you decide who is in.</string>
+    <string name="group_create">Create</string>
+    <plurals name="group_members">
+        <item quantity="one">%d member</item>
+        <item quantity="other">%d members</item>
+    </plurals>
+    <string name="group_status">%1$s · end-to-end encrypted</string>
+    <string name="group_members_title">Members</string>
+    <string name="group_empty">Only members can read this group. Messages travel over the mesh like public ones, sealed with the group\'s key, and reach members within range.</string>
+    <string name="group_placeholder">Message #%1$s…</string>
+    <string name="group_you">you</string>
+    <string name="group_creator">creator</string>
+    <string name="group_remove">Remove</string>
+    <string name="group_invite_title">Invite someone nearby</string>
+    <string name="group_invite">Invite</string>
+    <string name="group_none_nearby">No one nearby to invite.</string>
+    <string name="group_creator_manages">Only the creator can invite or remove people.</string>
+    <string name="group_leave">Leave group</string>
+    <string name="group_created">created #%1$s. Open Members to invite people nearby.</string>
+    <string name="group_creator_only">only the group\'s creator can do that</string>
+    <string name="group_not_connected">%1$s must be nearby and connected to be invited</string>
+    <string name="group_already">%1$s is already in the group</string>
+    <string name="group_full">a group holds at most %1$d people</string>
+    <string name="group_invited">invited %1$s to #%2$s; the group key changed</string>
+    <string name="group_removed_member">removed %1$s; the group key changed, so they cannot read new messages</string>
+    <string name="group_left">left #%1$s</string>
+    <string name="group_removed_from">you were removed from #%1$s</string>
+    <string name="group_joined">%2$s added you to #%1$s</string>
+    <string name="group_none">you are in no groups</string>
+    <string name="group_open_first">open the group\'s chat first</string>
 </resources>

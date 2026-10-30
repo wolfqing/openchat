@@ -166,4 +166,37 @@
     <string name="share_channel_warn_body">#%1$s حدود یک محله یا کمتر است. هر کس این متن را جابه‌جا کند، مثل اپراتور یا برنامه‌ای که با آن به اشتراک می‌گذارید، می‌فهمد کدام مکان برایتان مهم است.</string>
     <string name="share_anyway">به هر حال اشتراک بگذار</string>
     <string name="cancel">لغو</string>
+    <string name="cmd_help_group">/group create name · /group invite @name · /group remove @name · /group leave · /group list — گروه‌های خصوصی</string>
+    <string name="group_new">گروه جدید</string>
+    <string name="group_name_hint">نام گروه</string>
+    <string name="group_new_note">تا ۱۶ نفر که نزدیک خود می‌بینید. فقط اعضا می‌توانند بخوانند؛ شما تصمیم می‌گیرید چه کسی عضو باشد.</string>
+    <string name="group_create">ایجاد</string>
+    <plurals name="group_members">
+        <item quantity="one">%d عضو</item>
+        <item quantity="other">%d عضو</item>
+    </plurals>
+    <string name="group_status">%1$s · رمزگذاری سرتاسری</string>
+    <string name="group_members_title">اعضا</string>
+    <string name="group_empty">فقط اعضا این گروه را می‌خوانند. پیام‌ها مانند پیام‌های عمومی در شبکه می‌روند، با کلید گروه مهر شده‌اند و به اعضای در دسترس می‌رسند.</string>
+    <string name="group_placeholder">پیام به #%1$s…</string>
+    <string name="group_you">شما</string>
+    <string name="group_creator">سازنده</string>
+    <string name="group_remove">حذف</string>
+    <string name="group_invite_title">دعوت از کسی در نزدیکی</string>
+    <string name="group_invite">دعوت</string>
+    <string name="group_none_nearby">کسی در نزدیکی برای دعوت نیست.</string>
+    <string name="group_creator_manages">فقط سازنده می‌تواند دعوت یا حذف کند.</string>
+    <string name="group_leave">ترک گروه</string>
+    <string name="group_created">#%1$s ساخته شد. برای دعوت افراد نزدیک «اعضا» را باز کنید.</string>
+    <string name="group_creator_only">فقط سازنده گروه می‌تواند این کار را بکند</string>
+    <string name="group_not_connected">%1$s باید نزدیک و متصل باشد تا دعوت شود</string>
+    <string name="group_already">%1$s از قبل در گروه است</string>
+    <string name="group_full">هر گروه حداکثر %1$d نفر دارد</string>
+    <string name="group_invited">%1$s به #%2$s دعوت شد؛ کلید گروه عوض شد</string>
+    <string name="group_removed_member">%1$s حذف شد؛ کلید عوض شد و پیام‌های تازه را نمی‌خواند</string>
+    <string name="group_left">#%1$s را ترک کردید</string>
+    <string name="group_removed_from">شما از #%1$s حذف شدید</string>
+    <string name="group_joined">%2$s شما را به #%1$s افزود</string>
+    <string name="group_none">در هیچ گروهی نیستید</string>
+    <string name="group_open_first">ابتدا گفتگوی گروه را باز کنید</string>
 </resources>

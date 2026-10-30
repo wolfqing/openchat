@@ -166,4 +166,37 @@
     <string name="share_channel_warn_body">#%1$s aşağı yukarı bir mahalle ya da daha küçük. Bu metni taşıyan (operatörünüz veya paylaştığınız uygulama) hangi yerle ilgilendiğinizi öğrenir.</string>
     <string name="share_anyway">Yine de paylaş</string>
     <string name="cancel">İptal</string>
+    <string name="cmd_help_group">/group create ad · /group invite @ad · /group remove @ad · /group leave · /group list — özel gruplar</string>
+    <string name="group_new">Yeni grup</string>
+    <string name="group_name_hint">Grup adı</string>
+    <string name="group_new_note">Yakında karşılaştığınız en fazla 16 kişi. Yalnızca üyeler okuyabilir; kimin olacağına siz karar verirsiniz.</string>
+    <string name="group_create">Oluştur</string>
+    <plurals name="group_members">
+        <item quantity="one">%d üye</item>
+        <item quantity="other">%d üye</item>
+    </plurals>
+    <string name="group_status">%1$s · uçtan uca şifreli</string>
+    <string name="group_members_title">Üyeler</string>
+    <string name="group_empty">Bu grubu yalnızca üyeler okuyabilir. Mesajlar ağda herkese açık olanlar gibi dolaşır, grup anahtarıyla mühürlenir ve menzildeki üyelere ulaşır.</string>
+    <string name="group_placeholder">#%1$s grubuna mesaj…</string>
+    <string name="group_you">siz</string>
+    <string name="group_creator">kurucu</string>
+    <string name="group_remove">Çıkar</string>
+    <string name="group_invite_title">Yakındaki birini davet et</string>
+    <string name="group_invite">Davet et</string>
+    <string name="group_none_nearby">Davet edilecek yakında kimse yok.</string>
+    <string name="group_creator_manages">Yalnızca kurucu davet edebilir veya çıkarabilir.</string>
+    <string name="group_leave">Gruptan ayrıl</string>
+    <string name="group_created">#%1$s oluşturuldu. Yakındakileri davet etmek için Üyeler\'i açın.</string>
+    <string name="group_creator_only">bunu yalnızca grubun kurucusu yapabilir</string>
+    <string name="group_not_connected">davet için %1$s yakında ve bağlı olmalı</string>
+    <string name="group_already">%1$s zaten grupta</string>
+    <string name="group_full">bir grup en fazla %1$d kişi</string>
+    <string name="group_invited">%1$s, #%2$s grubuna davet edildi; grup anahtarı değişti</string>
+    <string name="group_removed_member">%1$s çıkarıldı; anahtar değişti, yeni mesajları okuyamaz</string>
+    <string name="group_left">#%1$s grubundan ayrıldınız</string>
+    <string name="group_removed_from">#%1$s grubundan çıkarıldınız</string>
+    <string name="group_joined">%2$s sizi #%1$s grubuna ekledi</string>
+    <string name="group_none">hiçbir grupta değilsiniz</string>
+    <string name="group_open_first">önce grubun sohbetini açın</string>
 </resources>

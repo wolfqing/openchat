@@ -22,6 +22,11 @@ object Commands {
         data class Unblock(val name: String) : Outcome()
         data class Favorite(val person: Person, val on: Boolean) : Outcome()
         data class Drop(val text: String) : Outcome()
+        data class GroupCreate(val name: String) : Outcome()
+        data class GroupInvite(val person: Person) : Outcome()
+        data class GroupRemove(val name: String) : Outcome()
+        object GroupLeave : Outcome()
+        object GroupList : Outcome()
     }
 
     /** Commands offered as suggestions, by context. */
@@ -29,7 +34,7 @@ object Commands {
         val base = listOf("/msg", "/who", "/clear", "/hug", "/slap", "/block", "/unblock", "/help")
         return when {
             conversation.startsWith("geo:") -> base + "/drop"
-            else -> base + listOf("/fav", "/unfav")
+            else -> base + listOf("/fav", "/unfav", "/group")
         }
     }
 
@@ -73,6 +78,19 @@ object Commands {
                 val p = find(targetName) ?: dmPeer?.takeIf { targetName.isEmpty() }
                     ?: return if (targetName.isEmpty()) Outcome.Local(Note.USAGE, "$cmd @name") else Outcome.Local(Note.NOT_FOUND, targetName)
                 Outcome.Favorite(p, cmd == "/fav")
+            }
+            "/group" -> {
+                if (geo) return Outcome.Local(Note.MESH_ONLY)
+                val rest = args.substringAfter(' ', "").trim()
+                when (args.substringBefore(' ').lowercase()) {
+                    "create" -> if (rest.isEmpty()) Outcome.Local(Note.USAGE, "/group create name") else Outcome.GroupCreate(rest)
+                    "invite" -> find(rest.substringBefore(' '))?.let { Outcome.GroupInvite(it) }
+                        ?: if (rest.isEmpty()) Outcome.Local(Note.USAGE, "/group invite @name") else Outcome.Local(Note.NOT_FOUND, rest)
+                    "remove" -> if (rest.isEmpty()) Outcome.Local(Note.USAGE, "/group remove @name") else Outcome.GroupRemove(rest.removePrefix("@"))
+                    "leave" -> Outcome.GroupLeave
+                    "list" -> Outcome.GroupList
+                    else -> Outcome.Local(Note.USAGE, "/group create | invite | remove | leave | list")
+                }
             }
             "/drop" -> if (args.isEmpty()) Outcome.Local(Note.USAGE, "/drop message") else Outcome.Drop(args)
             else -> Outcome.Local(Note.UNKNOWN, cmd)

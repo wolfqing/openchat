@@ -174,4 +174,37 @@
     <string name="share_channel_warn_body">#%1$s — це приблизно квартал або менше. Той, хто передає цей текст (оператор зв\'язку, застосунок для надсилання), дізнається, яке місце вас цікавить.</string>
     <string name="share_anyway">Усе одно поділитися</string>
     <string name="cancel">Скасувати</string>
+    <string name="cmd_help_group">/group create ім\'я · /group invite @ім\'я · /group remove @ім\'я · /group leave · /group list — закриті групи</string>
+    <string name="group_new">Нова група</string>
+    <string name="group_name_hint">Назва групи</string>
+    <string name="group_new_note">До 16 людей, яких ви зустріли поруч. Читати можуть лише учасники; хто в групі, вирішуєте ви.</string>
+    <string name="group_create">Створити</string>
+    <plurals name="group_members">
+        <item quantity="one">Учасників: %d</item>
+        <item quantity="other">Учасників: %d</item>
+    </plurals>
+    <string name="group_status">%1$s · наскрізне шифрування</string>
+    <string name="group_members_title">Учасники</string>
+    <string name="group_empty">Цю групу читають лише учасники. Повідомлення йдуть мережею як публічні, але запечатані ключем групи й доходять до учасників у зоні досяжності.</string>
+    <string name="group_placeholder">Повідомлення в #%1$s…</string>
+    <string name="group_you">ви</string>
+    <string name="group_creator">творець</string>
+    <string name="group_remove">Видалити</string>
+    <string name="group_invite_title">Запросити когось поруч</string>
+    <string name="group_invite">Запросити</string>
+    <string name="group_none_nearby">Поруч нема кого запросити.</string>
+    <string name="group_creator_manages">Запрошувати й видаляти може лише творець.</string>
+    <string name="group_leave">Вийти з групи</string>
+    <string name="group_created">Групу #%1$s створено. Відкрийте «Учасники», щоб запросити тих, хто поруч.</string>
+    <string name="group_creator_only">це може лише творець групи</string>
+    <string name="group_not_connected">%1$s має бути поруч і на зв\'язку</string>
+    <string name="group_already">%1$s уже в групі</string>
+    <string name="group_full">у групі щонайбільше %1$d людей</string>
+    <string name="group_invited">%1$s запрошено до #%2$s; ключ групи змінено</string>
+    <string name="group_removed_member">%1$s видалено; ключ змінено, нові повідомлення не прочитати</string>
+    <string name="group_left">ви вийшли з #%1$s</string>
+    <string name="group_removed_from">вас видалили з #%1$s</string>
+    <string name="group_joined">%2$s додав(ла) вас до #%1$s</string>
+    <string name="group_none">ви не в жодній групі</string>
+    <string name="group_open_first">спершу відкрийте чат групи</string>
 </resources>

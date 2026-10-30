@@ -52,6 +52,10 @@ class Recorder : MeshListener {
     val queued = ArrayList<String>()
     val carried = ArrayList<String>()
     val verified = ArrayList<String>()
+    val groupStates = ArrayList<Pair<String, Boolean>>() // sender peer, invite
+    val groupMessages = ArrayList<ByteArray>()
+    override fun onGroupState(peerHex: String, sessionKey: ByteArray, invite: Boolean, payload: ByteArray) { groupStates += peerHex to invite }
+    override fun onGroupMessage(payload: ByteArray, timestamp: Long) { groupMessages += payload }
     val files = ArrayList<Pair<String, Boolean>>() // mime, private
     override fun onFile(senderHex: String, nickname: String, file: org.openchat.android.core.FilePacket, isPrivate: Boolean, timestamp: Long) { files += file.mimeType.orEmpty() to isPrivate }
     override fun onVerified(peerHex: String) { verified += peerHex }
@@ -486,5 +490,34 @@ class MeshEngineTest {
         net.connect("alice", "bob")
         net.scheduler.advance(5_000)
         assertTrue(bob.peersSnapshot().any { it.peerIdHex == alice.myPeerHex && it.signingPublicKey.contentEquals(alice.identity.signing.publicKey) })
+    }
+
+    @Test
+    fun groupStateGoesOverNoiseAndMessagesFloodAndSync() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        alice.sendGroupState(carol.myPeerHex, invite = true, payload = byteArrayOf(1, 2, 3))
+        net.scheduler.advance(5_000)
+        assertEquals(listOf(alice.myPeerHex to true), net.recorders["carol"]!!.groupStates)
+        assertEquals(0, net.recorders["bob"]!!.groupStates.size)
+        alice.broadcastGroupMessage(byteArrayOf(7, 7, 7))
+        net.scheduler.advance(5_000)
+        assertEquals(1, net.recorders["carol"]!!.groupMessages.size) // relayed through bob
+        assertEquals(1, net.recorders["bob"]!!.groupMessages.size)   // bob sees it but cannot open it
+        // Dave turns up later next to carol and gets the sealed message by history sync.
+        net.node("dave").start()
+        net.connect("carol", "dave"); net.scheduler.advance(40_000)
+        assertEquals(1, net.recorders["dave"]!!.groupMessages.size)
+    }
+
+    @Test
+    fun aSyncCopyDoesNotCancelTheRelay() {
+        // Same timing as the group test: alice's broadcast lands while bob's sync request to her is
+        // in flight, so bob gets her sync reply while his relay to carol is still waiting.
+        val net = line()
+        net.scheduler.advance(5_000)
+        net.engines["alice"]!!.sendPublic("first light")
+        net.scheduler.advance(5_000)
+        assertEquals(listOf("alice:first light"), net.recorders["carol"]!!.publics)
     }
 }

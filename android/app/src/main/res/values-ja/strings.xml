@@ -162,4 +162,37 @@
     <string name="share_channel_warn_body">#%1$s は街区程度かそれより狭い範囲です。この文を運ぶ相手（通信会社や共有に使うアプリなど）に、あなたが気にかけている場所が分かります。</string>
     <string name="share_anyway">それでも共有</string>
     <string name="cancel">キャンセル</string>
+    <string name="cmd_help_group">/group create 名前 · /group invite @名前 · /group remove @名前 · /group leave · /group list — プライベートグループ</string>
+    <string name="group_new">新しいグループ</string>
+    <string name="group_name_hint">グループ名</string>
+    <string name="group_new_note">近くで会った人を最大16人まで。読めるのはメンバーだけで、誰を入れるかはあなたが決めます。</string>
+    <string name="group_create">作成</string>
+    <plurals name="group_members">
+        <item quantity="one">メンバー%d人</item>
+        <item quantity="other">メンバー%d人</item>
+    </plurals>
+    <string name="group_status">%1$s · エンドツーエンド暗号化</string>
+    <string name="group_members_title">メンバー</string>
+    <string name="group_empty">このグループを読めるのはメンバーだけです。メッセージは公開メッセージと同じくメッシュを流れますが、グループの鍵で封をされ、範囲内のメンバーに届きます。</string>
+    <string name="group_placeholder">#%1$s にメッセージ…</string>
+    <string name="group_you">あなた</string>
+    <string name="group_creator">作成者</string>
+    <string name="group_remove">外す</string>
+    <string name="group_invite_title">近くの人を招待</string>
+    <string name="group_invite">招待</string>
+    <string name="group_none_nearby">招待できる人が近くにいません。</string>
+    <string name="group_creator_manages">招待や削除ができるのは作成者だけです。</string>
+    <string name="group_leave">グループを抜ける</string>
+    <string name="group_created">#%1$s を作成しました。「メンバー」から近くの人を招待できます。</string>
+    <string name="group_creator_only">それはグループの作成者だけができます</string>
+    <string name="group_not_connected">招待するには %1$s が近くで接続されている必要があります</string>
+    <string name="group_already">%1$s はすでにメンバーです</string>
+    <string name="group_full">グループは最大%1$d人です</string>
+    <string name="group_invited">%1$s を #%2$s に招待しました。グループの鍵を更新しました</string>
+    <string name="group_removed_member">%1$s を外しました。鍵を更新したので新しいメッセージは読めません</string>
+    <string name="group_left">#%1$s を抜けました</string>
+    <string name="group_removed_from">#%1$s から外されました</string>
+    <string name="group_joined">%2$s があなたを #%1$s に追加しました</string>
+    <string name="group_none">参加しているグループはありません</string>
+    <string name="group_open_first">先にグループのチャットを開いてください</string>
 </resources>

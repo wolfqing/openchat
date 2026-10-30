@@ -166,4 +166,37 @@
     <string name="share_channel_warn_body">#%1$s लगभग एक मोहल्ला या उससे छोटा है। जो भी यह संदेश आगे पहुँचाएगा, जैसे आपका ऑपरेटर या शेयर करने वाला ऐप, जान जाएगा कि आपकी रुचि किस जगह में है।</string>
     <string name="share_anyway">फिर भी शेयर करें</string>
     <string name="cancel">रद्द करें</string>
+    <string name="cmd_help_group">/group create name · /group invite @name · /group remove @name · /group leave · /group list — निजी समूह</string>
+    <string name="group_new">नया समूह</string>
+    <string name="group_name_hint">समूह का नाम</string>
+    <string name="group_new_note">आस-पास मिले अधिकतम 16 लोग। केवल सदस्य पढ़ सकते हैं; कौन रहेगा, यह आप तय करते हैं।</string>
+    <string name="group_create">बनाएँ</string>
+    <plurals name="group_members">
+        <item quantity="one">%d सदस्य</item>
+        <item quantity="other">%d सदस्य</item>
+    </plurals>
+    <string name="group_status">%1$s · एंड-टू-एंड एन्क्रिप्टेड</string>
+    <string name="group_members_title">सदस्य</string>
+    <string name="group_empty">इस समूह को केवल सदस्य पढ़ सकते हैं। संदेश सार्वजनिक संदेशों की तरह मेश से जाते हैं, समूह की कुंजी से बंद, और दायरे में मौजूद सदस्यों तक पहुँचते हैं।</string>
+    <string name="group_placeholder">#%1$s को संदेश…</string>
+    <string name="group_you">आप</string>
+    <string name="group_creator">निर्माता</string>
+    <string name="group_remove">हटाएँ</string>
+    <string name="group_invite_title">आस-पास किसी को आमंत्रित करें</string>
+    <string name="group_invite">आमंत्रित करें</string>
+    <string name="group_none_nearby">आस-पास आमंत्रित करने के लिए कोई नहीं।</string>
+    <string name="group_creator_manages">केवल निर्माता लोगों को जोड़ या हटा सकता है।</string>
+    <string name="group_leave">समूह छोड़ें</string>
+    <string name="group_created">#%1$s बनाया गया। आस-पास के लोगों को जोड़ने के लिए सदस्य खोलें।</string>
+    <string name="group_creator_only">यह केवल समूह का निर्माता कर सकता है</string>
+    <string name="group_not_connected">आमंत्रण के लिए %1$s का पास और जुड़ा होना ज़रूरी है</string>
+    <string name="group_already">%1$s पहले से समूह में है</string>
+    <string name="group_full">एक समूह में अधिकतम %1$d लोग</string>
+    <string name="group_invited">%1$s को #%2$s में जोड़ा; समूह की कुंजी बदल गई</string>
+    <string name="group_removed_member">%1$s को हटाया; कुंजी बदल गई, वे नए संदेश नहीं पढ़ सकेंगे</string>
+    <string name="group_left">#%1$s छोड़ दिया</string>
+    <string name="group_removed_from">आपको #%1$s से हटा दिया गया</string>
+    <string name="group_joined">%2$s ने आपको #%1$s में जोड़ा</string>
+    <string name="group_none">आप किसी समूह में नहीं हैं</string>
+    <string name="group_open_first">पहले समूह की चैट खोलें</string>
 </resources>

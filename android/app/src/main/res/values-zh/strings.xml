@@ -174,4 +174,37 @@
     <string name="share_channel_warn_body">#%1$s 大约是一个街区或更小的范围。经手这段文字的人或服务（比如运营商、你用来分享的应用）会知道你关心的是哪里。</string>
     <string name="share_anyway">仍然分享</string>
     <string name="cancel">取消</string>
+    <string name="cmd_help_group">/group create 名字 · /group invite @名字 · /group remove @名字 · /group leave · /group list — 私密群组</string>
+    <string name="group_new">新建群组</string>
+    <string name="group_name_hint">群组名称</string>
+    <string name="group_new_note">最多 16 人，只能邀请身边遇到的人。只有成员能看到内容，由你决定谁在群里。</string>
+    <string name="group_create">创建</string>
+    <plurals name="group_members">
+        <item quantity="one">%d 名成员</item>
+        <item quantity="other">%d 名成员</item>
+    </plurals>
+    <string name="group_status">%1$s · 端到端加密</string>
+    <string name="group_members_title">成员</string>
+    <string name="group_empty">只有成员能看到这个群组。消息像公共消息一样经网状网传递，但用群组密钥加密，范围内的成员都能收到。</string>
+    <string name="group_placeholder">发到 #%1$s…</string>
+    <string name="group_you">你</string>
+    <string name="group_creator">群主</string>
+    <string name="group_remove">移出</string>
+    <string name="group_invite_title">邀请身边的人</string>
+    <string name="group_invite">邀请</string>
+    <string name="group_none_nearby">身边没有可以邀请的人。</string>
+    <string name="group_creator_manages">只有群主能邀请或移出成员。</string>
+    <string name="group_leave">退出群组</string>
+    <string name="group_created">已创建 #%1$s。点「成员」邀请身边的人。</string>
+    <string name="group_creator_only">只有群主能这样做</string>
+    <string name="group_not_connected">%1$s 需要在身边并已连接才能邀请</string>
+    <string name="group_already">%1$s 已经在群里了</string>
+    <string name="group_full">群组最多 %1$d 人</string>
+    <string name="group_invited">已邀请 %1$s 加入 #%2$s，群组密钥已更换</string>
+    <string name="group_removed_member">已移出 %1$s；群组密钥已更换，对方读不到新消息</string>
+    <string name="group_left">已退出 #%1$s</string>
+    <string name="group_removed_from">你被移出了 #%1$s</string>
+    <string name="group_joined">%2$s 把你加入了 #%1$s</string>
+    <string name="group_none">你还没有加入任何群组</string>
+    <string name="group_open_first">请先打开这个群组的聊天</string>
 </resources>

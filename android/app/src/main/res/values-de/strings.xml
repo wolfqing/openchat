@@ -166,4 +166,37 @@
     <string name="share_channel_warn_body">#%1$s umfasst etwa ein Viertel oder weniger. Wer diesen Text transportiert, etwa dein Mobilfunkanbieter oder die App zum Teilen, erfährt, welcher Ort dich interessiert.</string>
     <string name="share_anyway">Trotzdem teilen</string>
     <string name="cancel">Abbrechen</string>
+    <string name="cmd_help_group">/group create Name · /group invite @Name · /group remove @Name · /group leave · /group list — private Gruppen</string>
+    <string name="group_new">Neue Gruppe</string>
+    <string name="group_name_hint">Gruppenname</string>
+    <string name="group_new_note">Bis zu 16 Leute, die du in der Nähe triffst. Nur Mitglieder können mitlesen; du bestimmst, wer dabei ist.</string>
+    <string name="group_create">Erstellen</string>
+    <plurals name="group_members">
+        <item quantity="one">%d Mitglied</item>
+        <item quantity="other">%d Mitglieder</item>
+    </plurals>
+    <string name="group_status">%1$s · Ende-zu-Ende-verschlüsselt</string>
+    <string name="group_members_title">Mitglieder</string>
+    <string name="group_empty">Nur Mitglieder können diese Gruppe lesen. Nachrichten laufen wie öffentliche über das Mesh, mit dem Gruppenschlüssel versiegelt, und erreichen Mitglieder in Reichweite.</string>
+    <string name="group_placeholder">Nachricht an #%1$s…</string>
+    <string name="group_you">du</string>
+    <string name="group_creator">Ersteller</string>
+    <string name="group_remove">Entfernen</string>
+    <string name="group_invite_title">Jemanden in der Nähe einladen</string>
+    <string name="group_invite">Einladen</string>
+    <string name="group_none_nearby">Niemand in der Nähe zum Einladen.</string>
+    <string name="group_creator_manages">Nur der Ersteller kann einladen oder entfernen.</string>
+    <string name="group_leave">Gruppe verlassen</string>
+    <string name="group_created">#%1$s erstellt. Unter „Mitglieder“ Leute in der Nähe einladen.</string>
+    <string name="group_creator_only">das kann nur der Ersteller der Gruppe</string>
+    <string name="group_not_connected">%1$s muss in der Nähe und verbunden sein</string>
+    <string name="group_already">%1$s ist schon in der Gruppe</string>
+    <string name="group_full">eine Gruppe fasst höchstens %1$d Leute</string>
+    <string name="group_invited">%1$s zu #%2$s eingeladen; der Gruppenschlüssel ist neu</string>
+    <string name="group_removed_member">%1$s entfernt; neuer Schlüssel, neue Nachrichten sind für sie nicht lesbar</string>
+    <string name="group_left">#%1$s verlassen</string>
+    <string name="group_removed_from">du wurdest aus #%1$s entfernt</string>
+    <string name="group_joined">%2$s hat dich zu #%1$s hinzugefügt</string>
+    <string name="group_none">du bist in keiner Gruppe</string>
+    <string name="group_open_first">öffne zuerst den Chat der Gruppe</string>
 </resources>

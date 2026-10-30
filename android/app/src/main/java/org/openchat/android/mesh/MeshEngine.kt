@@ -71,6 +71,13 @@ interface MeshListener {
     fun onFile(senderHex: String, nickname: String, file: FilePacket, isPrivate: Boolean, timestamp: Long) {}
     /** The peer proved it holds the keys from the verification QR we scanned (§16.2). */
     fun onVerified(peerHex: String) {}
+    /**
+     * Group state arrived inside the Noise session with [peerHex] (§22.2). [sessionKey] is the
+     * Noise static key that session authenticated, so the caller can check it is the creator.
+     */
+    fun onGroupState(peerHex: String, sessionKey: ByteArray, invite: Boolean, payload: ByteArray) {}
+    /** A sealed group message (§22.3); only members can open it. */
+    fun onGroupMessage(payload: ByteArray, timestamp: Long) {}
 }
 
 /**
@@ -106,6 +113,7 @@ class MeshEngine(
         var lastUsed = startedAt
         var messagesSent = 0
         var decryptFailures = 0
+        var remoteStatic: ByteArray? = null // the Noise key the handshake proved
         val established get() = send != null
         val pending get() = handshake != null && send == null
         fun wipe() { send?.clear(); recv?.clear(); send = null; recv = null }
@@ -135,6 +143,7 @@ class MeshEngine(
     private val peerCaps = HashMap<String, Long>() // from authenticated peer state, per peer (§18.2)
     // History sync (§14).
     private val history = LinkedHashMap<String, Packet>() // packet ID hex -> verified public message
+    private val groupHistory = LinkedHashMap<String, Packet>() // packet ID hex -> sealed group message (§22.3)
     private var myAnnounce: Packet? = null
     private val pendingSync = HashMap<String, Long>()     // peer hex -> when we last asked it
     private val syncReplies = HashMap<String, ArrayList<Long>>() // peer hex -> times we answered it
@@ -189,7 +198,7 @@ class MeshEngine(
         identity = newIdentity
         peers.clear(); sessions.values.forEach { it.wipe() }; sessions.clear(); candidates.clear(); pendingNoise.clear(); lastHandshakeStart.clear(); earlyCiphertexts.clear()
         known.clear(); outbox.clear(); carried.clear(); seenIds.clear(); acked.clear(); pendingAcks.clear()
-        history.clear(); pendingVerify.clear(); peerCaps.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
+        history.clear(); groupHistory.clear(); pendingVerify.clear(); peerCaps.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
         pendingRelays.values.forEach { it.cancel() }; pendingRelays.clear()
         dedup.clear()
         assembler = FragmentAssembler(clock = scheduler::now)
@@ -354,14 +363,16 @@ class MeshEngine(
         if (p.isRsr && !solicited(linkId)) return
         if (p.type == MessageType.FRAGMENT) {
             // Relay fragments independently, and try to reassemble locally.
-            if (!dedup.markIfNew(Deduplicator.key(p))) { pendingRelays.remove(Deduplicator.key(p))?.cancel(); return }
+            if (!dedup.markIfNew(Deduplicator.key(p))) { if (!p.isRsr) pendingRelays.remove(Deduplicator.key(p))?.cancel(); return }
             val addressedToMe = p.recipientId?.toHex() == myPeerHex
             if (p.isBroadcast || addressedToMe) assembler.accept(p)?.let { receive(it, linkId, relayable = false) }
             maybeRelay(p, linkId)
             return
         }
         val key = Deduplicator.key(p)
-        if (!dedup.markIfNew(key)) { pendingRelays.remove(key)?.cancel(); return }
+        // A duplicate means someone else already relayed it, so ours can be dropped. A sync reply
+        // does not: it went to us alone (TTL 0), and the flood still needs our relay (§14.5).
+        if (!dedup.markIfNew(key)) { if (!p.isRsr) pendingRelays.remove(key)?.cancel(); return }
 
         val senderHex = p.senderId.toHex()
         if (senderHex == myPeerHex) return
@@ -375,6 +386,7 @@ class MeshEngine(
             MessageType.NOISE_ENCRYPTED -> if (forMe) { handleEncrypted(senderHex, p.payload); return }
             MessageType.COURIER_ENVELOPE -> if (forMe) { handleCourier(p, linkId); return }
             MessageType.REQUEST_SYNC -> { if (forMe || p.isBroadcast) handleSyncRequest(p, linkId); return }
+            MessageType.GROUP_MESSAGE -> if (p.isBroadcast && !handleGroupMessage(p)) return
             MessageType.FILE_TRANSFER -> if (p.isBroadcast || forMe) { if (!handleFile(p, forMe)) return; if (forMe) return }
         }
         // Reassembled packets were already relayed as fragments.
@@ -474,6 +486,32 @@ class MeshEngine(
         return true
     }
 
+    // ---------------------------------------------------------------- groups (§22)
+
+    fun sendGroupState(peerHex: String, invite: Boolean, payload: ByteArray) =
+        sendNoise(peerHex, NoisePayload(if (invite) NoisePayloadType.GROUP_INVITE else NoisePayloadType.GROUP_KEY_UPDATE, payload).encode())
+
+    /** Unsigned outer packet: the author's signature is inside the ciphertext (§22.3). */
+    fun broadcastGroupMessage(payload: ByteArray) {
+        val p = Packet(type = MessageType.GROUP_MESSAGE, senderId = identity.peerId, timestamp = scheduler.now(), payload = payload)
+        dedup.markIfNew(Deduplicator.key(p))
+        storeGroupHistory(p)
+        broadcast(p, exclude = null)
+    }
+
+    private fun handleGroupMessage(p: Packet): Boolean {
+        if (p.payload.isEmpty() || !isFresh(p, scheduler.now())) return false
+        storeGroupHistory(p)
+        listener.onGroupMessage(p.payload, p.timestamp)
+        return true
+    }
+
+    private fun storeGroupHistory(p: Packet) {
+        if (!isFresh(p, scheduler.now())) return
+        groupHistory[PacketId.compute(p).toHex()] = p
+        while (groupHistory.size > GROUP_HISTORY_CAP) groupHistory.remove(groupHistory.keys.first())
+    }
+
     fun sendPublicFile(file: FilePacket): Boolean {
         val body = file.encode() ?: return false
         val p = sign(Packet(type = MessageType.FILE_TRANSFER, senderId = identity.peerId, timestamp = scheduler.now(), payload = body)) ?: return false
@@ -519,6 +557,7 @@ class MeshEngine(
         myAnnounce?.let { out.add(it) }
         peers.values.mapNotNullTo(out) { it.announce }
         history.values.filterTo(out) { isFresh(it, now) }
+        groupHistory.values.filterTo(out) { isFresh(it, now) }
         out.sortByDescending { it.timestamp }
         return out
     }
@@ -534,11 +573,11 @@ class MeshEngine(
         val candidates = syncCandidates(now)
         val p = GcsFilter.deriveP(SYNC_FPR)
         val take = minOf(candidates.size, GcsFilter.estimateMaxElements(SYNC_FILTER_BYTES, p), HISTORY_CAP)
-        val request = if (take == 0) SyncRequest(p, 1, ByteArray(0)) else {
+        val request = if (take == 0) SyncRequest(p, 1, ByteArray(0), SyncTypes.PUBLIC or SyncTypes.GROUP) else {
             val included = candidates.take(take)
             val f = GcsFilter.build(included.map { PacketId.compute(it) }, SYNC_FILTER_BYTES, SYNC_FPR)
             val since = if (f.includedCount in 1 until candidates.size) included[f.includedCount - 1].timestamp else null
-            SyncRequest(f.p, f.m, f.data, SyncTypes.PUBLIC, since)
+            SyncRequest(f.p, f.m, f.data, SyncTypes.PUBLIC or SyncTypes.GROUP, since)
         }
         val pkt = sign(Packet(type = MessageType.REQUEST_SYNC, senderId = identity.peerId, recipientId = peerHex.hexToBytes(), timestamp = now, payload = request.encode(), ttl = 0)) ?: return
         pendingSync[peerHex] = now
@@ -565,13 +604,15 @@ class MeshEngine(
             myAnnounce?.let { if (isFresh(it, now) && missing(it)) replies.add(it) }
             for (peer in peers.values) peer.announce?.let { if (isFresh(it, now) && missing(it)) replies.add(it) }
         }
-        if (request.wants(SyncTypes.MESSAGE)) {
-            for (m in history.values) {
+        fun offer(stored: Collection<Packet>) {
+            for (m in stored) {
                 if (!isFresh(m, now)) continue
                 if (request.since != null && m.timestamp < request.since) continue
                 if (missing(m)) replies.add(m)
             }
         }
+        if (request.wants(SyncTypes.MESSAGE)) offer(history.values)
+        if (request.wants(SyncTypes.GROUP)) offer(groupHistory.values)
         for (r in replies) sendOn(listOf(linkId), r.copy(ttl = 0, isRsr = true))
     }
 
@@ -652,7 +693,7 @@ class MeshEngine(
         }
         val (send, recv) = hs.split()
         val now = scheduler.now()
-        val s = Session(null, now).also { it.send = send; it.recv = recv; it.establishedAt = now }
+        val s = Session(null, now).also { it.send = send; it.recv = recv; it.establishedAt = now; it.remoteStatic = remote }
         val replaced = sessions.put(peerHex, s)
         candidates.remove(peerHex)
         replaced?.wipe()
@@ -732,6 +773,11 @@ class MeshEngine(
                 if (noiseKeyOf(peerHex)?.let(isBlocked) == true) return
                 val file = FilePacket.decode(payload.body)?.takeIf { it.kind != null } ?: return
                 listener.onFile(peerHex, nickname, file, isPrivate = true, timestamp = scheduler.now())
+            }
+            NoisePayloadType.GROUP_INVITE, NoisePayloadType.GROUP_KEY_UPDATE -> {
+                val key = sessions[peerHex]?.remoteStatic ?: return
+                if (isBlocked(key)) return
+                listener.onGroupState(peerHex, key, payload.type == NoisePayloadType.GROUP_INVITE, payload.body)
             }
             NoisePayloadType.VERIFY_CHALLENGE -> {
                 val (keyHex, nonce) = VerifyQr.parseChallenge(payload.body) ?: return
@@ -928,6 +974,7 @@ class MeshEngine(
         var changed = outbox.values.removeAll { now - it.createdAt > CourierEnvelope.LIFETIME_MS }
         changed = carried.removeAll { it.envelope.isExpired(now) } || changed
         changed = history.values.removeAll { !isFresh(it, now) } || changed
+        groupHistory.values.removeAll { !isFresh(it, now) }
         pendingSync.values.removeAll { now - it > SYNC_REPLY_WINDOW_MS }
         syncReplies.values.removeAll { times -> times.removeAll { now - it > SYNC_REPLY_WINDOW_MS }; times.isEmpty() }
         if (changed) listener.onStateChanged()
@@ -963,6 +1010,7 @@ class MeshEngine(
         private const val REMOTE_HANDOVER_COOLDOWN_MS = 10 * 60 * 1000L
         // History sync (§14, §11).
         private const val HISTORY_CAP = 1000
+        private const val GROUP_HISTORY_CAP = 200
         private const val HISTORY_MAX_AGE_MS = 900_000L
         private const val FUTURE_SKEW_MS = 120_000L
         private const val SYNC_INTERVAL_MS = 15_000L

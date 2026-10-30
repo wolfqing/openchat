@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Private groups, wire-compatible with bitchat ([spec §22](docs/protocol-spec.md)).
+  New group on the Private tab or `/group create`; the creator invites
+  people nearby from Members (or `/group invite @name`), removes them, and
+  anyone can leave. Up to 16 members. The creator signs the roster and a
+  fresh key on every change and hands them out inside Noise sessions;
+  messages are sealed with ChaCha20-Poly1305 under the group key, signed
+  by their author, and flooded over the mesh like public ones, so only
+  members read them. Members who were away pick up missed messages by
+  history sync. Text only for now. Groups and keys are sealed on disk and
+  go with the triple tap.
+- Fix: a history-sync copy arriving while a relay waited cancelled the
+  relay, so a message could stop one hop short. A sync reply goes to one
+  phone only and no longer counts as someone else having relayed it.
+- 6 new tests, 115 in all.
+
 - Flood protection, as bitchat ([spec §21](docs/protocol-spec.md)): a
   sender may post five public messages at once and then one a second, and
   one text may appear three times at once and then once every two seconds,

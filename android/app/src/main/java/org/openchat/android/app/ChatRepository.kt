@@ -11,6 +11,8 @@ sealed class Conversation(val key: String) {
     object Mesh : Conversation("mesh")
     data class Private(val peerHex: String) : Conversation("dm:$peerHex")
     data class Geo(val geohash: String) : Conversation("geo:$geohash")
+    /** A private group (§22), keyed by its group ID. */
+    data class Group(val idHex: String) : Conversation("grp:$idHex")
     /** Private chat with a location-channel persona, under my persona for that cell (§15.5). */
     data class GeoPrivate(val geohash: String, val pubkey: String) : Conversation("gdm:$geohash:$pubkey") {
         companion object {
@@ -104,6 +106,12 @@ interface ChatController {
     fun leaveGeo(geohash: String)
     fun sendGeo(geohash: String, text: String)
     fun sendGeoPrivate(geohash: String, pubkey: String, text: String)
+    /** Creates a group and returns its conversation key, or null for an empty name. */
+    fun createGroup(name: String): String?
+    fun groupInvite(idHex: String, peerHex: String)
+    fun groupRemove(idHex: String, fingerprint: String)
+    fun groupLeave(idHex: String)
+    fun sendGroup(idHex: String, text: String)
     /** Leaves a note at the device's building-level cell; false when the place is unknown. */
     fun dropNote(text: String): Boolean
     fun watchNotes(cell: String?)
@@ -172,6 +180,10 @@ object ChatRepository {
     }
 
     fun clear(conversation: String) = _messages.update { it - conversation }
+
+    private val _groups = MutableStateFlow<Map<String, GroupInfo>>(emptyMap())
+    val groups: StateFlow<Map<String, GroupInfo>> = _groups.asStateFlow()
+    fun setGroups(g: Map<String, GroupInfo>) { _groups.value = g }
 
     /** A chat the UI should open next (from /msg); consumed by the main screen. */
     private val _openRequest = MutableStateFlow<String?>(null)

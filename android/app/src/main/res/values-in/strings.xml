@@ -162,4 +162,37 @@
     <string name="share_channel_warn_body">#%1$s sekitar satu lingkungan atau lebih kecil. Siapa pun yang membawa teks ini, seperti operator atau aplikasi yang Anda pakai berbagi, tahu tempat mana yang Anda minati.</string>
     <string name="share_anyway">Tetap bagikan</string>
     <string name="cancel">Batal</string>
+    <string name="cmd_help_group">/group create nama · /group invite @nama · /group remove @nama · /group leave · /group list — grup pribadi</string>
+    <string name="group_new">Grup baru</string>
+    <string name="group_name_hint">Nama grup</string>
+    <string name="group_new_note">Hingga 16 orang yang Anda temui di sekitar. Hanya anggota yang bisa membaca; Anda yang menentukan siapa ikut.</string>
+    <string name="group_create">Buat</string>
+    <plurals name="group_members">
+        <item quantity="one">%d anggota</item>
+        <item quantity="other">%d anggota</item>
+    </plurals>
+    <string name="group_status">%1$s · terenkripsi ujung ke ujung</string>
+    <string name="group_members_title">Anggota</string>
+    <string name="group_empty">Hanya anggota yang bisa membaca grup ini. Pesan berjalan lewat jaringan mesh seperti pesan publik, disegel dengan kunci grup, sampai ke anggota dalam jangkauan.</string>
+    <string name="group_placeholder">Pesan ke #%1$s…</string>
+    <string name="group_you">Anda</string>
+    <string name="group_creator">pembuat</string>
+    <string name="group_remove">Keluarkan</string>
+    <string name="group_invite_title">Undang orang di sekitar</string>
+    <string name="group_invite">Undang</string>
+    <string name="group_none_nearby">Tidak ada orang di sekitar untuk diundang.</string>
+    <string name="group_creator_manages">Hanya pembuat yang bisa mengundang atau mengeluarkan orang.</string>
+    <string name="group_leave">Keluar dari grup</string>
+    <string name="group_created">#%1$s dibuat. Buka Anggota untuk mengundang orang sekitar.</string>
+    <string name="group_creator_only">hanya pembuat grup yang bisa melakukannya</string>
+    <string name="group_not_connected">%1$s harus di sekitar dan terhubung untuk diundang</string>
+    <string name="group_already">%1$s sudah ada di grup</string>
+    <string name="group_full">satu grup paling banyak %1$d orang</string>
+    <string name="group_invited">%1$s diundang ke #%2$s; kunci grup berganti</string>
+    <string name="group_removed_member">%1$s dikeluarkan; kunci berganti, ia tak bisa membaca pesan baru</string>
+    <string name="group_left">keluar dari #%1$s</string>
+    <string name="group_removed_from">Anda dikeluarkan dari #%1$s</string>
+    <string name="group_joined">%2$s menambahkan Anda ke #%1$s</string>
+    <string name="group_none">Anda belum ada di grup mana pun</string>
+    <string name="group_open_first">buka dulu obrolan grupnya</string>
 </resources>

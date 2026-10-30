@@ -174,4 +174,37 @@
     <string name="share_channel_warn_body">#%1$s — это примерно квартал или меньше. Тот, кто передаёт этот текст (оператор связи, приложение для отправки), узнает, какое место вас интересует.</string>
     <string name="share_anyway">Всё равно поделиться</string>
     <string name="cancel">Отмена</string>
+    <string name="cmd_help_group">/group create имя · /group invite @имя · /group remove @имя · /group leave · /group list — закрытые группы</string>
+    <string name="group_new">Новая группа</string>
+    <string name="group_name_hint">Название группы</string>
+    <string name="group_new_note">До 16 человек, которых вы встретили рядом. Читать могут только участники; кто в группе, решаете вы.</string>
+    <string name="group_create">Создать</string>
+    <plurals name="group_members">
+        <item quantity="one">Участников: %d</item>
+        <item quantity="other">Участников: %d</item>
+    </plurals>
+    <string name="group_status">%1$s · сквозное шифрование</string>
+    <string name="group_members_title">Участники</string>
+    <string name="group_empty">Эту группу читают только участники. Сообщения идут по сети как публичные, но запечатаны ключом группы и доходят до участников в зоне досягаемости.</string>
+    <string name="group_placeholder">Сообщение в #%1$s…</string>
+    <string name="group_you">вы</string>
+    <string name="group_creator">создатель</string>
+    <string name="group_remove">Удалить</string>
+    <string name="group_invite_title">Пригласить кого-то рядом</string>
+    <string name="group_invite">Пригласить</string>
+    <string name="group_none_nearby">Рядом некого пригласить.</string>
+    <string name="group_creator_manages">Приглашать и удалять может только создатель.</string>
+    <string name="group_leave">Выйти из группы</string>
+    <string name="group_created">Группа #%1$s создана. Откройте «Участники», чтобы пригласить тех, кто рядом.</string>
+    <string name="group_creator_only">это может только создатель группы</string>
+    <string name="group_not_connected">%1$s должен быть рядом и на связи</string>
+    <string name="group_already">%1$s уже в группе</string>
+    <string name="group_full">в группе не больше %1$d человек</string>
+    <string name="group_invited">%1$s приглашён в #%2$s; ключ группы сменён</string>
+    <string name="group_removed_member">%1$s удалён; ключ сменён, новые сообщения ему не прочесть</string>
+    <string name="group_left">вы вышли из #%1$s</string>
+    <string name="group_removed_from">вас удалили из #%1$s</string>
+    <string name="group_joined">%2$s добавил(а) вас в #%1$s</string>
+    <string name="group_none">вы не состоите ни в одной группе</string>
+    <string name="group_open_first">сначала откройте чат группы</string>
 </resources>

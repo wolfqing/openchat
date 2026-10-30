@@ -162,4 +162,37 @@
     <string name="share_channel_warn_body">#%1$s သည် ရပ်ကွက်တစ်ခုခန့် သို့မဟုတ် ပိုငယ်သည်။ ဤစာကို သယ်ဆောင်သူ (ဖုန်းဝန်ဆောင်မှု သို့မဟုတ် မျှဝေသည့်အက်ပ်) က သင်စိတ်ဝင်စားသည့်နေရာကို သိမည်။</string>
     <string name="share_anyway">မည်သို့ပင်ဖြစ်စေ မျှဝေရန်</string>
     <string name="cancel">မလုပ်တော့ပါ</string>
+    <string name="cmd_help_group">/group create name · /group invite @name · /group remove @name · /group leave · /group list — သီးသန့်အုပ်စုများ</string>
+    <string name="group_new">အုပ်စုအသစ်</string>
+    <string name="group_name_hint">အုပ်စုအမည်</string>
+    <string name="group_new_note">အနီးတွင် တွေ့သူ အများဆုံး ၁၆ ဦး။ အဖွဲ့ဝင်များသာ ဖတ်နိုင်ပြီး မည်သူပါမည်ကို သင်ဆုံးဖြတ်သည်။</string>
+    <string name="group_create">ဖန်တီးရန်</string>
+    <plurals name="group_members">
+        <item quantity="one">အဖွဲ့ဝင် %d ဦး</item>
+        <item quantity="other">အဖွဲ့ဝင် %d ဦး</item>
+    </plurals>
+    <string name="group_status">%1$s · အဆုံးမှအဆုံး ကုဒ်ဝှက်ထား</string>
+    <string name="group_members_title">အဖွဲ့ဝင်များ</string>
+    <string name="group_empty">ဤအုပ်စုကို အဖွဲ့ဝင်များသာ ဖတ်နိုင်သည်။ စာများသည် အများသုံးစာကဲ့သို့ မက်ရှ်ပေါ်မှ သွားသော်လည်း အုပ်စုသော့ဖြင့် ပိတ်ထားပြီး အကွာအဝေးအတွင်းရှိ အဖွဲ့ဝင်များထံ ရောက်သည်။</string>
+    <string name="group_placeholder">#%1$s သို့ စာ…</string>
+    <string name="group_you">သင်</string>
+    <string name="group_creator">ဖန်တီးသူ</string>
+    <string name="group_remove">ဖယ်ရန်</string>
+    <string name="group_invite_title">အနီးရှိသူကို ဖိတ်ရန်</string>
+    <string name="group_invite">ဖိတ်ရန်</string>
+    <string name="group_none_nearby">ဖိတ်ရန် အနီးတွင် မည်သူမျှ မရှိပါ။</string>
+    <string name="group_creator_manages">ဖန်တီးသူသာ ဖိတ်နိုင် သို့မဟုတ် ဖယ်နိုင်သည်။</string>
+    <string name="group_leave">အုပ်စုမှ ထွက်ရန်</string>
+    <string name="group_created">#%1$s ကို ဖန်တီးပြီး။ အနီးရှိသူများကို ဖိတ်ရန် အဖွဲ့ဝင်များ ကိုဖွင့်ပါ။</string>
+    <string name="group_creator_only">အုပ်စုဖန်တီးသူသာ ပြုလုပ်နိုင်သည်</string>
+    <string name="group_not_connected">ဖိတ်ရန် %1$s သည် အနီးတွင် ချိတ်ဆက်ထားရမည်</string>
+    <string name="group_already">%1$s သည် အုပ်စုထဲတွင် ရှိပြီးဖြစ်သည်</string>
+    <string name="group_full">အုပ်စုတစ်ခုတွင် အများဆုံး %1$d ဦး</string>
+    <string name="group_invited">%1$s ကို #%2$s သို့ ဖိတ်ပြီး၊ အုပ်စုသော့ ပြောင်းပြီး</string>
+    <string name="group_removed_member">%1$s ကို ဖယ်ပြီး၊ သော့ပြောင်းသဖြင့် စာအသစ်များ မဖတ်နိုင်တော့ပါ</string>
+    <string name="group_left">#%1$s မှ ထွက်ပြီး</string>
+    <string name="group_removed_from">#%1$s မှ သင့်ကို ဖယ်လိုက်သည်</string>
+    <string name="group_joined">%2$s က သင့်ကို #%1$s ထဲ ထည့်ခဲ့သည်</string>
+    <string name="group_none">သင် မည်သည့်အုပ်စုတွင်မျှ မရှိပါ</string>
+    <string name="group_open_first">အုပ်စုချက်တင်ကို အရင်ဖွင့်ပါ</string>
 </resources>
