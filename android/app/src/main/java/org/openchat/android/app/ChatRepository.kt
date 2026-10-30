@@ -70,6 +70,7 @@ data class MeshStatus(
     val myPeerHex: String = "",
     val fingerprint: String = "",
     val carriedCount: Int = 0, // sealed envelopes held for others (§13.4)
+    val storageLocked: Boolean = false, // the saved identity exists but could not be opened; nothing runs until it can
 )
 
 /** A note left at a place (§17), visible to anyone nearby for 24 hours. */
@@ -106,7 +107,7 @@ interface ChatController {
     /** Leaves a note at the device's building-level cell; false when the place is unknown. */
     fun dropNote(text: String): Boolean
     fun watchNotes(cell: String?)
-    /** Sends a photo or voice note into a Nearby or private chat; returns a reason string resource on refusal, or 0. */
+    /** Sends a photo or voice note into a Nearby or private chat; returns a reason string resource on immediate refusal, or 0. A refusal decided later shows as a local line in that chat. */
     fun sendMedia(conversation: String, bytes: ByteArray, mime: String): Int
     fun setTor(on: Boolean)
     fun refreshLocation()

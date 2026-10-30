@@ -310,7 +310,7 @@ fun MainScreen(
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-            StatusBanner(missingPermissions, mesh.bluetoothOn, mesh.running, peers.size, onGrantPermissions, onEnableBluetooth)
+            StatusBanner(missingPermissions, mesh.storageLocked, mesh.bluetoothOn, mesh.running, peers.size, onGrantPermissions, onEnableBluetooth)
             when (tab) {
                 Tab.NEARBY -> ChatPane(
                     conversation = Conversation.Mesh.key,
@@ -396,15 +396,17 @@ fun PanicLogo(onPanic: () -> Unit) {
 }
 
 @Composable
-private fun StatusBanner(missing: Boolean, btOn: Boolean, running: Boolean, peers: Int, onGrant: () -> Unit, onEnable: () -> Unit) {
+private fun StatusBanner(missing: Boolean, locked: Boolean, btOn: Boolean, running: Boolean, peers: Int, onGrant: () -> Unit, onEnable: () -> Unit) {
+    val ctx = LocalContext.current
     val (text, action) = when {
+        locked -> stringResource(R.string.banner_storage_locked) to { org.openchat.android.app.MeshService.start(ctx) }
         missing -> stringResource(R.string.banner_need_permission) to onGrant
         !btOn -> stringResource(R.string.banner_bt_off) to onEnable
         !running -> stringResource(R.string.banner_starting) to null
         peers == 0 -> stringResource(R.string.banner_searching) to null
         else -> plural(R.plurals.banner_connected, peers) to null
     }
-    val warn = missing || !btOn
+    val warn = missing || locked || !btOn
     val connected = !warn && running && peers > 0
     Box(
         Modifier.fillMaxWidth()

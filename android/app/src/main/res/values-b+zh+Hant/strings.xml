@@ -21,6 +21,7 @@
     <string name="banner_bt_off">藍牙已關閉，點這裡開啟</string>
     <string name="banner_starting">正在啟動…</string>
     <string name="banner_searching">正在尋找附近的人…</string>
+    <string name="banner_storage_locked">暫時無法解鎖已儲存的身分。點此重試。</string>
     <plurals name="banner_connected">
         <item quantity="other">已連上附近 %d 人</item>
     </plurals>

@@ -21,6 +21,7 @@
     <string name="banner_bt_off">Le Bluetooth est désactivé. Touchez ici pour l\'activer</string>
     <string name="banner_starting">Démarrage…</string>
     <string name="banner_searching">Recherche de personnes à proximité…</string>
+    <string name="banner_storage_locked">Impossible de déverrouiller l\'identité enregistrée pour le moment. Appuyez pour réessayer.</string>
     <plurals name="banner_connected">
         <item quantity="one">Connecté à %d personne à proximité</item>
         <item quantity="many">Connecté à %d personnes à proximité</item>

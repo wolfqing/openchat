@@ -98,17 +98,24 @@ class MeshEngine(
         var announce: Packet? = null, // latest verified announce, served to sync requests (§14.4)
     )
 
-    private class Session(val handshake: HandshakeXX?) {
+    private class Session(val handshake: HandshakeXX?, val startedAt: Long) {
         var send: CipherState? = null
         var recv: CipherState? = null
         var establishedAt = 0L
+        var lastUsed = startedAt
         var messagesSent = 0
+        var decryptFailures = 0
         val established get() = send != null
+        val pending get() = handshake != null && send == null
+        fun wipe() { send?.clear(); recv?.clear(); send = null; recv = null }
     }
 
     private val links = LinkedHashMap<String, Link>()
     private val peers = HashMap<String, PeerState>()
     private val sessions = HashMap<String, Session>()
+    // A peer re-handshaking while we still hold a session with it: the old session keeps working
+    // until the new one completes, so a forged message 1 cannot cut an established session (§8.1).
+    private val candidates = HashMap<String, Session>()
     private val pendingNoise = HashMap<String, ArrayDeque<ByteArray>>()
     // Ciphertexts that overtook the last handshake message on a relay path.
     private val earlyCiphertexts = HashMap<String, ArrayDeque<ByteArray>>()
@@ -139,10 +146,16 @@ class MeshEngine(
     /** Local block list, by Noise static key: messages from these senders are dropped unanswered. */
     @Volatile var isBlocked: (noiseKey: ByteArray) -> Boolean = { false }
 
+    /** People whose keys must survive the remembered-peer cap (favorites, verified): a flood of strangers cannot push them out. */
+    @Volatile var isPinned: (noiseKey: ByteArray) -> Boolean = { false }
+
     val myPeerHex get() = identity.peerIdHex
     val carriedCount get() = carried.size
     val outboxCount get() = outbox.size
     val historyCount get() = history.size
+    /** Sessions in any state, including handshakes still running; for tests and diagnostics. */
+    val sessionCount get() = sessions.size + candidates.size
+    val knownCount get() = known.size
 
     fun exportState() = MeshState(HashMap(known), outbox.values.toList(), carried.toList(), history.values.toList())
 
@@ -173,7 +186,7 @@ class MeshEngine(
     /** Clears every piece of state tied to the old identity (panic wipe, §10). */
     fun resetIdentity(newIdentity: Identity) {
         identity = newIdentity
-        peers.clear(); sessions.clear(); pendingNoise.clear(); lastHandshakeStart.clear(); earlyCiphertexts.clear()
+        peers.clear(); sessions.values.forEach { it.wipe() }; sessions.clear(); candidates.clear(); pendingNoise.clear(); lastHandshakeStart.clear(); earlyCiphertexts.clear()
         known.clear(); outbox.clear(); carried.clear(); seenIds.clear(); acked.clear(); pendingAcks.clear()
         history.clear(); pendingVerify.clear(); peerCaps.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
         pendingRelays.values.forEach { it.cancel() }; pendingRelays.clear()
@@ -195,6 +208,7 @@ class MeshEngine(
         val now = scheduler.now()
         if (now >= nextAnnounceDue) sendAnnounce(force = false)
         expirePeers(now)
+        expireHandshakes(now)
         rekeyOldSessions(now)
         if (now - lastPrune > 30_000) { lastPrune = now; prune(now) }
         if (now - lastSyncRound >= SYNC_INTERVAL_MS) { lastSyncRound = now; syncRound() }
@@ -305,8 +319,29 @@ class MeshEngine(
     }
 
     private fun expirePeers(now: Long) {
-        val removed = peers.entries.removeAll { (_, s) -> s.directLinks.isEmpty() && now - s.lastSeen > 60_000 }
-        if (removed) publishPeers()
+        val gone = peers.filterValues { it.directLinks.isEmpty() && now - it.lastSeen > 60_000 }.keys
+        if (gone.isEmpty()) return
+        gone.forEach { peers.remove(it); peerCaps.remove(it); pendingVerify.remove(it) }
+        publishPeers()
+    }
+
+    /**
+     * A handshake that did not finish in [HANDSHAKE_TIMEOUT_MS] lost a message somewhere: drop it
+     * and, if something is waiting to be sent, try again. Also forgets strangers' half-open
+     * handshakes and idle sessions of peers long gone, so neither table grows without bound.
+     */
+    private fun expireHandshakes(now: Long) {
+        val timedOut = sessions.filterValues { it.pending && now - it.startedAt > HANDSHAKE_TIMEOUT_MS }.keys.toList()
+        for (hex in timedOut) {
+            sessions.remove(hex)
+            earlyCiphertexts.remove(hex)
+            if (pendingNoise[hex]?.isNotEmpty() == true && peers.containsKey(hex)) startHandshake(hex)
+        }
+        candidates.entries.removeAll { now - it.value.startedAt > HANDSHAKE_TIMEOUT_MS }
+        lastHandshakeStart.entries.removeAll { now - it.value > HANDSHAKE_TIMEOUT_MS }
+        sessions.entries.removeAll { (hex, s) ->
+            (s.established && !peers.containsKey(hex) && now - s.lastUsed > SESSION_IDLE_MS).also { if (it) s.wipe() }
+        }
     }
 
     private fun publishPeers() = listener.onPeersChanged(peersSnapshot())
@@ -356,7 +391,7 @@ class MeshEngine(
             pendingRelays.remove(key)
             // Directed packets go straight to the recipient when it is a neighbour.
             val target = p.recipientId?.toHex()?.let { hex -> peers[hex]?.directLinks?.firstOrNull { it != ingress && links.containsKey(it) } }
-            if (!p.isBroadcast && target != null) sendOn(listOf(target), relayed) else broadcast(relayed, exclude = ingress)
+            if (!p.isBroadcast && target != null) sendOn(listOf(target), relayed) else broadcast(relayed, exclude = ingress, relaying = true)
         }
     }
 
@@ -367,7 +402,10 @@ class MeshEngine(
         if (!verify(p, a.signingPublicKey)) return false
         val hex = p.senderId.toHex()
         val existing = peers[hex]
-        if (existing != null && !existing.signingKey.contentEquals(a.signingPublicKey)) return false
+        // The signing key is pinned to the Noise key for as long as we remember the peer (§4.2):
+        // a copy of someone's Noise key under a different signing key is an impersonation attempt.
+        val pinned = existing?.signingKey ?: known[hex]?.signingKey
+        if (pinned != null && !pinned.contentEquals(a.signingPublicKey)) return false
         val now = scheduler.now()
         val state = existing ?: PeerState(a.nickname, a.noisePublicKey, a.signingPublicKey, now).also { peers[hex] = it }
         val changed = existing == null || existing.nickname != a.nickname
@@ -401,7 +439,8 @@ class MeshEngine(
         val peer = peers[hex] ?: return false
         if (!verify(p, peer.signingKey)) return false
         peers.remove(hex)
-        sessions.remove(hex)
+        sessions.remove(hex)?.wipe()
+        candidates.remove(hex)
         publishPeers()
         return true
     }
@@ -550,14 +589,23 @@ class MeshEngine(
     }
 
     private fun startHandshake(peerHex: String) {
-        val existing = sessions[peerHex]
-        if (existing?.handshake != null && !existing.established) return
         val now = scheduler.now()
+        val existing = sessions[peerHex]
+        if (existing != null && existing.pending && now - existing.startedAt <= HANDSHAKE_TIMEOUT_MS) return
         if (now - (lastHandshakeStart[peerHex] ?: 0L) < 2_000) return
         lastHandshakeStart[peerHex] = now
         val hs = HandshakeXX(initiator = true, localStatic = identity.noise)
-        sessions[peerHex] = Session(hs)
+        sessions[peerHex] = Session(hs, now)
         sendHandshake(peerHex, hs.writeMessage())
+    }
+
+    /** Half-open handshakes are capped; the oldest goes when a new one arrives. */
+    private fun capPendingHandshakes() {
+        while (sessions.count { it.value.pending } + candidates.size >= PENDING_HANDSHAKE_CAP) {
+            val oldest = (sessions.entries.filter { it.value.pending } + candidates.entries).minByOrNull { it.value.startedAt } ?: return
+            if (!sessions.remove(oldest.key, oldest.value)) candidates.remove(oldest.key, oldest.value)
+            earlyCiphertexts.remove(oldest.key)
+        }
     }
 
     private fun sendHandshake(peerHex: String, message: ByteArray) {
@@ -566,40 +614,50 @@ class MeshEngine(
     }
 
     private fun handleHandshake(peerHex: String, message: ByteArray) {
+        val now = scheduler.now()
         val current = sessions[peerHex]
-        val pendingInitiator = current?.handshake?.takeIf { it.initiator && !current.established }
+        val freshInitiator = current?.handshake?.initiator == true && current.pending && now - current.startedAt <= HANDSHAKE_TIMEOUT_MS
 
-        // Message 1 is a bare 32-byte ephemeral key.
+        // Message 1 is a bare 32-byte ephemeral key. Handshake packets are not signed, so until
+        // message 3 proves the static key this is only a claim; it must not disturb what we hold.
         if (message.size == 32) {
-            if (pendingInitiator != null && myPeerHex < peerHex) return // we keep the initiator role (§8.1)
+            if (freshInitiator && myPeerHex < peerHex) return // we keep the initiator role (§8.1)
             val hs = HandshakeXX(initiator = false, localStatic = identity.noise)
             try { hs.readMessage(message) } catch (e: Exception) { return }
-            sessions[peerHex] = Session(hs)
+            capPendingHandshakes()
+            val s = Session(hs, now)
+            if (current != null && current.established) candidates[peerHex] = s else sessions[peerHex] = s
             sendHandshake(peerHex, hs.writeMessage())
             return
         }
-        val hs = current?.handshake ?: return
-        if (current.established) return
+        val target = current?.takeIf { it.pending } ?: candidates[peerHex] ?: return
+        val hs = target.handshake!!
         try {
             hs.readMessage(message)
             if (hs.shouldWrite) sendHandshake(peerHex, hs.writeMessage())
         } catch (e: Exception) {
-            sessions.remove(peerHex)
+            // A bad message poisons the Noise state; drop this attempt. The timeout sweep retries if we still have mail.
+            if (!candidates.remove(peerHex, target)) sessions.remove(peerHex, target)
             return
         }
-        if (hs.isComplete) completeHandshake(peerHex, hs)
+        if (hs.isComplete) completeHandshake(peerHex, hs, target)
     }
 
-    private fun completeHandshake(peerHex: String, hs: HandshakeXX) {
+    private fun completeHandshake(peerHex: String, hs: HandshakeXX, attempt: Session) {
         val remote = hs.remoteStatic
         if (remote == null || Identity.peerIdFor(remote).toHex() != peerHex) {
-            sessions.remove(peerHex)
+            if (!candidates.remove(peerHex, attempt)) sessions.remove(peerHex, attempt)
             return
         }
         val (send, recv) = hs.split()
-        val s = Session(null).also { it.send = send; it.recv = recv; it.establishedAt = scheduler.now() }
-        sessions[peerHex] = s
+        val now = scheduler.now()
+        val s = Session(null, now).also { it.send = send; it.recv = recv; it.establishedAt = now }
+        val replaced = sessions.put(peerHex, s)
+        candidates.remove(peerHex)
+        replaced?.wipe()
         listener.onSessionEstablished(peerHex)
+        // The peer started over: anything still unacknowledged went out on keys it no longer has.
+        if (replaced?.established == true) flushOutboxTo(peerHex)
         // Tell the peer, inside the session, that it may send us encrypted media (§18.2).
         sendNoise(peerHex, NoisePayload(NoisePayloadType.AUTHENTICATED_PEER_STATE, AuthPeerState.encode(AuthPeerState.CAP_PRIVATE_MEDIA, identity.signing.publicKey)).encode())
         earlyCiphertexts.remove(peerHex)?.forEach { handleEncrypted(peerHex, it) }
@@ -615,12 +673,13 @@ class MeshEngine(
 
     private fun encryptAndSend(peerHex: String, s: Session, plaintext: ByteArray) {
         val ct = try { s.send!!.encrypt(plaintext) } catch (e: Exception) {
-            sessions.remove(peerHex)
+            sessions.remove(peerHex, s); s.wipe()
             pendingNoise.getOrPut(peerHex) { ArrayDeque() }.addFirst(plaintext)
             startHandshake(peerHex)
             return
         }
         s.messagesSent++
+        s.lastUsed = scheduler.now()
         val p = Packet(type = MessageType.NOISE_ENCRYPTED, senderId = identity.peerId, recipientId = peerHex.hexToBytes(), timestamp = scheduler.now(), payload = ct)
         sendDirected(peerHex, p)
     }
@@ -629,16 +688,29 @@ class MeshEngine(
         val s = sessions[peerHex]
         val plain = try { s?.recv?.decrypt(ciphertext) } catch (e: Exception) { null }
         if (plain == null) {
-            if (s != null && !s.established) {
-                // Handshake still running: keep it until the session exists.
-                val q = earlyCiphertexts.getOrPut(peerHex) { ArrayDeque() }
-                if (q.size < 32) q.addLast(ciphertext)
+            if (s == null) {
+                // The peer holds a session we lost (restart or wipe); start over.
+                startHandshake(peerHex)
                 return
             }
-            // The peer holds a session we lost (restart or wipe); start over.
-            sessions.remove(peerHex); startHandshake(peerHex)
+            if (s.pending) {
+                // Handshake still running: keep it until the session exists.
+                val q = earlyCiphertexts.getOrPut(peerHex) { ArrayDeque() }
+                if (q.size < EARLY_CIPHERTEXT_CAP && q.sumOf { it.size } + ciphertext.size <= EARLY_CIPHERTEXT_BYTES) q.addLast(ciphertext)
+                return
+            }
+            // Undecryptable bytes on a working session: anyone can forge the sender field, so this
+            // alone never costs the session. Only a run of failures with nothing genuine in between
+            // means the peer really lost its side; then we start over.
+            s.decryptFailures++
+            val now = scheduler.now()
+            if (s.decryptFailures >= DECRYPT_FAILURE_LIMIT && now - s.lastUsed > DECRYPT_FAILURE_QUIET_MS) {
+                sessions.remove(peerHex, s); s.wipe(); startHandshake(peerHex)
+            }
             return
         }
+        s!!.decryptFailures = 0
+        s.lastUsed = scheduler.now()
         val payload = NoisePayload.decode(plain) ?: return
         val nickname = peers[peerHex]?.nickname ?: peerHex.take(8)
         when (payload.type) {
@@ -682,9 +754,17 @@ class MeshEngine(
     private fun remember(hex: String, noiseKey: ByteArray, signingKey: ByteArray?, nickname: String, now: Long) {
         val k = known[hex]
         if (k == null) {
-            if (known.size >= KNOWN_CAP) known.entries.minByOrNull { it.value.lastSeen }?.let { known.remove(it.key) }
+            if (known.size >= KNOWN_CAP) {
+                // Evict the least recently seen stranger; people we owe mail to or care about stay.
+                val victim = known.entries.filter { (h, kp) -> !isPinned(kp.noiseKey) && outbox.values.none { it.peerHex == h } }
+                    .minByOrNull { it.value.lastSeen } ?: return
+                known.remove(victim.key)
+            }
             known[hex] = KnownPeer(noiseKey, signingKey, nickname, now)
-        } else { k.nickname = nickname; k.lastSeen = now }
+        } else {
+            k.nickname = nickname; k.lastSeen = now
+            if (k.signingKey == null && signingKey != null) k.signingKey = signingKey
+        }
         listener.onStateChanged()
     }
 
@@ -855,7 +935,7 @@ class MeshEngine(
     private fun rekeyOldSessions(now: Long) {
         for ((hex, s) in sessions.entries.toList()) {
             if (s.established && (now - s.establishedAt > 3_600_000 || s.messagesSent > 10_000)) {
-                if (myPeerHex < hex) { sessions.remove(hex); startHandshake(hex) }
+                if (myPeerHex < hex) { sessions.remove(hex)?.wipe(); startHandshake(hex) }
             }
         }
     }
@@ -867,6 +947,14 @@ class MeshEngine(
         private const val MAX_COURIERS = 3
         private const val OUTBOX_CAP = 200
         private const val KNOWN_CAP = 500
+        // Noise session liveness (§8.1).
+        private const val HANDSHAKE_TIMEOUT_MS = 10_000L
+        private const val PENDING_HANDSHAKE_CAP = 64
+        private const val EARLY_CIPHERTEXT_CAP = 32
+        private const val EARLY_CIPHERTEXT_BYTES = 64 * 1024
+        private const val DECRYPT_FAILURE_LIMIT = 16
+        private const val DECRYPT_FAILURE_QUIET_MS = 30_000L
+        private const val SESSION_IDLE_MS = 60 * 60 * 1000L
         private const val CARRY_CAP = 40
         private const val PER_DEPOSITOR = 2
         private const val OPENED_CAP = 512
@@ -903,10 +991,11 @@ class MeshEngine(
         if (direct.isNotEmpty()) sendOn(direct.take(1), p) else broadcast(p, exclude = null)
     }
 
-    private fun broadcast(p: Packet, exclude: String?) {
+    /** Our own packets go to every neighbour; only relayed copies take the §7 fanout subset. */
+    private fun broadcast(p: Packet, exclude: String?, relaying: Boolean = false) {
         val targets = links.keys.filter { it != exclude }
         if (targets.isEmpty()) return
-        sendOn(RelayPolicy.fanout(p, targets, random), p)
+        sendOn(if (relaying) RelayPolicy.fanout(p, targets, random) else targets, p)
     }
 
     private fun sendOn(targets: List<String>, p: Packet) {

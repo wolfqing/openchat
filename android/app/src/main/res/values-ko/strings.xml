@@ -21,6 +21,7 @@
     <string name="banner_bt_off">블루투스가 꺼져 있습니다. 여기를 탭해 켜세요</string>
     <string name="banner_starting">시작하는 중…</string>
     <string name="banner_searching">근처 사람을 찾는 중…</string>
+    <string name="banner_storage_locked">저장된 신원을 지금 잠금 해제할 수 없습니다. 탭하여 다시 시도하세요.</string>
     <plurals name="banner_connected">
         <item quantity="other">근처 %d명과 연결됨</item>
     </plurals>

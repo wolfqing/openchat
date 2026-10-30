@@ -21,6 +21,7 @@
     <string name="banner_bt_off">Bluetooth выключен. Нажмите, чтобы включить</string>
     <string name="banner_starting">Запуск…</string>
     <string name="banner_searching">Поиск людей рядом…</string>
+    <string name="banner_storage_locked">Сохранённую личность сейчас не удаётся разблокировать. Нажмите, чтобы повторить.</string>
     <plurals name="banner_connected">
         <item quantity="one">Подключено людей рядом: %d</item>
         <item quantity="few">Подключено людей рядом: %d</item>

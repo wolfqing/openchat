@@ -21,6 +21,7 @@
     <string name="banner_bt_off">Bluetooth mati. Ketuk di sini untuk menyalakan</string>
     <string name="banner_starting">Memulai…</string>
     <string name="banner_searching">Mencari orang di sekitar…</string>
+    <string name="banner_storage_locked">Identitas tersimpan tidak dapat dibuka saat ini. Ketuk untuk mencoba lagi.</string>
     <plurals name="banner_connected">
         <item quantity="other">Terhubung dengan %d orang di sekitar</item>
     </plurals>

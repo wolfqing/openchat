@@ -21,6 +21,7 @@
     <string name="banner_bt_off">Bluetooth đang tắt. Chạm vào đây để bật</string>
     <string name="banner_starting">Đang khởi động…</string>
     <string name="banner_searching">Đang tìm người ở gần…</string>
+    <string name="banner_storage_locked">Hiện không thể mở khóa danh tính đã lưu. Nhấn để thử lại.</string>
     <plurals name="banner_connected">
         <item quantity="other">Đã kết nối với %d người ở gần</item>
     </plurals>

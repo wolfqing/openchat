@@ -21,6 +21,7 @@
     <string name="banner_bt_off">O Bluetooth está desligado. Toque aqui para ligar</string>
     <string name="banner_starting">Iniciando…</string>
     <string name="banner_searching">Procurando pessoas por perto…</string>
+    <string name="banner_storage_locked">Não é possível desbloquear a identidade guardada agora. Toque para tentar de novo.</string>
     <plurals name="banner_connected">
         <item quantity="one">Conectado a %d pessoa por perto</item>
         <item quantity="many">Conectado a %d pessoas por perto</item>

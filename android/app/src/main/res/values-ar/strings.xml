@@ -21,6 +21,7 @@
     <string name="banner_bt_off">البلوتوث مغلق. انقر هنا لتشغيله</string>
     <string name="banner_starting">جارٍ البدء…</string>
     <string name="banner_searching">جارٍ البحث عن أشخاص قريبين…</string>
+    <string name="banner_storage_locked">لا يمكن فتح الهوية المحفوظة الآن. انقر لإعادة المحاولة.</string>
     <plurals name="banner_connected">
         <item quantity="zero">متصل بأشخاص قريبين: %d</item>
         <item quantity="one">متصل بأشخاص قريبين: %d</item>
