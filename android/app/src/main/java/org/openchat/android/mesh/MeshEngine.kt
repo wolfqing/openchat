@@ -337,7 +337,7 @@ class MeshEngine(
         if (!force && now < nextAnnounceDue) return
         if (now - lastAnnounce < 1000) return
         // No neighbour list: it hands any listener the local social graph, and routing falls back to flooding (§20).
-        val caps = AuthPeerState.CAP_PRIVATE_MEDIA or (if (bridgeCell != null) CAP_BRIDGE else 0L)
+        val caps = AuthPeerState.CAP_PRIVATE_MEDIA or (if (bridgeCell != null) CAP_BRIDGE else 0L) or (if (gateway) CAP_GATEWAY else 0L)
         val payload = Announcement(identity.nickname, identity.noise.publicKey, identity.signing.publicKey, emptyList(), caps, bridgeCell).encode() ?: return
         val p = sign(Packet(type = MessageType.ANNOUNCE, senderId = identity.peerId, timestamp = now, payload = payload)) ?: return
         dedup.markIfNew(Deduplicator.key(p))
@@ -534,6 +534,8 @@ class MeshEngine(
     /** Our advertised rendezvous cell while the bridge is on, or null. Re-announces on change. */
     @Volatile var bridgeCell: String? = null
         private set
+    @Volatile var gateway = false
+        private set
 
     fun setBridgeCell(cell: String?) {
         if (cell == bridgeCell) return
@@ -541,6 +543,17 @@ class MeshEngine(
         lastAnnounce = 0
         sendAnnounce(force = true)
     }
+
+    /** Whether we advertise the gateway bit: internet shared with the mesh for location channels (§24.5). */
+    fun setGateway(on: Boolean) {
+        if (on == gateway) return
+        gateway = on
+        lastAnnounce = 0
+        sendAnnounce(force = true)
+    }
+
+    /** Reachable peers that carry location-channel events to and from the internet. */
+    fun gatewayPeers(): List<String> = peers.filter { (_, s) -> s.capabilities and CAP_GATEWAY != 0L }.keys.toList()
 
     /** Reachable peers that bridge, with the cell they advertise. */
     fun bridgePeers(): List<Pair<String, String?>> =
@@ -1237,6 +1250,7 @@ class MeshEngine(
         private const val HISTORY_CAP = 1000
         private const val GROUP_HISTORY_CAP = 200
         const val CAP_BRIDGE = 1L shl 7
+        const val CAP_GATEWAY = 1L shl 2
         private val SYNC_TYPES = SyncTypes.PUBLIC or SyncTypes.GROUP or SyncTypes.BOARD
         private const val HISTORY_MAX_AGE_MS = 900_000L
         private const val FUTURE_SKEW_MS = 120_000L

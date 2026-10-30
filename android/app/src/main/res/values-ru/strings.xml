@@ -244,4 +244,5 @@
     <string name="cmd_trace_none">путь к %1$s неизвестен</string>
     <string name="cmd_trace_you">вы</string>
     <string name="cmd_pong">ответ от %1$s: %2$d мс</string>
+    <string name="bridge_gateway">Также делится вашим интернетом с телефонами рядом для каналов по местоположению: их подписанные сообщения уходят через вас, а каналы, в которых вы состоите, доходят до них.</string>
 </resources>

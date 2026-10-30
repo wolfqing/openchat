@@ -236,4 +236,5 @@
     <string name="cmd_trace_none">kein bekannter Pfad zu %1$s</string>
     <string name="cmd_trace_you">du</string>
     <string name="cmd_pong">Antwort von %1$s: %2$d ms</string>
+    <string name="bridge_gateway">Außerdem teilst du dein Internet für Ortskanäle mit Telefonen in der Nähe: Ihre signierten Kanalnachrichten gehen über dich hinaus, und die Kanäle, in denen du bist, kommen über dich zu ihnen.</string>
 </resources>

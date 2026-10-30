@@ -244,4 +244,5 @@
     <string name="cmd_trace_none">不知道到 %1$s 的路径</string>
     <string name="cmd_trace_you">你</string>
     <string name="cmd_pong">%1$s 回应：%2$d 毫秒</string>
+    <string name="bridge_gateway">同时也把你的网络分享给附近的手机用于地区频道：它们签好名的频道消息经你发出，你所在频道的消息也经你传给它们。</string>
 </resources>

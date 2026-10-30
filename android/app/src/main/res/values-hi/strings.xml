@@ -236,4 +236,5 @@
     <string name="cmd_trace_none">%1$s तक कोई ज्ञात रास्ता नहीं</string>
     <string name="cmd_trace_you">आप</string>
     <string name="cmd_pong">%1$s से जवाब: %2$d ms</string>
+    <string name="bridge_gateway">यह स्थान चैनलों के लिए आपका इंटरनेट आस-पास के फ़ोनों से भी साझा करता है: उनके हस्ताक्षरित संदेश आपके ज़रिए बाहर जाते हैं, और जिन चैनलों में आप हैं वे उन तक आते हैं।</string>
 </resources>

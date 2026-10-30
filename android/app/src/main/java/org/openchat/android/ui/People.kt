@@ -197,7 +197,7 @@ fun BridgeSection() {
     Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.bridge_title), fontWeight = FontWeight.SemiBold)
-            Text(stringResource(R.string.bridge_body), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.bridge_body) + " " + stringResource(R.string.bridge_gateway), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (b.enabled) {
                 val line = when {
                     b.cell == null -> ctx.getString(R.string.bridge_need_cell)

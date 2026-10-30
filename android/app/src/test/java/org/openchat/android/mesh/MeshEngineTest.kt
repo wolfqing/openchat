@@ -619,4 +619,17 @@ class MeshEngineTest {
         assertEquals(listOf(bob.myPeerHex, x.peerIdHex), alice.estimatePath(y.peerIdHex))
         assertEquals(null, alice.estimatePath("0011223344556677"))
     }
+
+    @Test
+    fun gatewayBitIsAdvertisedAndWithdrawn() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        carol.setGateway(true)
+        net.scheduler.advance(3_000)
+        assertEquals(listOf(carol.myPeerHex), alice.gatewayPeers())
+        assertEquals(emptyList<Pair<String, String?>>(), alice.bridgePeers()) // a gateway is not a bridge
+        carol.setGateway(false)
+        net.scheduler.advance(3_000)
+        assertEquals(emptyList<String>(), alice.gatewayPeers())
+    }
 }

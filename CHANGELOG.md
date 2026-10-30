@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Location-channel gateway, compatible with bitchat ([spec §24.5](docs/protocol-spec.md)).
+  With the bridge on and internet working, your phone also serves people
+  nearby who have none: what they post in a location channel goes out
+  through you, and the channels you are in come in for them over the radio
+  (30 a minute). Without internet, your own channel messages go out through
+  such a phone automatically. Every carried event is signature-checked;
+  bitchat's loop rules apply. The bridge explanation in the Me tab says so.
+- Unread counts no longer grow when the same message arrives twice.
+
 - `/ping @name` and `/trace @name` in Nearby and private chats, compatible
   with bitchat ([spec §25](docs/protocol-spec.md)). Ping shows the round
   trip and how many hops away someone is; trace shows an estimated path

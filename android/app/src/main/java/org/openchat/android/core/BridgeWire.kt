@@ -17,6 +17,8 @@ class NostrCarrier(val direction: Int, val geohash: String, val eventJson: ByteA
     }
 
     companion object {
+        const val TO_GATEWAY = 0x01   // a mesh-only phone asks a gateway to publish its location-channel event
+        const val FROM_GATEWAY = 0x02 // a gateway carries a location-channel event onto the radio
         const val TO_BRIDGE = 0x03   // a mesh-only sender asks a bridge phone to publish its event
         const val FROM_BRIDGE = 0x04 // a bridge phone carries a remote event onto the radio
         const val MAX_EVENT_BYTES = 16 * 1024
@@ -36,7 +38,8 @@ class NostrCarrier(val direction: Int, val geohash: String, val eventJson: ByteA
             if (r.remaining != 0) return null
             val g = gh?.takeIf { it.isNotEmpty() && it.toByteArray(Charsets.UTF_8).size <= 12 } ?: return null
             val j = json?.takeIf { it.isNotEmpty() && it.size <= MAX_EVENT_BYTES } ?: return null
-            return NostrCarrier(dir ?: return null, g, j)
+            val d = dir?.takeIf { it in TO_GATEWAY..FROM_BRIDGE } ?: return null // unknown directions are refused
+            return NostrCarrier(d, g, j)
         }
     }
 }

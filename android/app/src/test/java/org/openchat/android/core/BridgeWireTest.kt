@@ -26,6 +26,8 @@ class BridgeWireTest {
         assertEquals(NostrCarrier.FROM_BRIDGE, back.direction); assertEquals("u4pruy", back.geohash); assertArrayEquals(json, back.eventJson)
         assertNull(NostrCarrier.decode(bytes.copyOf(bytes.size - 1)))
         assertNull(NostrCarrier.decode(ByteArray(0)))
+        assertEquals(NostrCarrier.TO_GATEWAY, NostrCarrier.decode(NostrCarrier(NostrCarrier.TO_GATEWAY, "u4pruy", json).encode()!!)!!.direction)
+        assertNull(NostrCarrier.decode(NostrCarrier(0x77, "u4pruy", json).encode()!!))
         assertNull(NostrCarrier(NostrCarrier.TO_BRIDGE, "", json).encode())
         assertNull(NostrCarrier(NostrCarrier.TO_BRIDGE, "u".repeat(13), json).encode())
         assertNotNull(NostrCarrier(NostrCarrier.TO_BRIDGE, "u".repeat(12), json).encode())

@@ -232,4 +232,5 @@
     <string name="cmd_trace_none">%1$s への経路が不明です</string>
     <string name="cmd_trace_you">あなた</string>
     <string name="cmd_pong">%1$s から応答：%2$d ms</string>
+    <string name="bridge_gateway">位置チャンネルのために、近くの端末とインターネットも共有します。相手の署名付きメッセージはあなた経由で送られ、あなたが参加中のチャンネルは相手に届きます。</string>
 </resources>

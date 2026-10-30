@@ -236,4 +236,5 @@
     <string name="cmd_trace_none">مسیری به %1$s شناخته نیست</string>
     <string name="cmd_trace_you">شما</string>
     <string name="cmd_pong">پاسخ از %1$s: %2$d میلی‌ثانیه</string>
+    <string name="bridge_gateway">همچنین اینترنت شما را برای کانال‌های مکانی با گوشی‌های نزدیک به اشتراک می‌گذارد: پیام‌های امضاشدهٔ آن‌ها از طریق شما بیرون می‌رود و پیام‌های کانال‌هایی که در آن هستید به آن‌ها می‌رسد.</string>
 </resources>

@@ -232,4 +232,5 @@
     <string name="cmd_trace_none">tidak ada jalur yang diketahui ke %1$s</string>
     <string name="cmd_trace_you">kamu</string>
     <string name="cmd_pong">balasan dari %1$s: %2$d md</string>
+    <string name="bridge_gateway">Ini juga membagikan internetmu ke ponsel di sekitar untuk kanal lokasi: pesan bertanda tangan mereka keluar lewat kamu, dan kanal yang kamu ikuti sampai ke mereka.</string>
 </resources>

@@ -236,4 +236,5 @@
     <string name="cmd_trace_none">%1$s için bilinen bir yol yok</string>
     <string name="cmd_trace_you">sen</string>
     <string name="cmd_pong">%1$s yanıt verdi: %2$d ms</string>
+    <string name="bridge_gateway">Konum kanalları için internetini yakındaki telefonlarla da paylaşır: onların imzalı kanal mesajları senin üzerinden çıkar, bulunduğun kanallar da onlara ulaşır.</string>
 </resources>

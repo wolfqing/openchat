@@ -144,10 +144,12 @@ class MeshService : Service(), ChatController {
         Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)); nostr.setExtraRelays(s.relays) } }
         ble = BleTransport(this, handler) { engine }
         val directory = RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText())
-        bridge = Bridge(this, directory, { engine }, { task -> handler.post(task) }) { s -> ChatRepository.setBridge(s) }
+        bridge = Bridge(this, directory, { engine }, { geo }, { task -> handler.post(task) }) { s -> ChatRepository.setBridge(s) }
         geo = GeoChannels(directory, identity.nostrSeed, { engine.identity.nickname }) { from, text ->
             notifyMention(from, text)
         }
+        geo.onLive = { ev, g -> handler.post { bridge.onChannelEvent(ev, g) } }
+        geo.onOfflineSend = { ev, g -> handler.post { bridge.uplinkChannelEvent(ev, g) } }
         groups = GroupManager(this, SealedFile(this, "groups.bin"), { engine }) { from, text -> notifyPrivate(from, text) }
         handler.post { groups.load() }
         ChatRepository.controller = this

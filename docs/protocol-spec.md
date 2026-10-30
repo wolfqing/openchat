@@ -906,8 +906,9 @@ internet broadcasts events from other islands onto the radio, after a 0.2–
 minute. Receiving fromBridge needs no toggle. Loop rules: an event that
 came over the radio is never published or rebroadcast; an event this
 phone published is never rebroadcast; each event is rebroadcast at most
-once, and never when the radio copy is already present. `0x01`/`0x02`
-(geohash-chat gateway) are not implemented and are relayed only.
+once, and never when the radio copy is already present. Directions
+`0x01`/`0x02` are the location-channel gateway (§24.5); other values are
+refused.
 
 ### 24.4 Courier drops
 
@@ -920,6 +921,29 @@ subscribes to kind 1401 with `#x` = its own candidate tags (§13.3) and
 those of up to 16 verified direct neighbours, since 24 h ago; it opens its
 own and hands the others to their recipients as directed courier packets.
 Message-ID dedup absorbs a message arriving by drop, courier and direct link.
+
+### 24.5 Location-channel gateway
+
+Capability bit 2 in the announce. A phone advertises it while the bridge
+toggle is on and it has a working relay connection; it then shares that
+connection with the mesh for location channels (§9):
+
+- Deposit (`0x01`, directed to the gateway): a phone that just sent a
+  kind-20000 channel event and has no relay connection hands the finished,
+  signed event to one gateway peer. No toggle is needed for this. The
+  gateway checks kind, a `g` tag equal to the carrier geohash, age ≤ 15 min,
+  dedup, 10 deposits per depositor per minute, and only then the Schnorr
+  signature; it publishes to that cell's relays, or queues (20, 5 per
+  depositor) until it is online. If it is in that channel itself, the event
+  also shows on its own timeline.
+- Downlink (`0x02`, broadcast): a gateway carries each fresh, verified
+  kind-20000 event its own channel subscriptions deliver onto the radio,
+  at most 30 a minute (30 waiting, oldest dropped), each at most once,
+  marked only after it is sent. Never one it learned from the radio or
+  published itself.
+- Receiving `0x02` needs no toggle: after the same checks and the
+  signature, the event is marked as radio-carried (never published or
+  carried again) and shown if we are in that channel.
 
 ## 25. Mesh diagnostics (v0.6)
 

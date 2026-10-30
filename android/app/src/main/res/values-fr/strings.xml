@@ -240,4 +240,5 @@
     <string name="cmd_trace_none">aucun chemin connu vers %1$s</string>
     <string name="cmd_trace_you">vous</string>
     <string name="cmd_pong">réponse de %1$s : %2$d ms</string>
+    <string name="bridge_gateway">Il partage aussi votre internet avec les téléphones proches pour les canaux de lieu : leurs messages signés sortent par vous, et les canaux où vous êtes leur parviennent par vous.</string>
 </resources>

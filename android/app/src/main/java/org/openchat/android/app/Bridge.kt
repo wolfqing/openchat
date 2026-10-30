@@ -32,6 +32,7 @@ class Bridge(
     private val context: Context,
     private val directory: RelayDirectory,
     private val engine: () -> MeshEngine,
+    private val geo: () -> GeoChannels,
     private val post: (() -> Unit) -> Unit,
     private val publish: (BridgeStatus) -> Unit,
 ) {
@@ -69,8 +70,14 @@ class Bridge(
     private var lastDropRefresh = 0L
     private val dropsSeen = Ids()
     private val pendingDrops = ArrayDeque<NostrEvent>()
+    // Location-channel gateway (§24.5).
+    private val pendingGw = ArrayDeque<Pair<NostrEvent, String>>()
+    private val gwTimes = ArrayDeque<Long>()
+    private var gwDrainArmed = false
+    private val queuedGw = ArrayList<Triple<String, String, NostrEvent>>() // depositor, channel, event
 
     private val online get() = pool.connectedCount > 0
+    private val internet get() = online || geo().online
 
     fun setEnabled(on: Boolean) {
         prefs.edit().putBoolean(KEY, on).apply()
@@ -97,6 +104,11 @@ class Bridge(
         }
         // Advertise only while able to serve: a mesh-only phone must not attract deposits.
         engine().setBridgeCell(if (online) cell else null)
+        engine().setGateway(internet)
+        if (geo().online && queuedGw.isNotEmpty()) {
+            queuedGw.forEach { (_, g, ev) -> if (published.add(ev.id)) geo().publishCarried(ev, g) }
+            queuedGw.clear()
+        }
         val now = System.currentTimeMillis()
         if (online && cell != null && now - lastPresence > PRESENCE_MS) {
             lastPresence = now
@@ -195,6 +207,7 @@ class Bridge(
     fun onCarrier(senderHex: String, payload: ByteArray, directed: Boolean) {
         val carrier = NostrCarrier.decode(payload) ?: return
         val ev = event(carrier) ?: return
+        if (carrier.direction == NostrCarrier.TO_GATEWAY || carrier.direction == NostrCarrier.FROM_GATEWAY) return onGatewayCarrier(senderHex, carrier, ev, directed)
         val m = classify(ev, carrier.geohash) ?: return
         when {
             carrier.direction == NostrCarrier.TO_BRIDGE && directed -> uplink(senderHex, carrier.geohash, ev)
@@ -219,6 +232,71 @@ class Bridge(
         if (queuedUp.count { it.first == depositor } >= 5) return
         queuedUp.add(Triple(depositor, c, ev))
         while (queuedUp.size > 20) queuedUp.removeAt(0)
+    }
+
+    // ------------------------------------------------------------------ location-channel gateway (§24.5)
+
+    /** Carried location-channel events: the cell's own kind, its `g` tag, fresh. Signature checked by the caller. */
+    private fun channelEvent(ev: NostrEvent, g: String) =
+        ev.kind == NostrEvent.KIND_GEOHASH_MESSAGE && Geohash.isValid(g) && ev.tag("g") == g &&
+            Math.abs(System.currentTimeMillis() / 1000 - ev.createdAt) <= MAX_AGE_S
+
+    private fun onGatewayCarrier(senderHex: String, c: NostrCarrier, ev: NostrEvent, directed: Boolean) {
+        if (!channelEvent(ev, c.geohash)) return
+        if (c.direction == NostrCarrier.TO_GATEWAY && directed) {
+            // Deposit: publish it (cheap checks and the depositor's budget before the signature).
+            if (!enabled || ev.id in meshCarried || ev.id in published || queuedGw.any { it.third.id == ev.id }) return
+            val now = System.currentTimeMillis()
+            val times = upTimes.getOrPut(senderHex) { ArrayDeque() }
+            while (times.isNotEmpty() && now - times.first() > 60_000) times.removeFirst()
+            if (times.size >= UP_PER_MINUTE || !ev.isValid()) return
+            times.addLast(now)
+            if (geo().online) { published.add(ev.id); geo().publishCarried(ev, c.geohash) }
+            else if (queuedGw.count { it.first == senderHex } < 5) {
+                queuedGw.add(Triple(senderHex, c.geohash, ev))
+                while (queuedGw.size > 20) queuedGw.removeAt(0)
+            } else return
+            if (geo().isJoined(c.geohash)) geo().injectCarried(ev)
+        } else if (c.direction == NostrCarrier.FROM_GATEWAY && !directed) {
+            // Receiving needs no toggle. Marked after the signature check, so a forgery cannot poison the set.
+            if (ev.id in published || !ev.isValid() || !meshCarried.add(ev.id)) return
+            if (geo().isJoined(c.geohash)) geo().injectCarried(ev)
+        }
+    }
+
+    /** A live event on a channel we are in: as a gateway, carry it onto the radio for phones without internet. */
+    fun onChannelEvent(ev: NostrEvent, g: String) {
+        if (!enabled || !channelEvent(ev, g)) return
+        if (ev.id in meshCarried || ev.id in published || ev.id in rebroadcast || pendingGw.any { it.first.id == ev.id }) return
+        if (!ev.isValid()) return
+        pendingGw.addLast(ev to g)
+        while (pendingGw.size > MAX_PENDING_DOWN) pendingGw.removeFirst()
+        drainGateway()
+    }
+
+    private fun drainGateway() {
+        val now = System.currentTimeMillis()
+        while (gwTimes.isNotEmpty() && now - gwTimes.first() > 60_000) gwTimes.removeFirst()
+        while (pendingGw.isNotEmpty() && gwTimes.size < GATEWAY_PER_MINUTE) {
+            val (ev, g) = pendingGw.removeFirst()
+            if (!channelEvent(ev, g)) continue
+            val payload = NostrCarrier(NostrCarrier.FROM_GATEWAY, g, ev.toJson().toByteArray(Charsets.UTF_8)).encode() ?: continue
+            engine().sendCarrier(payload, null)
+            rebroadcast.add(ev.id) // only once actually sent, so an overflowed event can come again
+            gwTimes.addLast(now)
+        }
+        if (pendingGw.isEmpty() || gwDrainArmed) return
+        gwDrainArmed = true
+        val wait = maxOf(50L, 60_000 - (now - (gwTimes.firstOrNull() ?: now)))
+        android.os.Handler(android.os.Looper.myLooper() ?: return).postDelayed({ gwDrainArmed = false; drainGateway() }, wait)
+    }
+
+    /** Our own channel event found no relay: hand it to a gateway on the mesh. Needs no toggle. */
+    fun uplinkChannelEvent(ev: NostrEvent, g: String) {
+        if (ev.id in meshCarried) return
+        published.add(ev.id)
+        val gateway = engine().gatewayPeers().firstOrNull() ?: return
+        NostrCarrier(NostrCarrier.TO_GATEWAY, g, ev.toJson().toByteArray(Charsets.UTF_8)).encode()?.let { engine().sendCarrier(it, gateway) }
     }
 
     // ------------------------------------------------------------------ shared
@@ -289,7 +367,8 @@ class Bridge(
         pool.unsubscribe(SUB); pool.unsubscribe(DROP_SUB)
         cell = null; subscribed = emptySet(); dropTags = emptySet(); lastDropRefresh = 0
         pendingDown.clear(); queuedUp.clear(); pendingDrops.clear(); participants.clear()
-        engine().setBridgeCell(null)
+        pendingGw.clear(); queuedGw.clear()
+        engine().setBridgeCell(null); engine().setGateway(false)
     }
 
     /** Panic wipe: off, forgotten, back to the default. */
@@ -315,6 +394,7 @@ class Bridge(
         private const val MAX_DROP_BYTES = 20 * 1024
         private const val MAX_PENDING_DOWN = 30
         private const val DOWN_PER_MINUTE = 20
+        private const val GATEWAY_PER_MINUTE = 30
         private const val UP_PER_MINUTE = 10
         private const val PRESENCE_MS = 4 * 60_000L
         private const val PARTICIPANT_MS = 10 * 60_000L

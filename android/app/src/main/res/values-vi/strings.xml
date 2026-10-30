@@ -232,4 +232,5 @@
     <string name="cmd_trace_none">không biết đường đến %1$s</string>
     <string name="cmd_trace_you">bạn</string>
     <string name="cmd_pong">%1$s phản hồi: %2$d ms</string>
+    <string name="bridge_gateway">Nó cũng chia sẻ internet của bạn với các điện thoại gần đó cho kênh vị trí: tin nhắn đã ký của họ đi ra qua bạn, và các kênh bạn đang tham gia đến được với họ.</string>
 </resources>

@@ -163,12 +163,14 @@ object ChatRepository {
     @Volatile var openConversation: String? = null
 
     fun add(m: ChatMessage) {
+        var added = false
         _messages.update { all ->
             val list = all[m.conversation].orEmpty()
-            if (list.any { it.id == m.id && it.senderKey == m.senderKey }) return@update all
+            added = list.none { it.id == m.id && it.senderKey == m.senderKey }
+            if (!added) return@update all
             all + (m.conversation to (list + m).sortedBy { it.timestamp }.takeLast(TIMELINE_CAP))
         }
-        if (!m.mine && openConversation != m.conversation) {
+        if (added && !m.mine && openConversation != m.conversation) {
             _unread.update { it + (m.conversation to (it[m.conversation] ?: 0) + 1) }
         }
     }
