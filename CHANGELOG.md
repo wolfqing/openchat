@@ -2,6 +2,100 @@
 
 ## Unreleased
 
+- Live voice, compatible with bitchat ([spec §29](docs/protocol-spec.md)).
+  Hold the mic to talk and release to send (a quick tap still starts and
+  stops a recording). In Nearby and private chats people hear you while you
+  are still talking: their bubble appears at once and plays live if they
+  have that chat open, and the finished note then slots into the same
+  bubble. Public bursts are signed and accepted for 30 seconds; floods are
+  capped. A Me-tab switch, on by default, turns live voice off in both
+  directions. Not yet tried on a phone.
+- 6 new tests, 148 in all.
+
+- `/pay` and Cashu cards, compatible with bitchat ([spec §28](docs/protocol-spec.md)).
+  `/pay <token>` sends a Cashu ecash token after checking it is real money;
+  outside a private chat it needs `/pay <token> public`, because whoever
+  redeems a token first gets it. Tokens in messages show as a card with the
+  amount, mint and memo, an "Open in wallet" button and Copy. The app never
+  talks to a mint.
+- 5 new tests, 142 in all.
+
+- One-time prekeys, compatible with bitchat ([spec §27](docs/protocol-spec.md)).
+  Each phone publishes eight single-use keys that spread like board posts.
+  Mail for someone out of reach, whether carried by other phones or parked
+  on relays, is now sealed to one of their single-use keys when one is
+  known, and that key is deleted two days after the mail is opened, so
+  stealing the phone later does not unlock mail captured on the way.
+  Opening bitchat's forward-secret mail works too.
+- 4 new tests.
+
+- Vouching, compatible with bitchat ([spec §26](docs/protocol-spec.md)).
+  People you verified in person also tell your phone, over an encrypted
+  session and at most once a day, whom they verified; those people get a
+  grey ✓ and "verified by …" on their card. Only vouches from people you
+  verified count, and they lapse after 30 days or as soon as you un-verify
+  the voucher.
+- openchat now announces the capabilities it has (groups, board, vouching,
+  diagnostics), so bitchat phones offer them.
+- 5 new tests.
+
+- Location-channel gateway, compatible with bitchat ([spec §24.5](docs/protocol-spec.md)).
+  With the bridge on and internet working, your phone also serves people
+  nearby who have none: what they post in a location channel goes out
+  through you, and the channels you are in come in for them over the radio
+  (30 a minute). Without internet, your own channel messages go out through
+  such a phone automatically. Every carried event is signature-checked;
+  bitchat's loop rules apply. The bridge explanation in the Me tab says so.
+- Unread counts no longer grow when the same message arrives twice.
+
+- `/ping @name` and `/trace @name` in Nearby and private chats, compatible
+  with bitchat ([spec §25](docs/protocol-spec.md)). Ping shows the round
+  trip and how many hops away someone is; trace shows an estimated path
+  from the neighbour lists bitchat phones announce. Pongs are budgeted per
+  radio link, so a forged sender cannot turn a phone into a pong cannon.
+- 2 new tests.
+
+- Mesh bridge, wire-compatible with bitchat ([spec §24](docs/protocol-spec.md)),
+  off by default (Me tab). Bluetooth reaches only so far: with the bridge on,
+  Nearby messages also go to the internet relays for your neighbourhood
+  cell (about 1.2 km) under an unlinkable per-cell key, and what people in
+  other islands of that area say appears in Nearby, marked "via bridge". A
+  bridging phone with internet serves its island: it publishes messages
+  that bridging phones without internet hand to it, and carries other
+  islands' messages onto the radio (holdoff, 20 a minute, bitchat's loop
+  rules). A copy of a radio message is skipped, and the radio copy replaces
+  a bridged row that got there first.
+- Courier drops: with the bridge on, mail for someone out of reach is also
+  parked on relays as a sealed kind-1401 drop under a throwaway key, so it
+  arrives as soon as either side is online; a bridging phone also fetches
+  drops for verified neighbours and hands them over.
+- 5 new tests (including upstream's pinned message-ID vector), 125 in all.
+  The bridge's own relay-side logic is not unit-tested yet.
+
+- Notice board, wire-compatible with bitchat ([spec §23](docs/protocol-spec.md)).
+  Board on the Nearby tab: pin a notice for 1, 3 or 7 days, mark it urgent,
+  take it down later. Posts are signed by their author and pass from phone
+  to phone, including by history sync, so people who arrive days later
+  still read them; a takedown spreads the same way. Five posts per author,
+  200 in all. A fresh urgent notice adds a line to the Nearby chat; others
+  raise a badge. Kept with the sealed mesh state, wiped by the triple tap.
+- 5 new tests, 120 in all.
+
+- Private groups, wire-compatible with bitchat ([spec §22](docs/protocol-spec.md)).
+  New group on the Private tab or `/group create`; the creator invites
+  people nearby from Members (or `/group invite @name`), removes them, and
+  anyone can leave. Up to 16 members. The creator signs the roster and a
+  fresh key on every change and hands them out inside Noise sessions;
+  messages are sealed with ChaCha20-Poly1305 under the group key, signed
+  by their author, and flooded over the mesh like public ones, so only
+  members read them. Members who were away pick up missed messages by
+  history sync. Text only for now. Groups and keys are sealed on disk and
+  go with the triple tap.
+- Fix: a history-sync copy arriving while a relay waited cancelled the
+  relay, so a message could stop one hop short. A sync reply goes to one
+  phone only and no longer counts as someone else having relayed it.
+- 6 new tests, 115 in all.
+
 - Flood protection, as bitchat ([spec §21](docs/protocol-spec.md)): a
   sender may post five public messages at once and then one a second, and
   one text may appear three times at once and then once every two seconds,

@@ -55,8 +55,12 @@ object NoisePayloadType {
     const val PRIVATE_MESSAGE = 0x01
     const val READ_RECEIPT = 0x02
     const val DELIVERED = 0x03
+    const val GROUP_INVITE = 0x06
+    const val VOICE_FRAME = 0x08
+    const val GROUP_KEY_UPDATE = 0x07
     const val VERIFY_CHALLENGE = 0x10
     const val VERIFY_RESPONSE = 0x11
+    const val VOUCH = 0x12
     const val PRIVATE_FILE = 0x20
     const val PRIVATE_FILE_PRERELEASE = 0x09 // accepted, never sent
     const val AUTHENTICATED_PEER_STATE = 0x21

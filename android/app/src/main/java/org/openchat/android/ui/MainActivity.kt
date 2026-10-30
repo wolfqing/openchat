@@ -97,7 +97,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        org.openchat.android.app.ChatRepository.foreground = true
         refreshPermissionState()
+    }
+
+    override fun onPause() {
+        org.openchat.android.app.ChatRepository.foreground = false
+        super.onPause()
     }
 
     private fun meshPermissions(): Array<String> {

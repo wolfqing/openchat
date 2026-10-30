@@ -10,6 +10,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -116,6 +120,7 @@ import org.openchat.android.app.Conversation
 import org.openchat.android.app.DeliveryState
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.app.Social
+import org.openchat.android.core.Cashu
 import org.openchat.android.core.Mentions
 import org.openchat.android.nostr.Geohash
 import java.text.DateFormat
@@ -264,6 +269,10 @@ fun MainScreen(
     val openRequest by ChatRepository.openRequest.collectAsState()
     LaunchedEffect(openRequest) { openRequest?.let { openChat = it; ChatRepository.requestOpen(null) } }
     person?.let { p -> PersonSheet(p, onDismiss = { person = null }, onMessage = { openChat = Conversation.Private(it).key }) }
+    openChat?.takeIf { it.startsWith("grp:") }?.let { key ->
+        GroupChatScreen(key.removePrefix("grp:"), onBack = { openChat = null }, onPanic = onPanic)
+        return
+    }
     Conversation.GeoPrivate.parse(openChat ?: "")?.let { c ->
         GeoPrivateChatScreen(c, onBack = { openChat = null }, onPanic = onPanic)
         return
@@ -272,6 +281,10 @@ fun MainScreen(
     val chat = openChat
     if (chat != null && chat.startsWith("dm:")) {
         PrivateChatScreen(chat.removePrefix("dm:"), onBack = { openChat = null }, onPanic = onPanic)
+        return
+    }
+    if (chat == BOARD) {
+        BoardScreen(onBack = { openChat = null }, onPanic = onPanic)
         return
     }
     if (chat != null && chat.startsWith("geo:")) {
@@ -284,6 +297,14 @@ fun MainScreen(
             TopAppBar(
                 navigationIcon = { PanicLogo(onPanic) },
                 title = { PanicTitle(stringResource(tab.label), onPanic) },
+                actions = {
+                    if (tab == Tab.NEARBY) {
+                        val unseen by ChatRepository.boardUnseen.collectAsState()
+                        TextButton(onClick = { openChat = BOARD }) {
+                            BadgedBox(badge = { if (unseen > 0) Badge { Text("$unseen") } }) { Text(stringResource(R.string.board_title)) }
+                        }
+                    }
+                },
             )
         },
         bottomBar = {
@@ -291,7 +312,7 @@ fun MainScreen(
                 Tab.entries.forEach { t ->
                     val count = when (t) {
                         Tab.NEARBY -> unread[Conversation.Mesh.key] ?: 0
-                        Tab.PRIVATE -> unread.filterKeys { it.startsWith("dm:") || it.startsWith("gdm:") }.values.sum()
+                        Tab.PRIVATE -> unread.filterKeys { it.startsWith("dm:") || it.startsWith("gdm:") || it.startsWith("grp:") }.values.sum()
                         Tab.LOCATION -> unread.filterKeys { it.startsWith("geo:") }.values.sum()
                         Tab.ME -> 0
                     }
@@ -322,7 +343,7 @@ fun MainScreen(
                     onSend = { ChatRepository.controller?.sendPublic(it) },
                     onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) person = PersonRef.Mesh(m.senderKey, m.senderName) },
                 )
-                Tab.PRIVATE -> PrivateList(onOpen = { openChat = if (it.startsWith("gdm:")) it else Conversation.Private(it).key })
+                Tab.PRIVATE -> PrivateList(onOpen = { openChat = if (it.startsWith("gdm:") || it.startsWith("grp:")) it else Conversation.Private(it).key })
                 Tab.LOCATION -> LocationPane(onRequestLocation, onOpen = { openChat = Conversation.Geo(it).key })
                 Tab.ME -> MePane(onShareApp, onLanguage, onScan)
             }
@@ -332,12 +353,13 @@ fun MainScreen(
 
 /** Name with its #xxxx suffix set smaller, monospaced and muted, so the name itself leads. */
 @Composable
-fun labelText(label: PeerLabel, teleported: Boolean = false, verified: Boolean = false): AnnotatedString = buildAnnotatedString {
+fun labelText(label: PeerLabel, teleported: Boolean = false, verified: Boolean = false, vouched: Boolean = false): AnnotatedString = buildAnnotatedString {
     append(label.name)
     withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal, fontSize = 0.8.em, color = MaterialTheme.colorScheme.onSurfaceVariant)) {
         append(label.suffix)
     }
     if (verified) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" ✓") }
+    else if (vouched) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append(" ✓") } // verified by someone we verified
     if (teleported) append(" ✈")
 }
 
@@ -500,8 +522,13 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = if (m.mine) Alignment.End else Alignment.Start) {
         if (!m.mine) {
             Text(
-                labelText(PeerLabel.of(m), m.teleported, verified = !m.conversation.startsWith("geo:") && Social.state.collectAsState().value.isVerifiedPeer(m.senderKey)), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.let { if (onSenderClick != null) it.clickable { onSenderClick(m) } else it },
+                buildAnnotatedString {
+                    val social by Social.state.collectAsState()
+                    val mesh = !m.bridged && !m.conversation.startsWith("geo:")
+                    append(labelText(PeerLabel.of(m), m.teleported, verified = mesh && social.isVerifiedPeer(m.senderKey), vouched = mesh && social.isVouchedPeer(m.senderKey)))
+                    if (m.bridged) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Normal)) { append(" · " + stringResource(R.string.bridge_via)) }
+                }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.let { if (onSenderClick != null && !m.bridged) it.clickable { onSenderClick(m) } else it },
             )
         }
         Surface(
@@ -513,7 +540,10 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
             when {
                 m.attachment != null && m.audio -> VoiceNote(m.attachment)
                 m.attachment != null -> PhotoView(m.attachment, covered = !m.mine)
-                else -> Text(withMentions(m.text), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
+                else -> Column {
+                    Text(withMentions(m.text), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
+                    Cashu.tokensIn(m.text).take(3).forEach { CashuCard(it) }
+                }
             }
         }
         val status = if (m.mine) " · " + stringResource(
@@ -527,31 +557,78 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
     }
 }
 
+/** A Cashu token in a message: what it is worth, and a hand-off to a wallet app (§28). */
+@Composable
+private fun CashuCard(token: String) {
+    val ctx = LocalContext.current
+    val info = remember(token) { Cashu.decode(token) } ?: return
+    Column(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp)) {
+        Text("🥜 " + (info.display ?: stringResource(R.string.pay_token)) + (info.mintHost?.let { " · $it" } ?: ""), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        info.memo?.let { Text(it, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(onClick = {
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("cashu:$token"))
+                try { ctx.startActivity(intent) } catch (e: android.content.ActivityNotFoundException) {
+                    android.widget.Toast.makeText(ctx, R.string.pay_no_wallet, android.widget.Toast.LENGTH_LONG).show()
+                }
+            }) { Text(stringResource(R.string.pay_open_wallet)) }
+            TextButton(onClick = {
+                val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("cashu", token))
+                android.widget.Toast.makeText(ctx, R.string.pay_copied, android.widget.Toast.LENGTH_SHORT).show()
+            }) { Text(stringResource(R.string.pay_copy)) }
+        }
+    }
+}
+
 /** Photo picker and a tap-to-start, tap-to-send voice recorder (§18). */
 @Composable
 private fun MediaButtons(conversation: String) {
     val ctx = LocalContext.current
-    val recorder = remember { VoiceRecorder(ctx) }
+    val recorder = remember { VoiceRecorder(ctx) } // fallback when the live encoder is unavailable
     var recording by remember { mutableStateOf(false) }
+    var viaRecorder by remember { mutableStateOf(false) }
     fun send(bytes: ByteArray?, mime: String) {
         val reason = if (bytes == null) R.string.media_too_big else ChatRepository.controller?.sendMedia(conversation, bytes, mime) ?: 0
         if (reason != 0) ChatRepository.addLocal(conversation, ctx.getString(reason))
     }
-    fun stopAndSend() { recording = false; recorder.stop()?.let { f -> send(f.readBytes(), "audio/mp4"); f.delete() } }
+    // Recording streams live where it can (§29): people hear it while you talk.
+    fun begin(): Boolean {
+        viaRecorder = ChatRepository.controller?.startVoice(conversation) != true
+        return if (viaRecorder) recorder.start() else true
+    }
+    fun stopAndSend() {
+        recording = false
+        if (viaRecorder) recorder.stop()?.let { f -> send(f.readBytes(), "audio/mp4"); f.delete() }
+        else Thread { ChatRepository.controller?.finishVoice() }.start() // waits for the encoder to drain
+    }
+    fun cancel() { recording = false; if (viaRecorder) recorder.cancel() else ChatRepository.controller?.cancelVoice() }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> uri?.let { send(Media.jpegFrom(ctx, it), "image/jpeg") } }
-    val mic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) recording = recorder.start() }
-    DisposableEffect(conversation) { onDispose { recorder.cancel() } }
+    val mic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) recording = begin() }
+    DisposableEffect(conversation) { onDispose { if (recording) cancel() } }
     LaunchedEffect(recording) { if (recording) { kotlinx.coroutines.delay(Media.MAX_VOICE_MS.toLong()); if (recording) stopAndSend() } }
     if (!recording) {
         IconButton(onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
             Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.media_photo))
         }
     }
-    IconButton(onClick = {
-        if (recording) stopAndSend()
-        else if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) recording = recorder.start()
-        else mic.launch(android.Manifest.permission.RECORD_AUDIO)
-    }) {
+    val hint = stringResource(R.string.media_mic_hint)
+    // Hold to talk, release to send; a quick tap keeps recording until the next tap.
+    Box(
+        Modifier.size(48.dp).semantics { contentDescription = hint }.pointerInput(conversation) {
+            detectTapGestures(onPress = {
+                if (recording) { if (tryAwaitRelease()) stopAndSend(); return@detectTapGestures }
+                val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                if (!granted) { mic.launch(android.Manifest.permission.RECORD_AUDIO); return@detectTapGestures }
+                recording = begin()
+                if (!recording) return@detectTapGestures
+                val pressedAt = System.currentTimeMillis()
+                if (!tryAwaitRelease()) cancel()
+                else if (System.currentTimeMillis() - pressedAt >= 400) stopAndSend()
+            })
+        },
+        contentAlignment = Alignment.Center,
+    ) {
         Text(if (recording) "■" else "🎙", color = if (recording) MaterialTheme.colorScheme.error else Color.Unspecified, fontSize = 20.sp)
     }
     if (recording) Text(stringResource(R.string.media_recording), fontSize = 12.sp, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(end = 8.dp))
@@ -631,10 +708,44 @@ private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conv
             ChatRepository.controller?.setFavorite(o.person.key, o.person.label.name, o.on)
             local(ctx.getString(if (o.on) R.string.cmd_favorited else R.string.cmd_unfavorited, o.person.label.toString()))
         }
+        is Commands.Outcome.GroupCreate -> ChatRepository.controller?.createGroup(o.name)?.let { ChatRepository.requestOpen(it) }
+        is Commands.Outcome.GroupList -> local(
+            ChatRepository.groups.value.values.joinToString("\n") { "#${it.name} · ${it.members.size}/${org.openchat.android.core.Group.MAX_MEMBERS}" + if (it.iAmCreator) " ★" else "" }
+                .ifEmpty { ctx.getString(R.string.group_none) },
+        )
+        is Commands.Outcome.GroupInvite, is Commands.Outcome.GroupRemove, Commands.Outcome.GroupLeave -> {
+            val id = conversation.removePrefix("grp:").takeIf { conversation.startsWith("grp:") } ?: return local(ctx.getString(R.string.group_open_first))
+            val c = ChatRepository.controller ?: return
+            when (o) {
+                is Commands.Outcome.GroupInvite -> c.groupInvite(id, o.person.key)
+                is Commands.Outcome.GroupRemove -> {
+                    val n = o.name.lowercase()
+                    ChatRepository.groups.value[id]?.members?.firstOrNull { m ->
+                        m.nickname.lowercase() == n || PeerLabel.mesh(m.nickname, m.fingerprint.take(16)).toString().lowercase() == n
+                    }?.let { c.groupRemove(id, it.fingerprint) } ?: local(ctx.getString(R.string.cmd_not_found, o.name))
+                }
+                else -> c.groupLeave(id) // the group screen closes itself once the group is gone
+            }
+        }
+        is Commands.Outcome.Pay -> {
+            onSend(o.token)
+            local(ctx.getString(if (o.private) R.string.pay_sent_private else R.string.pay_sent_public, o.summary))
+        }
+        is Commands.Outcome.Ping -> {
+            local(ctx.getString(R.string.cmd_ping_started, o.person.label.toString()))
+            ChatRepository.controller?.ping(o.person.key, o.person.label.toString(), conversation)
+        }
+        is Commands.Outcome.Trace -> {
+            val path = ChatRepository.controller?.estimatePath(o.person.key)
+            local(
+                if (path == null) ctx.getString(R.string.cmd_trace_none, o.person.label.toString())
+                else ctx.getString(R.string.cmd_trace_path, (listOf(ctx.getString(R.string.cmd_trace_you)) + path + o.person.label.toString()).joinToString(" → "), path.size + 1),
+            )
+        }
         is Commands.Outcome.Drop -> local(ctx.getString(if (ChatRepository.controller?.dropNote(o.text) == true) R.string.note_dropped else R.string.note_no_location))
         is Commands.Outcome.Local -> local(
             when (o.note) {
-                Commands.Note.HELP -> ctx.getString(R.string.cmd_help)
+                Commands.Note.HELP -> ctx.getString(R.string.cmd_help) + "\n" + ctx.getString(R.string.cmd_help_group) + "\n" + ctx.getString(R.string.cmd_help_diag) + "\n" + ctx.getString(R.string.cmd_help_pay)
                 Commands.Note.WHO -> ctx.getString(R.string.cmd_who, o.arg)
                 Commands.Note.WHO_NONE -> ctx.getString(R.string.cmd_who_none)
                 Commands.Note.NOT_FOUND -> ctx.getString(R.string.cmd_not_found, o.arg)
@@ -642,6 +753,9 @@ private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conv
                 Commands.Note.UNKNOWN -> ctx.getString(R.string.cmd_unknown, o.arg)
                 Commands.Note.MESH_ONLY -> ctx.getString(R.string.cmd_mesh_only)
                 Commands.Note.NO_LOCATION -> ctx.getString(R.string.cmd_geo_only)
+                Commands.Note.PAY_NOT_TOKEN -> ctx.getString(R.string.pay_not_token)
+                Commands.Note.PAY_INVALID -> ctx.getString(R.string.pay_invalid)
+                Commands.Note.PAY_CONFIRM_PUBLIC -> ctx.getString(R.string.pay_confirm_public)
                 else -> o.arg
             },
         )
@@ -666,7 +780,7 @@ private fun withMentions(text: String): AnnotatedString {
 }
 
 /** "HH:mm" today, otherwise the short local date as well. */
-private fun stampText(ts: Long): String {
+internal fun stampText(ts: Long): String {
     val locale = Locale.getDefault()
     val clock = SimpleDateFormat("HH:mm", locale).format(Date(ts))
     val day = SimpleDateFormat("yyyyDDD", locale)
@@ -705,7 +819,7 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
         }
     }
     Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (!conversation.startsWith("geo:") && !conversation.startsWith("gdm:")) MediaButtons(conversation)
+        if (!conversation.startsWith("geo:") && !conversation.startsWith("gdm:") && !conversation.startsWith("grp:")) MediaButtons(conversation)
         OutlinedTextField(
             value = text, onValueChange = { if (it.length <= 1000) set(it) },
             placeholder = { Text(placeholder) },
@@ -736,7 +850,7 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
             title = {
                 Column {
-                    PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex)), onPanic)
+                    PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex), vouched = social.isVouchedPeer(peerHex)), onPanic)
                     Text(
                         stringResource(
                             when {
@@ -766,6 +880,105 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
             )
         }
     }
+}
+
+@Composable
+private fun NewGroupDialog(onDismiss: () -> Unit, onCreated: (String) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.group_new)) },
+        text = {
+            Column {
+                OutlinedTextField(name, { name = it.take(org.openchat.android.core.Group.MAX_NAME) }, singleLine = true, placeholder = { Text(stringResource(R.string.group_name_hint)) })
+                Text(stringResource(R.string.group_new_note), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = name.isNotBlank(), onClick = { ChatRepository.controller?.createGroup(name)?.let(onCreated) }) { Text(stringResource(R.string.group_create)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+/** A private group: sealed with the group key, flooded over the mesh (§22). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GroupChatScreen(idHex: String, onBack: () -> Unit, onPanic: () -> Unit) {
+    val groups by ChatRepository.groups.collectAsState()
+    val g = groups[idHex]
+    var members by remember { mutableStateOf(false) }
+    BackHandler(onBack = onBack)
+    if (g == null) { LaunchedEffect(Unit) { onBack() }; return }
+    if (members) GroupMembersDialog(g, onDismiss = { members = false }, onLeave = { members = false; ChatRepository.controller?.groupLeave(idHex); onBack() })
+    Scaffold(topBar = {
+        TopAppBar(
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
+            title = {
+                Column {
+                    PanicTitle("#" + g.name, onPanic)
+                    Text(stringResource(R.string.group_status, plural(R.plurals.group_members, g.members.size)), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            actions = { TextButton(onClick = { members = true }) { Text(stringResource(R.string.group_members_title)) } },
+        )
+    }) { padding ->
+        Box(Modifier.padding(padding)) {
+            ChatPane(
+                conversation = Conversation.Group(idHex).key,
+                emptyText = stringResource(R.string.group_empty),
+                placeholder = stringResource(R.string.group_placeholder, g.name),
+                onSend = { ChatRepository.controller?.sendGroup(idHex, it) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun GroupMembersDialog(g: org.openchat.android.app.GroupInfo, onDismiss: () -> Unit, onLeave: () -> Unit) {
+    val peers by ChatRepository.peers.collectAsState()
+    val memberIds = g.members.map { it.fingerprint.take(16) }.toSet()
+    val invitable = peers.filter { it.peerIdHex !in memberIds }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+        dismissButton = { TextButton(onClick = onLeave) { Text(stringResource(R.string.group_leave), color = MaterialTheme.colorScheme.error) } },
+        title = { Text("#" + g.name) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                g.members.forEach { m ->
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            buildAnnotatedString {
+                                append(labelText(PeerLabel.mesh(m.nickname, m.fingerprint.take(16))))
+                                if (m.fingerprint == g.myFingerprint) append(" · " + stringResource(R.string.group_you))
+                            },
+                            Modifier.weight(1f), fontSize = 14.sp,
+                        )
+                        if (m.fingerprint == g.creatorFingerprint) {
+                            Text("★ " + stringResource(R.string.group_creator), fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                        } else if (g.iAmCreator) {
+                            TextButton(onClick = { ChatRepository.controller?.groupRemove(g.idHex, m.fingerprint) }) { Text(stringResource(R.string.group_remove)) }
+                        }
+                    }
+                }
+                if (g.iAmCreator) {
+                    Text(stringResource(R.string.group_invite_title), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
+                    if (invitable.isEmpty()) Text(stringResource(R.string.group_none_nearby), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    invitable.forEach { p ->
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(labelText(PeerLabel.mesh(p.nickname, p.peerIdHex)), Modifier.weight(1f), fontSize = 14.sp)
+                            TextButton(enabled = g.members.size < org.openchat.android.core.Group.MAX_MEMBERS, onClick = { ChatRepository.controller?.groupInvite(g.idHex, p.peerIdHex) }) {
+                                Text(stringResource(R.string.group_invite))
+                            }
+                        }
+                    }
+                } else {
+                    Text(stringResource(R.string.group_creator_manages), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
+                }
+            }
+        },
+    )
 }
 
 /** Private chat with someone met in a location channel, over Nostr under my persona for that cell. */
@@ -814,13 +1027,33 @@ private fun PrivateList(onOpen: (String) -> Unit) {
     val withHistory = all.keys.filter { it.startsWith("dm:") }.map { it.removePrefix("dm:") }
     val ids = (peers.map { it.peerIdHex } + withHistory).distinct().filter { it != me.myPeerHex }
     val geoChats = all.keys.filter { it.startsWith("gdm:") }
-    if (ids.isEmpty() && geoChats.isEmpty()) {
+    val groups by ChatRepository.groups.collectAsState()
+    var creating by remember { mutableStateOf(false) }
+    if (creating) NewGroupDialog(onDismiss = { creating = false }, onCreated = { creating = false; onOpen(it) })
+    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
+        TextButton(onClick = { creating = true }) { Text(stringResource(R.string.group_new)) }
+    }
+    if (ids.isEmpty() && geoChats.isEmpty() && groups.isEmpty()) {
         Box(Modifier.fillMaxSize()) {
             Text(stringResource(R.string.dm_list_empty), Modifier.align(Alignment.Center).padding(32.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
     LazyColumn {
+        items(groups.values.toList(), key = { "grp:" + it.idHex }) { g ->
+            val key = Conversation.Group(g.idHex).key
+            Row(Modifier.fillMaxWidth().clickable { onOpen(key) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("#", fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.size(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(g.name, fontWeight = FontWeight.SemiBold)
+                    Text(all[key]?.lastOrNull { !it.system }?.text ?: plural(R.plurals.group_members, g.members.size), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                }
+                val n = unread[key] ?: 0
+                if (n > 0) Badge { Text("$n") }
+            }
+            HorizontalDivider()
+        }
         items(geoChats, key = { it }) { key ->
             val c = Conversation.GeoPrivate.parse(key)!!
             val last = all[key]?.lastOrNull()
@@ -846,7 +1079,7 @@ private fun PrivateList(onOpen: (String) -> Unit) {
                     val fav = social.favoriteOf(hex)
                     Text(
                         buildAnnotatedString {
-                            append(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex), verified = social.isVerifiedPeer(hex)))
+                            append(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex), verified = social.isVerifiedPeer(hex), vouched = social.isVouchedPeer(hex)))
                             if (fav?.mine == true) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" ★") }
                         },
                         fontWeight = FontWeight.SemiBold,
@@ -1054,6 +1287,8 @@ private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> U
             Text(stringResource(R.string.me_carrying, mesh.carriedCount), fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
         }
         NotificationSection()
+        LiveVoiceSection()
+        BridgeSection()
         TorSection()
         RelaySection()
         BlockedList()
