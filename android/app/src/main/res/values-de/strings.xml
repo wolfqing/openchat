@@ -21,6 +21,7 @@
     <string name="banner_bt_off">Bluetooth ist aus. Hier tippen zum Einschalten</string>
     <string name="banner_starting">Wird gestartet…</string>
     <string name="banner_searching">Suche nach Leuten in der Nähe…</string>
+    <string name="banner_storage_locked">Die gespeicherte Identität lässt sich gerade nicht entsperren. Zum Wiederholen tippen.</string>
     <plurals name="banner_connected">
         <item quantity="one">Mit %d Person in der Nähe verbunden</item>
         <item quantity="other">Mit %d Personen in der Nähe verbunden</item>

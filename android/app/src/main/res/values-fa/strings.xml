@@ -21,6 +21,7 @@
     <string name="banner_bt_off">بلوتوث خاموش است. برای روشن کردن اینجا بزن</string>
     <string name="banner_starting">در حال شروع…</string>
     <string name="banner_searching">در حال جست‌وجوی افراد نزدیک…</string>
+    <string name="banner_storage_locked">هویت ذخیره‌شده در حال حاضر باز نمی‌شود. برای تلاش دوباره ضربه بزنید.</string>
     <plurals name="banner_connected">
         <item quantity="one">متصل به %d نفر در نزدیکی</item>
         <item quantity="other">متصل به %d نفر در نزدیکی</item>

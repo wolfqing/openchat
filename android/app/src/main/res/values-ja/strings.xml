@@ -21,6 +21,7 @@
     <string name="banner_bt_off">Bluetoothがオフです。タップしてオンにする</string>
     <string name="banner_starting">起動中…</string>
     <string name="banner_searching">近くの人を探しています…</string>
+    <string name="banner_storage_locked">保存された ID を今は復号できません。タップして再試行してください。</string>
     <plurals name="banner_connected">
         <item quantity="other">近くの%d人と接続中</item>
     </plurals>

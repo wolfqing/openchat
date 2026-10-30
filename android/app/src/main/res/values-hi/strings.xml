@@ -21,6 +21,7 @@
     <string name="banner_bt_off">ब्लूटूथ बंद है। चालू करने के लिए यहाँ टैप करें</string>
     <string name="banner_starting">शुरू हो रहा है…</string>
     <string name="banner_searching">आस-पास के लोगों को ढूँढ रहा है…</string>
+    <string name="banner_storage_locked">सहेजी गई पहचान अभी अनलॉक नहीं हो सकी। फिर कोशिश करने के लिए टैप करें।</string>
     <plurals name="banner_connected">
         <item quantity="one">आस-पास %d व्यक्ति से जुड़े</item>
         <item quantity="other">आस-पास %d लोगों से जुड़े</item>

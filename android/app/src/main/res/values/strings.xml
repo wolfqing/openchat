@@ -26,6 +26,7 @@
     <string name="banner_bt_off">Bluetooth is off. Tap here to turn it on</string>
     <string name="banner_starting">Starting…</string>
     <string name="banner_searching">Looking for people nearby…</string>
+    <string name="banner_storage_locked">Your saved identity can\'t be unlocked right now. Tap to try again.</string>
     <plurals name="banner_connected">
         <item quantity="one">Connected to %d person nearby</item>
         <item quantity="other">Connected to %d people nearby</item>

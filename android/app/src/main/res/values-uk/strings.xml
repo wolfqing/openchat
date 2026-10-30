@@ -21,6 +21,7 @@
     <string name="banner_bt_off">Bluetooth вимкнено. Торкніться, щоб увімкнути</string>
     <string name="banner_starting">Запуск…</string>
     <string name="banner_searching">Пошук людей поруч…</string>
+    <string name="banner_storage_locked">Збережену особу зараз не вдається розблокувати. Торкніться, щоб повторити.</string>
     <plurals name="banner_connected">
         <item quantity="one">Підключено людей поруч: %d</item>
         <item quantity="few">Підключено людей поруч: %d</item>

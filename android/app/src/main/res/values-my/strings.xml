@@ -21,6 +21,7 @@
     <string name="banner_bt_off">ဘလူးတုသ် ပိတ်ထားသည်။ ဖွင့်ရန် ဤနေရာကို နှိပ်ပါ</string>
     <string name="banner_starting">စတင်နေသည်…</string>
     <string name="banner_searching">အနီးရှိလူများကို ရှာနေသည်…</string>
+    <string name="banner_storage_locked">သိမ်းထားသော အမည်သတ်မှတ်ချက်ကို ယခု ဖွင့်မရပါ။ ထပ်စမ်းရန် တို့ပါ။</string>
     <plurals name="banner_connected">
         <item quantity="other">အနီးရှိ လူ %d ဦးနှင့် ချိတ်ဆက်ထားသည်</item>
     </plurals>

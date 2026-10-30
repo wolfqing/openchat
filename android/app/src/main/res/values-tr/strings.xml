@@ -21,6 +21,7 @@
     <string name="banner_bt_off">Bluetooth kapalı. Açmak için buraya dokun</string>
     <string name="banner_starting">Başlatılıyor…</string>
     <string name="banner_searching">Yakındaki kişiler aranıyor…</string>
+    <string name="banner_storage_locked">Kayıtlı kimlik şu anda açılamıyor. Yeniden denemek için dokunun.</string>
     <plurals name="banner_connected">
         <item quantity="one">Yakındaki %d kişiye bağlı</item>
         <item quantity="other">Yakındaki %d kişiye bağlı</item>

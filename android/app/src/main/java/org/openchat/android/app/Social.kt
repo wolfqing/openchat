@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.json.JSONArray
 import org.json.JSONObject
+import org.openchat.android.core.hexToBytes
+import org.openchat.android.mesh.Identity
+import org.openchat.android.nostr.Bech32
 
 /**
  * A mesh peer marked as favorite. [theirNpub] arrives in their favorite notice
@@ -37,6 +40,21 @@ data class SocialState(
         (blocked.keys + favorites.keys + verified).firstOrNull { it.startsWith(peerHex) }
     fun isVerifiedPeer(peerHex: String) = verified.any { it.startsWith(peerHex) }
     fun favoriteOf(peerHex: String) = favorites.entries.firstOrNull { it.key.startsWith(peerHex) }?.value
+}
+
+/** Who an inbound Nostr private envelope may speak for (docs/protocol-spec.md §15.3). */
+object NostrSenders {
+    /**
+     * The favorite whose recorded npub signed this envelope, provided the unsigned sender ID inside
+     * names that favorite's Noise key. Anything else is ignored, including a notice that would bind
+     * a new npub to someone's Noise key: that first binding happens over a Noise session or a QR
+     * (§16), where the other side proves it holds the key.
+     */
+    fun resolve(favorites: Collection<Favorite>, senderPubkeyHex: String, embeddedSenderId: ByteArray): Favorite? {
+        val fav = favorites.firstOrNull { f -> f.theirNpub?.let { Bech32.npubToHex(it) } == senderPubkeyHex } ?: return null
+        val key = fav.noiseKeyHex.hexToBytes() ?: return null
+        return fav.takeIf { Identity.peerIdFor(key).contentEquals(embeddedSenderId) }
+    }
 }
 
 object Social {

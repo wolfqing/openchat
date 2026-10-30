@@ -288,6 +288,15 @@ openchat v0.1 originates packets without routes but relays routed packets.
 - Simultaneous initiation: upstream breaks the tie by comparing peer IDs.
   openchat: the side with the lexicographically lower peer ID (hex) stays
   initiator; the other abandons its own attempt and responds.
+- Liveness (openchat): a handshake that has not completed within 10 s is
+  dropped and, if anything is waiting to be sent, started again. The
+  lower-ID side holds its initiator role only while its own attempt is that
+  fresh. Handshake packets are unsigned, so a message 1 that arrives while a
+  session with that peer already exists runs as a candidate beside it and
+  replaces it only on completion; undecryptable ciphertext on a working
+  session is dropped, and the session is given up only after a run of
+  failures with nothing genuine in between. Half-open handshakes are capped
+  (64) and expire with the same timeout.
 
 ### 8.2 Transport messages
 
@@ -576,7 +585,12 @@ Favoriting someone sends them a private message (§8.3, over the mesh
 when reachable, else over Nostr if their npub is known, else by courier)
 whose content is `[FAVORITED]:<my npub>` or `[UNFAVORITED]:<my npub>`. It
 is not shown as a message. The receiver records the npub against the
-sender's Noise key. Two people who have both favorited each other and hold
+sender's Noise key. openchat records it only from an authenticated path: a
+Noise session on the mesh, or after a §16 verification. A notice arriving
+over Nostr is honoured only when its npub is the one already recorded for
+that Noise key, since the sender field inside a Nostr envelope (§15.2) is
+not signed and would otherwise let anyone bind another person's identity to
+their own npub. Two people who have both favorited each other and hold
 each other's npub are mutual favorites. The npub is the account key: one
 secp256k1 key per device, derived from the identity seed (openchat:
 `HMAC-SHA256(seed, "openchat-nostr-account")` through the §9 derivation),
