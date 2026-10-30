@@ -246,4 +246,7 @@
     <string name="pay_no_wallet">Chưa cài ví Cashu. Hãy sao chép token rồi dán vào ví.</string>
     <string name="pay_copy">Sao chép</string>
     <string name="pay_copied">Đã sao chép token</string>
+    <string name="media_mic_hint">Giọng nói: giữ để nói, hoặc chạm để bắt đầu và chạm lần nữa để gửi</string>
+    <string name="live_voice_title">Giọng nói trực tiếp</string>
+    <string name="live_voice_body">Tin nhắn thoại ở Gần đây và trò chuyện riêng phát cho người khác ngay khi bạn còn đang nói, và của họ phát cho bạn khi cuộc trò chuyện đó đang mở. Tắt: chỉ tin đã ghi xong, cả hai chiều.</string>
 </resources>

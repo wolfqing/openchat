@@ -57,6 +57,8 @@ class Recorder : MeshListener {
     val carriers = ArrayList<Pair<Boolean, ByteArray>>() // directed, payload
     val drops = ArrayList<ByteArray>()
     val vouches = ArrayList<Pair<ByteArray, ByteArray>>() // session key, signing key
+    val voice = ArrayList<Boolean>() // private
+    override fun onVoiceFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean) { voice += isPrivate }
     override fun onVouch(peerHex: String, sessionKey: ByteArray, signingKey: ByteArray, batch: ByteArray) { vouches += sessionKey to signingKey }
     override fun onCarrier(senderHex: String, payload: ByteArray, directed: Boolean) { carriers += directed to payload }
     override fun onDrop(envelope: ByteArray, recipientTagHex: String, expiresAt: Long) { drops += envelope }
@@ -667,5 +669,18 @@ class MeshEngineTest {
         val restored = MeshState.deserialize(alice.exportState().serialize())!!
         assertEquals(1, restored.bundles.size)
         assertTrue(restored.localPrekeys != null)
+    }
+
+    @Test
+    fun voiceFramesGoOverNoiseOrAsSignedBroadcasts() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        alice.sendPrivate(bob.myPeerHex, "hi")
+        net.scheduler.advance(5_000)
+        alice.sendVoiceFrame(bob.myPeerHex, byteArrayOf(1, 2, 3))
+        alice.sendVoiceFrame(null, byteArrayOf(4, 5, 6))
+        net.scheduler.advance(2_000)
+        assertEquals(listOf(false, true), net.recorders["bob"]!!.voice.sorted())
+        assertEquals(listOf(false), net.recorders["carol"]!!.voice) // relayed to the next hop
     }
 }

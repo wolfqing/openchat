@@ -254,4 +254,7 @@
     <string name="pay_no_wallet">Aucun portefeuille Cashu installé. Copiez le jeton et collez-le dans l\'un d\'eux.</string>
     <string name="pay_copy">Copier</string>
     <string name="pay_copied">Jeton copié</string>
+    <string name="media_mic_hint">Voix : maintenez pour parler, ou touchez pour commencer et touchez à nouveau pour envoyer</string>
+    <string name="live_voice_title">Voix en direct</string>
+    <string name="live_voice_body">Les messages vocaux dans À proximité et les discussions privées s\'entendent pendant que vous parlez encore, et ceux des autres se lisent quand la discussion est ouverte. Désactivé : seulement les messages terminés, dans les deux sens.</string>
 </resources>

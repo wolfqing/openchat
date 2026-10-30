@@ -81,6 +81,8 @@ interface MeshListener {
     fun onFile(senderHex: String, nickname: String, file: FilePacket, isPrivate: Boolean, timestamp: Long) {}
     /** The peer proved it holds the keys from the verification QR we scanned (§16.2). */
     fun onVerified(peerHex: String) {}
+    /** A live voice packet (§29) from an authenticated sender. */
+    fun onVoiceFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean) {}
     /** A vouch batch over Noise from the holder of [sessionKey], whose announced signing key is [signingKey] (§26). */
     fun onVouch(peerHex: String, sessionKey: ByteArray, signingKey: ByteArray, batch: ByteArray) {}
     /**
@@ -449,6 +451,7 @@ class MeshEngine(
                 if (p.isBroadcast) listener.onCarrier(senderHex, p.payload, directed = false)
             }
             MessageType.PREKEY_BUNDLE -> if (p.isBroadcast && !handlePrekeyBundle(p)) return
+            MessageType.VOICE_FRAME -> if (!p.isBroadcast || !handleVoiceFrame(p)) return
             MessageType.PING -> if (forMe) { handlePing(p, linkId); return }
             MessageType.PONG -> if (forMe) { handlePong(p); return }
             MessageType.FILE_TRANSFER -> if (p.isBroadcast || forMe) { if (!handleFile(p, forMe)) return; if (forMe) return }
@@ -673,6 +676,26 @@ class MeshEngine(
 
     private fun bundlePackets(now: Long): List<Packet> =
         (listOfNotNull(myBundle) + prekeyCache.all().map { it.packet }).filter { now - it.timestamp <= BUNDLE_SYNC_AGE_MS }
+
+    // ---------------------------------------------------------------- live voice (§29)
+
+    /** One packet of a live burst: to [peerHex] inside its session, or signed to everyone nearby when null. */
+    fun sendVoiceFrame(peerHex: String?, content: ByteArray) {
+        if (peerHex != null) { if (hasSession(peerHex)) sendNoise(peerHex, NoisePayload(NoisePayloadType.VOICE_FRAME, content).encode()); return }
+        val p = sign(Packet(type = MessageType.VOICE_FRAME, senderId = identity.peerId, timestamp = scheduler.now(), payload = content)) ?: return
+        dedup.markIfNew(Deduplicator.key(p))
+        broadcast(p, exclude = null)
+    }
+
+    /** Public voice: only fresh, signed by a peer we know; anything else is neither shown nor relayed. */
+    private fun handleVoiceFrame(p: Packet): Boolean {
+        if (Math.abs(scheduler.now() - p.timestamp) > VOICE_MAX_AGE_MS) return false
+        val hex = p.senderId.toHex()
+        val peer = peers[hex] ?: return false
+        if (!verify(p, peer.signingKey)) return false
+        if (!isBlocked(peer.noiseKey)) listener.onVoiceFrame(hex, peer.nickname, p.payload, isPrivate = false)
+        return true
+    }
 
     // ---------------------------------------------------------------- diagnostics (§25)
 
@@ -1098,6 +1121,10 @@ class MeshEngine(
                 if (isBlocked(key)) return
                 listener.onGroupState(peerHex, key, payload.type == NoisePayloadType.GROUP_INVITE, payload.body)
             }
+            NoisePayloadType.VOICE_FRAME -> {
+                if (noiseKeyOf(peerHex)?.let(isBlocked) == true) return
+                listener.onVoiceFrame(peerHex, nickname, payload.body, isPrivate = true)
+            }
             NoisePayloadType.VOUCH -> {
                 // The voucher is whoever holds this session; its announced signing key checks the batch.
                 val key = sessions[peerHex]?.remoteStatic ?: return
@@ -1365,6 +1392,7 @@ class MeshEngine(
         private const val BUNDLE_REBROADCAST_MS = 3600_000L
         private const val BUNDLE_SYNC_AGE_MS = 24 * 3600_000L
         private const val PENDING_BUNDLES = 64
+        private const val VOICE_MAX_AGE_MS = 30_000L
         private const val PING_NONCE = 8
         private const val PING_TIMEOUT_MS = 10_000L
         private const val PING_REPLY_LIMIT = 5

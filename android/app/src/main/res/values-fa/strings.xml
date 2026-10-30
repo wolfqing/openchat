@@ -250,4 +250,7 @@
     <string name="pay_no_wallet">هیچ کیف پول Cashu نصب نیست. توکن را کپی کنید و در یکی بچسبانید.</string>
     <string name="pay_copy">کپی</string>
     <string name="pay_copied">توکن کپی شد</string>
+    <string name="media_mic_hint">صدا: برای صحبت نگه دارید، یا بزنید تا شروع شود و دوباره بزنید تا فرستاده شود</string>
+    <string name="live_voice_title">صدای زنده</string>
+    <string name="live_voice_body">پیام‌های صوتی در «نزدیک» و گفتگوهای خصوصی وقتی هنوز صحبت می‌کنید برای دیگران پخش می‌شود و پیام‌های آن‌ها وقتی آن گفتگو باز است برای شما پخش می‌شود. خاموش: فقط پیام‌های کامل، در هر دو جهت.</string>
 </resources>

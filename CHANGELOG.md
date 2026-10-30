@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Live voice, compatible with bitchat ([spec §29](docs/protocol-spec.md)).
+  Hold the mic to talk and release to send (a quick tap still starts and
+  stops a recording). In Nearby and private chats people hear you while you
+  are still talking: their bubble appears at once and plays live if they
+  have that chat open, and the finished note then slots into the same
+  bubble. Public bursts are signed and accepted for 30 seconds; floods are
+  capped. A Me-tab switch, on by default, turns live voice off in both
+  directions. Not yet tried on a phone.
+- 6 new tests, 148 in all.
+
 - `/pay` and Cashu cards, compatible with bitchat ([spec §28](docs/protocol-spec.md)).
   `/pay <token>` sends a Cashu ecash token after checking it is real money;
   outside a private chat it needs `/pay <token> public`, because whoever

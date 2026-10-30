@@ -10,6 +10,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -581,27 +585,50 @@ private fun CashuCard(token: String) {
 @Composable
 private fun MediaButtons(conversation: String) {
     val ctx = LocalContext.current
-    val recorder = remember { VoiceRecorder(ctx) }
+    val recorder = remember { VoiceRecorder(ctx) } // fallback when the live encoder is unavailable
     var recording by remember { mutableStateOf(false) }
+    var viaRecorder by remember { mutableStateOf(false) }
     fun send(bytes: ByteArray?, mime: String) {
         val reason = if (bytes == null) R.string.media_too_big else ChatRepository.controller?.sendMedia(conversation, bytes, mime) ?: 0
         if (reason != 0) ChatRepository.addLocal(conversation, ctx.getString(reason))
     }
-    fun stopAndSend() { recording = false; recorder.stop()?.let { f -> send(f.readBytes(), "audio/mp4"); f.delete() } }
+    // Recording streams live where it can (§29): people hear it while you talk.
+    fun begin(): Boolean {
+        viaRecorder = ChatRepository.controller?.startVoice(conversation) != true
+        return if (viaRecorder) recorder.start() else true
+    }
+    fun stopAndSend() {
+        recording = false
+        if (viaRecorder) recorder.stop()?.let { f -> send(f.readBytes(), "audio/mp4"); f.delete() }
+        else Thread { ChatRepository.controller?.finishVoice() }.start() // waits for the encoder to drain
+    }
+    fun cancel() { recording = false; if (viaRecorder) recorder.cancel() else ChatRepository.controller?.cancelVoice() }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> uri?.let { send(Media.jpegFrom(ctx, it), "image/jpeg") } }
-    val mic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) recording = recorder.start() }
-    DisposableEffect(conversation) { onDispose { recorder.cancel() } }
+    val mic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) recording = begin() }
+    DisposableEffect(conversation) { onDispose { if (recording) cancel() } }
     LaunchedEffect(recording) { if (recording) { kotlinx.coroutines.delay(Media.MAX_VOICE_MS.toLong()); if (recording) stopAndSend() } }
     if (!recording) {
         IconButton(onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
             Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.media_photo))
         }
     }
-    IconButton(onClick = {
-        if (recording) stopAndSend()
-        else if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) recording = recorder.start()
-        else mic.launch(android.Manifest.permission.RECORD_AUDIO)
-    }) {
+    val hint = stringResource(R.string.media_mic_hint)
+    // Hold to talk, release to send; a quick tap keeps recording until the next tap.
+    Box(
+        Modifier.size(48.dp).semantics { contentDescription = hint }.pointerInput(conversation) {
+            detectTapGestures(onPress = {
+                if (recording) { if (tryAwaitRelease()) stopAndSend(); return@detectTapGestures }
+                val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                if (!granted) { mic.launch(android.Manifest.permission.RECORD_AUDIO); return@detectTapGestures }
+                recording = begin()
+                if (!recording) return@detectTapGestures
+                val pressedAt = System.currentTimeMillis()
+                if (!tryAwaitRelease()) cancel()
+                else if (System.currentTimeMillis() - pressedAt >= 400) stopAndSend()
+            })
+        },
+        contentAlignment = Alignment.Center,
+    ) {
         Text(if (recording) "■" else "🎙", color = if (recording) MaterialTheme.colorScheme.error else Color.Unspecified, fontSize = 20.sp)
     }
     if (recording) Text(stringResource(R.string.media_recording), fontSize = 12.sp, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(end = 8.dp))
@@ -1260,6 +1287,7 @@ private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> U
             Text(stringResource(R.string.me_carrying, mesh.carriedCount), fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
         }
         NotificationSection()
+        LiveVoiceSection()
         BridgeSection()
         TorSection()
         RelaySection()

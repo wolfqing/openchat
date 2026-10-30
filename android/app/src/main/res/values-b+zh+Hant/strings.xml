@@ -246,4 +246,7 @@
     <string name="pay_no_wallet">沒有安裝 Cashu 錢包應用。可複製權杖，貼到錢包裡。</string>
     <string name="pay_copy">複製</string>
     <string name="pay_copied">已複製權杖</string>
+    <string name="media_mic_hint">語音：按住說話，或點一下開始、再點一下傳送</string>
+    <string name="live_voice_title">即時語音</string>
+    <string name="live_voice_body">在「附近」和私聊裡，你說話時別人就能邊聽；別人的語音在你打開該聊天時也會即時播放。關閉後雙方都只收發錄完的語音。</string>
 </resources>

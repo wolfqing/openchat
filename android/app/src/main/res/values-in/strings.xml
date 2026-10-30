@@ -246,4 +246,7 @@
     <string name="pay_no_wallet">Belum ada aplikasi dompet Cashu. Salin token lalu tempel di dompet.</string>
     <string name="pay_copy">Salin</string>
     <string name="pay_copied">Token disalin</string>
+    <string name="media_mic_hint">Suara: tahan untuk bicara, atau ketuk untuk mulai dan ketuk lagi untuk mengirim</string>
+    <string name="live_voice_title">Suara langsung</string>
+    <string name="live_voice_body">Pesan suara di Sekitar dan obrolan pribadi terdengar oleh orang lain saat kamu masih bicara, dan milik mereka terputar saat obrolan itu terbuka. Mati: hanya pesan yang selesai, dua arah.</string>
 </resources>

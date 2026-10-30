@@ -246,4 +246,7 @@
     <string name="pay_no_wallet">Cashu ပိုက်ဆံအိတ်အက်ပ် မထည့်ထားပါ။ token ကို ကူးပြီး ပိုက်ဆံအိတ်တွင် ကပ်ပါ။</string>
     <string name="pay_copy">ကူးရန်</string>
     <string name="pay_copied">token ကူးပြီး</string>
+    <string name="media_mic_hint">အသံ- ပြောရန် ဖိထားပါ၊ သို့မဟုတ် စရန် တို့ပြီး ပို့ရန် ထပ်တို့ပါ</string>
+    <string name="live_voice_title">တိုက်ရိုက်အသံ</string>
+    <string name="live_voice_body">အနီးအနားနှင့် သီးသန့်ချက်များတွင် သင်ပြောနေစဉ် အခြားသူများ ကြားရပြီး ၎င်းတို့၏ အသံကို ထိုချက်ဖွင့်ထားလျှင် သင်ကြားရသည်။ ပိတ်ထားလျှင် နှစ်ဖက်စလုံး ပြီးဆုံးသော မက်ဆေ့ချ်များသာ။</string>
 </resources>

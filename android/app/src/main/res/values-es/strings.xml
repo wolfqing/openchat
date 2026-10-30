@@ -254,4 +254,7 @@
     <string name="pay_no_wallet">No hay ninguna billetera Cashu instalada. Copia el token y pégalo en una.</string>
     <string name="pay_copy">Copiar</string>
     <string name="pay_copied">Token copiado</string>
+    <string name="media_mic_hint">Voz: mantén pulsado para hablar, o toca para empezar y toca otra vez para enviar</string>
+    <string name="live_voice_title">Voz en directo</string>
+    <string name="live_voice_body">Las notas de voz en Cerca y en chats privados se oyen mientras aún hablas, y las de los demás suenan para ti cuando ese chat está abierto. Desactivado: solo notas terminadas, en ambos sentidos.</string>
 </resources>

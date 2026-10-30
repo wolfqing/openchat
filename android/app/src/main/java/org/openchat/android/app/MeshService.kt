@@ -74,6 +74,8 @@ class MeshService : Service(), ChatController {
     private lateinit var groups: GroupManager
     private lateinit var bridge: Bridge
     private val vouching = Vouching { engine }
+    private lateinit var liveVoice: LiveVoice
+    @Volatile private var capture: Pair<LiveCapture, String>? = null // recording now, and its chat
     private lateinit var nostrSeenStore: SealedFile
     private val publicLimiter = RateLimiter()
     private val nostrSeen = LinkedHashSet<String>() // message IDs already shown from Nostr, kept across restarts
@@ -149,6 +151,7 @@ class MeshService : Service(), ChatController {
         geo = GeoChannels(directory, identity.nostrSeed, { engine.identity.nickname }) { from, text ->
             notifyMention(from, text)
         }
+        liveVoice = LiveVoice(this, handler)
         geo.onLive = { ev, g -> handler.post { bridge.onChannelEvent(ev, g) } }
         geo.onOfflineSend = { ev, g -> handler.post { bridge.uplinkChannelEvent(ev, g) } }
         groups = GroupManager(this, SealedFile(this, "groups.bin"), { engine }) { from, text -> notifyPrivate(from, text) }
@@ -276,6 +279,8 @@ class MeshService : Service(), ChatController {
         override fun onFile(senderHex: String, nickname: String, file: FilePacket, isPrivate: Boolean, timestamp: Long) {
             val kind = file.kind ?: return
             val stored = Media.store(this@MeshService, file.content, FilePacket.extension(file.mimeType))
+            // The finished note of a live burst we already show takes over that bubble (§29).
+            if (kind == FilePacket.Kind.AUDIO && liveVoice.absorb(senderHex, isPrivate, file.fileName, stored)) return
             val conv = if (isPrivate) Conversation.Private(senderHex).key else Conversation.Mesh.key
             ChatRepository.rememberName(senderHex, nickname)
             ChatRepository.add(ChatMessage("file-${stored.nameWithoutExtension}", conv, nickname, senderHex, "", minOf(timestamp, System.currentTimeMillis()), mine = false,
@@ -312,6 +317,9 @@ class MeshService : Service(), ChatController {
         }
 
         override fun onSessionEstablished(peerHex: String) { vouching.attempt(peerHex) }
+
+        override fun onVoiceFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean) =
+            liveVoice.onFrame(senderHex, nickname, content, isPrivate)
 
         override fun onVouch(peerHex: String, sessionKey: ByteArray, signingKey: ByteArray, batch: ByteArray) = vouching.receive(sessionKey, signingKey, batch)
 
@@ -537,10 +545,10 @@ class MeshService : Service(), ChatController {
         return true
     }
 
-    override fun sendMedia(conversation: String, bytes: ByteArray, mime: String): Int {
+    override fun sendMedia(conversation: String, bytes: ByteArray, mime: String, fileName: String?): Int {
         if (bytes.size > Media.MAX_SEND_BYTES) return R.string.media_too_big
         if (conversation.startsWith("geo:")) return R.string.media_geo_unsupported
-        val file = FilePacket((if (mime.startsWith("audio")) "voice_" else "img_") + java.util.UUID.randomUUID() + "." + FilePacket.extension(mime), mime, bytes)
+        val file = FilePacket(fileName ?: ((if (mime.startsWith("audio")) "voice_" else "img_") + java.util.UUID.randomUUID() + "." + FilePacket.extension(mime)), mime, bytes)
         val kind = file.kind ?: return R.string.media_too_big
         val peerHex = conversation.removePrefix("dm:").takeIf { conversation.startsWith("dm:") }
         // The capability check reads engine state and the copy touches disk: both belong on the mesh
@@ -559,6 +567,29 @@ class MeshService : Service(), ChatController {
         }
         return 0
     }
+
+    override fun startVoice(conversation: String): Boolean {
+        capture?.first?.cancel()
+        // Live where a burst can go: Nearby, or a private chat with a session up (§29).
+        val peerHex = conversation.removePrefix("dm:").takeIf { conversation.startsWith("dm:") }
+        val live = LiveVoicePrefs.enabled(this) && (conversation == Conversation.Mesh.key || peerHex != null)
+        val c = LiveCapture(this, live) { packet -> handler.post { engine.sendVoiceFrame(peerHex, packet) } }
+        if (!c.start()) return false
+        capture = c to conversation
+        return true
+    }
+
+    override fun finishVoice(): Boolean {
+        val (c, conversation) = capture ?: return false
+        capture = null
+        val f = c.finish() ?: return false
+        val bytes = f.readBytes().also { f.delete() }
+        val reason = sendMedia(conversation, bytes, "audio/mp4", f.name)
+        if (reason != 0) ChatRepository.addLocal(conversation, getString(reason))
+        return true
+    }
+
+    override fun cancelVoice() { capture?.first?.cancel(); capture = null }
 
     override fun setTor(on: Boolean) = tor.setWanted(on)
 
@@ -626,6 +657,7 @@ class MeshService : Service(), ChatController {
      * no timelines, no channels, no caches. No confirmation by design.
      */
     override fun panic() {
+        cancelVoice()
         ChatRepository.wipe()
         NotificationPrivacy.reset(this)
         Social.wipe()
@@ -637,6 +669,7 @@ class MeshService : Service(), ChatController {
             handler.removeCallbacks(saveState)
             bridge.wipe()
             groups.wipe()
+            liveVoice.wipe()
             stateStore.destroy()
             socialStore.delete()
             store.destroy()

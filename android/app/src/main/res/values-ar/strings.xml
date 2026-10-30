@@ -266,4 +266,7 @@
     <string name="pay_no_wallet">لا يوجد تطبيق محفظة Cashu مثبّت. انسخ الرمز والصقه في محفظة.</string>
     <string name="pay_copy">نسخ</string>
     <string name="pay_copied">نُسخ الرمز</string>
+    <string name="media_mic_hint">صوت: اضغط مطولًا للتحدث، أو انقر للبدء وانقر مجددًا للإرسال</string>
+    <string name="live_voice_title">الصوت المباشر</string>
+    <string name="live_voice_body">تُسمع الرسائل الصوتية في «القريب» والمحادثات الخاصة للآخرين وأنت ما زلت تتحدث، وتُسمع رسائلهم لك عندما تكون تلك المحادثة مفتوحة. عند الإيقاف: الرسائل المكتملة فقط في الاتجاهين.</string>
 </resources>

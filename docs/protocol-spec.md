@@ -1060,3 +1060,34 @@ host (48 chars), memo (control characters removed, 80 chars). Tokens are
 at most 60 000 characters. A message containing tokens shows a card per
 token (at most 3) with "open in wallet" (`cashu:` link) and copy.
 
+## 29. Live voice (v0.6)
+
+A voice note streams while it is being recorded. Each burst packet is:
+burst ID (8 random bytes) ‖ seq (2, BE) ‖ flags (1) ‖ payload. Flags `0x01`
+START, payload = codec (`0x01` = AAC-LC, 16 kHz, mono, about 16 kbps;
+anything else is refused), seq 0. Flags `0x00` data, payload = 1–8 times
+[2-byte BE length ‖ raw AAC frame], seq from 1, each packet at most 210
+bytes so it fits one radio write after Noise. Flags `0x02` END, payload =
+data packet count (2, BE) ‖ duration ms (4, BE). Flags `0x04` CANCELED,
+empty. END and CANCELED take the next seq.
+
+Private chats: Noise payload type `0x08`, only over an established session.
+Nearby: packet type `0x29`, broadcast, TTL 7, signed; accepted (and so
+relayed) only within 30 s of its timestamp and with a valid signature from
+a peer whose announce we hold. Never synced.
+
+Receiving: a burst is keyed by sender, chat and burst ID, so a copied ID
+cannot hijack someone else's burst; 8 at a time. Packets are put back in
+order; a hole is skipped after 0.5 s; the burst ends when every data packet
+up to END is in, after 3 s without packets, or past 6 KB/s or 384 KiB.
+Frames are written with ADTS headers to a file, so even a partial burst is a
+replayable bubble; it plays live only when that chat is open with the app
+in front. A burst with nothing audible, or CANCELED, leaves no bubble.
+
+Finishing: the sender also writes the frames to `voice_<burst ID hex>.m4a`
+and sends that as an ordinary voice note (§18); a receiver that assembled
+the burst from the same sender in the same chat swaps the finished file
+into the existing bubble instead of showing a second one. Notes under
+0.7 s are canceled. One switch (Me tab, on by default as in bitchat) turns
+live sending and live playing on or off; off means finished notes only.
+

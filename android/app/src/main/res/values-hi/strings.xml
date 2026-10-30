@@ -250,4 +250,7 @@
     <string name="pay_no_wallet">कोई Cashu वॉलेट ऐप इंस्टॉल नहीं है। टोकन कॉपी करके किसी वॉलेट में चिपकाएँ।</string>
     <string name="pay_copy">कॉपी करें</string>
     <string name="pay_copied">टोकन कॉपी हुआ</string>
+    <string name="media_mic_hint">आवाज़: बोलने के लिए दबाए रखें, या शुरू करने को टैप करें और भेजने को फिर टैप करें</string>
+    <string name="live_voice_title">लाइव आवाज़</string>
+    <string name="live_voice_body">आस-पास और निजी चैट में आपके बोलते-बोलते दूसरे सुन सकते हैं, और उनकी आवाज़ आपको तब सुनाई देती है जब वह चैट खुली हो। बंद: दोनों ओर केवल पूरे वॉइस नोट।</string>
 </resources>

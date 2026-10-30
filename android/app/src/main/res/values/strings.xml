@@ -264,4 +264,7 @@
     <string name="pay_no_wallet">No Cashu wallet app is installed. Copy the token and paste it into one.</string>
     <string name="pay_copy">Copy</string>
     <string name="pay_copied">Token copied</string>
+    <string name="media_mic_hint">Voice: hold to talk, or tap to start and tap again to send</string>
+    <string name="live_voice_title">Live voice</string>
+    <string name="live_voice_body">Voice notes in Nearby and private chats play for others while you are still talking, and theirs play for you when that chat is open. Off: only finished notes, both ways.</string>
 </resources>

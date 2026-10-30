@@ -130,7 +130,12 @@ interface ChatController {
     fun dropNote(text: String): Boolean
     fun watchNotes(cell: String?)
     /** Sends a photo or voice note into a Nearby or private chat; returns a reason string resource on immediate refusal, or 0. A refusal decided later shows as a local line in that chat. */
-    fun sendMedia(conversation: String, bytes: ByteArray, mime: String): Int
+    fun sendMedia(conversation: String, bytes: ByteArray, mime: String, fileName: String? = null): Int
+    /** Starts recording a voice note that also streams live where it can (§29); false if the microphone failed. */
+    fun startVoice(conversation: String): Boolean
+    /** Stops and sends the note; false when it was too short. */
+    fun finishVoice(): Boolean
+    fun cancelVoice()
     fun setTor(on: Boolean)
     fun refreshLocation()
     fun panic()
@@ -161,6 +166,8 @@ object ChatRepository {
 
     @Volatile var controller: ChatController? = null
     @Volatile var openConversation: String? = null
+    /** Whether the app is on screen; live voice never starts playing from the background. */
+    @Volatile var foreground = false
 
     fun add(m: ChatMessage) {
         var added = false

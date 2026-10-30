@@ -56,6 +56,7 @@ object NoisePayloadType {
     const val READ_RECEIPT = 0x02
     const val DELIVERED = 0x03
     const val GROUP_INVITE = 0x06
+    const val VOICE_FRAME = 0x08
     const val GROUP_KEY_UPDATE = 0x07
     const val VERIFY_CHALLENGE = 0x10
     const val VERIFY_RESPONSE = 0x11

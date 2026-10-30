@@ -254,4 +254,7 @@
     <string name="pay_no_wallet">Não há nenhuma carteira Cashu instalada. Copie o token e cole-o numa.</string>
     <string name="pay_copy">Copiar</string>
     <string name="pay_copied">Token copiado</string>
+    <string name="media_mic_hint">Voz: mantenha premido para falar, ou toque para começar e toque de novo para enviar</string>
+    <string name="live_voice_title">Voz em direto</string>
+    <string name="live_voice_body">As mensagens de voz em Perto e nas conversas privadas ouvem-se enquanto ainda fala, e as dos outros tocam quando essa conversa está aberta. Desligado: só mensagens terminadas, nos dois sentidos.</string>
 </resources>

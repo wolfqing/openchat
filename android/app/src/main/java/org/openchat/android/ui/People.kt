@@ -199,6 +199,20 @@ fun NotificationSection() {
     }
 }
 
+/** Live voice (§29): one switch for streaming your voice notes and playing others' as they come. */
+@Composable
+fun LiveVoiceSection() {
+    val ctx = LocalContext.current
+    var on by remember { mutableStateOf(org.openchat.android.app.LiveVoicePrefs.enabled(ctx)) }
+    Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.live_voice_title), fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.live_voice_body), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = on, onCheckedChange = { on = it; org.openchat.android.app.LiveVoicePrefs.setEnabled(ctx, it) })
+    }
+}
+
 /** The mesh bridge (§24): off by default; it puts this phone's public messages online. */
 @Composable
 fun BridgeSection() {

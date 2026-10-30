@@ -250,4 +250,7 @@
     <string name="pay_no_wallet">Yüklü bir Cashu cüzdanı yok. Jetonu kopyalayıp bir cüzdana yapıştır.</string>
     <string name="pay_copy">Kopyala</string>
     <string name="pay_copied">Jeton kopyalandı</string>
+    <string name="media_mic_hint">Ses: konuşmak için basılı tut ya da başlatmak için dokun, göndermek için tekrar dokun</string>
+    <string name="live_voice_title">Canlı ses</string>
+    <string name="live_voice_body">Yakında ve özel sohbetlerde sen konuşurken diğerleri dinler, onlarınki de o sohbet açıkken sana çalar. Kapalı: iki yönde de yalnızca bitmiş sesli mesajlar.</string>
 </resources>

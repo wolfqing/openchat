@@ -258,4 +258,7 @@
     <string name="pay_no_wallet">Кошелёк Cashu не установлен. Скопируйте токен и вставьте его в кошелёк.</string>
     <string name="pay_copy">Копировать</string>
     <string name="pay_copied">Токен скопирован</string>
+    <string name="media_mic_hint">Голос: удерживайте, чтобы говорить, или нажмите для начала и ещё раз для отправки</string>
+    <string name="live_voice_title">Голос в реальном времени</string>
+    <string name="live_voice_body">Голосовые в «Рядом» и личных чатах слышны другим, пока вы ещё говорите, а их голосовые играют у вас, когда чат открыт. Выкл.: только законченные сообщения в обе стороны.</string>
 </resources>
