@@ -516,12 +516,20 @@ class MeshEngineTest {
     fun syncedAnnounceDoesNotPassForPresence() {
         val net = SimNetwork(VirtualScheduler())
         listOf("alice", "bob", "carol").forEach { net.node(it).start() }
+        val carol = net.engines["carol"]!!.identity
         net.connect("bob", "carol")
         net.scheduler.advance(10_000)
         net.disconnect("bob", "carol") // carol walks off without a leave; bob keeps her for up to a minute
         net.scheduler.advance(5_000)
         net.connect("alice", "bob")
         net.scheduler.advance(10_000) // alice's first sync with bob brings carol's cached announce
+        // Bob's reply may legitimately leave it out (the sync filter has a 1/128 false-positive rate,
+        // §14.3), so a copy also arrives as a reply on the same link, which alice asked within the window.
+        val payload = Announcement(carol.nickname, carol.noise.publicKey, carol.signing.publicKey, emptyList()).encode()!!
+        val plain = Packet(type = MessageType.ANNOUNCE, senderId = carol.peerId, timestamp = net.scheduler.now() - 20_000, payload = payload, ttl = 0, isRsr = true)
+        val reply = plain.copy(signature = Crypto.ed25519Sign(carol.signing.privateKey, PacketCodec.signingBytes(plain)!!))
+        net.engines["alice"]!!.onBytes("to-bob", PacketCodec.encode(reply)!!)
+        net.scheduler.advance(100)
         assertTrue("carol is not here", net.recorders["alice"]!!.peers.none { it.nickname == "carol" })
         assertTrue(net.engines["alice"]!!.knownCount >= 2) // but her keys are remembered for verifying synced messages
         net.scheduler.advance(120_000)
