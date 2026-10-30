@@ -1,0 +1,84 @@
+openchat
+Copyright (c) 2026 wolfqing and openchat contributors
+Licensed under the MIT License, see LICENSE.
+
+This repository contains no source code from the bitchat project. It
+implements the bitchat wire protocol from docs/protocol-spec.md, which was
+written by reading the public-domain (Unlicense) bitchat iOS source at
+https://github.com/permissionlesstech/bitchat. The GPL-3.0 bitchat-android
+source was not read and is not used. openchat is not affiliated with or
+endorsed by the bitchat project.
+
+--------------------------------------------------------------------------
+Data shipped in the app
+--------------------------------------------------------------------------
+
+android/app/src/main/assets/relays.csv
+  Nostr relay URLs with approximate coordinates, from
+  permissionlesstech/bitchat relays/online_relays_gps.csv at tag v1.8.0.
+  Public domain (Unlicense). Kept verbatim so geohash channels use the
+  same relays as bitchat clients.
+
+--------------------------------------------------------------------------
+Third-party libraries bundled in the Android app
+--------------------------------------------------------------------------
+
+Bouncy Castle (org.bouncycastle:bcprov-jdk18on)
+  Copyright (c) 2000-2025 The Legion of the Bouncy Castle Inc.
+  MIT-style Bouncy Castle License, https://www.bouncycastle.org/licence.html
+
+OkHttp (com.squareup.okhttp3:okhttp)
+  Copyright 2019 Square, Inc.
+  Apache License 2.0
+
+kotlinx.coroutines (org.jetbrains.kotlinx:kotlinx-coroutines-android)
+  Copyright 2016-2024 JetBrains s.r.o.
+  Apache License 2.0
+
+ZXing core (com.google.zxing:core)
+  Copyright 2007 ZXing authors
+  Apache License 2.0
+
+ZXing Android Embedded (com.journeyapps:zxing-android-embedded)
+  Copyright 2012-2018 ZXing authors, Journey Mobile
+  Apache License 2.0
+
+Tor Android (info.guardianproject:tor-android)
+  Copyright The Guardian Project and The Tor Project
+  BSD 3-Clause License. Bundles the Tor daemon, which is licensed under
+  the BSD 3-Clause License, see https://gitweb.torproject.org/tor.git/tree/LICENSE
+
+jtorctl (info.guardianproject:jtorctl)
+  Copyright 2005 Nick Mathewson, Roger Dingledine; The Guardian Project
+  BSD 3-Clause License
+
+AndroidX, Jetpack Compose, Material 3 (androidx.*)
+  Copyright The Android Open Source Project
+  Apache License 2.0
+
+Kotlin standard library (org.jetbrains.kotlin:kotlin-stdlib)
+  Copyright 2010-2024 JetBrains s.r.o.
+  Apache License 2.0
+
+--------------------------------------------------------------------------
+Used in unit tests only, not shipped
+--------------------------------------------------------------------------
+
+Noise_XX_25519_ChaChaPoly_SHA256 test vector from the cacophony project
+  https://github.com/centromere/cacophony
+
+BIP-340 Schnorr signature test vectors from the Bitcoin Improvement
+  Proposals repository, BIP-340 is BSD 2-Clause
+  https://github.com/bitcoin/bips/blob/master/bip-0340
+
+JUnit 4 (Eclipse Public License 1.0), org.json (Public Domain, JSON
+  licence as published on json.org)
+
+--------------------------------------------------------------------------
+
+The licence texts for the Apache License 2.0, the BSD licences and the
+Bouncy Castle licence are available at the URLs above and in the
+respective library distributions. A full dependency report can be
+generated with:
+
+  cd android && ./gradlew :app:dependencies --configuration releaseRuntimeClasspath
