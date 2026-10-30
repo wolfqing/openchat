@@ -13,7 +13,7 @@
     <string name="onboard_start">Start</string>
     <string name="onboard_next">Next, you\'ll be asked to allow Bluetooth so the app can find people nearby.</string>
     <string name="safety_title">Before you start</string>
-    <string name="safety_body">· The Nearby channel is public. Everyone in range can see it.\n· Private messages are encrypted, but people nearby can tell you use this app and can recognize the same phone over time.\n· This app has not had a full independent security audit. If being identified would put you in serious danger, don\'t rely on it.\n· Tap the title at the top three times to erase all data at once.</string>
+    <string name="safety_body">· The Nearby channel is public. Everyone in range can see it.\n· Private messages are encrypted, but people nearby can tell you use this app and can recognize the same phone over time.\n· This app has not had a full independent security audit. If being identified would put you in serious danger, don\'t rely on it.\n· Tap the logo in the top-left corner three times to erase all data at once.</string>
 
     <!-- main shell -->
     <string name="tab_nearby">Nearby</string>
@@ -22,6 +22,7 @@
     <string name="tab_me">Me</string>
     <string name="ok">OK</string>
     <string name="wiped">Erased. You now have a new identity: %1$s</string>
+    <string name="panic_logo">openchat. Tap three times to erase everything.</string>
     <string name="banner_need_permission">Bluetooth permission is needed to find people nearby</string>
     <string name="banner_bt_off">Bluetooth is off. Tap here to turn it on</string>
     <string name="banner_starting">Starting…</string>

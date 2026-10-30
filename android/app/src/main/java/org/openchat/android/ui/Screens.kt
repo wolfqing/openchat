@@ -86,6 +86,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -273,7 +278,10 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { PanicTitle(stringResource(tab.label), onPanic) })
+            TopAppBar(
+                navigationIcon = { PanicLogo(onPanic) },
+                title = { PanicTitle(stringResource(tab.label), onPanic) },
+            )
         },
         bottomBar = {
             NavigationBar {
@@ -334,20 +342,57 @@ fun labelText(label: PeerLabel, teleported: Boolean = false, verified: Boolean =
 @Composable
 fun PanicTitle(text: String, onPanic: () -> Unit) = PanicTitle(AnnotatedString(text), onPanic)
 
+/**
+ * Three taps in a row fire [onPanic]. Each tap must follow the previous one within
+ * [PANIC_TAP_GAP_MS]; a slower tap starts a new count. Every counted tap gives a short
+ * haptic tick so the user can feel that taps register, since there is no ripple.
+ */
+private const val PANIC_TAP_GAP_MS = 500L
+
+@Composable
+private fun rememberPanicTaps(onPanic: () -> Unit): () -> Unit {
+    var taps by remember { mutableStateOf(0) }
+    var lastTap by remember { mutableLongStateOf(0L) }
+    val haptic = LocalHapticFeedback.current
+    return {
+        val now = System.currentTimeMillis()
+        if (now - lastTap > PANIC_TAP_GAP_MS) taps = 0
+        lastTap = now
+        taps++
+        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        if (taps >= 3) { taps = 0; lastTap = 0; onPanic() }
+    }
+}
+
 @Composable
 fun PanicTitle(text: AnnotatedString, onPanic: () -> Unit) {
-    var taps by remember { mutableStateOf(0) }
-    var firstTap by remember { mutableLongStateOf(0L) }
+    val tap = rememberPanicTaps(onPanic)
     Text(
         text,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
-            val now = System.currentTimeMillis()
-            if (now - firstTap > 800) { firstTap = now; taps = 0 }
-            taps++
-            if (taps >= 3) { taps = 0; firstTap = 0; onPanic() }
-        },
+        modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = tap),
     )
+}
+
+/** The app mark in the top-left corner: a 48dp target for the triple-tap wipe. */
+@Composable
+fun PanicLogo(onPanic: () -> Unit) {
+    val tap = rememberPanicTaps(onPanic)
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = tap)
+            .clipToBounds(),
+        contentAlignment = Alignment.Center,
+    ) {
+        // The launcher foreground keeps its pixels inside the adaptive-icon safe zone (about half
+        // the canvas), so scale it up to fill the box.
+        Image(
+            painterResource(R.drawable.ic_launcher_foreground),
+            contentDescription = stringResource(R.string.panic_logo),
+            modifier = Modifier.fillMaxSize().scale(1.7f),
+        )
+    }
 }
 
 @Composable

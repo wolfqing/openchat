@@ -11,7 +11,7 @@
     <string name="onboard_start">开始</string>
     <string name="onboard_next">下一步会请你允许使用蓝牙，用来发现附近的人。</string>
     <string name="safety_title">请先知道</string>
-    <string name="safety_body">· 「附近」频道是公开的，范围内所有人都能看到。\n· 私信是加密的，但附近的人能看出你在用这个 App，也能长期认出同一台手机。\n· 本软件未经完整的独立安全审计。如果被识别出来会有严重后果，请不要依赖它。\n· 连点三下顶部标题，立刻清空所有数据。</string>
+    <string name="safety_body">· 「附近」频道是公开的，范围内所有人都能看到。\n· 私信是加密的，但附近的人能看出你在用这个 App，也能长期认出同一台手机。\n· 本软件未经完整的独立安全审计。如果被识别出来会有严重后果，请不要依赖它。\n· 连点三下左上角的 logo，立刻清空所有数据。</string>
 
     <!-- main shell -->
     <string name="tab_nearby">附近</string>
@@ -20,6 +20,7 @@
     <string name="tab_me">我</string>
     <string name="ok">好</string>
     <string name="wiped">已清空。你现在是一个新身份：%1$s</string>
+    <string name="panic_logo">openchat。连点三下清空所有数据。</string>
     <string name="banner_need_permission">需要蓝牙权限才能发现附近的人</string>
     <string name="banner_bt_off">蓝牙已关闭，点这里打开</string>
     <string name="banner_starting">正在启动…</string>
