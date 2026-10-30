@@ -21,6 +21,7 @@
     <string name="banner_bt_off">Bluetooth вимкнено. Торкніться, щоб увімкнути</string>
     <string name="banner_starting">Запуск…</string>
     <string name="banner_searching">Пошук людей поруч…</string>
+    <string name="banner_storage_locked">Збережену особу зараз не вдається розблокувати. Торкніться, щоб повторити.</string>
     <plurals name="banner_connected">
         <item quantity="one">Підключено людей поруч: %d</item>
         <item quantity="few">Підключено людей поруч: %d</item>
@@ -117,7 +118,7 @@
     <string name="verify_badge_off">Не перевірено. Порівняйте цей відбиток при зустрічі:</string>
     <string name="verify_mark">Збігається, позначити перевіреним</string>
     <string name="verify_unmark">Зняти позначку</string>
-    <string name="cmd_help">/msg @ім\'я [текст] — особистий чат\n/who — хто тут\n/clear — очистити цей чат\n/hug @ім\'я · /slap @ім\'я\n/block @ім\'я · /unblock @ім\'я\n/fav @ім\'я · /unfav @ім\'я — обране (лише поруч)\n/help — цей список</string>
+    <string name="cmd_help">/msg @ім\'я [текст] — особистий чат\n/who — хто тут\n/clear — очистити цей чат\n/hug @ім\'я · /slap @ім\'я\n/block @ім\'я · /unblock @ім\'я\n/fav @ім\'я · /unfav @ім\'я — обране (лише поруч)\n/drop текст — залишити тут нотатку (лише канали місця)\n/help — цей список</string>
     <string name="cmd_who">тут: %1$s</string>
     <string name="cmd_who_none">зараз тут більше нікого немає</string>
     <string name="cmd_not_found">%1$s тут немає</string>

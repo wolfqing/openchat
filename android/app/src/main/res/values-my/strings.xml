@@ -21,6 +21,7 @@
     <string name="banner_bt_off">ဘလူးတုသ် ပိတ်ထားသည်။ ဖွင့်ရန် ဤနေရာကို နှိပ်ပါ</string>
     <string name="banner_starting">စတင်နေသည်…</string>
     <string name="banner_searching">အနီးရှိလူများကို ရှာနေသည်…</string>
+    <string name="banner_storage_locked">သိမ်းထားသော အမည်သတ်မှတ်ချက်ကို ယခု ဖွင့်မရပါ။ ထပ်စမ်းရန် တို့ပါ။</string>
     <plurals name="banner_connected">
         <item quantity="other">အနီးရှိ လူ %d ဦးနှင့် ချိတ်ဆက်ထားသည်</item>
     </plurals>
@@ -105,7 +106,7 @@
     <string name="verify_badge_off">အတည်မပြုရသေးပါ။ ဤလက်ဗွေကို မျက်နှာချင်းဆိုင် တိုက်စစ်ပါ-</string>
     <string name="verify_mark">ကိုက်ညီသည်၊ အတည်ပြုပြီးဟု မှတ်ရန်</string>
     <string name="verify_unmark">အတည်ပြုချက် ဖယ်ရန်</string>
-    <string name="cmd_help">/msg @name [message] — သီးသန့်ချက်တင်\n/who — ဒီမှာ ဘယ်သူရှိလဲ\n/clear — ဤချက်တင်ကို ရှင်းရန်\n/hug @name · /slap @name\n/block @name · /unblock @name\n/fav @name · /unfav @name — အကြိုက်ဆုံး (အနီးအနားသာ)\n/help — ဤစာရင်း</string>
+    <string name="cmd_help">/msg @name [message] — သီးသန့်ချက်တင်\n/who — ဒီမှာ ဘယ်သူရှိလဲ\n/clear — ဤချက်တင်ကို ရှင်းရန်\n/hug @name · /slap @name\n/block @name · /unblock @name\n/fav @name · /unfav @name — အကြိုက်ဆုံး (အနီးအနားသာ)\n/drop စာ — ဒီမှာ မှတ်စုထားခဲ့ရန် (တည်နေရာချန်နယ်သာ)\n/help — ဤစာရင်း</string>
     <string name="cmd_who">ဒီမှာ- %1$s</string>
     <string name="cmd_who_none">ယခု ဒီမှာ အခြားသူ မရှိပါ</string>
     <string name="cmd_not_found">%1$s ဒီမှာ မရှိပါ</string>

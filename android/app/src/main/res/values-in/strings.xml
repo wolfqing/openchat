@@ -21,6 +21,7 @@
     <string name="banner_bt_off">Bluetooth mati. Ketuk di sini untuk menyalakan</string>
     <string name="banner_starting">Memulai…</string>
     <string name="banner_searching">Mencari orang di sekitar…</string>
+    <string name="banner_storage_locked">Identitas tersimpan tidak dapat dibuka saat ini. Ketuk untuk mencoba lagi.</string>
     <plurals name="banner_connected">
         <item quantity="other">Terhubung dengan %d orang di sekitar</item>
     </plurals>
@@ -105,7 +106,7 @@
     <string name="verify_badge_off">Belum terverifikasi. Cocokkan sidik jari ini secara langsung:</string>
     <string name="verify_mark">Cocok, tandai terverifikasi</string>
     <string name="verify_unmark">Hapus verifikasi</string>
-    <string name="cmd_help">/msg @nama [pesan] — obrolan pribadi\n/who — siapa di sini\n/clear — kosongkan obrolan ini\n/hug @nama · /slap @nama\n/block @nama · /unblock @nama\n/fav @nama · /unfav @nama — favorit (hanya sekitar)\n/help — daftar ini</string>
+    <string name="cmd_help">/msg @nama [pesan] — obrolan pribadi\n/who — siapa di sini\n/clear — kosongkan obrolan ini\n/hug @nama · /slap @nama\n/block @nama · /unblock @nama\n/fav @nama · /unfav @nama — favorit (hanya sekitar)\n/drop teks — tinggalkan catatan di sini (hanya kanal lokasi)\n/help — daftar ini</string>
     <string name="cmd_who">di sini: %1$s</string>
     <string name="cmd_who_none">saat ini tidak ada orang lain di sini</string>
     <string name="cmd_not_found">%1$s tidak ada di sini</string>

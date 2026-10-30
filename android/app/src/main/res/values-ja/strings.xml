@@ -21,6 +21,7 @@
     <string name="banner_bt_off">Bluetoothがオフです。タップしてオンにする</string>
     <string name="banner_starting">起動中…</string>
     <string name="banner_searching">近くの人を探しています…</string>
+    <string name="banner_storage_locked">保存された ID を今は復号できません。タップして再試行してください。</string>
     <plurals name="banner_connected">
         <item quantity="other">近くの%d人と接続中</item>
     </plurals>
@@ -105,7 +106,7 @@
     <string name="verify_badge_off">未確認です。対面でこの指紋を照合してください：</string>
     <string name="verify_mark">一致したので確認済みにする</string>
     <string name="verify_unmark">確認を取り消す</string>
-    <string name="cmd_help">/msg @名前 [本文] — 個別チャット\n/who — ここにいる人\n/clear — このチャットを消去\n/hug @名前 · /slap @名前\n/block @名前 · /unblock @名前\n/fav @名前 · /unfav @名前 — お気に入り（近くのみ）\n/help — この一覧</string>
+    <string name="cmd_help">/msg @名前 [本文] — 個別チャット\n/who — ここにいる人\n/clear — このチャットを消去\n/hug @名前 · /slap @名前\n/block @名前 · /unblock @名前\n/fav @名前 · /unfav @名前 — お気に入り（近くのみ）\n/drop 本文 — ここにメモを残す（位置チャンネルのみ）\n/help — この一覧</string>
     <string name="cmd_who">ここにいる人: %1$s</string>
     <string name="cmd_who_none">今ここには他に誰もいません</string>
     <string name="cmd_not_found">%1$s は見つかりません</string>

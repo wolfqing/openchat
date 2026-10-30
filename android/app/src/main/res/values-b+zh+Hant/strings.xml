@@ -21,6 +21,7 @@
     <string name="banner_bt_off">藍牙已關閉，點這裡開啟</string>
     <string name="banner_starting">正在啟動…</string>
     <string name="banner_searching">正在尋找附近的人…</string>
+    <string name="banner_storage_locked">暫時無法解鎖已儲存的身分。點此重試。</string>
     <plurals name="banner_connected">
         <item quantity="other">已連上附近 %d 人</item>
     </plurals>
@@ -105,7 +106,7 @@
     <string name="verify_badge_off">未驗證。當面核對下面的指紋：</string>
     <string name="verify_mark">一致，標記為已驗證</string>
     <string name="verify_unmark">取消驗證</string>
-    <string name="cmd_help">/msg @名字 [訊息] — 私聊\n/who — 誰在這裡\n/clear — 清空本聊天\n/hug @名字 · /slap @名字\n/block @名字 · /unblock @名字\n/fav @名字 · /unfav @名字 — 收藏（僅附近）\n/help — 本列表</string>
+    <string name="cmd_help">/msg @名字 [訊息] — 私聊\n/who — 誰在這裡\n/clear — 清空本聊天\n/hug @名字 · /slap @名字\n/block @名字 · /unblock @名字\n/fav @名字 · /unfav @名字 — 收藏（僅附近）\n/drop 內容 — 在此留一則便箋（僅位置頻道）\n/help — 本列表</string>
     <string name="cmd_who">在這裡：%1$s</string>
     <string name="cmd_who_none">現在這裡沒有別人</string>
     <string name="cmd_not_found">找不到 %1$s</string>

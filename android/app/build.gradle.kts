@@ -1,7 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+// Release signing. android/keystore.properties (git-ignored) names the keystore and its passwords;
+// without it the release build falls back to the debug key, as the previews up to v0.5.0 were signed.
+val keystoreProps = rootProject.file("keystore.properties").takeIf { it.exists() }?.let { f ->
+    Properties().also { props -> f.inputStream().use { props.load(it) } }
 }
 
 android {
@@ -16,18 +24,29 @@ android {
         versionName = "0.5.0"
     }
 
+    signingConfigs {
+        if (keystoreProps != null) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
     buildTypes {
         // Tor ships native code per ABI. Phones are ARM; x86_64 is only for the emulator.
         debug {
             ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
         }
-        // The published preview: shrunk by R8, ARM only, still signed with the local debug key
-        // so it installs over earlier previews.
+        // The published preview: shrunk by R8, ARM only. Signed with the release key when
+        // keystore.properties is present. Previews up to v0.5.0 carried the debug key, so the
+        // first release-signed build does not install over them: uninstall first.
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (keystoreProps != null) "release" else "debug")
             ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         }
     }

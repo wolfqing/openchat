@@ -1,5 +1,6 @@
 package org.openchat.android.app
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
@@ -11,6 +12,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.location.Location
 import android.location.LocationManager
@@ -51,6 +53,8 @@ class MeshService : Service(), ChatController {
         private const val CHANNEL_MESSAGES = "messages"
         private const val NOTIFICATION_ID = 1
         private const val NOTE_PRECISION = 8 // building level, as bitchat
+        // A repeated Nostr message newer than this is the sender's own resend and gets its receipt again (§15.3).
+        private const val RESEND_ACK_WINDOW_MS = 10 * 60_000L
 
         fun start(context: Context) {
             val i = Intent(context, MeshService::class.java)
@@ -74,6 +78,8 @@ class MeshService : Service(), ChatController {
     private lateinit var ble: BleTransport
     private lateinit var geo: GeoChannels
     private var bleStarted = false
+    // Set when onCreate could not bring the service up (permission gone, identity locked): every later callback is a no-op.
+    private var disabled = false
 
     private val scheduler = object : Scheduler {
         override fun post(task: () -> Unit) { handler.post(task) }
@@ -93,29 +99,43 @@ class MeshService : Service(), ChatController {
     override fun onCreate() {
         super.onCreate()
         createChannels()
-        startInForeground()
+        // Android 14+ refuses a connectedDevice foreground service without a Bluetooth permission. A sticky
+        // restart after the user revoked it must stop quietly, not crash and be restarted into the same crash.
+        if (!canRunInForeground()) { disabled = true; stopSelf(); return }
+        try { startInForeground() } catch (e: Exception) { disabled = true; stopSelf(); return }
         thread = HandlerThread("mesh").apply { start() }
         handler = Handler(thread.looper)
         store = IdentityStore(this)
         stateStore = MeshStateStore(this)
-        val identity = store.loadOrCreate()
+        val identity = try { store.loadOrCreate() } catch (e: IdentityStore.Locked) {
+            // The keys are on disk but will not open right now. Never replace them: tell the UI and wait for a retry.
+            ChatRepository.updateMesh { it.copy(storageLocked = true, running = false) }
+            disabled = true
+            thread.quitSafely()
+            stopSelf()
+            return
+        }
+        ChatRepository.updateMesh { it.copy(storageLocked = false) }
         engine = MeshEngine(identity, scheduler, { link, bytes -> ble.write(link, bytes) }, listener)
         stateStore.load()?.let { s -> engine.importState(s); s.known.forEach { (hex, k) -> noiseKeys[hex] = k.noiseKey } }
         // Route relay traffic before any relay socket opens (§19).
         tor = Tor(this) { s -> ChatRepository.updateGeo { it.copy(tor = s) } }
         tor.apply()
         socialStore = SealedFile(this, "social.bin")
-        socialStore.read()?.let { Social.deserialize(it) }?.let { Social.load(it) }
-        Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)); nostr.setExtraRelays(s.relays) } }
+        socialStore.readOrNull()?.let { Social.deserialize(it) }?.let { Social.load(it) }
         engine.isBlocked = { key -> sha256(key).toHex() in Social.state.value.blocked }
+        // Favorites and verified people keep their place among the remembered keys when strangers flood in.
+        engine.isPinned = { key -> val fp = sha256(key).toHex(); Social.state.value.let { fp in it.favorites || fp in it.verified } }
         Social.state.value.favorites.values.forEach { f -> f.noiseKeyHex.hexToBytes()?.let { noiseKeys[Identity.peerIdFor(it).toHex()] = it } }
         nostrSeenStore = SealedFile(this, "nostr-seen.bin")
-        nostrSeenStore.read()?.let { nostrSeen.addAll(String(it, Charsets.UTF_8).split('\n').filter { id -> id.isNotEmpty() }) }
+        nostrSeenStore.readOrNull()?.let { nostrSeen.addAll(String(it, Charsets.UTF_8).split('\n').filter { id -> id.isNotEmpty() }) }
         nostr = NostrDirect(identity.nostrSeed, { sender, content, createdAt, _ -> handler.post { onNostrDirect(sender, content, createdAt) } }) { g, sender, content, createdAt ->
             handler.post { onGeoPrivate(g, sender, content, createdAt) }
         }
         nostr.setExtraRelays(Social.state.value.relays)
         nostr.start()
+        // Installed only now that everything it touches exists.
+        Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)); nostr.setExtraRelays(s.relays) } }
         ble = BleTransport(this, handler) { engine }
         geo = GeoChannels(RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText()), identity.nostrSeed, { engine.identity.nickname }) { from, text ->
             notifyMention(from, text)
@@ -132,12 +152,22 @@ class MeshService : Service(), ChatController {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (disabled) return START_NOT_STICKY
         handler.post { startBleIfPossible(); publishStatus() }
         return START_STICKY
     }
 
+    /** Android 14+ requires one of these for FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE. */
+    private fun canRunInForeground(): Boolean {
+        if (Build.VERSION.SDK_INT < 34) return true
+        return listOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_ADVERTISE)
+            .any { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
+    }
+
     override fun onDestroy() {
+        if (disabled) { super.onDestroy(); return }
         ChatRepository.controller = null
+        Social.onChanged = null
         try { unregisterReceiver(btReceiver) } catch (e: Exception) { }
         handler.post {
             engine.stop()
@@ -276,31 +306,43 @@ class MeshService : Service(), ChatController {
         ChatRepository.addLocal(Conversation.Private(peerHex).key, getString(if (on) R.string.fav_they_on else R.string.fav_they_off, PeerLabel.mesh(nickname, peerHex).toString()))
     }
 
+    /** True the first time this Nostr message ID is seen; the set survives restarts so relay replays stay silent. */
+    private fun rememberNostrMessage(id: String): Boolean {
+        if (!nostrSeen.add(id)) return false
+        while (nostrSeen.size > 1000) nostrSeen.remove(nostrSeen.first())
+        nostrSeenStore.write(nostrSeen.joinToString("\n").toByteArray(Charsets.UTF_8))
+        return true
+    }
+
     private fun onNostrDirect(senderPubkey: String, content: String, createdAt: Long) {
         val d = NostrEmbedded.decode(content) ?: return
         val social = Social.state.value
-        val fav = social.favorites.values.firstOrNull { it.theirNpub?.let { n -> NostrDirect.npubToHex(n) } == senderPubkey }
-        val noiseKey = fav?.noiseKeyHex?.hexToBytes()
-            ?: noiseKeys[d.senderId.toHex()]?.takeIf { Identity.peerIdFor(it).contentEquals(d.senderId) } ?: return
+        // Only the npub we already hold for someone speaks for them here (§15.3). The sender field inside
+        // the envelope is unsigned, so a npub is bound to a Noise key over a Noise session or a QR, never by Nostr.
+        val fav = NostrSenders.resolve(social.favorites.values, senderPubkey, d.senderId) ?: return
+        val noiseKey = fav.noiseKeyHex.hexToBytes() ?: return
         if (sha256(noiseKey).toHex() in social.blocked) return
         val peerHex = Identity.peerIdFor(noiseKey).toHex()
-        val nickname = fav?.nickname ?: ChatRepository.names.value[peerHex] ?: peerHex.take(8)
+        val nickname = fav.nickname
         when (d.payload.type) {
             NoisePayloadType.PRIVATE_MESSAGE -> {
                 val pm = PrivateMessage.decode(d.payload.body) ?: return
                 val notice = NostrEmbedded.parseFavoriteNotice(pm.content)
                 if (notice != null) {
-                    // The notice must come from the npub it announces.
+                    // They may favorite or unfavorite us again, under the npub we know them by.
                     if (NostrDirect.npubToHex(notice.second) == senderPubkey) favoriteNoticeFrom(noiseKey, nickname, notice.first, notice.second)
                     return
                 }
-                if (fav == null) return // only favorites may write over Nostr
-                NostrEmbedded.receipt(NoisePayloadType.DELIVERED, pm.messageId, engine.identity.peerId, d.senderId, System.currentTimeMillis())
-                    ?.let { nostr.send(senderPubkey, it, paced = true) }
-                if (!nostrSeen.add(pm.messageId)) return
-                while (nostrSeen.size > 1000) nostrSeen.remove(nostrSeen.first())
-                nostrSeenStore.write(nostrSeen.joinToString("\n").toByteArray(Charsets.UTF_8))
-                deliverPrivate(peerHex, nickname, pm.messageId, pm.content, minOf(createdAt * 1000, System.currentTimeMillis()))
+                val now = System.currentTimeMillis()
+                // Relays replay stored envelopes on every reconnect. A repeat is answered only when it is
+                // recent enough to be the sender's own resend of a receipt that got lost.
+                val first = rememberNostrMessage(pm.messageId)
+                if (first || now - createdAt * 1000 < RESEND_ACK_WINDOW_MS) {
+                    NostrEmbedded.receipt(NoisePayloadType.DELIVERED, pm.messageId, engine.identity.peerId, d.senderId, now)
+                        ?.let { nostr.send(senderPubkey, it, paced = true) }
+                }
+                if (!first) return
+                deliverPrivate(peerHex, nickname, pm.messageId, pm.content, minOf(createdAt * 1000, now))
             }
             NoisePayloadType.DELIVERED -> ChatRepository.setState(Conversation.Private(peerHex).key, String(d.payload.body, Charsets.UTF_8), DeliveryState.DELIVERED)
             NoisePayloadType.READ_RECEIPT -> ChatRepository.setState(Conversation.Private(peerHex).key, String(d.payload.body, Charsets.UTF_8), DeliveryState.READ)
@@ -420,10 +462,12 @@ class MeshService : Service(), ChatController {
         when (d.payload.type) {
             NoisePayloadType.PRIVATE_MESSAGE -> {
                 val pm = PrivateMessage.decode(d.payload.body) ?: return
-                NostrEmbedded.receiptAnonymous(NoisePayloadType.DELIVERED, pm.messageId, System.currentTimeMillis())?.let { nostr.send(senderPubkey, it, paced = true, from = me) }
-                if (!nostrSeen.add(pm.messageId)) return
-                while (nostrSeen.size > 1000) nostrSeen.remove(nostrSeen.first())
-                nostrSeenStore.write(nostrSeen.joinToString("\n").toByteArray(Charsets.UTF_8))
+                val now = System.currentTimeMillis()
+                val first = rememberNostrMessage(pm.messageId)
+                if (first || now - createdAt * 1000 < RESEND_ACK_WINDOW_MS) {
+                    NostrEmbedded.receiptAnonymous(NoisePayloadType.DELIVERED, pm.messageId, now)?.let { nostr.send(senderPubkey, it, paced = true, from = me) }
+                }
+                if (!first) return
                 // Their name, if they spoke in the channel; otherwise anon plus the key suffix.
                 val nick = ChatRepository.messages.value[Conversation.Geo(geohash).key]?.lastOrNull { it.senderKey == senderPubkey }?.senderName.orEmpty()
                 ChatRepository.rememberName(senderPubkey, nick)
@@ -454,15 +498,20 @@ class MeshService : Service(), ChatController {
         val file = FilePacket((if (mime.startsWith("audio")) "voice_" else "img_") + java.util.UUID.randomUUID() + "." + FilePacket.extension(mime), mime, bytes)
         val kind = file.kind ?: return R.string.media_too_big
         val peerHex = conversation.removePrefix("dm:").takeIf { conversation.startsWith("dm:") }
-        if (peerHex != null && !java.util.concurrent.FutureTask { engine.canSendPrivateFile(peerHex) }.also { handler.post(it) }.get()) {
-            return R.string.media_private_unsupported
+        // The capability check reads engine state and the copy touches disk: both belong on the mesh
+        // thread, and the UI thread never waits for it (it would hang for good once the service is gone).
+        handler.post {
+            if (peerHex != null && !engine.canSendPrivateFile(peerHex)) {
+                ChatRepository.addLocal(conversation, getString(R.string.media_private_unsupported))
+                return@post
+            }
+            val stored = Media.store(this, bytes, FilePacket.extension(mime))
+            val id = engine.identity
+            val now = System.currentTimeMillis()
+            ChatRepository.add(ChatMessage("file-${stored.nameWithoutExtension}", conversation, id.nickname, id.peerIdHex, "", now, mine = true,
+                attachment = stored.absolutePath, audio = kind == FilePacket.Kind.AUDIO))
+            if (peerHex != null) engine.sendPrivateFile(peerHex, file) else engine.sendPublicFile(file)
         }
-        val stored = Media.store(this, bytes, FilePacket.extension(mime))
-        val id = engine.identity
-        val now = System.currentTimeMillis()
-        ChatRepository.add(ChatMessage("file-${stored.nameWithoutExtension}", conversation, id.nickname, id.peerIdHex, "", now, mine = true,
-            attachment = stored.absolutePath, audio = kind == FilePacket.Kind.AUDIO))
-        handler.post { if (peerHex != null) engine.sendPrivateFile(peerHex, file) else engine.sendPublicFile(file) }
         return 0
     }
 

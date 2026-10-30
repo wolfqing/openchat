@@ -18,31 +18,54 @@ import javax.crypto.spec.GCMParameterSpec
  */
 class SealedFile(context: Context, name: String) {
     private val file = File(context.noBackupFilesDir, name)
+    private val tmp = File(context.noBackupFilesDir, "$name.tmp")
 
-    fun write(plain: ByteArray) {
+    /** The file is there but cannot be opened: corrupt, or the Keystore key is gone or not answering. */
+    class Unreadable(cause: Throwable) : Exception(cause)
+
+    val exists get() = file.exists()
+
+    /**
+     * Seals and writes atomically: the new content goes to a sibling file and is renamed over the
+     * old one, so a crash or power loss mid-write leaves the previous version, never half a file.
+     * Returns false instead of throwing when the Keystore or the disk refuses; the caller keeps its
+     * in-memory state and tries again on the next change.
+     */
+    fun write(plain: ByteArray): Boolean = try {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, key())
         val sealed = cipher.doFinal(plain)
         val iv = cipher.iv
-        file.writeBytes(byteArrayOf(iv.size.toByte()) + iv + sealed)
+        tmp.writeBytes(byteArrayOf(iv.size.toByte()) + iv + sealed)
+        if (!tmp.renameTo(file)) { tmp.delete(); false } else true
+    } catch (e: Exception) {
+        tmp.delete()
+        false
     }
 
-    fun read(): ByteArray? = try {
-        if (!file.exists()) null else {
+    /** Null when there is no file. Throws [Unreadable] when there is one we cannot open. */
+    fun read(): ByteArray? {
+        if (!file.exists()) return null
+        try {
             val data = file.readBytes()
+            if (data.isEmpty()) throw IllegalStateException("empty sealed file")
             val ivLen = data[0].toInt()
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
             cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, data, 1, ivLen))
-            cipher.doFinal(data, 1 + ivLen, data.size - 1 - ivLen)
+            return cipher.doFinal(data, 1 + ivLen, data.size - 1 - ivLen)
+        } catch (e: Exception) {
+            throw Unreadable(e)
         }
-    } catch (e: Exception) {
-        null
     }
+
+    /** Like [read], but an unreadable file counts as absent: for caches that can be rebuilt. */
+    fun readOrNull(): ByteArray? = try { read() } catch (e: Unreadable) { null }
 
     /** Overwrites and deletes the file. */
     fun delete() {
+        tmp.delete()
         if (file.exists()) {
-            file.writeBytes(ByteArray(file.length().toInt()))
+            try { file.writeBytes(ByteArray(file.length().toInt())) } catch (e: Exception) { }
             file.delete()
         }
     }
@@ -78,12 +101,21 @@ class SealedFile(context: Context, name: String) {
 class IdentityStore(context: Context) {
     private val file = SealedFile(context, "identity.bin")
 
+    /** The saved identity exists but cannot be opened. Never silently replaced: that would lose the user's keys. */
+    class Locked(cause: Throwable) : Exception(cause)
+
+    /**
+     * Returns the saved identity, or a new one when none was ever saved. A file that is present but
+     * will not open (Keystore hiccup after a system update, corrupt bytes) raises [Locked] so the
+     * caller can report it and try again later, instead of overwriting the keys with fresh ones.
+     */
     fun loadOrCreate(): Identity {
-        file.read()?.let { Identity.deserialize(it) }?.let { return it }
+        val bytes = try { file.read() } catch (e: SealedFile.Unreadable) { throw Locked(e) }
+        if (bytes != null) return Identity.deserialize(bytes) ?: throw Locked(IllegalStateException("undecodable identity"))
         return Identity.generate().also { save(it) }
     }
 
-    fun save(identity: Identity) = file.write(identity.serialize())
+    fun save(identity: Identity): Boolean = file.write(identity.serialize())
 
     /** Panic wipe: destroys the sealed file and the Keystore key that could open it. */
     fun destroy() {
@@ -96,7 +128,7 @@ class IdentityStore(context: Context) {
 class MeshStateStore(context: Context) {
     private val file = SealedFile(context, "mesh-state.bin")
 
-    fun load(): MeshState? = file.read()?.let { MeshState.deserialize(it) }
+    fun load(): MeshState? = file.readOrNull()?.let { MeshState.deserialize(it) }
     fun save(state: MeshState) = file.write(state.serialize())
     fun destroy() = file.delete()
 }

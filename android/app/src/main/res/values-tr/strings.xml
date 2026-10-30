@@ -21,6 +21,7 @@
     <string name="banner_bt_off">Bluetooth kapalı. Açmak için buraya dokun</string>
     <string name="banner_starting">Başlatılıyor…</string>
     <string name="banner_searching">Yakındaki kişiler aranıyor…</string>
+    <string name="banner_storage_locked">Kayıtlı kimlik şu anda açılamıyor. Yeniden denemek için dokunun.</string>
     <plurals name="banner_connected">
         <item quantity="one">Yakındaki %d kişiye bağlı</item>
         <item quantity="other">Yakındaki %d kişiye bağlı</item>
@@ -109,7 +110,7 @@
     <string name="verify_badge_off">Doğrulanmadı. Bu parmak izini yüz yüze karşılaştırın:</string>
     <string name="verify_mark">Eşleşiyor, doğrulandı olarak işaretle</string>
     <string name="verify_unmark">Doğrulamayı kaldır</string>
-    <string name="cmd_help">/msg @ad [mesaj] — özel sohbet\n/who — burada kimler var\n/clear — bu sohbeti temizle\n/hug @ad · /slap @ad\n/block @ad · /unblock @ad\n/fav @ad · /unfav @ad — favoriler (yalnızca yakında)\n/help — bu liste</string>
+    <string name="cmd_help">/msg @ad [mesaj] — özel sohbet\n/who — burada kimler var\n/clear — bu sohbeti temizle\n/hug @ad · /slap @ad\n/block @ad · /unblock @ad\n/fav @ad · /unfav @ad — favoriler (yalnızca yakında)\n/drop metin — buraya not bırak (yalnızca konum kanalları)\n/help — bu liste</string>
     <string name="cmd_who">burada: %1$s</string>
     <string name="cmd_who_none">şu an burada başka kimse yok</string>
     <string name="cmd_not_found">%1$s burada değil</string>

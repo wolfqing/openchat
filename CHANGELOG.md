@@ -10,6 +10,59 @@
   note points at the logo. Only the English and Chinese notes were
   updated; the other sixteen still say "title".
 
+Fixes from the 2026-10-29 code review. None change the wire format.
+
+- Private messages over Nostr: a favorite notice arriving over Nostr could
+  bind any mesh peer's identity to the sender's own npub, because the sender
+  field inside the envelope is not signed. Once bound, private messages to
+  that peer out of Bluetooth range were encrypted to the attacker. Now only
+  the npub already recorded for a person speaks for them over Nostr
+  (`NostrSenders`, [spec §15.1](docs/protocol-spec.md)); the first binding
+  happens over a Noise session or a verification QR, where the key is
+  proven. 4 new tests.
+- Sealed files (identity, mesh state, block list) are written to a sibling
+  file and renamed over the old one, so a crash mid-write cannot leave half
+  a file. An identity file that exists but will not open (Keystore not
+  answering after a system update, corrupt bytes) is no longer replaced by
+  fresh keys: the service stops, the banner says the saved identity cannot
+  be unlocked, and a tap retries. Write failures no longer throw.
+- Noise handshakes time out after 10 s and are retried while something is
+  waiting to be sent; before, one lost handshake message left a private
+  chat stuck until the other side restarted. Garbage ciphertext or a forged
+  handshake message 1 under someone's peer ID no longer cuts an established
+  session with that person: a re-handshake runs beside the old session and
+  replaces it only when it completes. Half-open handshakes are capped at 64
+  and expire; early ciphertexts are capped by bytes; sessions of peers gone
+  for an hour are dropped and their keys zeroed.
+- A phone's own public messages and announces go to every neighbour. The
+  log₂(n) fanout subset of §7 applied to them too, so a hub with six
+  neighbours reached about three of them with its own words.
+- An announce whose signing key differs from the one remembered for that
+  Noise key is rejected even after the peer has left the live table, so a
+  copy of someone's Noise key under another signing key cannot speak as
+  them or lock them out when they return. Favorites, verified people and
+  anyone with mail in the outbox are never evicted from the remembered-key
+  table by a flood of strangers.
+- The service no longer crash-loops when Android 14+ restarts it after the
+  Bluetooth permission was revoked: it checks first and stops quietly.
+- Sending a photo or voice note no longer blocks the UI thread waiting on
+  the mesh thread (a hang for good once the service was gone); a refusal
+  shows as a local line in that chat.
+- Delivered receipts over Nostr are sent once per message; a repeat is
+  answered only within 10 minutes of its timestamp. Before, every reconnect
+  replayed two days of envelopes and each got a fresh receipt, which also
+  told the sender when this phone restarted.
+- 104 unit tests in all (10 new).
+- Release builds are signed with a dedicated release key when
+  `android/keystore.properties` is present (git-ignored, see
+  android/README.md). Previews up to v0.5.0 were signed with the build
+  machine's debug key, which cannot be recovered if that machine is lost
+  and would have forced every user to reinstall at some later, worse time.
+  The first release-signed preview will not install over v0.5.0 or
+  earlier: uninstall first. Identity, favorites and verifications are lost
+  with the uninstall; this is the one-time cost of making the switch now.
+- `/help` lists `/drop` in location channels.
+
 ## Android v0.5.0 (preview) — 2026-10-29
 
 - History sync, wire-compatible with bitchat's `requestSync` gossip
@@ -91,7 +144,7 @@
   checked against upstream's draft vectors, but not switched on. Upstream
   has not shipped it in either client, and a rotating ID would make an
   openchat phone invisible to every bitchat phone. 4 new tests.
-- 92 unit tests in all. New dependencies: zxing core and
+- 94 unit tests in all. New dependencies: zxing core and
   zxing-android-embedded (Apache-2.0), tor-android and jtorctl (BSD-3).
 - Smaller download. Previews are now the release build: R8-shrunk
   (classes 11 MB → 1.4 MB), ARM only (the x86_64 Tor library was for the

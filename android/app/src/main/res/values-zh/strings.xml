@@ -25,6 +25,7 @@
     <string name="banner_bt_off">蓝牙已关闭，点这里打开</string>
     <string name="banner_starting">正在启动…</string>
     <string name="banner_searching">正在寻找附近的人…</string>
+    <string name="banner_storage_locked">暂时无法解锁已保存的身份。点此重试。</string>
     <plurals name="banner_connected">
         <item quantity="other">已连上附近 %d 人</item>
     </plurals>
@@ -117,7 +118,7 @@
     <string name="verify_badge_off">未验证。当面核对下面的指纹：</string>
     <string name="verify_mark">一致，标记为已验证</string>
     <string name="verify_unmark">取消验证</string>
-    <string name="cmd_help">/msg @名字 [消息] — 私聊\n/who — 谁在这里\n/clear — 清空本聊天\n/hug @名字 · /slap @名字\n/block @名字 · /unblock @名字\n/fav @名字 · /unfav @名字 — 收藏（仅附近）\n/help — 本列表</string>
+    <string name="cmd_help">/msg @名字 [消息] — 私聊\n/who — 谁在这里\n/clear — 清空本聊天\n/hug @名字 · /slap @名字\n/block @名字 · /unblock @名字\n/fav @名字 · /unfav @名字 — 收藏（仅附近）\n/drop 内容 — 在此留一条便签（仅位置频道）\n/help — 本列表</string>
     <string name="cmd_who">在这里：%1$s</string>
     <string name="cmd_who_none">现在这里没有别人</string>
     <string name="cmd_not_found">找不到 %1$s</string>

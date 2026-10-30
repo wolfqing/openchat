@@ -21,6 +21,7 @@
     <string name="banner_bt_off">البلوتوث مغلق. انقر هنا لتشغيله</string>
     <string name="banner_starting">جارٍ البدء…</string>
     <string name="banner_searching">جارٍ البحث عن أشخاص قريبين…</string>
+    <string name="banner_storage_locked">لا يمكن فتح الهوية المحفوظة الآن. انقر لإعادة المحاولة.</string>
     <plurals name="banner_connected">
         <item quantity="zero">متصل بأشخاص قريبين: %d</item>
         <item quantity="one">متصل بأشخاص قريبين: %d</item>
@@ -125,7 +126,7 @@
     <string name="verify_badge_off">لم يتم التحقق. قارن هذه البصمة مع بصمته وجهًا لوجه:</string>
     <string name="verify_mark">متطابقة، علّمه كموثَّق</string>
     <string name="verify_unmark">إزالة التحقق</string>
-    <string name="cmd_help">/msg @name [message] — محادثة خاصة\n/who — من هنا\n/clear — مسح هذه المحادثة\n/hug @name · /slap @name\n/block @name · /unblock @name\n/fav @name · /unfav @name — المفضلة (القريبون فقط)\n/help — هذه القائمة</string>
+    <string name="cmd_help">/msg @name [message] — محادثة خاصة\n/who — من هنا\n/clear — مسح هذه المحادثة\n/hug @name · /slap @name\n/block @name · /unblock @name\n/fav @name · /unfav @name — المفضلة (القريبون فقط)\n/drop نص — اترك ملاحظة هنا (قنوات الموقع فقط)\n/help — هذه القائمة</string>
     <string name="cmd_who">الموجودون: %1$s</string>
     <string name="cmd_who_none">لا أحد غيرك هنا الآن</string>
     <string name="cmd_not_found">%1$s غير موجود هنا</string>

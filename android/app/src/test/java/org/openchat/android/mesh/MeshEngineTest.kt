@@ -4,9 +4,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.openchat.android.core.Announcement
+import org.openchat.android.core.AuthPeerState
 import org.openchat.android.core.MessageType
 import org.openchat.android.core.Packet
 import org.openchat.android.core.PacketCodec
+import org.openchat.android.core.hexToBytes
 import org.openchat.android.crypto.Crypto
 import java.util.PriorityQueue
 import kotlin.random.Random
@@ -67,6 +70,8 @@ class SimNetwork(val scheduler: VirtualScheduler, private val maxWrite: Int = 18
     val recorders = HashMap<String, Recorder>()
     private val edges = HashMap<String, Pair<String, String>>() // linkId at node -> (remote node, remote linkId)
     var bytesSent = 0L
+    /** Radio loss: writes from [first] to [second] are silently dropped while the pair is listed. */
+    val lossy = HashSet<Pair<String, String>>()
 
     fun node(name: String): MeshEngine {
         val rec = Recorder()
@@ -74,6 +79,7 @@ class SimNetwork(val scheduler: VirtualScheduler, private val maxWrite: Int = 18
         engine = MeshEngine(Identity.generate(name), scheduler, LinkWriter { linkId, bytes ->
             bytesSent += bytes.size
             val (remote, remoteLink) = edges["$name/$linkId"] ?: return@LinkWriter
+            if (name to remote in lossy) return@LinkWriter
             // Split into MTU-sized writes like a real radio would.
             bytes.toList().chunked(maxWrite).forEachIndexed { i, chunk ->
                 scheduler.schedule(5L + i) { engines[remote]?.onBytes(remoteLink, chunk.toByteArray()) }
@@ -362,5 +368,123 @@ class MeshEngineTest {
         net.scheduler.advance(10_000)
         assertEquals(listOf("image/jpeg" to false, "image/jpeg" to true), net.recorders["carol"]!!.files)
         assertEquals(1, net.recorders["bob"]!!.files.size) // the relay saw only the public one
+    }
+
+    // ---------------------------------------------------------------- session liveness and abuse (§8.1)
+
+    private fun pair(): SimNetwork {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "bob").forEach { net.node(it).start() }
+        net.connect("alice", "bob")
+        net.scheduler.advance(10_000)
+        return net
+    }
+
+    /** A rogue link into [to] that carries whatever bytes the test writes. */
+    private fun rogueLink(net: SimNetwork, to: String): (Packet) -> Unit {
+        net.engines[to]!!.onLinkUp("rogue", 182)
+        return { p -> net.engines[to]!!.onBytes("rogue", PacketCodec.encode(p)!!) }
+    }
+
+    @Test
+    fun handshakeRetriesAfterLostMessage() {
+        val net = pair()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        net.lossy += "alice" to "bob" // message 1 never arrives
+        val ids = alice.sendPrivate(bob.myPeerHex, "are you there")
+        net.scheduler.advance(3_000)
+        assertTrue(net.recorders["bob"]!!.privates.isEmpty())
+        net.lossy.clear()
+        net.scheduler.advance(15_000) // the stalled handshake times out and is started again
+        assertEquals(listOf(ids[0] to "are you there"), net.recorders["bob"]!!.privates)
+        assertEquals(ids, net.recorders["alice"]!!.delivered)
+    }
+
+    @Test
+    fun garbageCiphertextDoesNotCutAnEstablishedSession() {
+        val net = pair()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        alice.sendPrivate(bob.myPeerHex, "one")
+        net.scheduler.advance(3_000)
+        assertTrue(bob.hasSession(alice.myPeerHex))
+        // Anyone can put alice's peer ID in the sender field of an unsigned Noise packet.
+        val inject = rogueLink(net, "bob")
+        repeat(10) { i ->
+            inject(Packet(type = MessageType.NOISE_ENCRYPTED, senderId = alice.identity.peerId, recipientId = bob.identity.peerId,
+                timestamp = net.scheduler.now(), payload = Random(i).nextBytes(48)))
+            net.scheduler.advance(500)
+        }
+        assertTrue("session survives forged ciphertext", bob.hasSession(alice.myPeerHex))
+        alice.sendPrivate(bob.myPeerHex, "two")
+        net.scheduler.advance(2_000)
+        assertEquals(listOf("one", "two"), net.recorders["bob"]!!.privates.map { it.second })
+    }
+
+    @Test
+    fun forgedHandshakeDoesNotReplaceAnEstablishedSession() {
+        val net = pair()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        alice.sendPrivate(bob.myPeerHex, "one")
+        net.scheduler.advance(3_000)
+        val inject = rogueLink(net, "bob")
+        // A bare 32-byte message 1 claiming to be alice; the impostor cannot finish it without her static key.
+        inject(Packet(type = MessageType.NOISE_HANDSHAKE, senderId = alice.identity.peerId, recipientId = bob.identity.peerId,
+            timestamp = net.scheduler.now(), payload = Random(7).nextBytes(32)))
+        net.scheduler.advance(1_000)
+        assertTrue(bob.hasSession(alice.myPeerHex))
+        alice.sendPrivate(bob.myPeerHex, "two")
+        net.scheduler.advance(2_000)
+        assertEquals(listOf("one", "two"), net.recorders["bob"]!!.privates.map { it.second })
+        // The dangling impostor attempt is forgotten.
+        net.scheduler.advance(15_000)
+        assertEquals(1, bob.sessionCount)
+    }
+
+    @Test
+    fun strangersHalfOpenHandshakesAreBoundedAndExpire() {
+        val net = pair()
+        val bob = net.engines["bob"]!!
+        val inject = rogueLink(net, "bob")
+        repeat(200) { i ->
+            val stranger = Identity.generate("x$i")
+            inject(Packet(type = MessageType.NOISE_HANDSHAKE, senderId = stranger.peerId, recipientId = bob.identity.peerId,
+                timestamp = net.scheduler.now(), payload = Random(i).nextBytes(32)))
+        }
+        assertTrue("capped at a few dozen, was ${bob.sessionCount}", bob.sessionCount <= 64)
+        net.scheduler.advance(15_000)
+        assertEquals(0, bob.sessionCount)
+    }
+
+    @Test
+    fun ownBroadcastReachesEveryNeighbour() {
+        // A hub with six leaves: a relayed packet may take the fanout subset, our own must not.
+        val net = SimNetwork(VirtualScheduler())
+        val leaves = listOf("ada", "grace", "edith", "hedy", "mary", "joan")
+        (listOf("hub") + leaves).forEach { net.node(it).start() }
+        leaves.forEach { net.connect("hub", it) }
+        net.scheduler.advance(10_000)
+        net.engines["hub"]!!.sendPublic("to everyone")
+        net.scheduler.advance(3_000)
+        leaves.forEach { assertEquals(it, listOf("hub:to everyone"), net.recorders[it]!!.publics) }
+    }
+
+    @Test
+    fun announceUnderAnotherSigningKeyIsRejected() {
+        val net = pair()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        net.disconnect("alice", "bob")
+        net.scheduler.advance(70_000) // alice has left bob's peer table; her keys are remembered
+        assertTrue(bob.peersSnapshot().none { it.peerIdHex == alice.myPeerHex })
+        val mallory = Identity.generate("alice")
+        val payload = Announcement("alice", alice.identity.noise.publicKey, mallory.signing.publicKey, emptyList(), AuthPeerState.CAP_PRIVATE_MEDIA).encode()!!
+        val plain = Packet(type = MessageType.ANNOUNCE, senderId = alice.identity.peerId, timestamp = net.scheduler.now(), payload = payload)
+        val forged = plain.copy(signature = Crypto.ed25519Sign(mallory.signing.privateKey, PacketCodec.signingBytes(plain)!!))
+        rogueLink(net, "bob")(forged)
+        net.scheduler.advance(1_000)
+        assertTrue("alice's Noise key under mallory's signing key is not alice", bob.peersSnapshot().none { it.peerIdHex == alice.myPeerHex })
+        // The real alice is still welcome.
+        net.connect("alice", "bob")
+        net.scheduler.advance(5_000)
+        assertTrue(bob.peersSnapshot().any { it.peerIdHex == alice.myPeerHex && it.signingPublicKey.contentEquals(alice.identity.signing.publicKey) })
     }
 }

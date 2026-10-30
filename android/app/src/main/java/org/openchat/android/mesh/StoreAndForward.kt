@@ -9,7 +9,7 @@ import org.openchat.android.core.hexToBytes
 import org.openchat.android.core.toHex
 
 /** A peer whose keys we keep after it leaves range, so mail can still be sealed for it (§13.1). */
-class KnownPeer(val noiseKey: ByteArray, val signingKey: ByteArray?, var nickname: String, var lastSeen: Long)
+class KnownPeer(val noiseKey: ByteArray, var signingKey: ByteArray?, var nickname: String, var lastSeen: Long)
 
 /** One private message waiting for a delivered or read receipt (§13.1). [plaintext] is the §8.3 payload. */
 class QueuedMessage(
