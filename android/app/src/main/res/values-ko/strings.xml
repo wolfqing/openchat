@@ -150,4 +150,16 @@
     <string name="relays_add">추가</string>
     <string name="relays_remove">삭제</string>
     <string name="relays_invalid">릴레이 주소가 아닙니다. wss://host를 쓰고, .onion은 ws://…도 됩니다.</string>
+    <string name="notify_quiet_message">새 메시지</string>
+    <string name="notify_quiet_mention">누군가 회원님을 언급했습니다</string>
+    <string name="notify_previews_title">알림에 이름과 내용 표시</string>
+    <string name="notify_previews_off">꺼짐: 알림은 무언가 왔다는 것만 알려 주므로, 잠긴 휴대폰을 든 사람에게 대화가 보이지 않습니다.</string>
+    <string name="notify_previews_on">켜짐: 알림에 이름과 메시지 앞부분이 표시됩니다. 잠금 화면에는 여전히 무언가 왔다는 것만 보입니다.</string>
+    <string name="media_tap_to_show">탭하여 보기</string>
+    <string name="share_channel">공유</string>
+    <string name="share_channel_text">bitchat 또는 openchat의 #%1$s 채널로 오세요: bitchat://geohash/%1$s — 지역 채널에서 #%1$s를 입력해도 됩니다.</string>
+    <string name="share_channel_warn_title">좁은 지역입니다</string>
+    <string name="share_channel_warn_body">#%1$s는 동네 하나 정도이거나 그보다 좁습니다. 이 글을 전달하는 쪽(통신사나 공유에 쓰는 앱 등)은 회원님이 관심 있는 곳을 알게 됩니다.</string>
+    <string name="share_anyway">그래도 공유</string>
+    <string name="cancel">취소</string>
 </resources>

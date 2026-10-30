@@ -162,4 +162,16 @@
     <string name="relays_add">添加</string>
     <string name="relays_remove">移除</string>
     <string name="relays_invalid">不是有效的中继地址。请用 wss://主机名，.onion 可用 ws://。</string>
+    <string name="notify_quiet_message">新消息</string>
+    <string name="notify_quiet_mention">有人提到了你</string>
+    <string name="notify_previews_title">通知里显示名字和内容</string>
+    <string name="notify_previews_off">已关闭：通知只说「有新消息」，手机锁着时别人拿到也看不到聊天内容。</string>
+    <string name="notify_previews_on">已开启：通知里会显示名字和消息开头；锁屏上仍只显示「有新消息」。</string>
+    <string name="media_tap_to_show">点一下显示</string>
+    <string name="share_channel">分享</string>
+    <string name="share_channel_text">来 bitchat 或 openchat 的 #%1$s 频道：bitchat://geohash/%1$s ——也可以在地区频道里输入 #%1$s。</string>
+    <string name="share_channel_warn_title">这是一个很小的范围</string>
+    <string name="share_channel_warn_body">#%1$s 大约是一个街区或更小的范围。经手这段文字的人或服务（比如运营商、你用来分享的应用）会知道你关心的是哪里。</string>
+    <string name="share_anyway">仍然分享</string>
+    <string name="cancel">取消</string>
 </resources>

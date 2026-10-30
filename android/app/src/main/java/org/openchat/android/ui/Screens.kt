@@ -23,6 +23,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.aspectRatio
 import android.media.MediaPlayer
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -509,7 +512,7 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
         ) {
             when {
                 m.attachment != null && m.audio -> VoiceNote(m.attachment)
-                m.attachment != null -> PhotoView(m.attachment)
+                m.attachment != null -> PhotoView(m.attachment, covered = !m.mine)
                 else -> Text(withMentions(m.text), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
             }
         }
@@ -554,11 +557,31 @@ private fun MediaButtons(conversation: String) {
     if (recording) Text(stringResource(R.string.media_recording), fontSize = 12.sp, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(end = 8.dp))
 }
 
+/**
+ * A received photo starts as coarse blocks and opens on a tap (§21.4), so nobody
+ * standing nearby gets an unwanted picture shown to them on the screen.
+ */
 @Composable
-private fun PhotoView(path: String) {
-    val bmp = remember(path) { Media.thumbnail(path)?.asImageBitmap() }
-    if (bmp == null) Text("🖼", Modifier.padding(12.dp))
-    else Image(bmp, contentDescription = stringResource(R.string.media_photo), modifier = Modifier.widthIn(max = 260.dp).heightIn(max = 320.dp).padding(4.dp))
+private fun PhotoView(path: String, covered: Boolean) {
+    var open by remember(path) { mutableStateOf(!covered) }
+    val bmp = remember(path) { Media.thumbnail(path) }
+    if (bmp == null) { Text("🖼", Modifier.padding(12.dp)); return }
+    val shown = remember(path, open) { (if (open) bmp else Media.pixelate(bmp)).asImageBitmap() }
+    Box(contentAlignment = Alignment.Center) {
+        Image(
+            shown, contentDescription = stringResource(R.string.media_photo),
+            filterQuality = if (open) FilterQuality.Medium else FilterQuality.None,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.widthIn(max = 260.dp).heightIn(max = 320.dp).aspectRatio(bmp.width.toFloat() / bmp.height).padding(4.dp)
+                .let { if (!open) it.clickable { open = true } else it },
+        )
+        if (!open) {
+            Text(
+                stringResource(R.string.media_tap_to_show), fontSize = 13.sp, color = Color.White,
+                modifier = Modifier.background(Color(0x99000000), RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 6.dp),
+            )
+        }
+    }
 }
 
 @Composable
@@ -885,6 +908,32 @@ private fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Unit
     }
 }
 
+/**
+ * Plain-text invite to a location channel (§21.5): readable without the app, and a
+ * `bitchat://geohash/` link both apps open. A fine-grained cell asks first, since
+ * whoever carries the text learns which small area you care about.
+ */
+@Composable
+private fun ShareChannelButton(geohash: String) {
+    val ctx = LocalContext.current
+    var confirm by remember { mutableStateOf(false) }
+    fun share() {
+        val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+            .putExtra(android.content.Intent.EXTRA_TEXT, ctx.getString(R.string.share_channel_text, geohash))
+        ctx.startActivity(android.content.Intent.createChooser(send, null))
+    }
+    if (confirm) {
+        AlertDialog(
+            onDismissRequest = { confirm = false },
+            title = { Text(stringResource(R.string.share_channel_warn_title)) },
+            text = { Text(stringResource(R.string.share_channel_warn_body, geohash)) },
+            confirmButton = { TextButton(onClick = { confirm = false; share() }) { Text(stringResource(R.string.share_anyway)) } },
+            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    TextButton(onClick = { if (geohash.length >= 6) confirm = true else share() }) { Text(stringResource(R.string.share_channel)) }
+}
+
 /** Notes left at this building-level cell and the ones around it (§17). */
 @Composable
 private fun NotesSection(here: String) {
@@ -946,7 +995,10 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
                     Text(if (geo.relaysConnected == 0) stringResource(R.string.geo_connecting) else plural(R.plurals.geo_recent, n), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
-            actions = { TextButton(onClick = { ChatRepository.controller?.leaveGeo(geohash); onBack() }) { Text(stringResource(R.string.geo_leave)) } },
+            actions = {
+                ShareChannelButton(geohash)
+                TextButton(onClick = { ChatRepository.controller?.leaveGeo(geohash); onBack() }) { Text(stringResource(R.string.geo_leave)) }
+            },
         )
     }) { padding ->
         Box(Modifier.padding(padding)) {
@@ -1001,6 +1053,7 @@ private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> U
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.me_carrying, mesh.carriedCount), fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
         }
+        NotificationSection()
         TorSection()
         RelaySection()
         BlockedList()

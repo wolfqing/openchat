@@ -55,7 +55,8 @@ data class MeshPeer(
 
 interface MeshListener {
     fun onPeersChanged(peers: List<MeshPeer>) {}
-    fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long) {}
+    /** [replayed]: it came from history sync (§14) rather than live. */
+    fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean = false) {}
     fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) {}
     fun onDelivered(peerHex: String, messageId: String) {}
     fun onRead(peerHex: String, messageId: String) {}
@@ -456,7 +457,7 @@ class MeshEngine(
         val text = try { String(p.payload, Charsets.UTF_8) } catch (e: Exception) { return false }
         if (peer != null && !p.isRsr) peer.lastSeen = scheduler.now()
         if (p.isBroadcast) storeHistory(p)
-        listener.onPublicMessage(hex, peer?.nickname ?: known[hex]!!.nickname, text, p.timestamp)
+        listener.onPublicMessage(hex, peer?.nickname ?: known[hex]!!.nickname, text, p.timestamp, replayed = p.isRsr)
         return true
     }
 

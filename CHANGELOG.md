@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- Flood protection, as bitchat ([spec §21](docs/protocol-spec.md)): a
+  sender may post five public messages at once and then one a second, and
+  one text may appear three times at once and then once every two seconds,
+  whoever sends it. Excess messages are hidden, still relayed. Synced
+  history and relay backlogs are exempt.
+- Location-channel messages carry a little proof of work (NIP-13, 8 bits,
+  mined off the main thread), which lets a busy sender past the per-sender
+  limit on bitchat and openchat.
+- Notifications are quiet by default: "New message", no name, place or
+  text, so a locked phone does not read chats out to whoever holds it. A
+  switch on the Me tab shows previews; the lock screen stays quiet either
+  way, and the triple tap turns previews off again.
+- Received photos appear as coarse blocks until tapped.
+- Location channels have a Share button: a text invite with a
+  `bitchat://geohash/` link that bitchat and openchat both open (openchat
+  now opens such links). Small areas ask before sharing.
+- 5 new tests, 109 in all.
+
 - The app mark now sits in the top-left corner of the main screen and is a
   48 dp target for the triple-tap wipe. The title still works too. Each
   counted tap gives a short haptic tick, and the three taps are now judged

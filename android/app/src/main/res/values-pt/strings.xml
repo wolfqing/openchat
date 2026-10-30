@@ -158,4 +158,16 @@
     <string name="relays_add">Adicionar</string>
     <string name="relays_remove">Remover</string>
     <string name="relays_invalid">Não é um endereço de relay. Use wss://host, ou ws://… para .onion.</string>
+    <string name="notify_quiet_message">Nova mensagem</string>
+    <string name="notify_quiet_mention">Alguém mencionou você</string>
+    <string name="notify_previews_title">Mostrar nomes e texto nas notificações</string>
+    <string name="notify_previews_off">Desligado: a notificação só diz que algo chegou, então um telefone bloqueado não mostra suas conversas a quem o pegar.</string>
+    <string name="notify_previews_on">Ligado: nomes e o começo de cada mensagem aparecem nas notificações. A tela de bloqueio continua mostrando só que algo chegou.</string>
+    <string name="media_tap_to_show">Toque para ver</string>
+    <string name="share_channel">Compartilhar</string>
+    <string name="share_channel_text">entre no canal #%1$s no bitchat ou openchat: bitchat://geohash/%1$s — ou digite #%1$s nos canais de região.</string>
+    <string name="share_channel_warn_title">É uma área pequena</string>
+    <string name="share_channel_warn_body">#%1$s cobre mais ou menos um bairro ou menos. Quem levar este texto, como a operadora ou o app usado para compartilhar, saberá qual lugar te interessa.</string>
+    <string name="share_anyway">Compartilhar mesmo assim</string>
+    <string name="cancel">Cancelar</string>
 </resources>

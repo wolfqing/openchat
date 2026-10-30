@@ -3,6 +3,8 @@ package org.openchat.android.app
 import org.json.JSONArray
 import org.json.JSONObject
 import org.openchat.android.core.Mentions
+import org.openchat.android.core.RateLimiter
+import org.openchat.android.nostr.Pow
 import org.openchat.android.nostr.Geohash
 import org.openchat.android.nostr.NostrEvent
 import org.openchat.android.nostr.NostrKey
@@ -25,6 +27,9 @@ class GeoChannels(
     private val joined = ConcurrentHashMap<String, Joined>()
     private val presence = ConcurrentHashMap<String, ConcurrentHashMap<String, Long>>() // geohash -> pubkey -> last seen (s)
     private val pool = RelayPool(::onEvent)
+    private val limiter = RateLimiter()
+    // Mining proof of work takes up to two seconds; never on the caller's thread.
+    private val sender = java.util.concurrent.Executors.newSingleThreadExecutor()
 
     fun join(geohash: String, teleported: Boolean) {
         if (joined.containsKey(geohash)) return
@@ -50,11 +55,15 @@ class GeoChannels(
 
     fun send(geohash: String, text: String) {
         val j = joined[geohash] ?: return
-        val ev = NostrEvent.geohashMessage(j.key, geohash, nickname(), text, j.teleported)
-        pool.publish(j.relays, ev)
-        ChatRepository.add(
-            ChatMessage(ev.id, Conversation.Geo(geohash).key, nickname(), ev.pubkey, text, ev.createdAt * 1000, mine = true),
-        )
+        val name = nickname()
+        val localId = "pending-" + java.util.UUID.randomUUID()
+        val now = System.currentTimeMillis()
+        ChatRepository.add(ChatMessage(localId, Conversation.Geo(geohash).key, name, j.key.publicKeyHex, text, now, mine = true, state = DeliveryState.SENDING))
+        sender.execute {
+            val ev = NostrEvent.geohashMessage(j.key, geohash, name, text, j.teleported, mine = true)
+            pool.publish(j.relays, ev)
+            ChatRepository.replaceId(Conversation.Geo(geohash).key, localId, ev.id, DeliveryState.SENT)
+        }
     }
 
     // ------------------------------------------------------------------ location notes (§17)
@@ -142,6 +151,8 @@ class GeoChannels(
             val mine = ev.pubkey == j.key.publicKeyHex
             val mentioned = !mine && Mentions.mentionsMe(ev.content, nickname(), j.key.publicKeyHex.takeLast(4), ambiguous = false)
             val conv = Conversation.Geo(g).key
+            // Live traffic only: what relays replay on joining is history, and fine in a burst.
+            if (!mine && ev.createdAt >= nowS - 60 && !limiter.allow(ev.pubkey, ev.content, Pow.validatedBits(ev))) return publishStatus()
             if (mentioned && ev.createdAt >= nowS - 300 && ChatRepository.openConversation != conv && ChatRepository.messages.value[conv].orEmpty().none { it.id == ev.id }) {
                 onMention(PeerLabel.nostr(ev.tag("n"), ev.pubkey).toString() + " · #" + g, ev.content.take(200))
             }
