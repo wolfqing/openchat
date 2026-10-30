@@ -61,7 +61,7 @@
     <string name="geo_elsewhere">Kunjungi area lain</string>
     <string name="geo_hint">geohash, mis. wtw3s</string>
     <string name="geo_enter">Buka</string>
-    <string name="geo_teleport_note">Kamu tidak berada di sana, jadi orang lain akan melihat ✈ di samping namamu.</string>
+    <string name="geo_teleport_note">Kamu tidak berada di sana, jadi orang lain akan melihat ✈︎ di samping namamu.</string>
     <string name="geo_joined">Bergabung</string>
     <string name="geo_connecting">Menghubungkan…</string>
     <plurals name="geo_recent">
@@ -131,7 +131,7 @@
     <string name="notes_hint">Siapa pun yang datang dalam jarak sekitar 40 m dalam 24 jam ke depan bisa membacanya. Perlu internet.</string>
     <string name="notes_placeholder">Tinggalkan catatan di sini…</string>
     <string name="notes_empty">Tidak ada catatan di sini dalam 24 jam terakhir.</string>
-    <string name="note_dropped">📍 catatan ditinggalkan — hilang dalam 24 jam</string>
+    <string name="note_dropped">catatan ditinggalkan — hilang dalam 24 jam</string>
     <string name="note_no_location">meninggalkan catatan perlu lokasi Anda — aktifkan dulu di tab Wilayah</string>
     <string name="media_photo">Foto</string>
     <string name="media_voice">Pesan suara</string>

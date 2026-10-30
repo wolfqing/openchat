@@ -67,7 +67,7 @@
     <string name="geo_elsewhere">Visitar otra zona</string>
     <string name="geo_hint">geohash, p. ej. wtw3s</string>
     <string name="geo_enter">Ir</string>
-    <string name="geo_teleport_note">No estás allí, así que los demás verán ✈ junto a tu nombre.</string>
+    <string name="geo_teleport_note">No estás allí, así que los demás verán ✈︎ junto a tu nombre.</string>
     <string name="geo_joined">Unido</string>
     <string name="geo_connecting">Conectando…</string>
     <plurals name="geo_recent">
@@ -139,7 +139,7 @@
     <string name="notes_hint">Cualquiera que pase a unos 40 m en las próximas 24 horas puede leerla. Necesita internet.</string>
     <string name="notes_placeholder">Deja una nota aquí…</string>
     <string name="notes_empty">No hay notas aquí en las últimas 24 horas.</string>
-    <string name="note_dropped">📍 nota dejada aquí — desaparece en 24 h</string>
+    <string name="note_dropped">nota dejada aquí — desaparece en 24 h</string>
     <string name="note_no_location">dejar una nota requiere tu ubicación — actívala primero en la pestaña Zona</string>
     <string name="media_photo">Foto</string>
     <string name="media_voice">Nota de voz</string>

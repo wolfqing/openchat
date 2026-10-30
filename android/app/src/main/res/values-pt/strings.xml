@@ -67,7 +67,7 @@
     <string name="geo_elsewhere">Visitar outra área</string>
     <string name="geo_hint">geohash, ex.: wtw3s</string>
     <string name="geo_enter">Ir</string>
-    <string name="geo_teleport_note">Você não está lá, então os outros verão ✈ ao lado do seu nome.</string>
+    <string name="geo_teleport_note">Você não está lá, então os outros verão ✈︎ ao lado do seu nome.</string>
     <string name="geo_joined">Participando</string>
     <string name="geo_connecting">Conectando…</string>
     <plurals name="geo_recent">
@@ -139,7 +139,7 @@
     <string name="notes_hint">Quem chegar a uns 40 m nas próximas 24 horas pode ler o recado. Precisa de internet.</string>
     <string name="notes_placeholder">Deixe um recado aqui…</string>
     <string name="notes_empty">Nenhum recado aqui nas últimas 24 horas.</string>
-    <string name="note_dropped">📍 recado deixado aqui — some em 24 h</string>
+    <string name="note_dropped">recado deixado aqui — some em 24 h</string>
     <string name="note_no_location">deixar um recado precisa da sua localização — ative primeiro na aba Região</string>
     <string name="media_photo">Foto</string>
     <string name="media_voice">Mensagem de voz</string>

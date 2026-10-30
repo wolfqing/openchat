@@ -70,7 +70,7 @@
     <string name="geo_elsewhere">Перейти в другой район</string>
     <string name="geo_hint">geohash, например wtw3s</string>
     <string name="geo_enter">Перейти</string>
-    <string name="geo_teleport_note">Вас там нет, поэтому другие увидят ✈ рядом с вашим именем.</string>
+    <string name="geo_teleport_note">Вас там нет, поэтому другие увидят ✈︎ рядом с вашим именем.</string>
     <string name="geo_joined">Вы в канале</string>
     <string name="geo_connecting">Подключение…</string>
     <plurals name="geo_recent">
@@ -143,7 +143,7 @@
     <string name="notes_hint">Её прочтёт любой, кто окажется в пределах ~40 м в ближайшие 24 часа. Нужен интернет.</string>
     <string name="notes_placeholder">Оставить заметку здесь…</string>
     <string name="notes_empty">За последние 24 часа здесь заметок нет.</string>
-    <string name="note_dropped">📍 заметка оставлена — исчезнет через 24 ч</string>
+    <string name="note_dropped">заметка оставлена — исчезнет через 24 ч</string>
     <string name="note_no_location">для заметки нужно местоположение — сначала включите его на вкладке «Местность»</string>
     <string name="media_photo">Фото</string>
     <string name="media_voice">Голосовое</string>

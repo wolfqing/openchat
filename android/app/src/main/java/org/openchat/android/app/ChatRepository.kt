@@ -47,15 +47,18 @@ data class PeerLabel(val name: String, val suffix: String) {
     override fun toString() = name + suffix
 
     companion object {
-        // A nickname typed as "name#e887" must not pass for someone else's suffix.
-        private val FAKE_SUFFIX = Regex("(#[0-9A-Fa-f]{4})+$")
+        // A nickname typed as "name#e887" must not pass for someone else's suffix, and digits
+        // right before the # (bitchat's default "anon1234") would read as a second number.
+        private val TRAILING = Regex("(#[0-9A-Fa-f]{4}|[\\p{Nd}#\\s])+\$")
 
         private fun clean(nickname: String?) =
-            nickname?.trim()?.replace(FAKE_SUFFIX, "")?.trim()?.takeIf { it.isNotEmpty() } ?: "anon"
+            nickname?.replace(TRAILING, "")?.trim()?.takeIf { it.isNotEmpty() } ?: "anon"
 
         private fun suffix(four: String) = if (four.length == 4) "#" + four.lowercase() else ""
 
-        fun mesh(nickname: String?, peerHex: String) = PeerLabel(clean(nickname), suffix(peerHex.take(4)))
+        // Peers that never announced a name are stored under their first eight hex digits.
+        fun mesh(nickname: String?, peerHex: String) =
+            PeerLabel(clean(nickname?.takeUnless { peerHex.length >= 8 && it.equals(peerHex.take(8), ignoreCase = true) }), suffix(peerHex.take(4)))
         fun nostr(nickname: String?, pubkeyHex: String) = PeerLabel(clean(nickname), suffix(pubkeyHex.takeLast(4)))
         fun of(m: ChatMessage) =
             if (m.conversation.startsWith("geo:") || m.conversation.startsWith("gdm:")) nostr(m.senderName, m.senderKey) else mesh(m.senderName, m.senderKey)

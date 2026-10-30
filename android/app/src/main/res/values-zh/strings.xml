@@ -71,7 +71,7 @@
     <string name="geo_elsewhere">去别的地区看看</string>
     <string name="geo_hint">geohash，如 wtw3s</string>
     <string name="geo_enter">进入</string>
-    <string name="geo_teleport_note">你不在那里，所以别人会看到你的名字旁有 ✈ 标记。</string>
+    <string name="geo_teleport_note">你不在那里，所以别人会看到你的名字旁有 ✈︎ 标记。</string>
     <string name="geo_joined">已加入</string>
     <string name="geo_connecting">正在连接网络…</string>
     <plurals name="geo_recent">
@@ -143,7 +143,7 @@
     <string name="notes_hint">未来 24 小时内到附近约 40 米范围的人都能看到。需要联网。</string>
     <string name="notes_placeholder">在这里留言…</string>
     <string name="notes_empty">过去 24 小时这里没有留言。</string>
-    <string name="note_dropped">📍 已在这里留言，24 小时后消失</string>
+    <string name="note_dropped">已在这里留言，24 小时后消失</string>
     <string name="note_no_location">留言需要你的位置，请先在「地区」页使用位置</string>
     <string name="media_photo">照片</string>
     <string name="media_voice">语音</string>

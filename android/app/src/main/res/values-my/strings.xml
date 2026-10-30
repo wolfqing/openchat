@@ -61,7 +61,7 @@
     <string name="geo_elsewhere">အခြားဒေသသို့ သွားမည်</string>
     <string name="geo_hint">geohash ဥပမာ wtw3s</string>
     <string name="geo_enter">သွားမည်</string>
-    <string name="geo_teleport_note">သင်ထိုနေရာတွင် မရှိသဖြင့် အခြားသူများက သင့်အမည်ဘေးတွင် ✈ ကို မြင်ရပါမည်။</string>
+    <string name="geo_teleport_note">သင်ထိုနေရာတွင် မရှိသဖြင့် အခြားသူများက သင့်အမည်ဘေးတွင် ✈︎ ကို မြင်ရပါမည်။</string>
     <string name="geo_joined">ဝင်ရောက်ပြီး</string>
     <string name="geo_connecting">ချိတ်ဆက်နေသည်…</string>
     <plurals name="geo_recent">
@@ -131,7 +131,7 @@
     <string name="notes_hint">နောက် ၂၄ နာရီအတွင်း မီတာ ၄၀ ခန့်အတွင်း ရောက်လာသူတိုင်း ဖတ်နိုင်သည်။ အင်တာနက် လိုသည်။</string>
     <string name="notes_placeholder">ဒီမှာ မှတ်စုထားခဲ့ရန်…</string>
     <string name="notes_empty">လွန်ခဲ့သော ၂၄ နာရီအတွင်း ဒီမှာ မှတ်စုမရှိပါ။</string>
-    <string name="note_dropped">📍 ဒီမှာ မှတ်စုထားခဲ့ပြီ — ၂၄ နာရီတွင် ပျောက်မည်</string>
+    <string name="note_dropped">ဒီမှာ မှတ်စုထားခဲ့ပြီ — ၂၄ နာရီတွင် ပျောက်မည်</string>
     <string name="note_no_location">မှတ်စုထားရန် သင့်တည်နေရာ လိုသည် — ဒေသ တဘ်တွင် အရင်ဖွင့်ပါ</string>
     <string name="media_photo">ဓာတ်ပုံ</string>
     <string name="media_voice">အသံမှတ်စု</string>

@@ -64,7 +64,7 @@
     <string name="geo_elsewhere">Andere Gegend besuchen</string>
     <string name="geo_hint">geohash, z. B. wtw3s</string>
     <string name="geo_enter">Los</string>
-    <string name="geo_teleport_note">Du bist nicht dort, deshalb sehen andere ✈ neben deinem Namen.</string>
+    <string name="geo_teleport_note">Du bist nicht dort, deshalb sehen andere ✈︎ neben deinem Namen.</string>
     <string name="geo_joined">Beigetreten</string>
     <string name="geo_connecting">Verbinde…</string>
     <plurals name="geo_recent">
@@ -135,7 +135,7 @@
     <string name="notes_hint">Wer in den nächsten 24 Stunden bis etwa 40 m herankommt, kann die Notiz lesen. Braucht Internet.</string>
     <string name="notes_placeholder">Hier eine Notiz hinterlassen…</string>
     <string name="notes_empty">Keine Notizen in den letzten 24 Stunden.</string>
-    <string name="note_dropped">📍 Notiz hinterlassen — sie verschwindet nach 24 h</string>
+    <string name="note_dropped">Notiz hinterlassen — sie verschwindet nach 24 h</string>
     <string name="note_no_location">Für eine Notiz brauchst du deinen Standort — zuerst im Tab „Ort“ freigeben</string>
     <string name="media_photo">Foto</string>
     <string name="media_voice">Sprachnachricht</string>

@@ -42,11 +42,19 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Sensors
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Sensors
+import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -59,6 +67,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -84,6 +93,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
@@ -212,7 +222,13 @@ fun SafetyNote() {
 
 // ---------------------------------------------------------------- main shell
 
-private enum class Tab(@StringRes val label: Int) { NEARBY(R.string.tab_nearby), PRIVATE(R.string.tab_private), LOCATION(R.string.tab_location), ME(R.string.tab_me) }
+// One icon family: outlined, filled when the tab is selected.
+private enum class Tab(@StringRes val label: Int, val icon: ImageVector, val selectedIcon: ImageVector) {
+    NEARBY(R.string.tab_nearby, Icons.Outlined.Sensors, Icons.Filled.Sensors),
+    PRIVATE(R.string.tab_private, Icons.Outlined.ChatBubbleOutline, Icons.Filled.ChatBubble),
+    LOCATION(R.string.tab_location, Icons.Outlined.Place, Icons.Filled.Place),
+    ME(R.string.tab_me, Icons.Outlined.Person, Icons.Filled.Person),
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -299,7 +315,7 @@ fun MainScreen(
                         icon = {
                             BadgedBox(badge = { if (count > 0) Badge { Text("$count") } }) {
                                 Icon(
-                                    when (t) { Tab.NEARBY -> Icons.Filled.Share; Tab.PRIVATE -> Icons.Filled.Lock; Tab.LOCATION -> Icons.Filled.LocationOn; Tab.ME -> Icons.Filled.Person },
+                                    if (tab == t) t.selectedIcon else t.icon,
                                     contentDescription = stringResource(t.label),
                                 )
                             }
@@ -334,8 +350,8 @@ fun labelText(label: PeerLabel, teleported: Boolean = false, verified: Boolean =
     withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal, fontSize = 0.8.em, color = MaterialTheme.colorScheme.onSurfaceVariant)) {
         append(label.suffix)
     }
-    if (verified) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" ✓") }
-    if (teleported) append(" ✈")
+    if (verified) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" \u2713\uFE0E") }
+    if (teleported) append(" \u2708\uFE0E")
 }
 
 /** Title that wipes everything on a triple tap, with no confirmation (docs/protocol-spec.md §10). */
@@ -549,7 +565,7 @@ private fun MediaButtons(conversation: String) {
         else if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) recording = recorder.start()
         else mic.launch(android.Manifest.permission.RECORD_AUDIO)
     }) {
-        Text(if (recording) "■" else "🎙", color = if (recording) MaterialTheme.colorScheme.error else Color.Unspecified, fontSize = 20.sp)
+        Icon(if (recording) Icons.Outlined.Stop else Icons.Outlined.Mic, contentDescription = stringResource(R.string.media_voice), tint = if (recording) MaterialTheme.colorScheme.error else LocalContentColor.current)
     }
     if (recording) Text(stringResource(R.string.media_recording), fontSize = 12.sp, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(end = 8.dp))
 }
@@ -557,7 +573,7 @@ private fun MediaButtons(conversation: String) {
 @Composable
 private fun PhotoView(path: String) {
     val bmp = remember(path) { Media.thumbnail(path)?.asImageBitmap() }
-    if (bmp == null) Text("🖼", Modifier.padding(12.dp))
+    if (bmp == null) Icon(Icons.Outlined.Image, contentDescription = stringResource(R.string.media_photo), modifier = Modifier.padding(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     else Image(bmp, contentDescription = stringResource(R.string.media_photo), modifier = Modifier.widthIn(max = 260.dp).heightIn(max = 320.dp).padding(4.dp))
 }
 
@@ -573,7 +589,7 @@ private fun VoiceNote(path: String) {
             val p = player
             if (p != null) { p.release(); player = null }
             else player = try { MediaPlayer().apply { setDataSource(path); setOnCompletionListener { it.release(); player = null }; prepare(); start() } } catch (e: Exception) { null }
-        }) { Text(if (player != null) "■" else "▶", fontSize = 18.sp) }
+        }) { Icon(if (player != null) Icons.Outlined.Stop else Icons.Outlined.PlayArrow, contentDescription = stringResource(R.string.media_voice)) }
         Text(stringResource(R.string.media_voice) + " · " + "%d:%02d".format(duration / 60_000, (duration / 1000) % 60), fontSize = 14.sp, modifier = Modifier.padding(end = 12.dp))
     }
 }
@@ -824,7 +840,7 @@ private fun PrivateList(onOpen: (String) -> Unit) {
                     Text(
                         buildAnnotatedString {
                             append(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex), verified = social.isVerifiedPeer(hex)))
-                            if (fav?.mine == true) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" ★") }
+                            if (fav?.mine == true) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" \u2605\uFE0E") }
                         },
                         fontWeight = FontWeight.SemiBold,
                     )

@@ -64,7 +64,7 @@
     <string name="geo_elsewhere">किसी दूसरे इलाके में जाएँ</string>
     <string name="geo_hint">geohash, जैसे wtw3s</string>
     <string name="geo_enter">जाएँ</string>
-    <string name="geo_teleport_note">आप वहाँ नहीं हैं, इसलिए दूसरों को आपके नाम के पास ✈ दिखेगा।</string>
+    <string name="geo_teleport_note">आप वहाँ नहीं हैं, इसलिए दूसरों को आपके नाम के पास ✈︎ दिखेगा।</string>
     <string name="geo_joined">जुड़ गए</string>
     <string name="geo_connecting">जुड़ रहा है…</string>
     <plurals name="geo_recent">
@@ -135,7 +135,7 @@
     <string name="notes_hint">अगले 24 घंटों में लगभग 40 मीटर के भीतर आने वाला कोई भी नोट पढ़ सकता है। इंटरनेट चाहिए।</string>
     <string name="notes_placeholder">यहाँ नोट छोड़ें…</string>
     <string name="notes_empty">पिछले 24 घंटों में यहाँ कोई नोट नहीं।</string>
-    <string name="note_dropped">📍 नोट यहाँ छोड़ा गया — 24 घंटे में मिट जाएगा</string>
+    <string name="note_dropped">नोट यहाँ छोड़ा गया — 24 घंटे में मिट जाएगा</string>
     <string name="note_no_location">नोट छोड़ने के लिए आपकी लोकेशन चाहिए — पहले क्षेत्र टैब में चालू करें</string>
     <string name="media_photo">फ़ोटो</string>
     <string name="media_voice">वॉइस नोट</string>

@@ -61,7 +61,7 @@
     <string name="geo_elsewhere">別の地域へ行く</string>
     <string name="geo_hint">geohash（例: wtw3s）</string>
     <string name="geo_enter">移動</string>
-    <string name="geo_teleport_note">その場所にいないため、ほかの人にはあなたの名前の横に✈が表示されます。</string>
+    <string name="geo_teleport_note">その場所にいないため、ほかの人にはあなたの名前の横に✈︎が表示されます。</string>
     <string name="geo_joined">参加中</string>
     <string name="geo_connecting">接続中…</string>
     <plurals name="geo_recent">
@@ -131,7 +131,7 @@
     <string name="notes_hint">今後24時間以内に約40m以内に来た人なら誰でも読めます。インターネットが必要です。</string>
     <string name="notes_placeholder">ここにメモを残す…</string>
     <string name="notes_empty">過去24時間、ここにメモはありません。</string>
-    <string name="note_dropped">📍 ここにメモを残しました。24時間で消えます</string>
+    <string name="note_dropped">ここにメモを残しました。24時間で消えます</string>
     <string name="note_no_location">メモを残すには位置情報が必要です。先に「地域」タブで使ってください</string>
     <string name="media_photo">写真</string>
     <string name="media_voice">ボイスメモ</string>

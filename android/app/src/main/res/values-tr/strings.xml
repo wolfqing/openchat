@@ -64,7 +64,7 @@
     <string name="geo_elsewhere">Başka bir bölgeye git</string>
     <string name="geo_hint">geohash, ör. wtw3s</string>
     <string name="geo_enter">Git</string>
-    <string name="geo_teleport_note">Orada değilsin, bu yüzden diğerleri adının yanında ✈ görecek.</string>
+    <string name="geo_teleport_note">Orada değilsin, bu yüzden diğerleri adının yanında ✈︎ görecek.</string>
     <string name="geo_joined">Katıldın</string>
     <string name="geo_connecting">Bağlanılıyor…</string>
     <plurals name="geo_recent">
@@ -135,7 +135,7 @@
     <string name="notes_hint">Önümüzdeki 24 saatte yaklaşık 40 m yakına gelen herkes notu okuyabilir. İnternet gerekir.</string>
     <string name="notes_placeholder">Buraya not bırak…</string>
     <string name="notes_empty">Son 24 saatte burada not yok.</string>
-    <string name="note_dropped">📍 not bırakıldı — 24 saatte kaybolur</string>
+    <string name="note_dropped">not bırakıldı — 24 saatte kaybolur</string>
     <string name="note_no_location">not bırakmak için konumunuz gerekir — önce Konum sekmesinde açın</string>
     <string name="media_photo">Fotoğraf</string>
     <string name="media_voice">Sesli not</string>
