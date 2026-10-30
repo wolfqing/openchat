@@ -65,7 +65,7 @@ network**, built with three differences in mind:
 | Interop with stock bitchat | **Not yet verified.** Implemented from the spec and upstream test vectors; verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
 | iOS | Not started |
-| Release signing | Previews are signed with a debug key. Verify the SHA-256 in the release notes |
+| Release signing | Builds after v0.5.0 carry a dedicated release key; its certificate fingerprint is in [SECURITY.md](SECURITY.md). Previews up to v0.5.0 were debug-signed. Verify the APK SHA-256 in the release notes |
 
 Do not rely on openchat where being identified has serious consequences.
 The app says so on first launch. See [SECURITY.md](SECURITY.md).

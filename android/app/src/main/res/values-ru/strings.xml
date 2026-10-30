@@ -118,7 +118,7 @@
     <string name="verify_badge_off">Не проверен. Сравните этот отпечаток при встрече:</string>
     <string name="verify_mark">Совпадает, отметить как проверенного</string>
     <string name="verify_unmark">Снять отметку</string>
-    <string name="cmd_help">/msg @имя [текст] — личный чат\n/who — кто здесь\n/clear — очистить этот чат\n/hug @имя · /slap @имя\n/block @имя · /unblock @имя\n/fav @имя · /unfav @имя — избранное (только рядом)\n/help — этот список</string>
+    <string name="cmd_help">/msg @имя [текст] — личный чат\n/who — кто здесь\n/clear — очистить этот чат\n/hug @имя · /slap @имя\n/block @имя · /unblock @имя\n/fav @имя · /unfav @имя — избранное (только рядом)\n/drop текст — оставить здесь заметку (только каналы места)\n/help — этот список</string>
     <string name="cmd_who">здесь: %1$s</string>
     <string name="cmd_who_none">сейчас здесь больше никого нет</string>
     <string name="cmd_not_found">%1$s здесь нет</string>

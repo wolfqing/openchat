@@ -24,3 +24,9 @@ local.properties
 # misc
 node_modules/
 dist/
+
+# Android release signing: the keystore and its passwords never enter git
+android/release.jks
+android/keystore.properties
+*.jks
+*.keystore

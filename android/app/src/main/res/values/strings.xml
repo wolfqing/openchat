@@ -124,7 +124,7 @@
     <string name="verify_badge_off">Not verified. Compare this fingerprint with theirs in person:</string>
     <string name="verify_mark">They match, mark as verified</string>
     <string name="verify_unmark">Remove verification</string>
-    <string name="cmd_help">/msg @name [message] — private chat\n/who — who is here\n/clear — clear this chat\n/hug @name · /slap @name\n/block @name · /unblock @name\n/fav @name · /unfav @name — favorites (nearby only)\n/help — this list</string>
+    <string name="cmd_help">/msg @name [message] — private chat\n/who — who is here\n/clear — clear this chat\n/hug @name · /slap @name\n/block @name · /unblock @name\n/fav @name · /unfav @name — favorites (nearby only)\n/drop text — leave a note here (location channels)\n/help — this list</string>
     <string name="cmd_who">here: %1$s</string>
     <string name="cmd_who_none">no one else is here right now</string>
     <string name="cmd_not_found">%1$s is not here</string>
