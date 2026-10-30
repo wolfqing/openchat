@@ -40,7 +40,11 @@ interface Scheduler {
 fun interface Cancellable { fun cancel() }
 
 /** Platform side of a link: writes raw bytes. One link = one connected remote device. */
-fun interface LinkWriter { fun write(linkId: String, bytes: ByteArray) }
+fun interface LinkWriter {
+    fun write(linkId: String, bytes: ByteArray)
+    /** Bytes accepted by [write] and not yet on the air; lets the engine pace fragments to the radio. */
+    fun pending(linkId: String): Int = 0
+}
 
 data class MeshPeer(
     val peerIdHex: String,
@@ -298,7 +302,12 @@ class MeshEngine(
     private fun sendAnnounce(force: Boolean) {
         val now = scheduler.now()
         if (!force && now < nextAnnounceDue) return
-        if (now - lastAnnounce < 1000) return
+        if (now - lastAnnounce < 1000) {
+            // Rate-limited. A forced announce (new link, new name) must still go out promptly: the
+            // tick sends it the moment the limit allows instead of at the next periodic slot.
+            if (force) nextAnnounceDue = minOf(nextAnnounceDue, lastAnnounce + 1000)
+            return
+        }
         // No neighbour list: it hands any listener the local social graph, and routing falls back to flooding (§20).
         val payload = Announcement(identity.nickname, identity.noise.publicKey, identity.signing.publicKey, emptyList(), AuthPeerState.CAP_PRIVATE_MEDIA).encode() ?: return
         val p = sign(Packet(type = MessageType.ANNOUNCE, senderId = identity.peerId, timestamp = now, payload = payload)) ?: return
@@ -355,7 +364,9 @@ class MeshEngine(
             // Relay fragments independently, and try to reassemble locally.
             if (!dedup.markIfNew(Deduplicator.key(p))) { pendingRelays.remove(Deduplicator.key(p))?.cancel(); return }
             val addressedToMe = p.recipientId?.toHex() == myPeerHex
-            if (p.isBroadcast || addressedToMe) assembler.accept(p)?.let { receive(it, linkId, relayable = false) }
+            // The original keeps its full TTL inside the fragments; the fragments' own TTL says how far
+            // it travelled, so a reassembled announce cannot pass for a neighbour's (§4.1).
+            if (p.isBroadcast || addressedToMe) assembler.accept(p)?.let { receive(it.copy(ttl = minOf(it.ttl, p.ttl)), linkId, relayable = false) }
             maybeRelay(p, linkId)
             return
         }
@@ -407,6 +418,14 @@ class MeshEngine(
         val pinned = existing?.signingKey ?: known[hex]?.signingKey
         if (pinned != null && !pinned.contentEquals(a.signingPublicKey)) return false
         val now = scheduler.now()
+        if (p.isRsr) {
+            // A neighbour's cached copy says the peer was around, not that it still is: it keeps the
+            // keys for verifying synced messages but must not create or refresh presence, or two
+            // neighbours would keep a departed peer alive between them for as long as the cache lasts.
+            remember(hex, a.noisePublicKey, a.signingPublicKey, a.nickname, now)
+            existing?.let { if ((it.announce?.timestamp ?: 0) <= p.timestamp) it.announce = p }
+            return true
+        }
         val state = existing ?: PeerState(a.nickname, a.noisePublicKey, a.signingPublicKey, now).also { peers[hex] = it }
         val changed = existing == null || existing.nickname != a.nickname
         state.nickname = a.nickname
@@ -417,6 +436,9 @@ class MeshEngine(
         if (linkId != null && p.ttl >= Packet.DEFAULT_TTL) {
             val link = links[linkId]
             if (link != null && link.peerHex != hex) {
+                // The device on this link now speaks as someone else (a panic wipe, or a peer-ID
+                // rotation); the old peer is no longer direct here and may expire like any other.
+                link.peerHex?.let { old -> peers[old]?.directLinks?.remove(linkId) }
                 link.peerHex = hex
                 state.directLinks.add(linkId)
                 newlyDirect = true
@@ -970,6 +992,10 @@ class MeshEngine(
         private const val SYNC_REPLY_LIMIT = 8
         private const val SYNC_FILTER_BYTES = 400
         private const val SYNC_FPR = 0.01
+        // Fragment pacing (§1, §12): wait while a link holds this much, give up after the assembler would have.
+        private const val FRAGMENT_BACKLOG_BYTES = 4 * 1024
+        private const val FRAGMENT_RETRY_MS = 100L
+        private const val FRAGMENT_SEND_TIMEOUT_MS = 30_000L
     }
 
     private fun sign(p: Packet): Packet? {
@@ -1008,11 +1034,21 @@ class MeshEngine(
         val chunk = maxOf(Fragmenter.MIN_CHUNK, minOf(Fragmenter.DEFAULT_CHUNK, limit - 50))
         val fragments = Fragmenter.split(p, chunk) ?: return
         val spacing = if (p.isBroadcast) 30L else 25L
-        fragments.forEachIndexed { i, f ->
-            val bytes = PacketCodec.encode(f) ?: return
-            dedup.markIfNew(Deduplicator.key(f))
-            if (i == 0) targets.forEach { writer.write(it, bytes) }
-            else scheduler.schedule(spacing * i) { targets.filter { links.containsKey(it) }.forEach { writer.write(it, bytes) } }
+        val encoded = fragments.map { f -> (PacketCodec.encode(f) ?: return).also { dedup.markIfNew(Deduplicator.key(f)) } }
+        val deadline = scheduler.now() + FRAGMENT_SEND_TIMEOUT_MS
+        // Fragments are paced to what the links actually take rather than a fixed clock: a radio
+        // slower than the schedule would otherwise pile up a queue it can only shed by cutting frames.
+        fun sendFrom(i: Int) {
+            if (i >= encoded.size) return
+            val live = targets.filter { links.containsKey(it) }
+            if (live.isEmpty()) return
+            if (live.any { writer.pending(it) > FRAGMENT_BACKLOG_BYTES }) {
+                if (scheduler.now() < deadline) scheduler.schedule(FRAGMENT_RETRY_MS) { sendFrom(i) }
+                return
+            }
+            live.forEach { writer.write(it, encoded[i]) }
+            if (i + 1 < encoded.size) scheduler.schedule(spacing) { sendFrom(i + 1) }
         }
+        sendFrom(0)
     }
 }

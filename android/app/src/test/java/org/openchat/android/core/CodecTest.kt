@@ -170,4 +170,42 @@ class CodecTest {
         assertTrue(!RelayPolicy.decide(bcast.copy(ttl = 1), false, false, 1).relay)
         assertTrue(!RelayPolicy.decide(bcast, true, false, 1).relay)
     }
+
+    @Test
+    fun framerDropsAStalledPartialFrame() {
+        var now = 0L
+        val framer = StreamFramer(clock = { now })
+        val a = PacketCodec.encode(Packet(type = MessageType.MESSAGE, senderId = sender, timestamp = 1, payload = "first".toByteArray()))!!
+        val c = PacketCodec.encode(Packet(type = MessageType.MESSAGE, senderId = sender, timestamp = 3, payload = "third".toByteArray()))!!
+        // Pieces that keep coming are joined.
+        assertEquals(0, framer.append(a.copyOfRange(0, 10)).size)
+        now = 100
+        assertEquals("first", String(PacketCodec.decode(framer.append(a.copyOfRange(10, a.size)).single())!!.payload))
+        // A head whose tail never came is abandoned, so the next frame is not glued to it.
+        assertEquals(0, framer.append(a.copyOfRange(0, 10)).size)
+        now = 100 + StreamFramer.STALL_MS + 1
+        val frames = framer.append(c)
+        assertEquals("third", String(PacketCodec.decode(frames.single())!!.payload))
+        assertEquals(0, framer.pendingBytes)
+    }
+
+    @Test
+    fun framerResyncsAfterGarbage() {
+        val a = PacketCodec.encode(Packet(type = MessageType.MESSAGE, senderId = sender, timestamp = 1, payload = "first".toByteArray()))!!
+        val c = PacketCodec.encode(Packet(type = MessageType.MESSAGE, senderId = sender, timestamp = 3, payload = "third".toByteArray()))!!
+        // Lost traffic that happens to start with 0x01: it reads as a fragment header claiming 60 KB
+        // (over the fragment cap) followed by bytes that are no header at all.
+        val garbage = byteArrayOf(1, MessageType.FRAGMENT.toByte(), 7) + ByteArray(8) + byteArrayOf(0, 0xEA.toByte(), 0x60) + ByteArray(30) { 0x55 }
+        val framer = StreamFramer()
+        val frames = ArrayList<ByteArray>()
+        (garbage + a + c + ByteArray(300) { 0x55 }).toList().chunked(50).forEach { frames += framer.append(it.toByteArray()) }
+        assertEquals(listOf("first", "third"), frames.map { String(PacketCodec.decode(it)!!.payload) })
+    }
+
+    @Test
+    fun frameLengthUsesThePerTypeCap() {
+        fun header(type: Int, payloadLength: Int) = byteArrayOf(1, type.toByte(), 7) + ByteArray(8) + byteArrayOf(0, (payloadLength shr 8).toByte(), payloadLength.toByte()) + ByteArray(8)
+        assertNull("a fragment cannot carry 60 KB", PacketCodec.frameLength(header(MessageType.FRAGMENT, 60_000)))
+        assertEquals(14 + 8 + 60_000, PacketCodec.frameLength(header(MessageType.MESSAGE, 60_000)))
+    }
 }

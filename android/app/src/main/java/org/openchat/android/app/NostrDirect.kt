@@ -28,7 +28,7 @@ class NostrDirect(
     val npub get() = Bech32.npub(key.publicKeyHex)
     private val pool = RelayPool(::onEvent)
     // Receipts go out one at a time: relays rate-limit bursts.
-    private val pacer = Executors.newSingleThreadScheduledExecutor()
+    private var pacer = Executors.newSingleThreadScheduledExecutor()
     private var nextSlot = 0L
 
     val connected get() = pool.connectedCount > 0
@@ -68,18 +68,20 @@ class NostrDirect(
         if (!paced) { pool.publish(relays, ev); return }
         val now = System.currentTimeMillis()
         val at = synchronized(this) { maxOf(now, nextSlot).also { nextSlot = it + ACK_SPACING_MS } }
-        pacer.schedule({ pool.publish(relays, ev) }, at - now, TimeUnit.MILLISECONDS)
+        synchronized(this) { pacer }.schedule({ pool.publish(relays, ev) }, at - now, TimeUnit.MILLISECONDS)
     }
 
     fun reset(newSeed: ByteArray) {
         pool.unsubscribe(SUB)
         inboxes.keys.toList().forEach { removeInbox(it) }
+        // Receipts still waiting their turn were sealed by the old key: they must not go out as it.
+        synchronized(this) { pacer.shutdownNow(); pacer = Executors.newSingleThreadScheduledExecutor(); nextSlot = 0L }
         seed = newSeed
         key = keyFor(newSeed)
         start()
     }
 
-    fun close() = pool.closeAll()
+    fun close() { synchronized(this) { pacer.shutdownNow() }; pool.closeAll() }
 
     private fun onEvent(relay: String, ev: NostrEvent) {
         val p = ev.tag("p") ?: return

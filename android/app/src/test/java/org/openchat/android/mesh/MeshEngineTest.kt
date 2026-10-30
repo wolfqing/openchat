@@ -10,6 +10,7 @@ import org.openchat.android.core.MessageType
 import org.openchat.android.core.Packet
 import org.openchat.android.core.PacketCodec
 import org.openchat.android.core.hexToBytes
+import org.openchat.android.core.toHex
 import org.openchat.android.crypto.Crypto
 import java.util.PriorityQueue
 import kotlin.random.Random
@@ -486,5 +487,84 @@ class MeshEngineTest {
         net.connect("alice", "bob")
         net.scheduler.advance(5_000)
         assertTrue(bob.peersSnapshot().any { it.peerIdHex == alice.myPeerHex && it.signingPublicKey.contentEquals(alice.identity.signing.publicKey) })
+    }
+
+    @Test
+    fun newLinkHearsOurAnnounceWithinTwoSeconds() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "bob").forEach { net.node(it).start() } // both announce now, into no links
+        net.scheduler.advance(500)
+        net.connect("alice", "bob") // inside the 1 s announce rate limit
+        net.scheduler.advance(1_500)
+        assertTrue(net.recorders["bob"]!!.peers.any { it.nickname == "alice" })
+        assertTrue(net.recorders["alice"]!!.peers.any { it.nickname == "bob" })
+    }
+
+    @Test
+    fun syncedAnnounceDoesNotPassForPresence() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "bob", "carol").forEach { net.node(it).start() }
+        net.connect("bob", "carol")
+        net.scheduler.advance(10_000)
+        net.disconnect("bob", "carol") // carol walks off without a leave; bob keeps her for up to a minute
+        net.scheduler.advance(5_000)
+        net.connect("alice", "bob")
+        net.scheduler.advance(10_000) // alice's first sync with bob brings carol's cached announce
+        assertTrue("carol is not here", net.recorders["alice"]!!.peers.none { it.nickname == "carol" })
+        assertTrue(net.engines["alice"]!!.knownCount >= 2) // but her keys are remembered for verifying synced messages
+        net.scheduler.advance(120_000)
+        assertTrue(net.recorders["bob"]!!.peers.none { it.nickname == "carol" })
+    }
+
+    @Test
+    fun linkThatChangesIdentityDropsTheOldPeer() {
+        val net = pair()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        val oldBob = bob.myPeerHex
+        bob.resetIdentity(Identity.generate("bob2")) // panic wipe on the same connection
+        net.scheduler.advance(70_000)
+        val seen = alice.peersSnapshot()
+        assertTrue(seen.any { it.nickname == "bob2" && it.direct })
+        assertTrue("the old identity on this link is gone", seen.none { it.peerIdHex == oldBob })
+    }
+
+    @Test
+    fun fragmentsWaitForTheLinkToDrain() {
+        val scheduler = VirtualScheduler()
+        var backlog = 0
+        val writes = ArrayList<ByteArray>()
+        val engine = MeshEngine(Identity.generate("alice"), scheduler, object : LinkWriter {
+            override fun write(linkId: String, bytes: ByteArray) { writes += bytes }
+            override fun pending(linkId: String) = backlog
+        }, Recorder(), Random(1))
+        engine.start()
+        engine.onLinkUp("l", 182)
+        scheduler.advance(100)
+        fun fragments() = writes.map { PacketCodec.decode(it)!! }.filter { it.type == MessageType.FRAGMENT }
+        backlog = 10_000 // the radio is still busy with earlier traffic
+        engine.sendPublic(Random(7).nextBytes(1_500).toHex()) // compresses to well over one frame
+        scheduler.advance(2_000)
+        assertEquals("nothing goes out onto a backed-up link", 0, fragments().size)
+        backlog = 0
+        scheduler.advance(2_000)
+        val fragments = fragments()
+        assertTrue(fragments.size >= 7)
+        assertEquals(fragments.size, fragments.map { it.payload.copyOfRange(8, 10).toList() }.distinct().size) // every index exactly once
+    }
+
+    @Test
+    fun fragmentsGiveUpWhenTheLinkNeverDrains() {
+        val scheduler = VirtualScheduler()
+        val writes = ArrayList<ByteArray>()
+        val engine = MeshEngine(Identity.generate("alice"), scheduler, object : LinkWriter {
+            override fun write(linkId: String, bytes: ByteArray) { writes += bytes }
+            override fun pending(linkId: String) = 10_000
+        }, Recorder(), Random(1))
+        engine.start()
+        engine.onLinkUp("l", 182)
+        scheduler.advance(100)
+        engine.sendPublic(Random(7).nextBytes(1_500).toHex())
+        scheduler.advance(60_000)
+        assertEquals(0, writes.map { PacketCodec.decode(it)!! }.count { it.type == MessageType.FRAGMENT })
     }
 }

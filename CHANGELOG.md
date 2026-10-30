@@ -63,6 +63,67 @@ Fixes from the 2026-10-29 code review. None change the wire format.
   with the uninstall; this is the one-time cost of making the switch now.
 - `/help` lists `/drop` in location channels.
 
+Second round from the same review (link layer, engine, wipe, UI). Still
+no wire-format change.
+
+- Bluetooth link layer: a link's send queue used to shed the oldest chunks
+  when it overflowed, which cut a frame in half and left the other phone's
+  framer hunting for the next header inside our tail. A frame now goes out
+  whole or is refused whole. Fragments are paced to what the link actually
+  takes (the engine asks the link how much it still holds) instead of a
+  fixed 25–30 ms clock, and a send that cannot drain in 30 s is abandoned.
+  The receiving framer drops a partial frame that stalls for 250 ms ([spec
+  §1](docs/protocol-spec.md)), applies the per-type payload caps (§2.7)
+  rather than the global 1.2 MB one, resynchronises one byte at a time
+  after lost traffic, and only hands up frames that decode. A link whose
+  stack refuses 40 writes in a row is dropped instead of retried every
+  50 ms forever. A central's prepared (long) write now gets its execute
+  response. 3 new tests.
+- A connection attempt that times out before the link is ready now clears
+  every table it touched; before, the address could stay "connected" in our
+  bookkeeping and was never tried again until the other phone rotated its
+  Bluetooth address (up to 15 min).
+- A device that starts speaking as a new identity on the same link (panic
+  wipe, peer-ID rotation) no longer leaves its old identity marked direct
+  forever: the old peer expires like any other. A reassembled packet takes
+  the TTL its fragments travelled with, so an announce carried in
+  fragments cannot pass for a neighbour's.
+- An announce that arrives as a history-sync reply is remembered (for
+  verifying synced messages) but no longer creates or refreshes presence.
+  Before, two neighbours could keep a departed peer "here" between them for
+  up to 15 min, and private messages to it went to a handshake that could
+  not complete instead of to a courier.
+- A new link gets our announce as soon as the 1 s announce rate limit
+  allows; before, a link that opened within a second of the last announce
+  waited 15–38 s for the next periodic one. 4 new engine tests.
+- Panic wipe: Tor is stopped, its directory (guards, state, cached
+  descriptors) deleted and Tor restarted on fresh guards after a 2–8 s
+  pause, with relay sockets closed in between, so the new identity's first
+  contact with the relays shares no circuit with the old one. Receipts still
+  waiting their turn in the Nostr pacer are discarded rather than sent as
+  the old persona. Media files in the cache are deleted at every service
+  start, since the timeline they belong to does not survive one. Message
+  notifications are marked secret, so their text stays off the lock screen
+  and out of the notification history.
+- Tor: the ON state is now taken from the service's status, not from a
+  static port number that outlives a stop, so a Tor restart no longer shows
+  ON while it is still bootstrapping. A relay socket that was opened just
+  as the route changed is dropped on open rather than kept as a clearnet
+  socket. An `.onion` relay is never handed to the system resolver while
+  Tor is off.
+- Chat view: the list follows new messages only while you are at the end of
+  it or the message is yours, so a history sync inserting older lines (or a
+  timeline at its 500-line cap) no longer yanks you to the bottom. Photos
+  and voice-note lengths are decoded off the main thread and cached, so
+  scrolling a media-heavy chat does not stutter. The APK copy behind "share
+  the app" no longer runs on the UI thread.
+- Edge-to-edge drawing is requested explicitly (Android 15 enforces it), and
+  the first-run screen keeps its language menu and start button clear of
+  the system bars.
+- 112 unit tests in all (8 new). `fragmentsReassemble` failed once in a
+  full run and passed on every rerun; it uses a random payload and is on
+  the list to pin down.
+
 ## Android v0.5.0 (preview) — 2026-10-29
 
 - History sync, wire-compatible with bitchat's `requestSync` gossip

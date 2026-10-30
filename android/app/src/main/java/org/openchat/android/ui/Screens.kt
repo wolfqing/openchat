@@ -66,6 +66,12 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import android.util.LruCache
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -171,7 +177,7 @@ fun LanguagePicker(onLanguage: (AppLanguage.Choice) -> Unit) {
 fun OnboardingScreen(onStart: () -> Unit, onLanguage: (AppLanguage.Choice) -> Unit) {
     Surface(Modifier.fillMaxSize()) {
         Column(
-            Modifier.fillMaxSize().padding(28.dp).verticalScroll(rememberScrollState()),
+            Modifier.fillMaxSize().safeDrawingPadding().padding(28.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Center,
         ) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) { LanguagePicker(onLanguage) }
@@ -453,8 +459,18 @@ fun ChatPane(
         ChatRepository.clearUnread(conversation)
         onDispose { if (ChatRepository.openConversation == conversation) ChatRepository.openConversation = null }
     }
-    LaunchedEffect(list.size) {
-        if (list.isNotEmpty()) state.animateScrollToItem(list.size - 1)
+    // Follow the conversation only while the reader is at its end, or when the new line is theirs:
+    // a history sync inserting older lines, or a timeline at its cap, must not yank them around.
+    val atBottom by remember {
+        derivedStateOf {
+            val info = state.layoutInfo
+            val last = info.visibleItemsInfo.lastOrNull() ?: return@derivedStateOf true
+            last.index >= info.totalItemsCount - 2
+        }
+    }
+    val newest = list.lastOrNull()
+    LaunchedEffect(newest?.id, newest?.senderKey) {
+        if (newest != null && (newest.mine || atBottom)) state.animateScrollToItem(list.size - 1)
         ChatRepository.clearUnread(conversation)
         onVisible(list)
     }
@@ -556,16 +572,25 @@ private fun MediaButtons(conversation: String) {
 
 @Composable
 private fun PhotoView(path: String) {
-    val bmp = remember(path) { Media.thumbnail(path)?.asImageBitmap() }
+    // Decoding happens off the main thread; a bubble scrolled out and back finds its bitmap in the cache.
+    val bmp by produceState(thumbnails.get(path), path) {
+        if (value == null) value = withContext(Dispatchers.IO) { Media.thumbnail(path)?.asImageBitmap()?.also { thumbnails.put(path, it) } }
+    }
     if (bmp == null) Text("🖼", Modifier.padding(12.dp))
-    else Image(bmp, contentDescription = stringResource(R.string.media_photo), modifier = Modifier.widthIn(max = 260.dp).heightIn(max = 320.dp).padding(4.dp))
+    else Image(bmp!!, contentDescription = stringResource(R.string.media_photo), modifier = Modifier.widthIn(max = 260.dp).heightIn(max = 320.dp).padding(4.dp))
 }
+
+private val thumbnails = LruCache<String, androidx.compose.ui.graphics.ImageBitmap>(24)
+private val voiceDurations = LruCache<String, Int>(64)
 
 @Composable
 private fun VoiceNote(path: String) {
     var player by remember { mutableStateOf<MediaPlayer?>(null) }
-    val duration = remember(path) {
-        try { MediaPlayer().run { setDataSource(path); prepare(); duration.also { release() } } } catch (e: Exception) { 0 }
+    // The length is read off the main thread once per file, not on every composition.
+    val duration by produceState(voiceDurations.get(path) ?: 0, path) {
+        if (voiceDurations.get(path) == null) value = withContext(Dispatchers.IO) {
+            try { MediaPlayer().run { setDataSource(path); prepare(); duration.also { release() } } } catch (e: Exception) { 0 }
+        }.also { voiceDurations.put(path, it) }
     }
     DisposableEffect(path) { onDispose { player?.release() } }
     Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {

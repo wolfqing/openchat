@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
@@ -46,6 +47,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Android 15 draws edge to edge whether asked or not; asking makes every version lay out the same way.
+        enableEdgeToEdge()
         val prefs = getSharedPreferences("ui", Context.MODE_PRIVATE)
         onboarded.value = prefs.getBoolean("onboarded", false)
         refreshPermissionState()
@@ -65,7 +68,7 @@ class MainActivity : ComponentActivity() {
                         onGrantPermissions = ::requestMeshPermissions,
                         onEnableBluetooth = ::enableBluetooth,
                         onRequestLocation = ::requestLocation,
-                        onShareApp = { startActivity(ApkShare.intent(this)) },
+                        onShareApp = { ApkShare.share(this) },
                         onLanguage = ::setLanguage,
                         onScan = {
                             scanLauncher.launch(ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setBeepEnabled(false).setOrientationLocked(false).setPrompt(""))
