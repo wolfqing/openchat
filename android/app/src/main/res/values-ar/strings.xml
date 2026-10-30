@@ -255,4 +255,15 @@
     <string name="bridge_gateway">ويشارك أيضًا اتصالك بالإنترنت مع الهواتف القريبة لقنوات الموقع: تخرج رسائلها الموقّعة عبرك، وتصلها رسائل القنوات التي أنت فيها.</string>
     <string name="vouch_by">تحقّق منه %1$s، الذي تحققت منه أنت</string>
     <string name="vouch_note">الأشخاص الذين تحققت منهم يخبرون هاتفك أيضًا بمن تحققوا منه وجهًا لوجه؛ ويظهر بجانب هؤلاء ✓ رمادية.</string>
+    <string name="cmd_help_pay">‏/pay &lt;token&gt; — إرسال رمز Cashu للنقد الإلكتروني (أضف \"public\" خارج المحادثات الخاصة)</string>
+    <string name="pay_not_token">لا يبدو هذا رمز Cashu: يجب أن يبدأ بـ cashuA أو cashuB</string>
+    <string name="pay_invalid">لا يمكن قراءة مبلغ من هذا الرمز، لذا لم يُرسل</string>
+    <string name="pay_confirm_public">يستطيع كل من يقرأ هذه المحادثة صرف الرمز. للإرسال على أي حال: /pay &lt;token&gt; public</string>
+    <string name="pay_sent_private">أُرسل %1$s. رمز Cashu لحامله: من يصرفه أولًا يحصل على المال.</string>
+    <string name="pay_sent_public">أُرسل %1$s إلى الجميع في هذه المحادثة؛ يستطيع أي أحد هنا صرفه</string>
+    <string name="pay_token">رمز Cashu</string>
+    <string name="pay_open_wallet">افتح في المحفظة</string>
+    <string name="pay_no_wallet">لا يوجد تطبيق محفظة Cashu مثبّت. انسخ الرمز والصقه في محفظة.</string>
+    <string name="pay_copy">نسخ</string>
+    <string name="pay_copied">نُسخ الرمز</string>
 </resources>

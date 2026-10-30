@@ -239,4 +239,15 @@
     <string name="bridge_gateway">همچنین اینترنت شما را برای کانال‌های مکانی با گوشی‌های نزدیک به اشتراک می‌گذارد: پیام‌های امضاشدهٔ آن‌ها از طریق شما بیرون می‌رود و پیام‌های کانال‌هایی که در آن هستید به آن‌ها می‌رسد.</string>
     <string name="vouch_by">تأییدشده توسط %1$s که شما تأییدش کرده‌اید</string>
     <string name="vouch_note">کسانی که تأییدشان کرده‌اید هم به گوشی شما می‌گویند چه کسی را حضوری تأیید کرده‌اند؛ کنار نام آن‌ها ✓ خاکستری می‌آید.</string>
+    <string name="cmd_help_pay">‏/pay &lt;token&gt; — فرستادن توکن پول الکترونیکی Cashu (بیرون از گفتگوی خصوصی \"public\" اضافه کنید)</string>
+    <string name="pay_not_token">این شبیه توکن Cashu نیست: باید با cashuA یا cashuB شروع شود</string>
+    <string name="pay_invalid">از این توکن مبلغی خوانده نمی‌شود، پس فرستاده نشد</string>
+    <string name="pay_confirm_public">هر کسی این گفتگو را بخواند می‌تواند توکن را نقد کند. برای فرستادن به‌هرحال: /pay &lt;token&gt; public</string>
+    <string name="pay_sent_private">%1$s فرستاده شد. توکن Cashu بی‌نام است: هر که زودتر نقدش کند پول را می‌گیرد.</string>
+    <string name="pay_sent_public">%1$s برای همه در این گفتگو فرستاده شد؛ هر کسی اینجا می‌تواند نقدش کند</string>
+    <string name="pay_token">توکن Cashu</string>
+    <string name="pay_open_wallet">باز کردن در کیف پول</string>
+    <string name="pay_no_wallet">هیچ کیف پول Cashu نصب نیست. توکن را کپی کنید و در یکی بچسبانید.</string>
+    <string name="pay_copy">کپی</string>
+    <string name="pay_copied">توکن کپی شد</string>
 </resources>

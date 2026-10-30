@@ -247,4 +247,15 @@
     <string name="bridge_gateway">同时也把你的网络分享给附近的手机用于地区频道：它们签好名的频道消息经你发出，你所在频道的消息也经你传给它们。</string>
     <string name="vouch_by">由你验证过的 %1$s 验证过</string>
     <string name="vouch_note">你验证过的人也会告诉你的手机他们当面验证过谁；这些人名字旁会显示灰色的 ✓。</string>
+    <string name="cmd_help_pay">/pay &lt;令牌&gt; — 发送 Cashu 电子现金令牌（私聊以外需加 \"public\"）</string>
+    <string name="pay_not_token">这看起来不像 Cashu 令牌：应以 cashuA 或 cashuB 开头</string>
+    <string name="pay_invalid">这个令牌解不出金额，所以没有发送</string>
+    <string name="pay_confirm_public">读到这个聊天的任何人都能兑走这个令牌。仍要发送：/pay &lt;令牌&gt; public</string>
+    <string name="pay_sent_private">已发送 %1$s。Cashu 令牌是不记名的：谁先兑换钱就归谁。</string>
+    <string name="pay_sent_public">已把 %1$s 发给这个聊天里的所有人；任何人都能兑换</string>
+    <string name="pay_token">Cashu 令牌</string>
+    <string name="pay_open_wallet">用钱包打开</string>
+    <string name="pay_no_wallet">没有安装 Cashu 钱包应用。可复制令牌，粘贴到钱包里。</string>
+    <string name="pay_copy">复制</string>
+    <string name="pay_copied">已复制令牌</string>
 </resources>

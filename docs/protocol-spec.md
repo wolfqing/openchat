@@ -1041,3 +1041,22 @@ bundle under a newer time. A spent key's private half is kept 48 h for
 redelivered copies, an unspent one 30 days. Privates live in the sealed
 mesh state and die with the triple tap. Capability bit 0 is announced.
 
+## 28. Cashu tokens (v0.6)
+
+Nothing new on the wire: a Cashu ecash token travels as ordinary message
+text. `/pay <token>` (bare, `cashu:` or `cashu://`, percent-encoding
+undone) sends it only if it decodes cleanly to a positive amount. In a
+private chat it goes straight out; anywhere more than one person reads
+(Nearby, a group, a location channel) it needs `/pay <token> public`,
+since whoever redeems a bearer token first gets the money.
+
+Decoding, for display only, never for redemption (the app never contacts
+a mint): `cashuA` + base64url JSON (`token[].mint`, `token[].proofs[].amount`,
+`unit`, `memo`); `cashuB` + base64url CBOR, definite lengths only, depth 16,
+10 000 items per container (`m` mint, `u` unit, `d` memo, `t[].p[].a`
+amounts). Per-proof and total amounts are capped at 2.1 × 10^15; a total
+above that rejects the token. Shown: amount and unit (default sat), mint
+host (48 chars), memo (control characters removed, 80 chars). Tokens are
+at most 60 000 characters. A message containing tokens shows a card per
+token (at most 3) with "open in wallet" (`cashu:` link) and copy.
+

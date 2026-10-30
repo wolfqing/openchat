@@ -243,4 +243,15 @@
     <string name="bridge_gateway">Il partage aussi votre internet avec les téléphones proches pour les canaux de lieu : leurs messages signés sortent par vous, et les canaux où vous êtes leur parviennent par vous.</string>
     <string name="vouch_by">Vérifié par %1$s, que vous avez vérifié</string>
     <string name="vouch_note">Les personnes que vous avez vérifiées indiquent aussi à votre téléphone qui elles ont vérifié en personne ; celles-ci reçoivent un ✓ gris.</string>
+    <string name="cmd_help_pay">/pay &lt;jeton&gt; — envoyer un jeton Cashu (ajoutez \"public\" hors des discussions privées)</string>
+    <string name="pay_not_token">ce n\'est pas un jeton Cashu : il doit commencer par cashuA ou cashuB</string>
+    <string name="pay_invalid">ce jeton ne donne aucun montant lisible, il n\'a donc pas été envoyé</string>
+    <string name="pay_confirm_public">toute personne lisant cette discussion pourrait encaisser le jeton. Pour l\'envoyer quand même : /pay &lt;jeton&gt; public</string>
+    <string name="pay_sent_private">%1$s envoyé. Un jeton Cashu est au porteur : le premier qui l\'encaisse reçoit l\'argent.</string>
+    <string name="pay_sent_public">%1$s envoyé à toute la discussion ; n\'importe qui ici peut l\'encaisser</string>
+    <string name="pay_token">jeton Cashu</string>
+    <string name="pay_open_wallet">Ouvrir dans le portefeuille</string>
+    <string name="pay_no_wallet">Aucun portefeuille Cashu installé. Copiez le jeton et collez-le dans l\'un d\'eux.</string>
+    <string name="pay_copy">Copier</string>
+    <string name="pay_copied">Jeton copié</string>
 </resources>

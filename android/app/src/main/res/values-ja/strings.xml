@@ -235,4 +235,15 @@
     <string name="bridge_gateway">位置チャンネルのために、近くの端末とインターネットも共有します。相手の署名付きメッセージはあなた経由で送られ、あなたが参加中のチャンネルは相手に届きます。</string>
     <string name="vouch_by">あなたが確認した %1$s が確認済み</string>
     <string name="vouch_note">あなたが確認した人は、自分が対面で確認した相手もあなたの端末に伝えます。その相手には灰色の ✓ が付きます。</string>
+    <string name="cmd_help_pay">/pay &lt;トークン&gt; — Cashu 電子マネートークンを送る（個人チャット以外では \"public\" を付ける）</string>
+    <string name="pay_not_token">Cashu トークンではないようです。cashuA か cashuB で始まります</string>
+    <string name="pay_invalid">このトークンから金額を読み取れないため、送信しませんでした</string>
+    <string name="pay_confirm_public">このチャットを読む誰でもトークンを換金できます。それでも送るには：/pay &lt;トークン&gt; public</string>
+    <string name="pay_sent_private">%1$s を送りました。Cashu トークンは持参人払いです。最初に換金した人がお金を受け取ります。</string>
+    <string name="pay_sent_public">%1$s をこのチャットの全員に送りました。ここにいる誰でも換金できます</string>
+    <string name="pay_token">Cashu トークン</string>
+    <string name="pay_open_wallet">ウォレットで開く</string>
+    <string name="pay_no_wallet">Cashu ウォレットアプリが入っていません。トークンをコピーしてウォレットに貼り付けてください。</string>
+    <string name="pay_copy">コピー</string>
+    <string name="pay_copied">トークンをコピーしました</string>
 </resources>

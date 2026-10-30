@@ -235,4 +235,15 @@
     <string name="bridge_gateway">同時也把你的網路分享給附近的手機用於地區頻道：它們簽好名的頻道訊息經你發出，你所在頻道的訊息也經你傳給它們。</string>
     <string name="vouch_by">由你驗證過的 %1$s 驗證過</string>
     <string name="vouch_note">你驗證過的人也會告訴你的手機他們當面驗證過誰；這些人名字旁會顯示灰色的 ✓。</string>
+    <string name="cmd_help_pay">/pay &lt;權杖&gt; — 傳送 Cashu 電子現金權杖（私聊以外需加 \"public\"）</string>
+    <string name="pay_not_token">這看起來不像 Cashu 權杖：應以 cashuA 或 cashuB 開頭</string>
+    <string name="pay_invalid">這個權杖解不出金額，所以沒有傳送</string>
+    <string name="pay_confirm_public">讀到這個聊天的任何人都能兌走這個權杖。仍要傳送：/pay &lt;權杖&gt; public</string>
+    <string name="pay_sent_private">已傳送 %1$s。Cashu 權杖是不記名的：誰先兌換錢就歸誰。</string>
+    <string name="pay_sent_public">已把 %1$s 傳給這個聊天裡的所有人；任何人都能兌換</string>
+    <string name="pay_token">Cashu 權杖</string>
+    <string name="pay_open_wallet">用錢包開啟</string>
+    <string name="pay_no_wallet">沒有安裝 Cashu 錢包應用。可複製權杖，貼到錢包裡。</string>
+    <string name="pay_copy">複製</string>
+    <string name="pay_copied">已複製權杖</string>
 </resources>

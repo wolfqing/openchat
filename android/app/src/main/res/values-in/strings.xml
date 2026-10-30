@@ -235,4 +235,15 @@
     <string name="bridge_gateway">Ini juga membagikan internetmu ke ponsel di sekitar untuk kanal lokasi: pesan bertanda tangan mereka keluar lewat kamu, dan kanal yang kamu ikuti sampai ke mereka.</string>
     <string name="vouch_by">Diverifikasi oleh %1$s, yang sudah kamu verifikasi</string>
     <string name="vouch_note">Orang yang sudah kamu verifikasi juga memberi tahu ponselmu siapa yang mereka verifikasi langsung; orang itu mendapat ✓ abu-abu.</string>
+    <string name="cmd_help_pay">/pay &lt;token&gt; — kirim token e-cash Cashu (tambahkan \"public\" di luar obrolan pribadi)</string>
+    <string name="pay_not_token">itu tidak tampak seperti token Cashu: harus diawali cashuA atau cashuB</string>
+    <string name="pay_invalid">token ini tidak berisi jumlah yang terbaca, jadi tidak dikirim</string>
+    <string name="pay_confirm_public">siapa pun yang membaca obrolan ini bisa mencairkan token. Untuk tetap mengirim: /pay &lt;token&gt; public</string>
+    <string name="pay_sent_private">%1$s terkirim. Token Cashu berlaku bagi pemegangnya: siapa yang mencairkan dulu mendapat uangnya.</string>
+    <string name="pay_sent_public">%1$s dikirim ke semua orang di obrolan ini; siapa pun di sini bisa mencairkannya</string>
+    <string name="pay_token">token Cashu</string>
+    <string name="pay_open_wallet">Buka di dompet</string>
+    <string name="pay_no_wallet">Belum ada aplikasi dompet Cashu. Salin token lalu tempel di dompet.</string>
+    <string name="pay_copy">Salin</string>
+    <string name="pay_copied">Token disalin</string>
 </resources>

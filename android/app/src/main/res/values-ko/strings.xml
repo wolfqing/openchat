@@ -235,4 +235,15 @@
     <string name="bridge_gateway">위치 채널을 위해 근처 휴대폰과 인터넷도 공유합니다. 그들이 서명한 채널 메시지가 나를 거쳐 나가고, 내가 있는 채널의 메시지가 그들에게 전달됩니다.</string>
     <string name="vouch_by">내가 확인한 %1$s이(가) 확인함</string>
     <string name="vouch_note">내가 확인한 사람들은 자신이 직접 확인한 사람도 내 휴대폰에 알려 줍니다. 그런 사람에게는 회색 ✓가 붙습니다.</string>
+    <string name="cmd_help_pay">/pay &lt;토큰&gt; — Cashu 전자화폐 토큰 보내기 (개인 채팅 밖에서는 \"public\" 추가)</string>
+    <string name="pay_not_token">Cashu 토큰이 아닌 것 같습니다. cashuA 또는 cashuB로 시작해야 합니다</string>
+    <string name="pay_invalid">이 토큰에서 금액을 읽을 수 없어 보내지 않았습니다</string>
+    <string name="pay_confirm_public">이 채팅을 읽는 누구나 토큰을 현금화할 수 있습니다. 그래도 보내려면: /pay &lt;토큰&gt; public</string>
+    <string name="pay_sent_private">%1$s 보냄. Cashu 토큰은 무기명입니다. 먼저 현금화한 사람이 돈을 받습니다.</string>
+    <string name="pay_sent_public">%1$s을(를) 이 채팅의 모두에게 보냈습니다. 누구나 현금화할 수 있습니다</string>
+    <string name="pay_token">Cashu 토큰</string>
+    <string name="pay_open_wallet">지갑에서 열기</string>
+    <string name="pay_no_wallet">Cashu 지갑 앱이 없습니다. 토큰을 복사해 지갑에 붙여 넣으세요.</string>
+    <string name="pay_copy">복사</string>
+    <string name="pay_copied">토큰 복사됨</string>
 </resources>

@@ -243,4 +243,15 @@
     <string name="bridge_gateway">Também partilha a sua internet com telefones próximos para os canais de local: as mensagens assinadas deles saem por si, e os canais em que está chegam até eles.</string>
     <string name="vouch_by">Verificado por %1$s, que você verificou</string>
     <string name="vouch_note">As pessoas que você verificou também dizem ao seu telefone quem verificaram pessoalmente; essas pessoas ganham um ✓ cinza.</string>
+    <string name="cmd_help_pay">/pay &lt;token&gt; — enviar um token de dinheiro Cashu (fora de conversas privadas, junte \"public\")</string>
+    <string name="pay_not_token">isso não parece um token Cashu: deve começar por cashuA ou cashuB</string>
+    <string name="pay_invalid">não foi possível ler um valor deste token, por isso não foi enviado</string>
+    <string name="pay_confirm_public">qualquer pessoa que leia esta conversa poderia resgatar o token. Para enviar mesmo assim: /pay &lt;token&gt; public</string>
+    <string name="pay_sent_private">%1$s enviado. Um token Cashu é ao portador: quem o resgatar primeiro fica com o dinheiro.</string>
+    <string name="pay_sent_public">%1$s enviado a todos nesta conversa; qualquer pessoa aqui pode resgatá-lo</string>
+    <string name="pay_token">token Cashu</string>
+    <string name="pay_open_wallet">Abrir na carteira</string>
+    <string name="pay_no_wallet">Não há nenhuma carteira Cashu instalada. Copie o token e cole-o numa.</string>
+    <string name="pay_copy">Copiar</string>
+    <string name="pay_copied">Token copiado</string>
 </resources>

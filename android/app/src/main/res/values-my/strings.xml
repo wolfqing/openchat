@@ -235,4 +235,15 @@
     <string name="bridge_gateway">တည်နေရာချန်နယ်များအတွက် သင့်အင်တာနက်ကို အနီးရှိဖုန်းများနှင့်လည်း မျှဝေသည်- ၎င်းတို့၏ လက်မှတ်ထိုးထားသော မက်ဆေ့ချ်များ သင့်မှတစ်ဆင့် ထွက်သွားပြီး သင်ရှိနေသော ချန်နယ်များ ၎င်းတို့ထံ ရောက်သည်။</string>
     <string name="vouch_by">သင်အတည်ပြုထားသော %1$s က အတည်ပြုထားသည်</string>
     <string name="vouch_note">သင်အတည်ပြုထားသူများက ၎င်းတို့ လူချင်းတွေ့ အတည်ပြုထားသူများကိုလည်း သင့်ဖုန်းသို့ ပြောပြသည်။ ထိုသူများ၏ အမည်ဘေးတွင် မီးခိုးရောင် ✓ ပြသည်။</string>
+    <string name="cmd_help_pay">/pay &lt;token&gt; — Cashu e-cash token ပို့ရန် (သီးသန့်ချက်မဟုတ်လျှင် \"public\" ထည့်ပါ)</string>
+    <string name="pay_not_token">Cashu token နှင့် မတူပါ- cashuA သို့မဟုတ် cashuB ဖြင့် စရမည်</string>
+    <string name="pay_invalid">ဤ token မှ ပမာဏ ဖတ်မရသဖြင့် မပို့ပါ</string>
+    <string name="pay_confirm_public">ဤချက်ကို ဖတ်သူတိုင်း token ကို ငွေထုတ်နိုင်သည်။ မည်သို့ပင်ဖြစ်စေ ပို့ရန်: /pay &lt;token&gt; public</string>
+    <string name="pay_sent_private">%1$s ပို့ပြီး။ Cashu token သည် ကိုင်ဆောင်သူ token ဖြစ်သည်- အရင်ထုတ်သူက ငွေရသည်။</string>
+    <string name="pay_sent_public">%1$s ကို ဤချက်ရှိ လူတိုင်းထံ ပို့ပြီး၊ မည်သူမဆို ငွေထုတ်နိုင်သည်</string>
+    <string name="pay_token">Cashu token</string>
+    <string name="pay_open_wallet">ပိုက်ဆံအိတ်တွင် ဖွင့်ရန်</string>
+    <string name="pay_no_wallet">Cashu ပိုက်ဆံအိတ်အက်ပ် မထည့်ထားပါ။ token ကို ကူးပြီး ပိုက်ဆံအိတ်တွင် ကပ်ပါ။</string>
+    <string name="pay_copy">ကူးရန်</string>
+    <string name="pay_copied">token ကူးပြီး</string>
 </resources>

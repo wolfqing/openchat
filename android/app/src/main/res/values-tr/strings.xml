@@ -239,4 +239,15 @@
     <string name="bridge_gateway">Konum kanalları için internetini yakındaki telefonlarla da paylaşır: onların imzalı kanal mesajları senin üzerinden çıkar, bulunduğun kanallar da onlara ulaşır.</string>
     <string name="vouch_by">Doğruladığın %1$s tarafından doğrulandı</string>
     <string name="vouch_note">Doğruladığın kişiler, yüz yüze kimi doğruladıklarını da telefonuna bildirir; bu kişilerin yanında gri bir ✓ görünür.</string>
+    <string name="cmd_help_pay">/pay &lt;jeton&gt; — Cashu e-nakit jetonu gönder (özel sohbet dışında \"public\" ekle)</string>
+    <string name="pay_not_token">bu bir Cashu jetonuna benzemiyor: cashuA veya cashuB ile başlamalı</string>
+    <string name="pay_invalid">bu jetondan bir tutar okunamadı, bu yüzden gönderilmedi</string>
+    <string name="pay_confirm_public">bu sohbeti okuyan herkes jetonu bozdurabilir. Yine de göndermek için: /pay &lt;jeton&gt; public</string>
+    <string name="pay_sent_private">%1$s gönderildi. Cashu jetonu hamiline yazılıdır: ilk bozduran parayı alır.</string>
+    <string name="pay_sent_public">%1$s bu sohbetteki herkese gönderildi; buradaki herkes bozdurabilir</string>
+    <string name="pay_token">Cashu jetonu</string>
+    <string name="pay_open_wallet">Cüzdanda aç</string>
+    <string name="pay_no_wallet">Yüklü bir Cashu cüzdanı yok. Jetonu kopyalayıp bir cüzdana yapıştır.</string>
+    <string name="pay_copy">Kopyala</string>
+    <string name="pay_copied">Jeton kopyalandı</string>
 </resources>

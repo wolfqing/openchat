@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- `/pay` and Cashu cards, compatible with bitchat ([spec §28](docs/protocol-spec.md)).
+  `/pay <token>` sends a Cashu ecash token after checking it is real money;
+  outside a private chat it needs `/pay <token> public`, because whoever
+  redeems a token first gets it. Tokens in messages show as a card with the
+  amount, mint and memo, an "Open in wallet" button and Copy. The app never
+  talks to a mint.
+- 5 new tests, 142 in all.
+
 - One-time prekeys, compatible with bitchat ([spec §27](docs/protocol-spec.md)).
   Each phone publishes eight single-use keys that spread like board posts.
   Mail for someone out of reach, whether carried by other phones or parked

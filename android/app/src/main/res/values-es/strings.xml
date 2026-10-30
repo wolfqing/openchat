@@ -243,4 +243,15 @@
     <string name="bridge_gateway">También comparte tu internet con los teléfonos cercanos para los canales de ubicación: sus mensajes firmados salen a través de ti y los canales en los que estás les llegan por ti.</string>
     <string name="vouch_by">Verificado por %1$s, a quien tú verificaste</string>
     <string name="vouch_note">Las personas que verificaste también le dicen a tu teléfono a quién verificaron en persona; esas personas llevan un ✓ gris.</string>
+    <string name="cmd_help_pay">/pay &lt;token&gt; — enviar un token de efectivo Cashu (añade \"public\" fuera de chats privados)</string>
+    <string name="pay_not_token">eso no parece un token Cashu: debe empezar por cashuA o cashuB</string>
+    <string name="pay_invalid">este token no contiene un importe legible, así que no se envió</string>
+    <string name="pay_confirm_public">cualquiera que lea este chat podría cobrar el token. Para enviarlo igualmente: /pay &lt;token&gt; public</string>
+    <string name="pay_sent_private">enviado %1$s. Un token Cashu es al portador: quien lo cobre primero se queda el dinero.</string>
+    <string name="pay_sent_public">enviado %1$s a todos en este chat; cualquiera aquí puede cobrarlo</string>
+    <string name="pay_token">token Cashu</string>
+    <string name="pay_open_wallet">Abrir en la billetera</string>
+    <string name="pay_no_wallet">No hay ninguna billetera Cashu instalada. Copia el token y pégalo en una.</string>
+    <string name="pay_copy">Copiar</string>
+    <string name="pay_copied">Token copiado</string>
 </resources>

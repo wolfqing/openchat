@@ -239,4 +239,15 @@
     <string name="bridge_gateway">Außerdem teilst du dein Internet für Ortskanäle mit Telefonen in der Nähe: Ihre signierten Kanalnachrichten gehen über dich hinaus, und die Kanäle, in denen du bist, kommen über dich zu ihnen.</string>
     <string name="vouch_by">Verifiziert von %1$s, die du verifiziert hast</string>
     <string name="vouch_note">Wen du verifiziert hast, teilt deinem Telefon auch mit, wen er persönlich verifiziert hat; diese Personen bekommen ein graues ✓.</string>
+    <string name="cmd_help_pay">/pay &lt;Token&gt; — Cashu-E-Cash-Token senden (außerhalb privater Chats \"public\" anhängen)</string>
+    <string name="pay_not_token">das sieht nicht nach einem Cashu-Token aus: es beginnt mit cashuA oder cashuB</string>
+    <string name="pay_invalid">aus diesem Token lässt sich kein Betrag lesen, darum wurde es nicht gesendet</string>
+    <string name="pay_confirm_public">jede Person in diesem Chat könnte das Token einlösen. Trotzdem senden: /pay &lt;Token&gt; public</string>
+    <string name="pay_sent_private">%1$s gesendet. Ein Cashu-Token ist ein Inhabertoken: Wer es zuerst einlöst, bekommt das Geld.</string>
+    <string name="pay_sent_public">%1$s an alle in diesem Chat gesendet; alle hier können es einlösen</string>
+    <string name="pay_token">Cashu-Token</string>
+    <string name="pay_open_wallet">In Wallet öffnen</string>
+    <string name="pay_no_wallet">Keine Cashu-Wallet installiert. Kopiere das Token und füge es in eine ein.</string>
+    <string name="pay_copy">Kopieren</string>
+    <string name="pay_copied">Token kopiert</string>
 </resources>

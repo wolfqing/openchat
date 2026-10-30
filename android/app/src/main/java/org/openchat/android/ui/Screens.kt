@@ -116,6 +116,7 @@ import org.openchat.android.app.Conversation
 import org.openchat.android.app.DeliveryState
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.app.Social
+import org.openchat.android.core.Cashu
 import org.openchat.android.core.Mentions
 import org.openchat.android.nostr.Geohash
 import java.text.DateFormat
@@ -535,7 +536,10 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
             when {
                 m.attachment != null && m.audio -> VoiceNote(m.attachment)
                 m.attachment != null -> PhotoView(m.attachment, covered = !m.mine)
-                else -> Text(withMentions(m.text), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
+                else -> Column {
+                    Text(withMentions(m.text), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
+                    Cashu.tokensIn(m.text).take(3).forEach { CashuCard(it) }
+                }
             }
         }
         val status = if (m.mine) " · " + stringResource(
@@ -546,6 +550,30 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
             },
         ) else ""
         Text(time + status, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** A Cashu token in a message: what it is worth, and a hand-off to a wallet app (§28). */
+@Composable
+private fun CashuCard(token: String) {
+    val ctx = LocalContext.current
+    val info = remember(token) { Cashu.decode(token) } ?: return
+    Column(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp)) {
+        Text("🥜 " + (info.display ?: stringResource(R.string.pay_token)) + (info.mintHost?.let { " · $it" } ?: ""), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        info.memo?.let { Text(it, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(onClick = {
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("cashu:$token"))
+                try { ctx.startActivity(intent) } catch (e: android.content.ActivityNotFoundException) {
+                    android.widget.Toast.makeText(ctx, R.string.pay_no_wallet, android.widget.Toast.LENGTH_LONG).show()
+                }
+            }) { Text(stringResource(R.string.pay_open_wallet)) }
+            TextButton(onClick = {
+                val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("cashu", token))
+                android.widget.Toast.makeText(ctx, R.string.pay_copied, android.widget.Toast.LENGTH_SHORT).show()
+            }) { Text(stringResource(R.string.pay_copy)) }
+        }
     }
 }
 
@@ -672,6 +700,10 @@ private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conv
                 else -> c.groupLeave(id) // the group screen closes itself once the group is gone
             }
         }
+        is Commands.Outcome.Pay -> {
+            onSend(o.token)
+            local(ctx.getString(if (o.private) R.string.pay_sent_private else R.string.pay_sent_public, o.summary))
+        }
         is Commands.Outcome.Ping -> {
             local(ctx.getString(R.string.cmd_ping_started, o.person.label.toString()))
             ChatRepository.controller?.ping(o.person.key, o.person.label.toString(), conversation)
@@ -686,7 +718,7 @@ private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conv
         is Commands.Outcome.Drop -> local(ctx.getString(if (ChatRepository.controller?.dropNote(o.text) == true) R.string.note_dropped else R.string.note_no_location))
         is Commands.Outcome.Local -> local(
             when (o.note) {
-                Commands.Note.HELP -> ctx.getString(R.string.cmd_help) + "\n" + ctx.getString(R.string.cmd_help_group) + "\n" + ctx.getString(R.string.cmd_help_diag)
+                Commands.Note.HELP -> ctx.getString(R.string.cmd_help) + "\n" + ctx.getString(R.string.cmd_help_group) + "\n" + ctx.getString(R.string.cmd_help_diag) + "\n" + ctx.getString(R.string.cmd_help_pay)
                 Commands.Note.WHO -> ctx.getString(R.string.cmd_who, o.arg)
                 Commands.Note.WHO_NONE -> ctx.getString(R.string.cmd_who_none)
                 Commands.Note.NOT_FOUND -> ctx.getString(R.string.cmd_not_found, o.arg)
@@ -694,6 +726,9 @@ private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conv
                 Commands.Note.UNKNOWN -> ctx.getString(R.string.cmd_unknown, o.arg)
                 Commands.Note.MESH_ONLY -> ctx.getString(R.string.cmd_mesh_only)
                 Commands.Note.NO_LOCATION -> ctx.getString(R.string.cmd_geo_only)
+                Commands.Note.PAY_NOT_TOKEN -> ctx.getString(R.string.pay_not_token)
+                Commands.Note.PAY_INVALID -> ctx.getString(R.string.pay_invalid)
+                Commands.Note.PAY_CONFIRM_PUBLIC -> ctx.getString(R.string.pay_confirm_public)
                 else -> o.arg
             },
         )

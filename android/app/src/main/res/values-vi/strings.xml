@@ -235,4 +235,15 @@
     <string name="bridge_gateway">Nó cũng chia sẻ internet của bạn với các điện thoại gần đó cho kênh vị trí: tin nhắn đã ký của họ đi ra qua bạn, và các kênh bạn đang tham gia đến được với họ.</string>
     <string name="vouch_by">Được %1$s (người bạn đã xác minh) xác minh</string>
     <string name="vouch_note">Những người bạn đã xác minh cũng cho điện thoại của bạn biết họ đã gặp và xác minh ai; những người đó có dấu ✓ màu xám.</string>
+    <string name="cmd_help_pay">/pay &lt;token&gt; — gửi token tiền điện tử Cashu (ngoài trò chuyện riêng thêm \"public\")</string>
+    <string name="pay_not_token">đây không giống token Cashu: phải bắt đầu bằng cashuA hoặc cashuB</string>
+    <string name="pay_invalid">không đọc được số tiền từ token này nên không gửi</string>
+    <string name="pay_confirm_public">ai đọc cuộc trò chuyện này cũng có thể đổi token. Vẫn gửi: /pay &lt;token&gt; public</string>
+    <string name="pay_sent_private">đã gửi %1$s. Token Cashu là vô danh: ai đổi trước sẽ nhận tiền.</string>
+    <string name="pay_sent_public">đã gửi %1$s cho mọi người trong cuộc trò chuyện này; ai cũng có thể đổi</string>
+    <string name="pay_token">token Cashu</string>
+    <string name="pay_open_wallet">Mở trong ví</string>
+    <string name="pay_no_wallet">Chưa cài ví Cashu. Hãy sao chép token rồi dán vào ví.</string>
+    <string name="pay_copy">Sao chép</string>
+    <string name="pay_copied">Đã sao chép token</string>
 </resources>

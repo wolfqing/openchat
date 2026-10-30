@@ -253,4 +253,15 @@
     <string name="bridge_gateway">It also shares your internet with nearby phones for location channels: their signed channel messages go out through you, and the channels you are in come in for them.</string>
     <string name="vouch_by">Verified by %1$s, whom you verified</string>
     <string name="vouch_note">People you verified also tell your phone whom they verified in person; those people get a grey ✓.</string>
+    <string name="cmd_help_pay">/pay &lt;token&gt; — send a Cashu ecash token (add \"public\" outside private chats)</string>
+    <string name="pay_not_token">that does not look like a Cashu token: it should start with cashuA or cashuB</string>
+    <string name="pay_invalid">this token does not decode to an amount, so it was not sent</string>
+    <string name="pay_confirm_public">everyone reading this chat could redeem the token. To send it anyway: /pay &lt;token&gt; public</string>
+    <string name="pay_sent_private">sent %1$s. A Cashu token is a bearer token: whoever redeems it first gets the money.</string>
+    <string name="pay_sent_public">sent %1$s to everyone in this chat; anyone here can redeem it</string>
+    <string name="pay_token">Cashu token</string>
+    <string name="pay_open_wallet">Open in wallet</string>
+    <string name="pay_no_wallet">No Cashu wallet app is installed. Copy the token and paste it into one.</string>
+    <string name="pay_copy">Copy</string>
+    <string name="pay_copied">Token copied</string>
 </resources>

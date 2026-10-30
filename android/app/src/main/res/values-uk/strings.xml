@@ -247,4 +247,15 @@
     <string name="bridge_gateway">Також ділиться вашим інтернетом із телефонами поруч для каналів за місцем: їхні підписані повідомлення виходять через вас, а канали, в яких ви є, доходять до них.</string>
     <string name="vouch_by">Підтверджено: %1$s (ви їх підтвердили)</string>
     <string name="vouch_note">Ті, кого ви підтвердили, повідомляють вашому телефону, кого вони підтвердили особисто; у таких людей сіра ✓.</string>
+    <string name="cmd_help_pay">/pay &lt;токен&gt; — надіслати токен Cashu (поза приватними чатами додайте \"public\")</string>
+    <string name="pay_not_token">це не схоже на токен Cashu: він починається з cashuA або cashuB</string>
+    <string name="pay_invalid">з цього токена не читається сума, тому його не надіслано</string>
+    <string name="pay_confirm_public">будь-хто, хто читає цей чат, зможе отримати гроші за токеном. Щоб усе одно надіслати: /pay &lt;токен&gt; public</string>
+    <string name="pay_sent_private">%1$s надіслано. Токен Cashu на пред\'явника: гроші отримає той, хто першим його обміняє.</string>
+    <string name="pay_sent_public">%1$s надіслано всім у цьому чаті; обміняти може будь-хто</string>
+    <string name="pay_token">токен Cashu</string>
+    <string name="pay_open_wallet">Відкрити в гаманці</string>
+    <string name="pay_no_wallet">Гаманець Cashu не встановлено. Скопіюйте токен і вставте його в гаманець.</string>
+    <string name="pay_copy">Копіювати</string>
+    <string name="pay_copied">Токен скопійовано</string>
 </resources>
