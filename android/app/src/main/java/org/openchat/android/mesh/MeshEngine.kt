@@ -78,6 +78,8 @@ interface MeshListener {
     fun onFile(senderHex: String, nickname: String, file: FilePacket, isPrivate: Boolean, timestamp: Long) {}
     /** The peer proved it holds the keys from the verification QR we scanned (§16.2). */
     fun onVerified(peerHex: String) {}
+    /** A vouch batch over Noise from the holder of [sessionKey], whose announced signing key is [signingKey] (§26). */
+    fun onVouch(peerHex: String, sessionKey: ByteArray, signingKey: ByteArray, batch: ByteArray) {}
     /**
      * Group state arrived inside the Noise session with [peerHex] (§22.2). [sessionKey] is the
      * Noise static key that session authenticated, so the caller can check it is the creator.
@@ -337,7 +339,7 @@ class MeshEngine(
         if (!force && now < nextAnnounceDue) return
         if (now - lastAnnounce < 1000) return
         // No neighbour list: it hands any listener the local social graph, and routing falls back to flooding (§20).
-        val caps = AuthPeerState.CAP_PRIVATE_MEDIA or (if (bridgeCell != null) CAP_BRIDGE else 0L) or (if (gateway) CAP_GATEWAY else 0L)
+        val caps = myCapabilities
         val payload = Announcement(identity.nickname, identity.noise.publicKey, identity.signing.publicKey, emptyList(), caps, bridgeCell).encode() ?: return
         val p = sign(Packet(type = MessageType.ANNOUNCE, senderId = identity.peerId, timestamp = now, payload = payload)) ?: return
         dedup.markIfNew(Deduplicator.key(p))
@@ -543,6 +545,18 @@ class MeshEngine(
         lastAnnounce = 0
         sendAnnounce(force = true)
     }
+
+    /** What we can do, as announced (§4) and stated in-session (§18.2). */
+    private val myCapabilities get() = CAP_PRIVATE_MEDIA or CAP_GROUPS or CAP_BOARD or CAP_VOUCH or CAP_DIAGNOSTICS or
+        (if (bridgeCell != null) CAP_BRIDGE else 0L) or (if (gateway) CAP_GATEWAY else 0L)
+
+    /** Capability bits from a peer's announce; 0 when it announced none. */
+    fun capabilitiesOf(peerHex: String) = peers[peerHex]?.capabilities ?: 0L
+
+    /** The Ed25519 key a peer's announce bound to its identity, while we remember it. */
+    fun signingKeyOf(peerHex: String): ByteArray? = peers[peerHex]?.signingKey ?: known[peerHex]?.signingKey
+
+    fun sendVouches(peerHex: String, batch: ByteArray) = sendNoise(peerHex, NoisePayload(NoisePayloadType.VOUCH, batch).encode())
 
     /** Whether we advertise the gateway bit: internet shared with the mesh for location channels (§24.5). */
     fun setGateway(on: Boolean) {
@@ -939,7 +953,7 @@ class MeshEngine(
         // The peer started over: anything still unacknowledged went out on keys it no longer has.
         if (replaced?.established == true) flushOutboxTo(peerHex)
         // Tell the peer, inside the session, that it may send us encrypted media (§18.2).
-        sendNoise(peerHex, NoisePayload(NoisePayloadType.AUTHENTICATED_PEER_STATE, AuthPeerState.encode(AuthPeerState.CAP_PRIVATE_MEDIA, identity.signing.publicKey)).encode())
+        sendNoise(peerHex, NoisePayload(NoisePayloadType.AUTHENTICATED_PEER_STATE, AuthPeerState.encode(myCapabilities, identity.signing.publicKey)).encode())
         earlyCiphertexts.remove(peerHex)?.forEach { handleEncrypted(peerHex, it) }
         flushIfPossible(peerHex)
     }
@@ -1016,6 +1030,13 @@ class MeshEngine(
                 val key = sessions[peerHex]?.remoteStatic ?: return
                 if (isBlocked(key)) return
                 listener.onGroupState(peerHex, key, payload.type == NoisePayloadType.GROUP_INVITE, payload.body)
+            }
+            NoisePayloadType.VOUCH -> {
+                // The voucher is whoever holds this session; its announced signing key checks the batch.
+                val key = sessions[peerHex]?.remoteStatic ?: return
+                if (noiseKeyOf(peerHex)?.contentEquals(key) != true) return
+                val signing = peers[peerHex]?.signingKey ?: known[peerHex]?.signingKey ?: return
+                listener.onVouch(peerHex, key, signing, payload.body)
             }
             NoisePayloadType.VERIFY_CHALLENGE -> {
                 val (keyHex, nonce) = VerifyQr.parseChallenge(payload.body) ?: return
@@ -1251,6 +1272,11 @@ class MeshEngine(
         private const val GROUP_HISTORY_CAP = 200
         const val CAP_BRIDGE = 1L shl 7
         const val CAP_GATEWAY = 1L shl 2
+        const val CAP_GROUPS = 1L shl 3
+        const val CAP_BOARD = 1L shl 4
+        const val CAP_VOUCH = 1L shl 5
+        const val CAP_DIAGNOSTICS = 1L shl 6
+        private const val CAP_PRIVATE_MEDIA = AuthPeerState.CAP_PRIVATE_MEDIA
         private val SYNC_TYPES = SyncTypes.PUBLIC or SyncTypes.GROUP or SyncTypes.BOARD
         private const val HISTORY_MAX_AGE_MS = 900_000L
         private const val FUTURE_SKEW_MS = 120_000L

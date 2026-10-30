@@ -73,6 +73,7 @@ class MeshService : Service(), ChatController {
     private lateinit var tor: Tor
     private lateinit var groups: GroupManager
     private lateinit var bridge: Bridge
+    private val vouching = Vouching { engine }
     private lateinit var nostrSeenStore: SealedFile
     private val publicLimiter = RateLimiter()
     private val nostrSeen = LinkedHashSet<String>() // message IDs already shown from Nostr, kept across restarts
@@ -141,7 +142,7 @@ class MeshService : Service(), ChatController {
         nostr.setExtraRelays(Social.state.value.relays)
         nostr.start()
         // Installed only now that everything it touches exists.
-        Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)); nostr.setExtraRelays(s.relays) } }
+        Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)); nostr.setExtraRelays(s.relays); vouching.attemptAll() } }
         ble = BleTransport(this, handler) { engine }
         val directory = RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText())
         bridge = Bridge(this, directory, { engine }, { geo }, { task -> handler.post(task) }) { s -> ChatRepository.setBridge(s) }
@@ -239,6 +240,7 @@ class MeshService : Service(), ChatController {
             peers.forEach { noiseKeys[it.peerIdHex] = it.noisePublicKey }
             ChatRepository.setPeers(peers)
             ChatRepository.updateMesh { it.copy(links = engine.linkCount) }
+            vouching.attemptAll() // a capability-bearing announce can land after the session
         }
 
         override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean) {
@@ -308,6 +310,10 @@ class MeshService : Service(), ChatController {
         override fun onVerified(peerHex: String) {
             engine.noiseKeyOf(peerHex)?.let { Social.setVerified(sha256(it).toHex(), true) }
         }
+
+        override fun onSessionEstablished(peerHex: String) { vouching.attempt(peerHex) }
+
+        override fun onVouch(peerHex: String, sessionKey: ByteArray, signingKey: ByteArray, batch: ByteArray) = vouching.receive(sessionKey, signingKey, batch)
 
         // Coalesce bursts of changes into one write.
         override fun onStateChanged() { handler.removeCallbacks(saveState); handler.postDelayed(saveState, 500) }

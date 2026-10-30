@@ -237,4 +237,6 @@
     <string name="cmd_trace_you">du</string>
     <string name="cmd_pong">Antwort von %1$s: %2$d ms</string>
     <string name="bridge_gateway">Außerdem teilst du dein Internet für Ortskanäle mit Telefonen in der Nähe: Ihre signierten Kanalnachrichten gehen über dich hinaus, und die Kanäle, in denen du bist, kommen über dich zu ihnen.</string>
+    <string name="vouch_by">Verifiziert von %1$s, die du verifiziert hast</string>
+    <string name="vouch_note">Wen du verifiziert hast, teilt deinem Telefon auch mit, wen er persönlich verifiziert hat; diese Personen bekommen ein graues ✓.</string>
 </resources>

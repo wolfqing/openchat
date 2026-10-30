@@ -86,6 +86,16 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                                 stringResource(if (verified) R.string.verify_badge_on else R.string.verify_badge_off),
                                 fontSize = 13.sp, color = if (verified) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            val vouchers = social.vouchersFor(fp)
+                            if (vouchers.isNotEmpty()) {
+                                val names by ChatRepository.names.collectAsState()
+                                val peers by ChatRepository.peers.collectAsState()
+                                val who = vouchers.joinToString(", ") { v ->
+                                    val hex = v.take(16)
+                                    PeerLabel.mesh(peers.firstOrNull { it.peerIdHex == hex }?.nickname ?: social.favorites[v]?.nickname ?: names[hex], hex).toString()
+                                }
+                                Text(stringResource(R.string.vouch_by, who), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                             Text(fp.chunked(4).joinToString(" "), fontFamily = FontFamily.Monospace, fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             TextButton(onClick = { Social.setVerified(fp, !verified) }) {
                                 Text(stringResource(if (verified) R.string.verify_unmark else R.string.verify_mark))
@@ -168,7 +178,7 @@ fun VerifySection(onScan: () -> Unit) {
     var show by remember { mutableStateOf(false) }
     if (show) MyQrDialog { show = false }
     Text(stringResource(R.string.verify_title), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 24.dp))
-    Text(stringResource(R.string.verify_body), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text(stringResource(R.string.verify_body) + " " + stringResource(R.string.vouch_note), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
         FilledTonalButton(onClick = { show = true }) { Text(stringResource(R.string.verify_show)) }
         OutlinedButton(onClick = onScan) { Text(stringResource(R.string.verify_scan)) }

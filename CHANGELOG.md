@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Vouching, compatible with bitchat ([spec §26](docs/protocol-spec.md)).
+  People you verified in person also tell your phone, over an encrypted
+  session and at most once a day, whom they verified; those people get a
+  grey ✓ and "verified by …" on their card. Only vouches from people you
+  verified count, and they lapse after 30 days or as soon as you un-verify
+  the voucher.
+- openchat now announces the capabilities it has (groups, board, vouching,
+  diagnostics), so bitchat phones offer them.
+- 5 new tests.
+
 - Location-channel gateway, compatible with bitchat ([spec §24.5](docs/protocol-spec.md)).
   With the bridge on and internet working, your phone also serves people
   nearby who have none: what they post in a location channel goes out

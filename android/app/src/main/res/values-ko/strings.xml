@@ -233,4 +233,6 @@
     <string name="cmd_trace_you">나</string>
     <string name="cmd_pong">%1$s 응답: %2$d ms</string>
     <string name="bridge_gateway">위치 채널을 위해 근처 휴대폰과 인터넷도 공유합니다. 그들이 서명한 채널 메시지가 나를 거쳐 나가고, 내가 있는 채널의 메시지가 그들에게 전달됩니다.</string>
+    <string name="vouch_by">내가 확인한 %1$s이(가) 확인함</string>
+    <string name="vouch_note">내가 확인한 사람들은 자신이 직접 확인한 사람도 내 휴대폰에 알려 줍니다. 그런 사람에게는 회색 ✓가 붙습니다.</string>
 </resources>

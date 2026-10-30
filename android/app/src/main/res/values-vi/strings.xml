@@ -233,4 +233,6 @@
     <string name="cmd_trace_you">bạn</string>
     <string name="cmd_pong">%1$s phản hồi: %2$d ms</string>
     <string name="bridge_gateway">Nó cũng chia sẻ internet của bạn với các điện thoại gần đó cho kênh vị trí: tin nhắn đã ký của họ đi ra qua bạn, và các kênh bạn đang tham gia đến được với họ.</string>
+    <string name="vouch_by">Được %1$s (người bạn đã xác minh) xác minh</string>
+    <string name="vouch_note">Những người bạn đã xác minh cũng cho điện thoại của bạn biết họ đã gặp và xác minh ai; những người đó có dấu ✓ màu xám.</string>
 </resources>

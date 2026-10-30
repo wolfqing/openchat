@@ -348,12 +348,13 @@ fun MainScreen(
 
 /** Name with its #xxxx suffix set smaller, monospaced and muted, so the name itself leads. */
 @Composable
-fun labelText(label: PeerLabel, teleported: Boolean = false, verified: Boolean = false): AnnotatedString = buildAnnotatedString {
+fun labelText(label: PeerLabel, teleported: Boolean = false, verified: Boolean = false, vouched: Boolean = false): AnnotatedString = buildAnnotatedString {
     append(label.name)
     withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal, fontSize = 0.8.em, color = MaterialTheme.colorScheme.onSurfaceVariant)) {
         append(label.suffix)
     }
     if (verified) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" ✓") }
+    else if (vouched) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append(" ✓") } // verified by someone we verified
     if (teleported) append(" ✈")
 }
 
@@ -517,7 +518,9 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
         if (!m.mine) {
             Text(
                 buildAnnotatedString {
-                    append(labelText(PeerLabel.of(m), m.teleported, verified = !m.bridged && !m.conversation.startsWith("geo:") && Social.state.collectAsState().value.isVerifiedPeer(m.senderKey)))
+                    val social by Social.state.collectAsState()
+                    val mesh = !m.bridged && !m.conversation.startsWith("geo:")
+                    append(labelText(PeerLabel.of(m), m.teleported, verified = mesh && social.isVerifiedPeer(m.senderKey), vouched = mesh && social.isVouchedPeer(m.senderKey)))
                     if (m.bridged) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Normal)) { append(" · " + stringResource(R.string.bridge_via)) }
                 }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.let { if (onSenderClick != null && !m.bridged) it.clickable { onSenderClick(m) } else it },
@@ -785,7 +788,7 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
             title = {
                 Column {
-                    PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex)), onPanic)
+                    PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex), vouched = social.isVouchedPeer(peerHex)), onPanic)
                     Text(
                         stringResource(
                             when {
@@ -1014,7 +1017,7 @@ private fun PrivateList(onOpen: (String) -> Unit) {
                     val fav = social.favoriteOf(hex)
                     Text(
                         buildAnnotatedString {
-                            append(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex), verified = social.isVerifiedPeer(hex)))
+                            append(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex), verified = social.isVerifiedPeer(hex), vouched = social.isVouchedPeer(hex)))
                             if (fav?.mine == true) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" ★") }
                         },
                         fontWeight = FontWeight.SemiBold,

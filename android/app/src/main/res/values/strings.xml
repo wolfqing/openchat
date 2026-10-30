@@ -251,4 +251,6 @@
     <string name="cmd_trace_you">you</string>
     <string name="cmd_pong">pong from %1$s: %2$d ms</string>
     <string name="bridge_gateway">It also shares your internet with nearby phones for location channels: their signed channel messages go out through you, and the channels you are in come in for them.</string>
+    <string name="vouch_by">Verified by %1$s, whom you verified</string>
+    <string name="vouch_note">People you verified also tell your phone whom they verified in person; those people get a grey ✓.</string>
 </resources>

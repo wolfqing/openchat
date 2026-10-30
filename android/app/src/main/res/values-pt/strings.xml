@@ -241,4 +241,6 @@
     <string name="cmd_trace_you">você</string>
     <string name="cmd_pong">resposta de %1$s: %2$d ms</string>
     <string name="bridge_gateway">Também partilha a sua internet com telefones próximos para os canais de local: as mensagens assinadas deles saem por si, e os canais em que está chegam até eles.</string>
+    <string name="vouch_by">Verificado por %1$s, que você verificou</string>
+    <string name="vouch_note">As pessoas que você verificou também dizem ao seu telefone quem verificaram pessoalmente; essas pessoas ganham um ✓ cinza.</string>
 </resources>

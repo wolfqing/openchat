@@ -233,4 +233,6 @@
     <string name="cmd_trace_you">あなた</string>
     <string name="cmd_pong">%1$s から応答：%2$d ms</string>
     <string name="bridge_gateway">位置チャンネルのために、近くの端末とインターネットも共有します。相手の署名付きメッセージはあなた経由で送られ、あなたが参加中のチャンネルは相手に届きます。</string>
+    <string name="vouch_by">あなたが確認した %1$s が確認済み</string>
+    <string name="vouch_note">あなたが確認した人は、自分が対面で確認した相手もあなたの端末に伝えます。その相手には灰色の ✓ が付きます。</string>
 </resources>

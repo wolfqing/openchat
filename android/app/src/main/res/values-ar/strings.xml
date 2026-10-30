@@ -253,4 +253,6 @@
     <string name="cmd_trace_you">أنت</string>
     <string name="cmd_pong">رد من %1$s: %2$d مللي ثانية</string>
     <string name="bridge_gateway">ويشارك أيضًا اتصالك بالإنترنت مع الهواتف القريبة لقنوات الموقع: تخرج رسائلها الموقّعة عبرك، وتصلها رسائل القنوات التي أنت فيها.</string>
+    <string name="vouch_by">تحقّق منه %1$s، الذي تحققت منه أنت</string>
+    <string name="vouch_note">الأشخاص الذين تحققت منهم يخبرون هاتفك أيضًا بمن تحققوا منه وجهًا لوجه؛ ويظهر بجانب هؤلاء ✓ رمادية.</string>
 </resources>

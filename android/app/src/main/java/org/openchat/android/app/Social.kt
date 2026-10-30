@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.json.JSONArray
 import org.json.JSONObject
+import org.openchat.android.core.VouchBook
 import org.openchat.android.core.hexToBytes
 import org.openchat.android.mesh.Identity
 import org.openchat.android.nostr.Bech32
@@ -34,7 +35,15 @@ data class SocialState(
     val favorites: Map<String, Favorite> = emptyMap(),
     val verified: Set<String> = emptySet(),
     val relays: List<String> = emptyList(), // extra Nostr relays for private messages (§15.4)
+    val verifiedAt: Map<String, Long> = emptyMap(), // fingerprint -> when we verified it, newest vouched for first (§26)
+    val vouches: Map<String, Map<String, Long>> = emptyMap(), // vouchee -> voucher -> attestation time
+    val vouchSent: Map<String, Long> = emptyMap(), // fingerprint -> when we last sent it a batch
 ) {
+    /** People we verified who vouch for [fingerprint], when we have not verified it ourselves. */
+    fun vouchersFor(fingerprint: String, nowMs: Long = System.currentTimeMillis()): List<String> =
+        if (fingerprint in verified) emptyList() else VouchBook.vouchers(vouches, fingerprint, nowMs, verified)
+    fun isVouchedPeer(peerHex: String) = vouches.keys.any { it.startsWith(peerHex) && vouchersFor(it).isNotEmpty() }
+
     fun isBlockedPeer(peerHex: String) = blocked.keys.any { it.startsWith(peerHex) }
     fun fingerprintOf(peerHex: String): String? =
         (blocked.keys + favorites.keys + verified).firstOrNull { it.startsWith(peerHex) }
@@ -75,7 +84,22 @@ object Social {
     fun unblock(fingerprint: String) = change { it.copy(blocked = it.blocked - fingerprint) }
     fun blockGeo(pubkey: String, name: String) = change { it.copy(geoBlocked = it.geoBlocked + (pubkey to name)) }
     fun unblockGeo(pubkey: String) = change { it.copy(geoBlocked = it.geoBlocked - pubkey) }
-    fun setVerified(fingerprint: String, on: Boolean) = change { it.copy(verified = if (on) it.verified + fingerprint else it.verified - fingerprint) }
+    fun setVerified(fingerprint: String, on: Boolean) = change {
+        if (on == fingerprint in it.verified) it
+        else it.copy(
+            verified = if (on) it.verified + fingerprint else it.verified - fingerprint,
+            verifiedAt = if (on) it.verifiedAt + (fingerprint to System.currentTimeMillis()) else it.verifiedAt - fingerprint,
+        )
+    }
+
+    /** Stores a checked vouch if bitchat's gates let it in; true when stored. */
+    fun recordVouch(vouchee: String, voucher: String, timestampMs: Long): Boolean {
+        var stored = false
+        change { s -> VouchBook.record(s.vouches, vouchee, voucher, timestampMs, System.currentTimeMillis(), s.verified)?.let { stored = true; s.copy(vouches = it) } ?: s }
+        return stored
+    }
+
+    fun markVouchSent(fingerprint: String, atMs: Long) = change { it.copy(vouchSent = it.vouchSent + (fingerprint to atMs)) }
     fun putFavorite(fingerprint: String, f: Favorite?) = change {
         it.copy(favorites = if (f == null) it.favorites - fingerprint else it.favorites + (fingerprint to f))
     }
@@ -98,6 +122,9 @@ object Social {
         }
         o.put("favorites", favs)
         o.put("relays", JSONArray(s.relays))
+        o.put("verifiedAt", JSONObject(s.verifiedAt))
+        o.put("vouches", JSONObject(s.vouches.mapValues { JSONObject(it.value) }))
+        o.put("vouchSent", JSONObject(s.vouchSent))
         return o.toString().toByteArray(Charsets.UTF_8)
     }
 
@@ -112,11 +139,16 @@ object Social {
             val f = favs.getJSONObject(k)
             Favorite(f.getString("noise"), f.getString("nick"), f.optString("npub").ifEmpty { null }, f.optBoolean("theirs"), f.optBoolean("mine", true))
         }.orEmpty()
+        fun times(m: JSONObject?): Map<String, Long> = m?.keys()?.asSequence()?.associateWith { m.getLong(it) }.orEmpty()
         val ver = o.optJSONArray("verified")
         val rel = o.optJSONArray("relays")
+        val vouches = o.optJSONObject("vouches")
         SocialState(
             map("blocked"), map("geoBlocked"), favorites, (0 until (ver?.length() ?: 0)).map { ver!!.getString(it) }.toSet(),
             (0 until (rel?.length() ?: 0)).map { rel!!.getString(it) },
+            times(o.optJSONObject("verifiedAt")),
+            vouches?.keys()?.asSequence()?.associateWith { times(vouches.getJSONObject(it)) }.orEmpty(),
+            times(o.optJSONObject("vouchSent")),
         )
     } catch (e: Exception) { null }
 }

@@ -245,4 +245,6 @@
     <string name="cmd_trace_you">你</string>
     <string name="cmd_pong">%1$s 回应：%2$d 毫秒</string>
     <string name="bridge_gateway">同时也把你的网络分享给附近的手机用于地区频道：它们签好名的频道消息经你发出，你所在频道的消息也经你传给它们。</string>
+    <string name="vouch_by">由你验证过的 %1$s 验证过</string>
+    <string name="vouch_note">你验证过的人也会告诉你的手机他们当面验证过谁；这些人名字旁会显示灰色的 ✓。</string>
 </resources>

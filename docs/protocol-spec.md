@@ -967,3 +967,36 @@ either end claims it, because openchat sends no list of its own (§20);
 the first hop is one of our own live links. Breadth-first, at most 6 hops.
 The result is an estimate, shown as such.
 
+## 26. Vouching (v0.6)
+
+A vouch says "I verified this identity in person" (§16), signed by the
+voucher and sent only inside a Noise session (payload type `0x12`), so the
+voucher is the session peer and is not named in it.
+
+Attestation, TLVs with 1-byte type and 1-byte length, unknown types skipped:
+`0x01` vouchee fingerprint (32, SHA-256 of its Noise static key), `0x02`
+vouchee Ed25519 key (32), `0x03` time (8, BE ms), `0x04` signature (64) by
+the voucher's signing key over `"bitchat-vouch-v1"` ‖ fingerprint ‖ key ‖
+time. Batch: a count byte, then each attestation behind a 2-byte BE length;
+at most 16, malformed entries skipped, a larger declared count ignored.
+
+Sending: when a session is up with a peer we verified, at most once per 24 h
+per peer, we send attestations for up to 16 other people we verified, most
+recently verified first, skipping any whose signing key we do not hold.
+Also re-tried when the peer list changes or we verify someone. A peer whose
+announce lists capabilities without bit 5 gets none; one that lists none
+may still get them.
+
+Accepting: only from a session peer we verified, each signature checked
+against that peer's announced signing key; time within 30 days back and one
+hour ahead. Stored per vouchee, the eight newest vouchers; never for
+ourselves as voucher of ourselves or for someone we verified directly.
+Whether a vouch counts is decided when read: its voucher must still be
+verified by us and it must be under 30 days old. Shown as a grey ✓ and as
+"verified by …" on the person. Kept in the sealed social state and wiped
+by the triple tap.
+
+openchat now announces capability bits 3 (groups), 4 (board), 5 (vouch),
+6 (diagnostics) and 8 (private media), plus 7 and 2 while bridging or
+serving as a gateway, both in the announce and in the in-session peer state.
+

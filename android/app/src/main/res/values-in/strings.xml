@@ -233,4 +233,6 @@
     <string name="cmd_trace_you">kamu</string>
     <string name="cmd_pong">balasan dari %1$s: %2$d md</string>
     <string name="bridge_gateway">Ini juga membagikan internetmu ke ponsel di sekitar untuk kanal lokasi: pesan bertanda tangan mereka keluar lewat kamu, dan kanal yang kamu ikuti sampai ke mereka.</string>
+    <string name="vouch_by">Diverifikasi oleh %1$s, yang sudah kamu verifikasi</string>
+    <string name="vouch_note">Orang yang sudah kamu verifikasi juga memberi tahu ponselmu siapa yang mereka verifikasi langsung; orang itu mendapat ✓ abu-abu.</string>
 </resources>

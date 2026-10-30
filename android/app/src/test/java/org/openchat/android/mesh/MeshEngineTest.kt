@@ -56,6 +56,8 @@ class Recorder : MeshListener {
     val groupMessages = ArrayList<ByteArray>()
     val carriers = ArrayList<Pair<Boolean, ByteArray>>() // directed, payload
     val drops = ArrayList<ByteArray>()
+    val vouches = ArrayList<Pair<ByteArray, ByteArray>>() // session key, signing key
+    override fun onVouch(peerHex: String, sessionKey: ByteArray, signingKey: ByteArray, batch: ByteArray) { vouches += sessionKey to signingKey }
     override fun onCarrier(senderHex: String, payload: ByteArray, directed: Boolean) { carriers += directed to payload }
     override fun onDrop(envelope: ByteArray, recipientTagHex: String, expiresAt: Long) { drops += envelope }
     override fun onGroupState(peerHex: String, sessionKey: ByteArray, invite: Boolean, payload: ByteArray) { groupStates += peerHex to invite }
@@ -631,5 +633,21 @@ class MeshEngineTest {
         carol.setGateway(false)
         net.scheduler.advance(3_000)
         assertEquals(emptyList<String>(), alice.gatewayPeers())
+    }
+
+    @Test
+    fun vouchesTravelInsideTheSessionAndNameTheSessionPeer() {
+        val net = pair()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        alice.sendPrivate(bob.myPeerHex, "hi") // brings the session up
+        net.scheduler.advance(5_000)
+        val v = org.openchat.android.core.Vouch.create(ByteArray(32) { 7 }, ByteArray(32) { 8 }, net.scheduler.now(), alice.identity.signing)!!
+        alice.sendVouches(bob.myPeerHex, org.openchat.android.core.Vouch.encodeList(listOf(v))!!)
+        net.scheduler.advance(2_000)
+        val (session, signing) = net.recorders["bob"]!!.vouches.single()
+        assertTrue(session.contentEquals(alice.identity.noise.publicKey))
+        assertTrue(signing.contentEquals(alice.identity.signing.publicKey))
+        // Vouching is part of what a phone announces it can do.
+        assertTrue(bob.capabilitiesOf(alice.myPeerHex) and MeshEngine.CAP_VOUCH != 0L)
     }
 }
