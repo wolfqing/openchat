@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- The app mark now sits in the top-left corner of the main screen and is a
+  48 dp target for the triple-tap wipe. The title still works too. Each
+  counted tap gives a short haptic tick, and the three taps are now judged
+  by the gap between them (500 ms each) instead of an 800 ms window from
+  the first tap, which was too tight on a real phone. The first-run safety
+  note points at the logo. Only the English and Chinese notes were
+  updated; the other sixteen still say "title".
+
 ## Android v0.5.0 (preview) — 2026-10-29
 
 - History sync, wire-compatible with bitchat's `requestSync` gossip
