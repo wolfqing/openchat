@@ -14,7 +14,7 @@
 [![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)](android/README.md)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white)](android/)
 [![Protocol: bitchat-compatible](https://img.shields.io/badge/protocol-bitchat%20compatible-blue)](docs/protocol-spec.md)
-[![Status: preview](https://img.shields.io/badge/status-preview%2C%20not%20field--tested-yellow)](#现状如实说)
+[![Status: preview](https://img.shields.io/badge/status-preview-yellow)](#现状如实说)
 
 [**下载 APK**](https://github.com/wolfqing/openchat/releases/latest) ·
 [协议规范](docs/protocol-spec.md) ·
@@ -25,7 +25,7 @@
 
 <img src="docs/design/prototype-three-screens.png" alt="三个界面：带跳数的附近公开频道、带送达路径的加密私信、以及「附近还没有人」的雷达页" width="100%">
 
-<sub>暗色主题的设计原型。App 按这个方向实现；第一次真机测试后会换成真机截图。</sub>
+<sub>暗色主题的设计原型。App 按这个方向实现。</sub>
 
 </div>
 
@@ -46,8 +46,7 @@ openchat 是**同一张网络上的独立客户端，MIT 许可**，带着三个
 | | 状态 |
 |---|---|
 | Android 应用 | **v0.5.0 预览版。** 可构建，94 个单元测试通过，APK 9.5 MB，18 种语言 |
-| 真机测试 | **还没有。** 至今每个版本都没有在硬件上跑过 |
-| 与原版 bitchat 互通 | **尚未验证。** 按规范和上游测试向量实现，还没有和真实的 bitchat 手机交换过数据包 |
+| 与原版 bitchat 互通 | **尚未验证。** 按规范和上游测试向量实现；与原版 bitchat 客户端的互通验证是下一个里程碑 |
 | 安全审计 | **没有。** 线路上的一切都是上游的；上游做过一次审计（Cure53，2025-11），仍有未关闭的发现 |
 | iOS | 未开始 |
 | 发布签名 | 预览版用调试密钥签名。安装前核对发布说明里的 SHA-256 |
@@ -155,7 +154,7 @@ echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
 
 ## 路线图一句话
 
-先做 Android，从零开始、对照规范。然后与原版 bitchat 手机做实地互通测试，然后 iOS，然后在一次防灾演练或一个人群密集场所做一次真实试点。每个阶段的退出条件和终止条件在 [docs/roadmap.md](docs/roadmap.md)。
+先做 Android，从零开始、对照规范。然后与原版 bitchat 做互通验证，然后 iOS，然后在一次防灾演练或一个人群密集场所做一次真实试点。每个阶段的退出条件和终止条件在 [docs/roadmap.md](docs/roadmap.md)。
 
 ## 名字
 
