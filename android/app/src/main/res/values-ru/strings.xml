@@ -235,4 +235,13 @@
         <item quantity="other">по ту сторону: %d</item>
     </plurals>
     <string name="bridge_via">через мост</string>
+    <string name="cmd_help_diag">/ping @имя — время отклика · /trace @имя — примерный путь (только «Рядом»)</string>
+    <string name="cmd_ping_started">пингую %1$s…</string>
+    <string name="cmd_pong_direct">ответ от %1$s: %2$d мс · напрямую</string>
+    <string name="cmd_pong_hops">ответ от %1$s: %2$d мс · переходов: %3$d</string>
+    <string name="cmd_ping_none">%1$s не ответил(а)</string>
+    <string name="cmd_trace_path">примерный путь: %1$s (переходов: %2$d)</string>
+    <string name="cmd_trace_none">путь к %1$s неизвестен</string>
+    <string name="cmd_trace_you">вы</string>
+    <string name="cmd_pong">ответ от %1$s: %2$d мс</string>
 </resources>

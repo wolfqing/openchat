@@ -223,4 +223,13 @@
         <item quantity="other">向こう側に%d人</item>
     </plurals>
     <string name="bridge_via">橋渡し経由</string>
+    <string name="cmd_help_diag">/ping @名前 — 往復時間 · /trace @名前 — 推定経路（近くのみ）</string>
+    <string name="cmd_ping_started">%1$s に ping 中…</string>
+    <string name="cmd_pong_direct">%1$s から応答：%2$d ms · 直接</string>
+    <string name="cmd_pong_hops">%1$s から応答：%2$d ms · ホップ数：%3$d</string>
+    <string name="cmd_ping_none">%1$s から応答なし</string>
+    <string name="cmd_trace_path">推定経路：%1$s（%2$d ホップ）</string>
+    <string name="cmd_trace_none">%1$s への経路が不明です</string>
+    <string name="cmd_trace_you">あなた</string>
+    <string name="cmd_pong">%1$s から応答：%2$d ms</string>
 </resources>

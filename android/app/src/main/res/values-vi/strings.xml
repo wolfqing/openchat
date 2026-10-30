@@ -223,4 +223,13 @@
         <item quantity="other">%d người bên kia cầu</item>
     </plurals>
     <string name="bridge_via">qua cầu nối</string>
+    <string name="cmd_help_diag">/ping @tên — thời gian khứ hồi · /trace @tên — đường đi ước tính (chỉ Gần đây)</string>
+    <string name="cmd_ping_started">đang ping %1$s…</string>
+    <string name="cmd_pong_direct">%1$s phản hồi: %2$d ms · trực tiếp</string>
+    <string name="cmd_pong_hops">%1$s phản hồi: %2$d ms · số bước: %3$d</string>
+    <string name="cmd_ping_none">%1$s không phản hồi</string>
+    <string name="cmd_trace_path">đường đi ước tính: %1$s (số bước: %2$d)</string>
+    <string name="cmd_trace_none">không biết đường đến %1$s</string>
+    <string name="cmd_trace_you">bạn</string>
+    <string name="cmd_pong">%1$s phản hồi: %2$d ms</string>
 </resources>

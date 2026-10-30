@@ -223,4 +223,13 @@
         <item quantity="other">တံတားတစ်ဖက်တွင် %d ဦး</item>
     </plurals>
     <string name="bridge_via">တံတားမှ</string>
+    <string name="cmd_help_diag">/ping @name — အသွားအပြန်ကြာချိန် · /trace @name — ခန့်မှန်းလမ်းကြောင်း (အနီးအနားသာ)</string>
+    <string name="cmd_ping_started">%1$s ကို ping လုပ်နေသည်…</string>
+    <string name="cmd_pong_direct">%1$s ထံမှ တုံ့ပြန်ချက်: %2$d ms · တိုက်ရိုက်</string>
+    <string name="cmd_pong_hops">%1$s ထံမှ တုံ့ပြန်ချက်: %2$d ms · ခုန်ကူးမှု: %3$d</string>
+    <string name="cmd_ping_none">%1$s ထံမှ တုံ့ပြန်ချက်မရှိ</string>
+    <string name="cmd_trace_path">ခန့်မှန်းလမ်းကြောင်း: %1$s (ခုန်ကူးမှု: %2$d)</string>
+    <string name="cmd_trace_none">%1$s သို့ သိထားသော လမ်းကြောင်းမရှိ</string>
+    <string name="cmd_trace_you">သင်</string>
+    <string name="cmd_pong">%1$s ထံမှ တုံ့ပြန်ချက်: %2$d ms</string>
 </resources>

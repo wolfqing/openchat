@@ -223,4 +223,13 @@
         <item quantity="other">%d orang di seberang</item>
     </plurals>
     <string name="bridge_via">lewat jembatan</string>
+    <string name="cmd_help_diag">/ping @nama — waktu pulang-pergi · /trace @nama — perkiraan jalur (hanya Sekitar)</string>
+    <string name="cmd_ping_started">mengirim ping ke %1$s…</string>
+    <string name="cmd_pong_direct">balasan dari %1$s: %2$d md · langsung</string>
+    <string name="cmd_pong_hops">balasan dari %1$s: %2$d md · lompatan: %3$d</string>
+    <string name="cmd_ping_none">tidak ada balasan dari %1$s</string>
+    <string name="cmd_trace_path">perkiraan jalur: %1$s (lompatan: %2$d)</string>
+    <string name="cmd_trace_none">tidak ada jalur yang diketahui ke %1$s</string>
+    <string name="cmd_trace_you">kamu</string>
+    <string name="cmd_pong">balasan dari %1$s: %2$d md</string>
 </resources>

@@ -669,10 +669,21 @@ private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conv
                 else -> c.groupLeave(id) // the group screen closes itself once the group is gone
             }
         }
+        is Commands.Outcome.Ping -> {
+            local(ctx.getString(R.string.cmd_ping_started, o.person.label.toString()))
+            ChatRepository.controller?.ping(o.person.key, o.person.label.toString(), conversation)
+        }
+        is Commands.Outcome.Trace -> {
+            val path = ChatRepository.controller?.estimatePath(o.person.key)
+            local(
+                if (path == null) ctx.getString(R.string.cmd_trace_none, o.person.label.toString())
+                else ctx.getString(R.string.cmd_trace_path, (listOf(ctx.getString(R.string.cmd_trace_you)) + path + o.person.label.toString()).joinToString(" → "), path.size + 1),
+            )
+        }
         is Commands.Outcome.Drop -> local(ctx.getString(if (ChatRepository.controller?.dropNote(o.text) == true) R.string.note_dropped else R.string.note_no_location))
         is Commands.Outcome.Local -> local(
             when (o.note) {
-                Commands.Note.HELP -> ctx.getString(R.string.cmd_help) + "\n" + ctx.getString(R.string.cmd_help_group)
+                Commands.Note.HELP -> ctx.getString(R.string.cmd_help) + "\n" + ctx.getString(R.string.cmd_help_group) + "\n" + ctx.getString(R.string.cmd_help_diag)
                 Commands.Note.WHO -> ctx.getString(R.string.cmd_who, o.arg)
                 Commands.Note.WHO_NONE -> ctx.getString(R.string.cmd_who_none)
                 Commands.Note.NOT_FOUND -> ctx.getString(R.string.cmd_not_found, o.arg)

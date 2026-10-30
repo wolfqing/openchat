@@ -235,4 +235,13 @@
         <item quantity="other">桥对面 %d 人</item>
     </plurals>
     <string name="bridge_via">经桥接</string>
+    <string name="cmd_help_diag">/ping @名字 — 往返时间 · /trace @名字 — 估计路径（仅附近）</string>
+    <string name="cmd_ping_started">正在 ping %1$s…</string>
+    <string name="cmd_pong_direct">%1$s 回应：%2$d 毫秒 · 直连</string>
+    <string name="cmd_pong_hops">%1$s 回应：%2$d 毫秒 · 跳数：%3$d</string>
+    <string name="cmd_ping_none">%1$s 没有回应</string>
+    <string name="cmd_trace_path">估计路径：%1$s（%2$d 跳）</string>
+    <string name="cmd_trace_none">不知道到 %1$s 的路径</string>
+    <string name="cmd_trace_you">你</string>
+    <string name="cmd_pong">%1$s 回应：%2$d 毫秒</string>
 </resources>

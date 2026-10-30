@@ -223,4 +223,13 @@
         <item quantity="other">건너편 %d명</item>
     </plurals>
     <string name="bridge_via">브리지 경유</string>
+    <string name="cmd_help_diag">/ping @이름 — 왕복 시간 · /trace @이름 — 추정 경로 (근처 전용)</string>
+    <string name="cmd_ping_started">%1$s에게 ping 보내는 중…</string>
+    <string name="cmd_pong_direct">%1$s 응답: %2$d ms · 직접</string>
+    <string name="cmd_pong_hops">%1$s 응답: %2$d ms · 홉: %3$d</string>
+    <string name="cmd_ping_none">%1$s 응답 없음</string>
+    <string name="cmd_trace_path">추정 경로: %1$s (홉: %2$d)</string>
+    <string name="cmd_trace_none">%1$s까지의 경로를 모릅니다</string>
+    <string name="cmd_trace_you">나</string>
+    <string name="cmd_pong">%1$s 응답: %2$d ms</string>
 </resources>

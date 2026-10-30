@@ -921,3 +921,25 @@ those of up to 16 verified direct neighbours, since 24 h ago; it opens its
 own and hands the others to their recipients as directed courier packets.
 Message-ID dedup absorbs a message arriving by drop, courier and direct link.
 
+## 25. Mesh diagnostics (v0.6)
+
+### 25.1 Ping (`0x26`) and pong (`0x27`)
+
+Payload, 9 bytes (longer is accepted, the rest ignored): an 8-byte random
+nonce, then the TTL the packet was sent with. Unsigned and unencrypted;
+TTL 7, addressed to one peer and relayed like any directed packet. The
+addressed peer answers with a pong addressed to the ping's sender, echoing
+the nonce, with its own launch TTL. A pong counts only if its nonce is one
+we sent to that very peer, within 10 s. Hops = launch TTL − received TTL +
+1 (1 = neighbour). Because the sender ID of an unsigned packet can be
+forged, the pong budget is per ingress link, not per claimed sender: at
+most 5 pongs per link per 10 s.
+
+### 25.2 Estimated path
+
+`/trace` is computed locally from the direct-neighbour lists other phones
+put in their announces (§4, TLV `0x04`); nothing is sent. A link counts if
+either end claims it, because openchat sends no list of its own (§20);
+the first hop is one of our own live links. Breadth-first, at most 6 hops.
+The result is an estimate, shown as such.
+

@@ -235,4 +235,13 @@
         <item quantity="other">по той бік: %d</item>
     </plurals>
     <string name="bridge_via">через міст</string>
+    <string name="cmd_help_diag">/ping @ім\'я — час відгуку · /trace @ім\'я — орієнтовний шлях (лише «Поруч»)</string>
+    <string name="cmd_ping_started">пінгую %1$s…</string>
+    <string name="cmd_pong_direct">відповідь від %1$s: %2$d мс · напряму</string>
+    <string name="cmd_pong_hops">відповідь від %1$s: %2$d мс · переходів: %3$d</string>
+    <string name="cmd_ping_none">%1$s не відповідає</string>
+    <string name="cmd_trace_path">орієнтовний шлях: %1$s (переходів: %2$d)</string>
+    <string name="cmd_trace_none">шлях до %1$s невідомий</string>
+    <string name="cmd_trace_you">ви</string>
+    <string name="cmd_pong">відповідь від %1$s: %2$d мс</string>
 </resources>

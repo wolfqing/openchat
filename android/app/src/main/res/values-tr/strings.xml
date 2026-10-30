@@ -227,4 +227,13 @@
         <item quantity="other">köprünün öbür yanında %d kişi</item>
     </plurals>
     <string name="bridge_via">köprüden</string>
+    <string name="cmd_help_diag">/ping @ad — gidiş-dönüş süresi · /trace @ad — tahmini yol (yalnızca Yakında)</string>
+    <string name="cmd_ping_started">%1$s pingleniyor…</string>
+    <string name="cmd_pong_direct">%1$s yanıt verdi: %2$d ms · doğrudan</string>
+    <string name="cmd_pong_hops">%1$s yanıt verdi: %2$d ms · atlama: %3$d</string>
+    <string name="cmd_ping_none">%1$s yanıt vermedi</string>
+    <string name="cmd_trace_path">tahmini yol: %1$s (atlama: %2$d)</string>
+    <string name="cmd_trace_none">%1$s için bilinen bir yol yok</string>
+    <string name="cmd_trace_you">sen</string>
+    <string name="cmd_pong">%1$s yanıt verdi: %2$d ms</string>
 </resources>

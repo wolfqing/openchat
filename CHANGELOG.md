@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- `/ping @name` and `/trace @name` in Nearby and private chats, compatible
+  with bitchat ([spec §25](docs/protocol-spec.md)). Ping shows the round
+  trip and how many hops away someone is; trace shows an estimated path
+  from the neighbour lists bitchat phones announce. Pongs are budgeted per
+  radio link, so a forged sender cannot turn a phone into a pong cannon.
+- 2 new tests.
+
 - Mesh bridge, wire-compatible with bitchat ([spec §24](docs/protocol-spec.md)),
   off by default (Me tab). Bluetooth reaches only so far: with the bridge on,
   Nearby messages also go to the internet relays for your neighbourhood

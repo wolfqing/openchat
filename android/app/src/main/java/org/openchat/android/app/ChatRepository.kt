@@ -122,6 +122,10 @@ interface ChatController {
     fun postToBoard(text: String, urgent: Boolean, days: Int): Boolean
     fun deleteBoardPost(idHex: String)
     fun setBridge(on: Boolean)
+    /** Pings a mesh peer; the answer, or its absence, appears later as a local line in [conversation]. */
+    fun ping(peerHex: String, label: String, conversation: String)
+    /** Labels of the peers between us and [peerHex] (empty for a neighbour), or null when no path is known. */
+    fun estimatePath(peerHex: String): List<String>?
     /** Leaves a note at the device's building-level cell; false when the place is unknown. */
     fun dropNote(text: String): Boolean
     fun watchNotes(cell: String?)

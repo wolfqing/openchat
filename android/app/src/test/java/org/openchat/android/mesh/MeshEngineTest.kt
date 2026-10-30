@@ -580,4 +580,43 @@ class MeshEngineTest {
         carol.receiveDrop(drop) // a second relay's copy is not shown twice
         assertEquals(1, net.recorders["carol"]!!.privates.size)
     }
+
+    @Test
+    fun pingsComeBackWithHopsAndAreBudgetedPerLink() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!; val carol = net.engines["carol"]!!
+        val results = ArrayList<PingResult?>()
+        alice.ping(carol.myPeerHex) { results += it }
+        alice.ping(bob.myPeerHex) { results += it }
+        net.scheduler.advance(2_000)
+        assertEquals(listOf(1, 2), results.map { it!!.hops!! }.sorted())
+        // Nobody answers for a peer that is not there.
+        alice.ping("0011223344556677") { results += it }
+        net.scheduler.advance(11_000)
+        assertEquals(null, results.last())
+        // Bob answers at most five pings a link per ten seconds.
+        results.clear()
+        repeat(7) { alice.ping(bob.myPeerHex) { results += it } }
+        net.scheduler.advance(11_000)
+        assertEquals(5, results.count { it != null })
+    }
+
+    @Test
+    fun pathIsEstimatedFromAnnouncedNeighbours() {
+        val net = pair()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        val x = Identity.generate("x"); val y = Identity.generate("y")
+        val inject = rogueLink(net, "alice")
+        fun announce(id: Identity, neighbours: List<ByteArray>) {
+            val payload = Announcement(id.nickname, id.noise.publicKey, id.signing.publicKey, neighbours).encode()!!
+            val plain = Packet(type = MessageType.ANNOUNCE, senderId = id.peerId, timestamp = net.scheduler.now(), payload = payload, ttl = 5)
+            inject(plain.copy(signature = Crypto.ed25519Sign(id.signing.privateKey, PacketCodec.signingBytes(plain)!!)))
+        }
+        announce(x, listOf(bob.identity.peerId)) // bob claims nothing; x's claim is enough
+        announce(y, listOf(x.peerId))
+        net.scheduler.advance(1_000)
+        assertEquals(emptyList<String>(), alice.estimatePath(bob.myPeerHex))
+        assertEquals(listOf(bob.myPeerHex, x.peerIdHex), alice.estimatePath(y.peerIdHex))
+        assertEquals(null, alice.estimatePath("0011223344556677"))
+    }
 }

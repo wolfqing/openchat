@@ -231,4 +231,13 @@
         <item quantity="other">%d pessoas do outro lado</item>
     </plurals>
     <string name="bridge_via">via ponte</string>
+    <string name="cmd_help_diag">/ping @nome — tempo de ida e volta · /trace @nome — caminho estimado (só Perto)</string>
+    <string name="cmd_ping_started">enviando ping para %1$s…</string>
+    <string name="cmd_pong_direct">resposta de %1$s: %2$d ms · direto</string>
+    <string name="cmd_pong_hops">resposta de %1$s: %2$d ms · saltos: %3$d</string>
+    <string name="cmd_ping_none">sem resposta de %1$s</string>
+    <string name="cmd_trace_path">caminho estimado: %1$s (saltos: %2$d)</string>
+    <string name="cmd_trace_none">nenhum caminho conhecido até %1$s</string>
+    <string name="cmd_trace_you">você</string>
+    <string name="cmd_pong">resposta de %1$s: %2$d ms</string>
 </resources>

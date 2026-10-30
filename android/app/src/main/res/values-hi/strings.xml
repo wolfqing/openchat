@@ -227,4 +227,13 @@
         <item quantity="other">पुल के पार %d लोग</item>
     </plurals>
     <string name="bridge_via">पुल से</string>
+    <string name="cmd_help_diag">/ping @name — आने-जाने का समय · /trace @name — अनुमानित रास्ता (केवल आस-पास)</string>
+    <string name="cmd_ping_started">%1$s को ping कर रहे हैं…</string>
+    <string name="cmd_pong_direct">%1$s से जवाब: %2$d ms · सीधा</string>
+    <string name="cmd_pong_hops">%1$s से जवाब: %2$d ms · हॉप: %3$d</string>
+    <string name="cmd_ping_none">%1$s से कोई जवाब नहीं</string>
+    <string name="cmd_trace_path">अनुमानित रास्ता: %1$s (हॉप: %2$d)</string>
+    <string name="cmd_trace_none">%1$s तक कोई ज्ञात रास्ता नहीं</string>
+    <string name="cmd_trace_you">आप</string>
+    <string name="cmd_pong">%1$s से जवाब: %2$d ms</string>
 </resources>

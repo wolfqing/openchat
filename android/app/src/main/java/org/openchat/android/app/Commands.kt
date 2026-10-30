@@ -27,6 +27,8 @@ object Commands {
         data class GroupRemove(val name: String) : Outcome()
         object GroupLeave : Outcome()
         object GroupList : Outcome()
+        data class Ping(val person: Person) : Outcome()
+        data class Trace(val person: Person) : Outcome()
     }
 
     /** Commands offered as suggestions, by context. */
@@ -34,7 +36,7 @@ object Commands {
         val base = listOf("/msg", "/who", "/clear", "/hug", "/slap", "/block", "/unblock", "/help")
         return when {
             conversation.startsWith("geo:") -> base + "/drop"
-            else -> base + listOf("/fav", "/unfav", "/group")
+            else -> base + listOf("/fav", "/unfav", "/group", "/ping", "/trace")
         }
     }
 
@@ -91,6 +93,12 @@ object Commands {
                     "list" -> Outcome.GroupList
                     else -> Outcome.Local(Note.USAGE, "/group create | invite | remove | leave | list")
                 }
+            }
+            "/ping", "/trace" -> {
+                if (geo) return Outcome.Local(Note.MESH_ONLY)
+                val p = find(targetName) ?: dmPeer?.takeIf { targetName.isEmpty() }
+                    ?: return if (targetName.isEmpty()) Outcome.Local(Note.USAGE, "$cmd @name") else Outcome.Local(Note.NOT_FOUND, targetName)
+                if (cmd == "/ping") Outcome.Ping(p) else Outcome.Trace(p)
             }
             "/drop" -> if (args.isEmpty()) Outcome.Local(Note.USAGE, "/drop message") else Outcome.Drop(args)
             else -> Outcome.Local(Note.UNKNOWN, cmd)

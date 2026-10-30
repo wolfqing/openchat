@@ -57,6 +57,9 @@ data class MeshPeer(
     val fingerprint: String get() = org.openchat.android.core.sha256(noisePublicKey).toHex()
 }
 
+/** A pong: round trip in milliseconds, and links crossed on the way back when the TTLs add up. */
+data class PingResult(val rttMs: Long, val hops: Int?)
+
 interface MeshListener {
     fun onPeersChanged(peers: List<MeshPeer>) {}
     /** [replayed]: it came from history sync (§14) rather than live. */
@@ -116,6 +119,7 @@ class MeshEngine(
         var announce: Packet? = null, // latest verified announce, served to sync requests (§14.4)
         var capabilities: Long = 0,
         var bridgeCell: String? = null, // the rendezvous cell a bridge phone advertises (§24.2)
+        var neighbors: Set<String> = emptySet(), // peer IDs its announce claims as direct links, for /trace (§25.2)
     )
 
     private class Session(val handshake: HandshakeXX?, val startedAt: Long) {
@@ -152,6 +156,10 @@ class MeshEngine(
     private val acked = LinkedHashMap<String, Int>() // message ID -> best receipt seen (1 delivered, 2 read)
     private val pendingAcks = HashMap<String, MutableSet<String>>()
     private val pendingVerify = HashMap<String, ByteArray>() // peer hex -> challenge nonce
+    // Mesh diagnostics (§25): outstanding pings by nonce, and the pong budget per ingress link.
+    private class Probe(val peerHex: String, val sentAt: Long, val timeout: Cancellable, val done: (PingResult?) -> Unit)
+    private val probes = HashMap<String, Probe>()
+    private val pingReplies = HashMap<String, ArrayDeque<Long>>()
     private val peerCaps = HashMap<String, Long>() // from authenticated peer state, per peer (§18.2)
     // History sync (§14).
     private val history = LinkedHashMap<String, Packet>() // packet ID hex -> verified public message
@@ -214,6 +222,7 @@ class MeshEngine(
         peers.clear(); sessions.values.forEach { it.wipe() }; sessions.clear(); candidates.clear(); pendingNoise.clear(); lastHandshakeStart.clear(); earlyCiphertexts.clear()
         known.clear(); outbox.clear(); carried.clear(); seenIds.clear(); acked.clear(); pendingAcks.clear()
         history.clear(); groupHistory.clear(); board.clear(); pendingVerify.clear(); peerCaps.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
+        probes.values.forEach { it.timeout.cancel() }; probes.clear(); pingReplies.clear()
         pendingRelays.values.forEach { it.cancel() }; pendingRelays.clear()
         dedup.clear()
         assembler = FragmentAssembler(clock = scheduler::now)
@@ -251,6 +260,7 @@ class MeshEngine(
 
     fun onLinkDown(linkId: String) {
         val link = links.remove(linkId) ?: return
+        pingReplies.remove(linkId)
         link.peerHex?.let { hex -> peers[hex]?.directLinks?.remove(linkId) }
         publishPeers()
     }
@@ -415,6 +425,8 @@ class MeshEngine(
                 }
                 if (p.isBroadcast) listener.onCarrier(senderHex, p.payload, directed = false)
             }
+            MessageType.PING -> if (forMe) { handlePing(p, linkId); return }
+            MessageType.PONG -> if (forMe) { handlePong(p); return }
             MessageType.FILE_TRANSFER -> if (p.isBroadcast || forMe) { if (!handleFile(p, forMe)) return; if (forMe) return }
         }
         // Reassembled packets were already relayed as fragments.
@@ -454,6 +466,7 @@ class MeshEngine(
         state.lastSeen = now
         state.capabilities = a.capabilities ?: 0
         state.bridgeCell = a.bridgeGeohash?.takeIf { it.isNotEmpty() }
+        state.neighbors = a.directNeighbors.map { it.toHex() }.toSet()
         if ((state.announce?.timestamp ?: 0) <= p.timestamp) state.announce = p
         // An announce at full TTL straight off a link came from that link's device.
         var newlyDirect = false
@@ -568,6 +581,77 @@ class MeshEngine(
             courierPacket(env.withCopies(1).encode() ?: return, hex)?.let { sendOnDirectLink(hex, it) }
             return
         }
+    }
+
+    // ---------------------------------------------------------------- diagnostics (§25)
+
+    /**
+     * Sends an unsigned ping to [peerHex]; [done] runs once on the engine thread, with the
+     * round trip, or with null when no pong came back in time.
+     */
+    fun ping(peerHex: String, done: (PingResult?) -> Unit) {
+        val nonce = ByteArray(PING_NONCE).also { random.nextBytes(it) }
+        val key = nonce.toHex()
+        val now = scheduler.now()
+        val timeout = scheduler.schedule(PING_TIMEOUT_MS) { probes.remove(key)?.done?.invoke(null) }
+        probes[key] = Probe(peerHex, now, timeout, done)
+        val payload = nonce + byteArrayOf(Packet.DEFAULT_TTL.toByte())
+        sendDirected(peerHex, Packet(type = MessageType.PING, senderId = identity.peerId, recipientId = peerHex.hexToBytes(), timestamp = now, payload = payload))
+    }
+
+    private fun handlePing(p: Packet, linkId: String?) {
+        if (p.payload.size < PING_NONCE + 1) return
+        // Pings are unsigned, so the claimed sender is anyone's to forge: the budget follows
+        // the link the ping came in on, or one neighbour could make us pong without end.
+        val link = linkId ?: return
+        val now = scheduler.now()
+        val times = pingReplies.getOrPut(link) { ArrayDeque() }
+        while (times.isNotEmpty() && now - times.first() > PING_REPLY_WINDOW_MS) times.removeFirst()
+        if (times.size >= PING_REPLY_LIMIT) return
+        times.addLast(now)
+        val payload = p.payload.copyOfRange(0, PING_NONCE) + byteArrayOf(Packet.DEFAULT_TTL.toByte())
+        sendDirected(p.senderId.toHex(), Packet(type = MessageType.PONG, senderId = identity.peerId, recipientId = p.senderId, timestamp = now, payload = payload))
+    }
+
+    private fun handlePong(p: Packet) {
+        if (p.payload.size < PING_NONCE + 1) return
+        val key = p.payload.copyOfRange(0, PING_NONCE).toHex()
+        // The nonce only we know, from the peer we asked.
+        if (probes[key]?.peerHex != p.senderId.toHex()) return
+        val probe = probes.remove(key)!!
+        probe.timeout.cancel()
+        val origin = p.payload[PING_NONCE].toInt() and 0xFF
+        val hops = if (origin >= p.ttl) origin - p.ttl + 1 else null
+        probe.done(PingResult(maxOf(0, scheduler.now() - probe.sentAt), hops))
+    }
+
+    /**
+     * An estimated path to [peerHex]: the peers in between, empty when it is a neighbour,
+     * null when no path is known. Built from the neighbour lists other phones announce; a
+     * link claimed by either end counts, since openchat phones send no list (§25.2).
+     */
+    fun estimatePath(peerHex: String): List<String>? {
+        fun direct(hex: String) = peers[hex]?.directLinks?.any { links.containsKey(it) } == true
+        if (direct(peerHex)) return emptyList()
+        val adjacent = HashMap<String, MutableSet<String>>()
+        for ((hex, s) in peers) for (n in s.neighbors) {
+            adjacent.getOrPut(hex) { mutableSetOf() }.add(n)
+            adjacent.getOrPut(n) { mutableSetOf() }.add(hex)
+        }
+        val from = HashMap<String, String?>()
+        var frontier = peers.keys.filter(::direct)
+        frontier.forEach { from[it] = null }
+        repeat(MAX_TRACE_HOPS) {
+            val next = ArrayList<String>()
+            for (hex in frontier) for (n in adjacent[hex].orEmpty()) {
+                if (n in from || n == myPeerHex) continue
+                from[n] = hex
+                if (n == peerHex) return generateSequence(hex) { from[it] }.toList().reversed()
+                next.add(n)
+            }
+            frontier = next
+        }
+        return null
     }
 
     // ---------------------------------------------------------------- notice board (§23)
@@ -1157,6 +1241,11 @@ class MeshEngine(
         private const val HISTORY_MAX_AGE_MS = 900_000L
         private const val FUTURE_SKEW_MS = 120_000L
         private const val SYNC_INTERVAL_MS = 15_000L
+        private const val PING_NONCE = 8
+        private const val PING_TIMEOUT_MS = 10_000L
+        private const val PING_REPLY_LIMIT = 5
+        private const val PING_REPLY_WINDOW_MS = 10_000L
+        private const val MAX_TRACE_HOPS = 6
         private const val INITIAL_SYNC_DELAY_MS = 5_000L
         private const val SYNC_REPLY_WINDOW_MS = 30_000L
         private const val SYNC_REPLY_LIMIT = 8

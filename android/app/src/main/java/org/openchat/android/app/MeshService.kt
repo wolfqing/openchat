@@ -568,6 +568,24 @@ class MeshService : Service(), ChatController {
         }.sortedWith(compareByDescending<BoardItem> { it.urgent }.thenByDescending { it.createdAt }))
     }
 
+    override fun ping(peerHex: String, label: String, conversation: String) {
+        handler.post {
+            engine.ping(peerHex) { r ->
+                ChatRepository.addLocal(conversation, when {
+                    r == null -> getString(R.string.cmd_ping_none, label)
+                    r.hops == null -> getString(R.string.cmd_pong, label, r.rttMs.toInt())
+                    r.hops == 1 -> getString(R.string.cmd_pong_direct, label, r.rttMs.toInt())
+                    else -> getString(R.string.cmd_pong_hops, label, r.rttMs.toInt(), r.hops)
+                })
+            }
+        }
+    }
+
+    override fun estimatePath(peerHex: String): List<String>? = java.util.concurrent.FutureTask {
+        val names = engine.peersSnapshot().associate { it.peerIdHex to it.nickname }
+        engine.estimatePath(peerHex)?.map { hex -> PeerLabel.mesh(names[hex], hex).toString() }
+    }.also { handler.post(it) }.get()
+
     override fun createGroup(name: String): String? =
         java.util.concurrent.FutureTask { groups.create(name) }.also { handler.post(it) }.get()
     override fun groupInvite(idHex: String, peerHex: String) { handler.post { groups.invite(idHex, peerHex) } }
