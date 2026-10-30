@@ -650,4 +650,22 @@ class MeshEngineTest {
         // Vouching is part of what a phone announces it can do.
         assertTrue(bob.capabilitiesOf(alice.myPeerHex) and MeshEngine.CAP_VOUCH != 0L)
     }
+
+    @Test
+    fun mailForAnAbsentPeerIsSealedToAOneTimePrekey() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "carol").forEach { net.node(it).start() }
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        net.connect("alice", "carol"); net.scheduler.advance(10_000)
+        net.disconnect("alice", "carol"); net.scheduler.advance(70_000)
+        alice.sendPrivate(carol.myPeerHex, "forward secret")
+        val drop = net.recorders["alice"]!!.drops.single()
+        assertTrue("sealed to carol's prekey", org.openchat.android.core.CourierEnvelope.decode(drop)!!.prekeyId != null)
+        carol.receiveDrop(drop)
+        assertEquals(listOf("forward secret"), net.recorders["carol"]!!.privates.map { it.second })
+        // Bundles and spent keys survive a restart of the sealed state.
+        val restored = MeshState.deserialize(alice.exportState().serialize())!!
+        assertEquals(1, restored.bundles.size)
+        assertTrue(restored.localPrekeys != null)
+    }
 }

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- One-time prekeys, compatible with bitchat ([spec §27](docs/protocol-spec.md)).
+  Each phone publishes eight single-use keys that spread like board posts.
+  Mail for someone out of reach, whether carried by other phones or parked
+  on relays, is now sealed to one of their single-use keys when one is
+  known, and that key is deleted two days after the mail is opened, so
+  stealing the phone later does not unlock mail captured on the way.
+  Opening bitchat's forward-secret mail works too.
+- 4 new tests.
+
 - Vouching, compatible with bitchat ([spec §26](docs/protocol-spec.md)).
   People you verified in person also tell your phone, over an encrypted
   session and at most once a day, whom they verified; those people get a

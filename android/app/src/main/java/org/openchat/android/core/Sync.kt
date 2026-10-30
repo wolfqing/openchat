@@ -125,6 +125,7 @@ object SyncTypes {
     const val MESSAGE = 2L
     const val PUBLIC = ANNOUNCE or MESSAGE
     const val BOARD = 1L shl 8
+    const val PREKEY = 1L shl 9
     const val GROUP = 1L shl 10
 
     fun encode(flags: Long): ByteArray? {

@@ -996,7 +996,48 @@ verified by us and it must be under 30 days old. Shown as a grey ✓ and as
 "verified by …" on the person. Kept in the sealed social state and wiped
 by the triple tap.
 
-openchat now announces capability bits 3 (groups), 4 (board), 5 (vouch),
+openchat now announces capability bits 0 (prekeys, §27), 3 (groups), 4 (board), 5 (vouch),
 6 (diagnostics) and 8 (private media), plus 7 and 2 while bridging or
 serving as a gateway, both in the announce and in the in-session peer state.
+
+## 27. One-time prekeys (v0.6)
+
+Courier mail (§13) sealed to someone's static key can be read by whoever
+later steals that key. A prekey bundle publishes up to eight X25519 keys
+that are deleted after use, so mail sealed to one of them is forward
+secret.
+
+### 27.1 Bundle (`0x24` payload)
+
+TLVs with 1-byte type and 2-byte BE length, unknown types skipped: `0x01`
+owner Noise static key (32), `0x02` entries, each a 4-byte BE ID and a
+32-byte key (1–8 entries, IDs distinct), `0x03` generated-at (8, BE ms),
+`0x04` Ed25519 signature (64) by the owner over: 1-byte length and
+`"bitchat-prekey-bundle-v1"`, the owner key, the entry count (1 byte), each
+ID and key, the generated-at time. The packet is a signed broadcast from
+the owner (TTL 7); it rides with announces at most hourly, at once when the
+bundle changes, and syncs as type bit 9 (§14.3) for a day, ignoring the
+since cursor.
+
+Accepting: the packet's sender ID must be the owner's peer ID, and both
+the bundle and packet signatures must verify under the signing key the
+owner's announce bound to that Noise key; a bundle that arrives first waits
+(64 owners at most) for that announce. Newest generated-at per owner wins;
+200 owners at most, least recently updated evicted.
+
+### 27.2 Sealing and opening
+
+Sealing courier mail, including bridge drops (§24.4): if a verified bundle
+for the recipient is under 7 days old, the message is sealed with Noise X
+to the lowest unused prekey, with prologue `"bitchat-prekey-v1"` ‖ BE32(ID),
+and the envelope carries TLV `0x05` = ID (envelope v2). Each message keeps
+its assigned prekey for every re-deposit. A recipient currently on the mesh
+whose announce lacks capability bit 0 gets static sealing (§13.2) instead.
+The recipient tag stays the static-key tag.
+
+Our own prekeys: eight unspent, topped back up when fewer than three
+remain; opening mail sealed to one marks it spent and republishes the
+bundle under a newer time. A spent key's private half is kept 48 h for
+redelivered copies, an unspent one 30 days. Privates live in the sealed
+mesh state and die with the triple tap. Capability bit 0 is announced.
 

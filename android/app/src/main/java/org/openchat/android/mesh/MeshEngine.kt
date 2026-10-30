@@ -11,6 +11,9 @@ import org.openchat.android.core.FilePacket
 import org.openchat.android.core.FragmentAssembler
 import org.openchat.android.core.Fragmenter
 import org.openchat.android.core.GcsFilter
+import org.openchat.android.core.LocalPrekeys
+import org.openchat.android.core.PrekeyBundle
+import org.openchat.android.core.PrekeyCache
 import org.openchat.android.core.MessageType
 import org.openchat.android.core.PacketId
 import org.openchat.android.core.AuthPeerState
@@ -167,6 +170,12 @@ class MeshEngine(
     private val history = LinkedHashMap<String, Packet>() // packet ID hex -> verified public message
     private val board = BoardStore(scheduler::now)
     private val groupHistory = LinkedHashMap<String, Packet>() // packet ID hex -> sealed group message (§22.3)
+    // One-time prekeys (§27).
+    private val localPrekeys = LocalPrekeys(scheduler::now)
+    private val prekeyCache = PrekeyCache(scheduler::now)
+    private val pendingBundles = LinkedHashMap<String, Packet>() // owner peer hex -> bundle waiting for its announce
+    private var myBundle: Packet? = null
+    private var lastBundleSent = 0L
     private var myAnnounce: Packet? = null
     private val pendingSync = HashMap<String, Long>()     // peer hex -> when we last asked it
     private val syncReplies = HashMap<String, ArrayList<Long>>() // peer hex -> times we answered it
@@ -190,7 +199,10 @@ class MeshEngine(
     val sessionCount get() = sessions.size + candidates.size
     val knownCount get() = known.size
 
-    fun exportState() = MeshState(HashMap(known), outbox.values.toList(), carried.toList(), history.values.toList(), board.entries())
+    fun exportState() = MeshState(
+        HashMap(known), outbox.values.toList(), carried.toList(), history.values.toList(), board.entries(),
+        localPrekeys.serialize(), prekeyCache.all().map { MeshState.StoredBundle(it.packet, it.used.toSet(), it.assigned.toMap()) },
+    )
 
     fun importState(s: MeshState) {
         known.putAll(s.known)
@@ -199,6 +211,13 @@ class MeshEngine(
         s.history.forEach { storeHistory(it) }
         // Re-verified on the way in: the file is ours, but the posts came from strangers.
         s.board.forEach { e -> Board.decode(e.packet.payload)?.takeIf(::boardSigned)?.let { board.ingest(it, e.packet, e.retainUntil) } }
+        s.localPrekeys?.let { localPrekeys.restore(it) }
+        // Re-verified on the way in, like board posts.
+        for (b in s.bundles) {
+            val bundle = PrekeyBundle.decode(b.packet.payload) ?: continue
+            val key = known[Identity.peerIdFor(bundle.noiseKey).toHex()]?.takeIf { it.noiseKey.contentEquals(bundle.noiseKey) }?.signingKey ?: continue
+            if (bundle.verify(key) && verify(b.packet, key)) prekeyCache.ingest(bundle, b.packet, b.used, b.assigned)
+        }
         prune(scheduler.now())
     }
 
@@ -225,6 +244,7 @@ class MeshEngine(
         known.clear(); outbox.clear(); carried.clear(); seenIds.clear(); acked.clear(); pendingAcks.clear()
         history.clear(); groupHistory.clear(); board.clear(); pendingVerify.clear(); peerCaps.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
         probes.values.forEach { it.timeout.cancel() }; probes.clear(); pingReplies.clear()
+        localPrekeys.clear(); prekeyCache.clear(); pendingBundles.clear(); myBundle = null; lastBundleSent = 0
         pendingRelays.values.forEach { it.cancel() }; pendingRelays.clear()
         dedup.clear()
         assembler = FragmentAssembler(clock = scheduler::now)
@@ -345,6 +365,7 @@ class MeshEngine(
         dedup.markIfNew(Deduplicator.key(p))
         myAnnounce = p
         lastAnnounce = now
+        sendPrekeyBundle(force = false)
         nextAnnounceDue = now + when {
             links.isEmpty() -> 4_000L
             links.size >= RelayPolicy.HIGH_DEGREE -> 30_000L + random.nextLong(-8_000, 8_001)
@@ -427,6 +448,7 @@ class MeshEngine(
                 }
                 if (p.isBroadcast) listener.onCarrier(senderHex, p.payload, directed = false)
             }
+            MessageType.PREKEY_BUNDLE -> if (p.isBroadcast && !handlePrekeyBundle(p)) return
             MessageType.PING -> if (forMe) { handlePing(p, linkId); return }
             MessageType.PONG -> if (forMe) { handlePong(p); return }
             MessageType.FILE_TRANSFER -> if (p.isBroadcast || forMe) { if (!handleFile(p, forMe)) return; if (forMe) return }
@@ -483,6 +505,7 @@ class MeshEngine(
             }
         }
         if (changed) publishPeers()
+        pendingBundles.remove(hex)?.let { handlePrekeyBundle(it) }
         flushIfPossible(hex)
         remember(hex, a.noisePublicKey, a.signingPublicKey, a.nickname, now)
         if (existing == null || newlyDirect) { flushOutboxTo(hex); flushAcksTo(hex) }
@@ -547,7 +570,7 @@ class MeshEngine(
     }
 
     /** What we can do, as announced (§4) and stated in-session (§18.2). */
-    private val myCapabilities get() = CAP_PRIVATE_MEDIA or CAP_GROUPS or CAP_BOARD or CAP_VOUCH or CAP_DIAGNOSTICS or
+    private val myCapabilities get() = CAP_PREKEYS or CAP_PRIVATE_MEDIA or CAP_GROUPS or CAP_BOARD or CAP_VOUCH or CAP_DIAGNOSTICS or
         (if (bridgeCell != null) CAP_BRIDGE else 0L) or (if (gateway) CAP_GATEWAY else 0L)
 
     /** Capability bits from a peer's announce; 0 when it announced none. */
@@ -609,6 +632,47 @@ class MeshEngine(
             return
         }
     }
+
+    // ---------------------------------------------------------------- prekeys (§27)
+
+    /** Broadcasts our signed bundle: with announces at most hourly, at once when it changed. */
+    private fun sendPrekeyBundle(force: Boolean) {
+        val now = scheduler.now()
+        if (links.isEmpty()) return // nobody to hear it yet; the first neighbour gets it with the next announce
+        if (!force && myBundle != null && now - lastBundleSent < BUNDLE_REBROADCAST_MS) return
+        localPrekeys.replenish()
+        val keys = localPrekeys.bundleKeys()
+        val payload = PrekeyBundle.signed(identity.noise.publicKey, keys, localPrekeys.generatedAt, identity.signing).encode() ?: return
+        val p = sign(Packet(type = MessageType.PREKEY_BUNDLE, senderId = identity.peerId, timestamp = now, payload = payload)) ?: return
+        lastBundleSent = now
+        myBundle = p
+        dedup.markIfNew(Deduplicator.key(p))
+        broadcast(p, exclude = null)
+    }
+
+    /**
+     * A gossiped bundle. The packet must come from the bundle's owner, and both the bundle and
+     * the packet must verify under the signing key the owner's announce bound; one that arrives
+     * before that announce waits for it.
+     */
+    private fun handlePrekeyBundle(p: Packet): Boolean {
+        val bundle = PrekeyBundle.decode(p.payload) ?: return false
+        if (bundle.noiseKey.contentEquals(identity.noise.publicKey)) return false
+        val owner = Identity.peerIdFor(bundle.noiseKey).toHex()
+        if (p.senderId.toHex() != owner) return false
+        val key = peers[owner]?.takeIf { it.noiseKey.contentEquals(bundle.noiseKey) }?.signingKey
+            ?: known[owner]?.takeIf { it.noiseKey.contentEquals(bundle.noiseKey) }?.signingKey
+        if (key == null) {
+            if (owner in pendingBundles || pendingBundles.size < PENDING_BUNDLES) pendingBundles[owner] = p
+            return false
+        }
+        if (!bundle.verify(key) || !verify(p, key)) return false
+        prekeyCache.ingest(bundle, p)
+        return true
+    }
+
+    private fun bundlePackets(now: Long): List<Packet> =
+        (listOfNotNull(myBundle) + prekeyCache.all().map { it.packet }).filter { now - it.timestamp <= BUNDLE_SYNC_AGE_MS }
 
     // ---------------------------------------------------------------- diagnostics (§25)
 
@@ -805,6 +869,7 @@ class MeshEngine(
         history.values.filterTo(out) { isFresh(it, now) }
         groupHistory.values.filterTo(out) { isFresh(it, now) }
         out.addAll(board.packets())
+        bundlePackets(now).forEach { out.add(it) }
         out.sortByDescending { it.timestamp }
         return out
     }
@@ -865,6 +930,8 @@ class MeshEngine(
             if (request.since != null && b.timestamp < request.since) continue
             if (missing(b)) replies.add(b)
         }
+        // Prekey bundles, like announces, ignore the since cursor; a day is their window.
+        if (request.wants(SyncTypes.PREKEY)) bundlePackets(now).filterTo(replies, ::missing)
         for (r in replies) sendOn(listOf(linkId), r.copy(ttl = 0, isRsr = true))
     }
 
@@ -1101,8 +1168,16 @@ class MeshEngine(
     }
 
     private fun seal(q: QueuedMessage, recipientKey: ByteArray, now: Long, copies: Int): ByteArray? {
-        val ct = try { NoiseX.seal(identity.noise, recipientKey, COURIER_PROLOGUE, q.plaintext) } catch (e: Exception) { return null }
-        val env = CourierEnvelope(CourierEnvelope.recipientTag(recipientKey, CourierEnvelope.epochDay(now)), now + CourierEnvelope.LIFETIME_MS, ct, copies)
+        // A fresh prekey of theirs gives forward secrecy (envelope v2); a peer on the mesh that
+        // does not announce prekeys vetoes it, since a cached bundle can outlive its keys (§27).
+        val hex = Identity.peerIdFor(recipientKey).toHex()
+        val veto = peers[hex]?.let { it.capabilities and CAP_PREKEYS == 0L } == true
+        val prekey = if (veto) null else prekeyCache.assign(q.messageId, recipientKey)
+        val ct = try {
+            if (prekey != null) NoiseX.seal(identity.noise, prekey.publicKey, PrekeyBundle.prologue(prekey.id), q.plaintext)
+            else NoiseX.seal(identity.noise, recipientKey, COURIER_PROLOGUE, q.plaintext)
+        } catch (e: Exception) { return null }
+        val env = CourierEnvelope(CourierEnvelope.recipientTag(recipientKey, CourierEnvelope.epochDay(now)), now + CourierEnvelope.LIFETIME_MS, ct, copies, prekey?.id)
         return env.encode()
     }
 
@@ -1173,8 +1248,13 @@ class MeshEngine(
     }
 
     private fun open(env: CourierEnvelope) {
-        if (env.prekeyId != null) return // envelope v2: sealed to a prekey we do not have
-        val opened = try { NoiseX.open(identity.noise, COURIER_PROLOGUE, env.ciphertext) } catch (e: Exception) { return }
+        val prekeyId = env.prekeyId
+        val opened = try {
+            if (prekeyId == null) NoiseX.open(identity.noise, COURIER_PROLOGUE, env.ciphertext)
+            else NoiseX.open(localPrekeys.keyPair(prekeyId) ?: return, PrekeyBundle.prologue(prekeyId), env.ciphertext)
+        } catch (e: Exception) { return }
+        // Spending a prekey shrinks our bundle: publish the new one so nobody seals to the spent key again.
+        if (prekeyId != null && localPrekeys.markConsumed(prekeyId)) { localPrekeys.replenish(); sendPrekeyBundle(force = true) }
         val payload = NoisePayload.decode(opened.payload) ?: return
         if (payload.type != NoisePayloadType.PRIVATE_MESSAGE) return
         val pm = PrivateMessage.decode(payload.body) ?: return
@@ -1271,16 +1351,20 @@ class MeshEngine(
         private const val HISTORY_CAP = 1000
         private const val GROUP_HISTORY_CAP = 200
         const val CAP_BRIDGE = 1L shl 7
+        const val CAP_PREKEYS = 1L shl 0
         const val CAP_GATEWAY = 1L shl 2
         const val CAP_GROUPS = 1L shl 3
         const val CAP_BOARD = 1L shl 4
         const val CAP_VOUCH = 1L shl 5
         const val CAP_DIAGNOSTICS = 1L shl 6
         private const val CAP_PRIVATE_MEDIA = AuthPeerState.CAP_PRIVATE_MEDIA
-        private val SYNC_TYPES = SyncTypes.PUBLIC or SyncTypes.GROUP or SyncTypes.BOARD
+        private val SYNC_TYPES = SyncTypes.PUBLIC or SyncTypes.GROUP or SyncTypes.BOARD or SyncTypes.PREKEY
         private const val HISTORY_MAX_AGE_MS = 900_000L
         private const val FUTURE_SKEW_MS = 120_000L
         private const val SYNC_INTERVAL_MS = 15_000L
+        private const val BUNDLE_REBROADCAST_MS = 3600_000L
+        private const val BUNDLE_SYNC_AGE_MS = 24 * 3600_000L
+        private const val PENDING_BUNDLES = 64
         private const val PING_NONCE = 8
         private const val PING_TIMEOUT_MS = 10_000L
         private const val PING_REPLY_LIMIT = 5
