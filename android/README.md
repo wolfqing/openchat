@@ -50,7 +50,7 @@ echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
 
 The APK lands in `app/build/outputs/apk/debug/app-debug.apk`. Previews are
 published from `./gradlew :app:assembleRelease` (R8-shrunk, ARM only, about
-9.5 MB, signed with the local debug key). minSdk 26
+9.5 MB). minSdk 26
 (Android 8.0), targetSdk 35.
 
 ## Tests
@@ -86,5 +86,9 @@ published from `./gradlew :app:assembleRelease` (R8-shrunk, ARM only, about
   the sender. The same trade-off bitchat makes for delivery rate. Nothing
   about carried mail for others is shown to the carrier beyond a count.
 - **Android lint**: no errors; warnings remain (dependency versions, obsolete SDK checks, monochrome icon).
-- The debug APK is signed with a local debug key, so a later release build
-  will not install over it.
+- Signing. Release builds read `android/keystore.properties` (git-ignored):
+  `storeFile`, `storePassword`, `keyAlias`, `keyPassword`. Keep the keystore
+  and that file backed up outside the repository; losing them means every
+  user reinstalls. Without the file, `assembleRelease` falls back to the
+  debug key. Previews up to v0.5.0 were debug-signed and must be
+  uninstalled before a release-signed build installs.

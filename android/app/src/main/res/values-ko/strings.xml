@@ -106,7 +106,7 @@
     <string name="verify_badge_off">확인되지 않음. 이 지문을 직접 대조하세요:</string>
     <string name="verify_mark">일치함, 확인됨으로 표시</string>
     <string name="verify_unmark">확인 취소</string>
-    <string name="cmd_help">/msg @이름 [메시지] — 개인 채팅\n/who — 여기 있는 사람\n/clear — 이 채팅 비우기\n/hug @이름 · /slap @이름\n/block @이름 · /unblock @이름\n/fav @이름 · /unfav @이름 — 즐겨찾기(근처만)\n/help — 이 목록</string>
+    <string name="cmd_help">/msg @이름 [메시지] — 개인 채팅\n/who — 여기 있는 사람\n/clear — 이 채팅 비우기\n/hug @이름 · /slap @이름\n/block @이름 · /unblock @이름\n/fav @이름 · /unfav @이름 — 즐겨찾기(근처만)\n/drop 내용 — 여기에 메모 남기기(위치 채널만)\n/help — 이 목록</string>
     <string name="cmd_who">여기 있음: %1$s</string>
     <string name="cmd_who_none">지금 여기에 다른 사람이 없습니다</string>
     <string name="cmd_not_found">%1$s 님이 여기 없습니다</string>

@@ -114,7 +114,7 @@
     <string name="verify_badge_off">Sin verificar. Compara esta huella en persona:</string>
     <string name="verify_mark">Coinciden, marcar como verificado</string>
     <string name="verify_unmark">Quitar verificación</string>
-    <string name="cmd_help">/msg @nombre [mensaje] — chat privado\n/who — quién está aquí\n/clear — vaciar este chat\n/hug @nombre · /slap @nombre\n/block @nombre · /unblock @nombre\n/fav @nombre · /unfav @nombre — favoritos (solo cerca)\n/help — esta lista</string>
+    <string name="cmd_help">/msg @nombre [mensaje] — chat privado\n/who — quién está aquí\n/clear — vaciar este chat\n/hug @nombre · /slap @nombre\n/block @nombre · /unblock @nombre\n/fav @nombre · /unfav @nombre — favoritos (solo cerca)\n/drop texto — dejar una nota aquí (solo canales de lugar)\n/help — esta lista</string>
     <string name="cmd_who">aquí: %1$s</string>
     <string name="cmd_who_none">ahora no hay nadie más aquí</string>
     <string name="cmd_not_found">%1$s no está aquí</string>

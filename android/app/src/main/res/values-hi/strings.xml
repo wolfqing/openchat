@@ -110,7 +110,7 @@
     <string name="verify_badge_off">सत्यापित नहीं। यह फ़िंगरप्रिंट आमने-सामने मिलाएँ:</string>
     <string name="verify_mark">मेल खाते हैं, सत्यापित चिह्नित करें</string>
     <string name="verify_unmark">सत्यापन हटाएँ</string>
-    <string name="cmd_help">/msg @name [message] — निजी चैट\n/who — यहाँ कौन है\n/clear — यह चैट साफ़ करें\n/hug @name · /slap @name\n/block @name · /unblock @name\n/fav @name · /unfav @name — पसंदीदा (केवल आस-पास)\n/help — यह सूची</string>
+    <string name="cmd_help">/msg @name [message] — निजी चैट\n/who — यहाँ कौन है\n/clear — यह चैट साफ़ करें\n/hug @name · /slap @name\n/block @name · /unblock @name\n/fav @name · /unfav @name — पसंदीदा (केवल आस-पास)\n/drop पाठ — यहाँ एक नोट छोड़ें (केवल स्थान चैनल)\n/help — यह सूची</string>
     <string name="cmd_who">यहाँ: %1$s</string>
     <string name="cmd_who_none">अभी यहाँ कोई और नहीं है</string>
     <string name="cmd_not_found">%1$s यहाँ नहीं है</string>

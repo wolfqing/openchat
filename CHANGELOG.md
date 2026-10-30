@@ -165,6 +165,15 @@ Fixes from the 2026-10-29 code review. None change the wire format.
   replayed two days of envelopes and each got a fresh receipt, which also
   told the sender when this phone restarted.
 - 104 unit tests in all (10 new).
+- Release builds are signed with a dedicated release key when
+  `android/keystore.properties` is present (git-ignored, see
+  android/README.md). Previews up to v0.5.0 were signed with the build
+  machine's debug key, which cannot be recovered if that machine is lost
+  and would have forced every user to reinstall at some later, worse time.
+  The first release-signed preview will not install over v0.5.0 or
+  earlier: uninstall first. Identity, favorites and verifications are lost
+  with the uninstall; this is the one-time cost of making the switch now.
+- `/help` lists `/drop` in location channels.
 
 ## Android v0.5.0 (preview) — 2026-10-29
 
@@ -247,7 +256,7 @@ Fixes from the 2026-10-29 code review. None change the wire format.
   checked against upstream's draft vectors, but not switched on. Upstream
   has not shipped it in either client, and a rotating ID would make an
   openchat phone invisible to every bitchat phone. 4 new tests.
-- 92 unit tests in all. New dependencies: zxing core and
+- 94 unit tests in all. New dependencies: zxing core and
   zxing-android-embedded (Apache-2.0), tor-android and jtorctl (BSD-3).
 - Smaller download. Previews are now the release build: R8-shrunk
   (classes 11 MB → 1.4 MB), ARM only (the x86_64 Tor library was for the

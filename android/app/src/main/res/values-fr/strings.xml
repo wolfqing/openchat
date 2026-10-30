@@ -114,7 +114,7 @@
     <string name="verify_badge_off">Non vérifié. Comparez cette empreinte en personne :</string>
     <string name="verify_mark">Identiques, marquer comme vérifié</string>
     <string name="verify_unmark">Retirer la vérification</string>
-    <string name="cmd_help">/msg @nom [message] — discussion privée\n/who — qui est là\n/clear — vider cette discussion\n/hug @nom · /slap @nom\n/block @nom · /unblock @nom\n/fav @nom · /unfav @nom — favoris (à proximité)\n/help — cette liste</string>
+    <string name="cmd_help">/msg @nom [message] — discussion privée\n/who — qui est là\n/clear — vider cette discussion\n/hug @nom · /slap @nom\n/block @nom · /unblock @nom\n/fav @nom · /unfav @nom — favoris (à proximité)\n/drop texte — laisser une note ici (canaux de lieu)\n/help — cette liste</string>
     <string name="cmd_who">ici : %1$s</string>
     <string name="cmd_who_none">personne d\'autre ici pour l\'instant</string>
     <string name="cmd_not_found">%1$s n\'est pas là</string>

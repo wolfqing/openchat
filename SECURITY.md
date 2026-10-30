@@ -88,10 +88,19 @@ Every release lists the commit it was built from and the SHA-256 of the APK
 in [CHANGELOG.md](CHANGELOG.md) and in the release notes. Check the hash
 before installing an APK that reached you phone to phone.
 
-Previews are currently signed with a local debug key, which proves nothing
-about who built them. A dedicated release signing key, with its certificate
-fingerprint published here, is a prerequisite for any app store or F-Droid
-listing. Until then, the hash is the only integrity check.
+Builds after v0.5.0 are signed with a dedicated release key. Its
+certificate fingerprint (SHA-256) is:
+
+```
+27:FB:F8:A4:EF:63:19:DE:61:5C:08:D9:B8:A6:76:2E:8E:2D:9F:C5:13:2C:F0:FD:22:A7:5B:4B:6F:96:EE:FE
+```
+
+Check it with `apksigner verify --print-certs <apk>`. Previews up to v0.5.0
+were signed with a local debug key, which proved nothing about who built
+them; a release-signed build does not install over them, so those must be
+uninstalled first. The signing key and its passwords live outside the
+repository. If the key is ever lost or compromised, the fingerprint here
+changes and the release notes say so.
 
 ## What we will never do
 

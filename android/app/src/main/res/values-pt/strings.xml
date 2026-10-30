@@ -114,7 +114,7 @@
     <string name="verify_badge_off">Não verificado. Compare esta impressão pessoalmente:</string>
     <string name="verify_mark">Conferem, marcar como verificado</string>
     <string name="verify_unmark">Remover verificação</string>
-    <string name="cmd_help">/msg @nome [mensagem] — conversa privada\n/who — quem está aqui\n/clear — limpar esta conversa\n/hug @nome · /slap @nome\n/block @nome · /unblock @nome\n/fav @nome · /unfav @nome — favoritos (só por perto)\n/help — esta lista</string>
+    <string name="cmd_help">/msg @nome [mensagem] — conversa privada\n/who — quem está aqui\n/clear — limpar esta conversa\n/hug @nome · /slap @nome\n/block @nome · /unblock @nome\n/fav @nome · /unfav @nome — favoritos (só por perto)\n/drop texto — deixar uma nota aqui (só canais de local)\n/help — esta lista</string>
     <string name="cmd_who">aqui: %1$s</string>
     <string name="cmd_who_none">ninguém mais aqui agora</string>
     <string name="cmd_not_found">%1$s não está aqui</string>
