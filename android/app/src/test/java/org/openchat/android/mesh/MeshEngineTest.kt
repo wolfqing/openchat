@@ -520,4 +520,25 @@ class MeshEngineTest {
         net.scheduler.advance(5_000)
         assertEquals(listOf("alice:first light"), net.recorders["carol"]!!.publics)
     }
+
+    @Test
+    fun boardPostsFloodSyncAndComeDown() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        assertTrue(alice.postToBoard("Water at the north gate until 18:00", urgent = true, days = 1))
+        net.scheduler.advance(5_000)
+        assertEquals(listOf("Water at the north gate until 18:00"), carol.boardPosts().map { it.content })
+        // Someone who arrives later still reads it, past the 15-minute window of chat history.
+        net.scheduler.advance(30 * 60_000L)
+        net.node("dave").start()
+        net.connect("carol", "dave"); net.scheduler.advance(40_000)
+        val dave = net.engines["dave"]!!
+        assertEquals(1, dave.boardPosts().size)
+        // Taking it down spreads the same way, and survives a restart of the board.
+        assertTrue(alice.deleteBoardPost(alice.boardPosts()[0].idHex))
+        net.scheduler.advance(40_000)
+        assertEquals(0, dave.boardPosts().size)
+        val restored = MeshState.deserialize(dave.exportState().serialize())!!
+        assertEquals(1, restored.board.size) // the tombstone, kept until the post would have expired
+    }
 }

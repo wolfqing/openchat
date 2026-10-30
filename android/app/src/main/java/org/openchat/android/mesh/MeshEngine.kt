@@ -1,6 +1,10 @@
 package org.openchat.android.mesh
 
 import org.openchat.android.core.Announcement
+import org.openchat.android.core.Board
+import org.openchat.android.core.BoardPost
+import org.openchat.android.core.BoardStore
+import org.openchat.android.core.BoardTombstone
 import org.openchat.android.core.CourierEnvelope
 import org.openchat.android.core.Deduplicator
 import org.openchat.android.core.FilePacket
@@ -78,6 +82,8 @@ interface MeshListener {
     fun onGroupState(peerHex: String, sessionKey: ByteArray, invite: Boolean, payload: ByteArray) {}
     /** A sealed group message (§22.3); only members can open it. */
     fun onGroupMessage(payload: ByteArray, timestamp: Long) {}
+    /** The board changed (§23). [arrived] is a post first seen just now; [live] is false for synced history. */
+    fun onBoardChanged(arrived: BoardPost?, live: Boolean) {}
 }
 
 /**
@@ -143,6 +149,7 @@ class MeshEngine(
     private val peerCaps = HashMap<String, Long>() // from authenticated peer state, per peer (§18.2)
     // History sync (§14).
     private val history = LinkedHashMap<String, Packet>() // packet ID hex -> verified public message
+    private val board = BoardStore(scheduler::now)
     private val groupHistory = LinkedHashMap<String, Packet>() // packet ID hex -> sealed group message (§22.3)
     private var myAnnounce: Packet? = null
     private val pendingSync = HashMap<String, Long>()     // peer hex -> when we last asked it
@@ -167,13 +174,15 @@ class MeshEngine(
     val sessionCount get() = sessions.size + candidates.size
     val knownCount get() = known.size
 
-    fun exportState() = MeshState(HashMap(known), outbox.values.toList(), carried.toList(), history.values.toList())
+    fun exportState() = MeshState(HashMap(known), outbox.values.toList(), carried.toList(), history.values.toList(), board.entries())
 
     fun importState(s: MeshState) {
         known.putAll(s.known)
         s.outbox.forEach { outbox[it.messageId] = it }
         carried.addAll(s.carried)
         s.history.forEach { storeHistory(it) }
+        // Re-verified on the way in: the file is ours, but the posts came from strangers.
+        s.board.forEach { e -> Board.decode(e.packet.payload)?.takeIf(::boardSigned)?.let { board.ingest(it, e.packet, e.retainUntil) } }
         prune(scheduler.now())
     }
 
@@ -198,7 +207,7 @@ class MeshEngine(
         identity = newIdentity
         peers.clear(); sessions.values.forEach { it.wipe() }; sessions.clear(); candidates.clear(); pendingNoise.clear(); lastHandshakeStart.clear(); earlyCiphertexts.clear()
         known.clear(); outbox.clear(); carried.clear(); seenIds.clear(); acked.clear(); pendingAcks.clear()
-        history.clear(); groupHistory.clear(); pendingVerify.clear(); peerCaps.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
+        history.clear(); groupHistory.clear(); board.clear(); pendingVerify.clear(); peerCaps.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
         pendingRelays.values.forEach { it.cancel() }; pendingRelays.clear()
         dedup.clear()
         assembler = FragmentAssembler(clock = scheduler::now)
@@ -387,6 +396,7 @@ class MeshEngine(
             MessageType.COURIER_ENVELOPE -> if (forMe) { handleCourier(p, linkId); return }
             MessageType.REQUEST_SYNC -> { if (forMe || p.isBroadcast) handleSyncRequest(p, linkId); return }
             MessageType.GROUP_MESSAGE -> if (p.isBroadcast && !handleGroupMessage(p)) return
+            MessageType.BOARD_POST -> if (p.isBroadcast && !handleBoard(p)) return
             MessageType.FILE_TRANSFER -> if (p.isBroadcast || forMe) { if (!handleFile(p, forMe)) return; if (forMe) return }
         }
         // Reassembled packets were already relayed as fragments.
@@ -486,6 +496,57 @@ class MeshEngine(
         return true
     }
 
+    // ---------------------------------------------------------------- notice board (§23)
+
+    fun boardPosts(): List<BoardPost> = board.posts()
+
+    /** Posts on the mesh board; false if the text is empty or over 512 bytes. */
+    fun postToBoard(content: String, urgent: Boolean, days: Int): Boolean {
+        val post = Board.newPost(content, "", identity.nickname, identity.signing, scheduler.now(), days, urgent) ?: return false
+        publishBoard(post, Board.encode(post))
+        listener.onBoardChanged(null, live = true)
+        return true
+    }
+
+    /** Withdraws one of our own posts with a signed tombstone that spreads like the post did. */
+    fun deleteBoardPost(postIdHex: String): Boolean {
+        val post = board.posts().firstOrNull { it.idHex == postIdHex && it.authorKey.contentEquals(identity.signing.publicKey) } ?: return false
+        val t = Board.tombstoneFor(post, identity.signing, scheduler.now())
+        publishBoard(t, Board.encode(t))
+        listener.onBoardChanged(null, live = true)
+        return true
+    }
+
+    private fun publishBoard(item: Any, payload: ByteArray) {
+        val p = sign(Packet(type = MessageType.BOARD_POST, senderId = identity.peerId, timestamp = scheduler.now(), payload = payload)) ?: return
+        dedup.markIfNew(Deduplicator.key(p))
+        board.ingest(item, p)
+        listener.onStateChanged()
+        broadcast(p, exclude = null)
+    }
+
+    private fun boardSigned(item: Any) = (item as? BoardPost)?.verify() ?: (item as? BoardTombstone)?.verify() ?: false
+
+    /** Posts verify by their own signature, so they need no announce. False: invalid or deleted, do not relay. */
+    private fun handleBoard(p: Packet): Boolean {
+        val item = Board.decode(p.payload)?.takeIf(::boardSigned) ?: return false
+        if (item is BoardPost && isBlocked(noiseKeyFor(item.authorKey) ?: ByteArray(0))) return true
+        return when (board.ingest(item, p)) {
+            BoardStore.Result.ACCEPTED -> {
+                listener.onStateChanged()
+                listener.onBoardChanged(item as? BoardPost, live = !p.isRsr)
+                true
+            }
+            BoardStore.Result.DUPLICATE -> true
+            BoardStore.Result.REJECTED -> false
+        }
+    }
+
+    /** The Noise key of whoever announced this signing key, if we know them (for the block list). */
+    private fun noiseKeyFor(signingKey: ByteArray): ByteArray? =
+        peers.values.firstOrNull { it.signingKey.contentEquals(signingKey) }?.noiseKey
+            ?: known.values.firstOrNull { it.signingKey?.contentEquals(signingKey) == true }?.noiseKey
+
     // ---------------------------------------------------------------- groups (§22)
 
     fun sendGroupState(peerHex: String, invite: Boolean, payload: ByteArray) =
@@ -558,6 +619,7 @@ class MeshEngine(
         peers.values.mapNotNullTo(out) { it.announce }
         history.values.filterTo(out) { isFresh(it, now) }
         groupHistory.values.filterTo(out) { isFresh(it, now) }
+        out.addAll(board.packets())
         out.sortByDescending { it.timestamp }
         return out
     }
@@ -573,11 +635,11 @@ class MeshEngine(
         val candidates = syncCandidates(now)
         val p = GcsFilter.deriveP(SYNC_FPR)
         val take = minOf(candidates.size, GcsFilter.estimateMaxElements(SYNC_FILTER_BYTES, p), HISTORY_CAP)
-        val request = if (take == 0) SyncRequest(p, 1, ByteArray(0), SyncTypes.PUBLIC or SyncTypes.GROUP) else {
+        val request = if (take == 0) SyncRequest(p, 1, ByteArray(0), SYNC_TYPES) else {
             val included = candidates.take(take)
             val f = GcsFilter.build(included.map { PacketId.compute(it) }, SYNC_FILTER_BYTES, SYNC_FPR)
             val since = if (f.includedCount in 1 until candidates.size) included[f.includedCount - 1].timestamp else null
-            SyncRequest(f.p, f.m, f.data, SyncTypes.PUBLIC or SyncTypes.GROUP, since)
+            SyncRequest(f.p, f.m, f.data, SYNC_TYPES, since)
         }
         val pkt = sign(Packet(type = MessageType.REQUEST_SYNC, senderId = identity.peerId, recipientId = peerHex.hexToBytes(), timestamp = now, payload = request.encode(), ttl = 0)) ?: return
         pendingSync[peerHex] = now
@@ -613,6 +675,11 @@ class MeshEngine(
         }
         if (request.wants(SyncTypes.MESSAGE)) offer(history.values)
         if (request.wants(SyncTypes.GROUP)) offer(groupHistory.values)
+        // Board posts live for days, past the 900 s window: only their own expiry applies.
+        if (request.wants(SyncTypes.BOARD)) for (b in board.packets()) {
+            if (request.since != null && b.timestamp < request.since) continue
+            if (missing(b)) replies.add(b)
+        }
         for (r in replies) sendOn(listOf(linkId), r.copy(ttl = 0, isRsr = true))
     }
 
@@ -1011,6 +1078,7 @@ class MeshEngine(
         // History sync (§14, §11).
         private const val HISTORY_CAP = 1000
         private const val GROUP_HISTORY_CAP = 200
+        private val SYNC_TYPES = SyncTypes.PUBLIC or SyncTypes.GROUP or SyncTypes.BOARD
         private const val HISTORY_MAX_AGE_MS = 900_000L
         private const val FUTURE_SKEW_MS = 120_000L
         private const val SYNC_INTERVAL_MS = 15_000L

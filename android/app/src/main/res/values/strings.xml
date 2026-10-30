@@ -213,4 +213,22 @@
     <string name="group_joined">%2$s added you to #%1$s</string>
     <string name="group_none">you are in no groups</string>
     <string name="group_open_first">open the group\'s chat first</string>
+    <string name="board_title">Board</string>
+    <string name="board_subtitle">Notices that stay up to a week, passed phone to phone</string>
+    <string name="board_empty">Nothing pinned yet. A notice here reaches everyone nearby, and people who come by later, for up to a week.</string>
+    <string name="board_urgent">URGENT</string>
+    <string name="board_urgent_check">Urgent</string>
+    <plurals name="board_days_left">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+    <string name="board_ends_today">ends today</string>
+    <string name="board_delete">Take down</string>
+    <string name="board_placeholder">Write a notice for everyone nearby…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <string name="board_post">Pin to the board</string>
+    <string name="board_urgent_line">📌 urgent notice from %1$s: %2$s</string>
 </resources>

@@ -203,4 +203,22 @@
     <string name="group_joined">%2$s te añadió a #%1$s</string>
     <string name="group_none">no estás en ningún grupo</string>
     <string name="group_open_first">abre primero el chat del grupo</string>
+    <string name="board_title">Tablón</string>
+    <string name="board_subtitle">Avisos que duran hasta una semana y pasan de teléfono en teléfono</string>
+    <string name="board_empty">Aún no hay nada. Un aviso aquí llega a todos los que estén cerca, y a quienes pasen después, durante hasta una semana.</string>
+    <string name="board_urgent">URGENTE</string>
+    <string name="board_urgent_check">Urgente</string>
+    <plurals name="board_days_left">
+        <item quantity="one">queda %d día</item>
+        <item quantity="other">quedan %d días</item>
+    </plurals>
+    <string name="board_ends_today">termina hoy</string>
+    <string name="board_delete">Retirar</string>
+    <string name="board_placeholder">Escribe un aviso para todos los que estén cerca…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d día</item>
+        <item quantity="other">%d días</item>
+    </plurals>
+    <string name="board_post">Publicar en el tablón</string>
+    <string name="board_urgent_line">📌 aviso urgente de %1$s: %2$s</string>
 </resources>

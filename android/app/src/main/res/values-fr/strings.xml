@@ -203,4 +203,22 @@
     <string name="group_joined">%2$s vous a ajouté à #%1$s</string>
     <string name="group_none">vous n\'êtes dans aucun groupe</string>
     <string name="group_open_first">ouvrez d\'abord la discussion du groupe</string>
+    <string name="board_title">Tableau</string>
+    <string name="board_subtitle">Des annonces qui restent jusqu\'à une semaine, de téléphone en téléphone</string>
+    <string name="board_empty">Rien d\'épinglé pour l\'instant. Une annonce ici atteint tout le monde autour, et ceux qui passent plus tard, pendant une semaine.</string>
+    <string name="board_urgent">URGENT</string>
+    <string name="board_urgent_check">Urgent</string>
+    <plurals name="board_days_left">
+        <item quantity="one">encore %d jour</item>
+        <item quantity="other">encore %d jours</item>
+    </plurals>
+    <string name="board_ends_today">se termine aujourd\'hui</string>
+    <string name="board_delete">Retirer</string>
+    <string name="board_placeholder">Écrivez une annonce pour tout le monde autour…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d jour</item>
+        <item quantity="other">%d jours</item>
+    </plurals>
+    <string name="board_post">Épingler au tableau</string>
+    <string name="board_urgent_line">📌 annonce urgente de %1$s : %2$s</string>
 </resources>

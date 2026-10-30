@@ -195,4 +195,22 @@
     <string name="group_joined">%2$s menambahkan Anda ke #%1$s</string>
     <string name="group_none">Anda belum ada di grup mana pun</string>
     <string name="group_open_first">buka dulu obrolan grupnya</string>
+    <string name="board_title">Papan</string>
+    <string name="board_subtitle">Pengumuman yang bertahan hingga seminggu, berpindah dari ponsel ke ponsel</string>
+    <string name="board_empty">Belum ada yang dipasang. Pengumuman di sini sampai ke semua orang di sekitar, dan yang lewat belakangan, hingga seminggu.</string>
+    <string name="board_urgent">PENTING</string>
+    <string name="board_urgent_check">Penting</string>
+    <plurals name="board_days_left">
+        <item quantity="one">sisa %d hari</item>
+        <item quantity="other">sisa %d hari</item>
+    </plurals>
+    <string name="board_ends_today">berakhir hari ini</string>
+    <string name="board_delete">Turunkan</string>
+    <string name="board_placeholder">Tulis pengumuman untuk semua orang di sekitar…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d hari</item>
+        <item quantity="other">%d hari</item>
+    </plurals>
+    <string name="board_post">Pasang di papan</string>
+    <string name="board_urgent_line">📌 pengumuman penting dari %1$s: %2$s</string>
 </resources>

@@ -199,4 +199,22 @@
     <string name="group_joined">%2$s ने आपको #%1$s में जोड़ा</string>
     <string name="group_none">आप किसी समूह में नहीं हैं</string>
     <string name="group_open_first">पहले समूह की चैट खोलें</string>
+    <string name="board_title">सूचना पट</string>
+    <string name="board_subtitle">एक हफ़्ते तक रहने वाली सूचनाएँ, फ़ोन से फ़ोन तक पहुँचती हुई</string>
+    <string name="board_empty">अभी कुछ नहीं लगा है। यहाँ की सूचना आस-पास सबको, और बाद में आने वालों को एक हफ़्ते तक मिलती है।</string>
+    <string name="board_urgent">ज़रूरी</string>
+    <string name="board_urgent_check">ज़रूरी</string>
+    <plurals name="board_days_left">
+        <item quantity="one">%d दिन बाकी</item>
+        <item quantity="other">%d दिन बाकी</item>
+    </plurals>
+    <string name="board_ends_today">आज खत्म</string>
+    <string name="board_delete">हटाएँ</string>
+    <string name="board_placeholder">आस-पास सबके लिए सूचना लिखें…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d दिन</item>
+        <item quantity="other">%d दिन</item>
+    </plurals>
+    <string name="board_post">सूचना पट पर लगाएँ</string>
+    <string name="board_urgent_line">📌 %1$s की ज़रूरी सूचना: %2$s</string>
 </resources>

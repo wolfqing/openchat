@@ -195,4 +195,22 @@
     <string name="group_joined">%2$s က သင့်ကို #%1$s ထဲ ထည့်ခဲ့သည်</string>
     <string name="group_none">သင် မည်သည့်အုပ်စုတွင်မျှ မရှိပါ</string>
     <string name="group_open_first">အုပ်စုချက်တင်ကို အရင်ဖွင့်ပါ</string>
+    <string name="board_title">ကြော်ငြာဘုတ်</string>
+    <string name="board_subtitle">တစ်ပတ်အထိ ကျန်ပြီး ဖုန်းမှဖုန်းသို့ ကူးသွားသော ကြေညာချက်များ</string>
+    <string name="board_empty">မည်သည့်အရာမျှ မတင်ရသေးပါ။ ဤနေရာရှိ ကြေညာချက်သည် အနီးရှိလူတိုင်းနှင့် နောက်မှ ရောက်လာသူများထံ တစ်ပတ်အထိ ရောက်သည်။</string>
+    <string name="board_urgent">အရေးပေါ်</string>
+    <string name="board_urgent_check">အရေးပေါ်</string>
+    <plurals name="board_days_left">
+        <item quantity="one">%d ရက် ကျန်</item>
+        <item quantity="other">%d ရက် ကျန်</item>
+    </plurals>
+    <string name="board_ends_today">ယနေ့ ကုန်မည်</string>
+    <string name="board_delete">ဖြုတ်ရန်</string>
+    <string name="board_placeholder">အနီးရှိလူတိုင်းအတွက် ကြေညာချက် ရေးရန်…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d ရက်</item>
+        <item quantity="other">%d ရက်</item>
+    </plurals>
+    <string name="board_post">ဘုတ်ပေါ် တင်ရန်</string>
+    <string name="board_urgent_line">📌 %1$s ထံမှ အရေးပေါ်ကြေညာချက်- %2$s</string>
 </resources>

@@ -195,4 +195,22 @@
     <string name="group_joined">%2$s があなたを #%1$s に追加しました</string>
     <string name="group_none">参加しているグループはありません</string>
     <string name="group_open_first">先にグループのチャットを開いてください</string>
+    <string name="board_title">掲示板</string>
+    <string name="board_subtitle">最長1週間残り、端末から端末へ伝わるお知らせ</string>
+    <string name="board_empty">まだ何もありません。ここのお知らせは近くの全員に、あとから来た人にも最長1週間届きます。</string>
+    <string name="board_urgent">緊急</string>
+    <string name="board_urgent_check">緊急</string>
+    <plurals name="board_days_left">
+        <item quantity="one">残り%d日</item>
+        <item quantity="other">残り%d日</item>
+    </plurals>
+    <string name="board_ends_today">今日まで</string>
+    <string name="board_delete">取り下げる</string>
+    <string name="board_placeholder">近くの全員へのお知らせを書く…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d日</item>
+        <item quantity="other">%d日</item>
+    </plurals>
+    <string name="board_post">掲示板に貼る</string>
+    <string name="board_urgent_line">📌 %1$s からの緊急のお知らせ：%2$s</string>
 </resources>

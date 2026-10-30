@@ -75,6 +75,12 @@ data class MeshStatus(
     val storageLocked: Boolean = false, // the saved identity exists but could not be opened; nothing runs until it can
 )
 
+/** A notice-board post as the UI shows it (§23). */
+data class BoardItem(
+    val idHex: String, val nickname: String, val authorKeyHex: String, val content: String,
+    val createdAt: Long, val expiresAt: Long, val urgent: Boolean, val mine: Boolean, val geohash: String,
+)
+
 /** A note left at a place (§17), visible to anyone nearby for 24 hours. */
 data class LocationNote(val id: String, val pubkey: String, val nickname: String, val text: String, val createdAt: Long, val geohash: String, val mine: Boolean)
 
@@ -112,6 +118,8 @@ interface ChatController {
     fun groupRemove(idHex: String, fingerprint: String)
     fun groupLeave(idHex: String)
     fun sendGroup(idHex: String, text: String)
+    fun postToBoard(text: String, urgent: Boolean, days: Int): Boolean
+    fun deleteBoardPost(idHex: String)
     /** Leaves a note at the device's building-level cell; false when the place is unknown. */
     fun dropNote(text: String): Boolean
     fun watchNotes(cell: String?)
@@ -181,6 +189,14 @@ object ChatRepository {
 
     fun clear(conversation: String) = _messages.update { it - conversation }
 
+    private val _board = MutableStateFlow<List<BoardItem>>(emptyList())
+    val board: StateFlow<List<BoardItem>> = _board.asStateFlow()
+    private val _boardUnseen = MutableStateFlow(0)
+    val boardUnseen: StateFlow<Int> = _boardUnseen.asStateFlow()
+    fun setBoard(items: List<BoardItem>) { _board.value = items }
+    fun addBoardUnseen() = _boardUnseen.update { it + 1 }
+    fun clearBoardUnseen() { _boardUnseen.value = 0 }
+
     private val _groups = MutableStateFlow<Map<String, GroupInfo>>(emptyMap())
     val groups: StateFlow<Map<String, GroupInfo>> = _groups.asStateFlow()
     fun setGroups(g: Map<String, GroupInfo>) { _groups.value = g }
@@ -202,6 +218,7 @@ object ChatRepository {
 
     /** Panic wipe of everything held in memory. */
     fun wipe() {
+        _board.value = emptyList(); _boardUnseen.value = 0
         _messages.value = emptyMap()
         _peers.value = emptyList()
         _unread.value = emptyMap()

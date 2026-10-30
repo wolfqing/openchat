@@ -195,4 +195,22 @@
     <string name="group_joined">%2$s đã thêm bạn vào #%1$s</string>
     <string name="group_none">bạn chưa ở nhóm nào</string>
     <string name="group_open_first">hãy mở cuộc trò chuyện của nhóm trước</string>
+    <string name="board_title">Bảng tin</string>
+    <string name="board_subtitle">Thông báo tồn tại tới một tuần, truyền từ máy này sang máy khác</string>
+    <string name="board_empty">Chưa có gì. Thông báo ở đây tới mọi người gần bạn, và cả người đi qua sau đó, trong tối đa một tuần.</string>
+    <string name="board_urgent">KHẨN</string>
+    <string name="board_urgent_check">Khẩn</string>
+    <plurals name="board_days_left">
+        <item quantity="one">còn %d ngày</item>
+        <item quantity="other">còn %d ngày</item>
+    </plurals>
+    <string name="board_ends_today">hết hạn hôm nay</string>
+    <string name="board_delete">Gỡ xuống</string>
+    <string name="board_placeholder">Viết thông báo cho mọi người gần bạn…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d ngày</item>
+        <item quantity="other">%d ngày</item>
+    </plurals>
+    <string name="board_post">Ghim lên bảng tin</string>
+    <string name="board_urgent_line">📌 thông báo khẩn từ %1$s: %2$s</string>
 </resources>

@@ -148,7 +148,8 @@ Signed types in v0.1: `announce`, `message`, `leave`. `noiseHandshake`,
 | `0x20` | fragment | send, receive, relay |
 | `0x21` | requestSync | send, receive; never relayed (§14) |
 | `0x22` | fileTransfer | send, receive, relay (§18) |
-| `0x23`–`0x29`, `0x2C` | boardPost, prekeyBundle, groupMessage, ping, pong, nostrCarrier, voiceFrame, announceV2 | relay only |
+| `0x23` | boardPost | send, receive, relay (§23) |
+| `0x24`–`0x29`, `0x2C` | prekeyBundle, groupMessage, ping, pong, nostrCarrier, voiceFrame, announceV2 | relay only |
 
 A relay forwards unknown types it can parse under the normal rules (§7).
 
@@ -390,7 +391,7 @@ ID) and keeps running. This is local behaviour and needs no wire support.
 - courier envelope v2 (sealed to a one-time prekey, TLV `0x05`): openchat
   carries and hands over such envelopes but cannot open one addressed to it
 - the bridge courier drop (envelopes parked on Nostr relays)
-- files other than images and audio, live push-to-talk voice, boards, prekeys, ping/pong, source-route
+- files other than images and audio, live push-to-talk voice, prekeys, ping/pong, source-route
   origination, peer ID rotation (`announceV2`, still a draft upstream)
 
 ## 13. Store-and-forward (v0.4)
@@ -826,4 +827,41 @@ BE32 epoch ‖ message ID ‖ BE64 timestamp ‖ content. A member shows a messa
 only for the current epoch, with a valid signature from a key in the roster,
 not its own, not blocked. Group messages are kept for history sync (§14,
 type bit 10, newest 200, 900 s) so members who were away catch up.
+
+## 23. Notice board (v0.6)
+
+### 23.1 Wire format (`0x23` payload)
+
+TLVs with a 1-byte type and 2-byte big-endian length; unknown types are
+skipped. `0x01` kind (`0x01` post, `0x02` tombstone), `0x02` post ID (16
+random bytes), `0x03` geohash (UTF-8, ≤ 12 base32 characters; empty = the
+mesh board), `0x04` content (1–512 bytes), `0x05` author Ed25519 key,
+`0x06` nickname (≤ 64 bytes), `0x07` created ms BE64, `0x08` expires ms
+BE64 (after created, at most 7 days), `0x09` flags (bit 0 urgent), `0x0A`
+signature, `0x0B` deleted ms BE64 (tombstone). A post signs: length byte +
+`"bitchat-board-v1"` ‖ post ID ‖ (BE16 length ‖ geohash) ‖ (BE16 length ‖
+content) ‖ author key ‖ (BE16 length ‖ nickname) ‖ created ‖ expires ‖
+flags. A tombstone signs: length byte + `"bitchat-board-del-v1"` ‖ post ID ‖
+deleted. The outer packet is a signed broadcast, but posts are verified by
+their own signature, so they stay valid after the author has left.
+
+### 23.2 Store and spread
+
+A post is refused if expired, created more than 1 h in the future, expiring
+beyond 7 days + 1 h from now, or already deleted. At most 5 posts per author
+and 200 in all, oldest evicted. A tombstone is accepted only from the post's
+author key, removes the post and is kept until the post would have expired;
+one that arrives before its post is kept 7 days (at most 5 per author, 100
+in all) and suppresses the post. Accepted and duplicate packets are
+relayed; refused ones are not. Board packets are offered in history sync
+(§14, type bit 8) for as long as they live, not just 900 s, and persisted
+with the §13.7 state, re-verified on load. A panic wipe clears them.
+
+### 23.3 In openchat
+
+The board lives on the Nearby tab. Posting goes to the mesh board (empty
+geohash) for 1, 3 or 7 days, optionally urgent; posts tagged with a
+geohash by bitchat are shown with their area. A new urgent post that is
+live and under 10 minutes old adds one line to the Nearby chat; other new
+posts only raise the board's badge. Authors can take their posts down.
 

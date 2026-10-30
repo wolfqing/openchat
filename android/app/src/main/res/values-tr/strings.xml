@@ -199,4 +199,22 @@
     <string name="group_joined">%2$s sizi #%1$s grubuna ekledi</string>
     <string name="group_none">hiçbir grupta değilsiniz</string>
     <string name="group_open_first">önce grubun sohbetini açın</string>
+    <string name="board_title">Pano</string>
+    <string name="board_subtitle">Bir haftaya kadar kalan, telefondan telefona geçen duyurular</string>
+    <string name="board_empty">Henüz bir şey yok. Buradaki duyuru yakındaki herkese ve bir haftaya kadar sonradan gelenlere ulaşır.</string>
+    <string name="board_urgent">ACİL</string>
+    <string name="board_urgent_check">Acil</string>
+    <plurals name="board_days_left">
+        <item quantity="one">%d gün kaldı</item>
+        <item quantity="other">%d gün kaldı</item>
+    </plurals>
+    <string name="board_ends_today">bugün bitiyor</string>
+    <string name="board_delete">Kaldır</string>
+    <string name="board_placeholder">Yakındaki herkes için bir duyuru yazın…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d gün</item>
+        <item quantity="other">%d gün</item>
+    </plurals>
+    <string name="board_post">Panoya as</string>
+    <string name="board_urgent_line">📌 %1$s acil duyuru: %2$s</string>
 </resources>

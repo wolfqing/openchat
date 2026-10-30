@@ -195,4 +195,22 @@
     <string name="group_joined">%2$s 把你加入了 #%1$s</string>
     <string name="group_none">你還沒有加入任何群組</string>
     <string name="group_open_first">請先打開這個群組的聊天</string>
+    <string name="board_title">公告板</string>
+    <string name="board_subtitle">最長保留一週，手機之間互相傳遞的公告</string>
+    <string name="board_empty">還沒有公告。這裡發的公告會傳給身邊所有人，之後路過的人在一週內也能看到。</string>
+    <string name="board_urgent">緊急</string>
+    <string name="board_urgent_check">緊急</string>
+    <plurals name="board_days_left">
+        <item quantity="one">還剩 %d 天</item>
+        <item quantity="other">還剩 %d 天</item>
+    </plurals>
+    <string name="board_ends_today">今天到期</string>
+    <string name="board_delete">撤下</string>
+    <string name="board_placeholder">寫一則給身邊所有人的公告…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d 天</item>
+        <item quantity="other">%d 天</item>
+    </plurals>
+    <string name="board_post">貼到公告板</string>
+    <string name="board_urgent_line">📌 %1$s 發了緊急公告：%2$s</string>
 </resources>

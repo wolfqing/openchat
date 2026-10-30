@@ -199,4 +199,22 @@
     <string name="group_joined">%2$s شما را به #%1$s افزود</string>
     <string name="group_none">در هیچ گروهی نیستید</string>
     <string name="group_open_first">ابتدا گفتگوی گروه را باز کنید</string>
+    <string name="board_title">تابلو</string>
+    <string name="board_subtitle">اطلاعیه‌هایی که تا یک هفته می‌مانند و گوشی‌به‌گوشی می‌روند</string>
+    <string name="board_empty">هنوز چیزی نصب نشده. اطلاعیه اینجا به همه اطرافیان و کسانی که بعداً می‌آیند تا یک هفته می‌رسد.</string>
+    <string name="board_urgent">فوری</string>
+    <string name="board_urgent_check">فوری</string>
+    <plurals name="board_days_left">
+        <item quantity="one">%d روز مانده</item>
+        <item quantity="other">%d روز مانده</item>
+    </plurals>
+    <string name="board_ends_today">امروز تمام می‌شود</string>
+    <string name="board_delete">برداشتن</string>
+    <string name="board_placeholder">اطلاعیه‌ای برای همه اطرافیان بنویسید…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d روز</item>
+        <item quantity="other">%d روز</item>
+    </plurals>
+    <string name="board_post">نصب روی تابلو</string>
+    <string name="board_urgent_line">📌 اطلاعیه فوری از %1$s: %2$s</string>
 </resources>

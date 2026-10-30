@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Notice board, wire-compatible with bitchat ([spec §23](docs/protocol-spec.md)).
+  Board on the Nearby tab: pin a notice for 1, 3 or 7 days, mark it urgent,
+  take it down later. Posts are signed by their author and pass from phone
+  to phone, including by history sync, so people who arrive days later
+  still read them; a takedown spreads the same way. Five posts per author,
+  200 in all. A fresh urgent notice adds a line to the Nearby chat; others
+  raise a badge. Kept with the sealed mesh state, wiped by the triple tap.
+- 5 new tests, 120 in all.
+
 - Private groups, wire-compatible with bitchat ([spec §22](docs/protocol-spec.md)).
   New group on the Private tab or `/group create`; the creator invites
   people nearby from Members (or `/group invite @name`), removes them, and

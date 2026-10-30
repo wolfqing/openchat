@@ -207,4 +207,22 @@
     <string name="group_joined">%2$s додав(ла) вас до #%1$s</string>
     <string name="group_none">ви не в жодній групі</string>
     <string name="group_open_first">спершу відкрийте чат групи</string>
+    <string name="board_title">Дошка</string>
+    <string name="board_subtitle">Оголошення, що висять до тижня й передаються від телефона до телефона</string>
+    <string name="board_empty">Поки порожньо. Оголошення тут дійде до всіх поруч і до тих, хто прийде пізніше, — упродовж тижня.</string>
+    <string name="board_urgent">ТЕРМІНОВО</string>
+    <string name="board_urgent_check">Терміново</string>
+    <plurals name="board_days_left">
+        <item quantity="one">залишилось днів: %d</item>
+        <item quantity="other">залишилось днів: %d</item>
+    </plurals>
+    <string name="board_ends_today">спливає сьогодні</string>
+    <string name="board_delete">Зняти</string>
+    <string name="board_placeholder">Оголошення для всіх поруч…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d дн.</item>
+        <item quantity="other">%d дн.</item>
+    </plurals>
+    <string name="board_post">Повісити на дошку</string>
+    <string name="board_urgent_line">📌 термінове оголошення від %1$s: %2$s</string>
 </resources>

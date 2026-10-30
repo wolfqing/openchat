@@ -22,6 +22,7 @@ import android.os.HandlerThread
 import android.os.IBinder
 import android.os.SystemClock
 import org.openchat.android.R
+import org.openchat.android.core.BoardPost
 import org.openchat.android.core.FilePacket
 import org.openchat.android.core.Mentions
 import org.openchat.android.core.NoisePayloadType
@@ -121,6 +122,7 @@ class MeshService : Service(), ChatController {
         ChatRepository.updateMesh { it.copy(storageLocked = false) }
         engine = MeshEngine(identity, scheduler, { link, bytes -> ble.write(link, bytes) }, listener)
         stateStore.load()?.let { s -> engine.importState(s); s.known.forEach { (hex, k) -> noiseKeys[hex] = k.noiseKey } }
+        publishBoard()
         // Route relay traffic before any relay socket opens (§19).
         tor = Tor(this) { s -> ChatRepository.updateGeo { it.copy(tor = s) } }
         tor.apply()
@@ -277,6 +279,19 @@ class MeshService : Service(), ChatController {
             groups.onState(peerHex, sessionKey, invite, payload)
 
         override fun onGroupMessage(payload: ByteArray, timestamp: Long) = groups.onMessage(payload, timestamp)
+
+        override fun onBoardChanged(arrived: BoardPost?, live: Boolean) {
+            publishBoard()
+            arrived ?: return
+            ChatRepository.addBoardUnseen()
+            // Only something happening now earns a line in the chat; synced history just counts.
+            if (arrived.urgent && live && System.currentTimeMillis() - arrived.createdAt < 10 * 60_000L) {
+                // The post carries a signing key, not a peer ID; name it by peer only if we have met them.
+                val who = engine.peersSnapshot().firstOrNull { it.signingPublicKey.contentEquals(arrived.authorKey) }
+                    ?.let { PeerLabel.mesh(it.nickname, it.peerIdHex).toString() } ?: arrived.nickname
+                ChatRepository.addLocal(Conversation.Mesh.key, getString(R.string.board_urgent_line, who, arrived.content.take(200)))
+            }
+        }
 
         override fun onVerified(peerHex: String) {
             engine.noiseKeyOf(peerHex)?.let { Social.setVerified(sha256(it).toHex(), true) }
@@ -528,6 +543,18 @@ class MeshService : Service(), ChatController {
     }
 
     override fun setTor(on: Boolean) = tor.setWanted(on)
+
+    override fun postToBoard(text: String, urgent: Boolean, days: Int): Boolean =
+        java.util.concurrent.FutureTask { engine.postToBoard(text, urgent, days) }.also { handler.post(it) }.get()
+    override fun deleteBoardPost(idHex: String) { handler.post { engine.deleteBoardPost(idHex) } }
+
+    /** The board as the UI shows it: urgent first, then newest. Runs on the mesh thread. */
+    private fun publishBoard() {
+        val me = engine.identity.signing.publicKey
+        ChatRepository.setBoard(engine.boardPosts().map { p ->
+            BoardItem(p.idHex, p.nickname, p.authorKey.toHex(), p.content, p.createdAt, p.expiresAt, p.urgent, p.authorKey.contentEquals(me), p.geohash)
+        }.sortedWith(compareByDescending<BoardItem> { it.urgent }.thenByDescending { it.createdAt }))
+    }
 
     override fun createGroup(name: String): String? =
         java.util.concurrent.FutureTask { groups.create(name) }.also { handler.post(it) }.get()

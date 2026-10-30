@@ -199,4 +199,22 @@
     <string name="group_joined">%2$s hat dich zu #%1$s hinzugefügt</string>
     <string name="group_none">du bist in keiner Gruppe</string>
     <string name="group_open_first">öffne zuerst den Chat der Gruppe</string>
+    <string name="board_title">Pinnwand</string>
+    <string name="board_subtitle">Aushänge, die bis zu einer Woche bleiben und von Telefon zu Telefon wandern</string>
+    <string name="board_empty">Noch nichts angeheftet. Ein Aushang erreicht alle in der Nähe und bis zu einer Woche lang auch alle, die später vorbeikommen.</string>
+    <string name="board_urgent">DRINGEND</string>
+    <string name="board_urgent_check">Dringend</string>
+    <plurals name="board_days_left">
+        <item quantity="one">noch %d Tag</item>
+        <item quantity="other">noch %d Tage</item>
+    </plurals>
+    <string name="board_ends_today">endet heute</string>
+    <string name="board_delete">Abnehmen</string>
+    <string name="board_placeholder">Aushang für alle in der Nähe…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d Tag</item>
+        <item quantity="other">%d Tage</item>
+    </plurals>
+    <string name="board_post">An die Pinnwand</string>
+    <string name="board_urgent_line">📌 dringender Aushang von %1$s: %2$s</string>
 </resources>

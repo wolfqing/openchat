@@ -207,4 +207,22 @@
     <string name="group_joined">%2$s добавил(а) вас в #%1$s</string>
     <string name="group_none">вы не состоите ни в одной группе</string>
     <string name="group_open_first">сначала откройте чат группы</string>
+    <string name="board_title">Доска</string>
+    <string name="board_subtitle">Объявления, которые висят до недели и передаются от телефона к телефону</string>
+    <string name="board_empty">Пока пусто. Объявление здесь дойдёт до всех рядом и до тех, кто придёт позже, — в течение недели.</string>
+    <string name="board_urgent">СРОЧНО</string>
+    <string name="board_urgent_check">Срочно</string>
+    <plurals name="board_days_left">
+        <item quantity="one">осталось дней: %d</item>
+        <item quantity="other">осталось дней: %d</item>
+    </plurals>
+    <string name="board_ends_today">истекает сегодня</string>
+    <string name="board_delete">Снять</string>
+    <string name="board_placeholder">Объявление для всех рядом…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d дн.</item>
+        <item quantity="other">%d дн.</item>
+    </plurals>
+    <string name="board_post">Повесить на доску</string>
+    <string name="board_urgent_line">📌 срочное объявление от %1$s: %2$s</string>
 </resources>

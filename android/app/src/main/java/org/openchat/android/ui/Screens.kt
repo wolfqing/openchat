@@ -278,6 +278,10 @@ fun MainScreen(
         PrivateChatScreen(chat.removePrefix("dm:"), onBack = { openChat = null }, onPanic = onPanic)
         return
     }
+    if (chat == BOARD) {
+        BoardScreen(onBack = { openChat = null }, onPanic = onPanic)
+        return
+    }
     if (chat != null && chat.startsWith("geo:")) {
         GeoChatScreen(chat.removePrefix("geo:"), onBack = { openChat = null }, onPanic = onPanic)
         return
@@ -288,6 +292,14 @@ fun MainScreen(
             TopAppBar(
                 navigationIcon = { PanicLogo(onPanic) },
                 title = { PanicTitle(stringResource(tab.label), onPanic) },
+                actions = {
+                    if (tab == Tab.NEARBY) {
+                        val unseen by ChatRepository.boardUnseen.collectAsState()
+                        TextButton(onClick = { openChat = BOARD }) {
+                            BadgedBox(badge = { if (unseen > 0) Badge { Text("$unseen") } }) { Text(stringResource(R.string.board_title)) }
+                        }
+                    }
+                },
             )
         },
         bottomBar = {
@@ -689,7 +701,7 @@ private fun withMentions(text: String): AnnotatedString {
 }
 
 /** "HH:mm" today, otherwise the short local date as well. */
-private fun stampText(ts: Long): String {
+internal fun stampText(ts: Long): String {
     val locale = Locale.getDefault()
     val clock = SimpleDateFormat("HH:mm", locale).format(Date(ts))
     val day = SimpleDateFormat("yyyyDDD", locale)

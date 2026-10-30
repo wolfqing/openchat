@@ -215,4 +215,22 @@
     <string name="group_joined">أضافك %2$s إلى #%1$s</string>
     <string name="group_none">لست في أي مجموعة</string>
     <string name="group_open_first">افتح محادثة المجموعة أولًا</string>
+    <string name="board_title">اللوحة</string>
+    <string name="board_subtitle">إعلانات تبقى حتى أسبوع وتنتقل من هاتف إلى آخر</string>
+    <string name="board_empty">لا شيء مثبت بعد. يصل الإعلان هنا إلى كل من حولك، ومن يمر لاحقًا، لمدة تصل إلى أسبوع.</string>
+    <string name="board_urgent">عاجل</string>
+    <string name="board_urgent_check">عاجل</string>
+    <plurals name="board_days_left">
+        <item quantity="one">متبقٍ %d يوم</item>
+        <item quantity="other">متبقٍ %d يوم</item>
+    </plurals>
+    <string name="board_ends_today">ينتهي اليوم</string>
+    <string name="board_delete">إزالة</string>
+    <string name="board_placeholder">اكتب إعلانًا لكل من حولك…</string>
+    <plurals name="board_days">
+        <item quantity="one">%d يوم</item>
+        <item quantity="other">%d يوم</item>
+    </plurals>
+    <string name="board_post">ثبّت على اللوحة</string>
+    <string name="board_urgent_line">📌 إعلان عاجل من %1$s: %2$s</string>
 </resources>
