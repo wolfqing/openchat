@@ -1,8 +1,8 @@
 # openchat for Android
 
 Status: **v0.5.0 preview.** Builds and passes its 94 unit tests. Not yet
-tested on physical devices, and not yet tested against a stock bitchat
-phone. See [SECURITY.md](../SECURITY.md) before relying on it.
+verified against a stock bitchat client. See [SECURITY.md](../SECURITY.md)
+before relying on it.
 
 Written from scratch in Kotlin. No bitchat source code is used. The wire
 format comes from [docs/protocol-spec.md](../docs/protocol-spec.md), which

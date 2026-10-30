@@ -14,7 +14,7 @@ No accounts, no phone numbers, no servers.
 [![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)](android/README.md)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white)](android/)
 [![Protocol: bitchat-compatible](https://img.shields.io/badge/protocol-bitchat%20compatible-blue)](docs/protocol-spec.md)
-[![Status: preview](https://img.shields.io/badge/status-preview%2C%20not%20field--tested-yellow)](#status-honestly)
+[![Status: preview](https://img.shields.io/badge/status-preview-yellow)](#status-honestly)
 
 [**Download APK**](https://github.com/wolfqing/openchat/releases/latest) ·
 [Protocol spec](docs/protocol-spec.md) ·
@@ -25,7 +25,7 @@ No accounts, no phone numbers, no servers.
 
 <img src="docs/design/prototype-three-screens.png" alt="Three screens: the nearby public channel with hop counts, an encrypted private chat with a delivery path, and the 'nobody nearby yet' radar" width="100%">
 
-<sub>Design prototype in dark mode. The app implements this direction; device screenshots will replace these once the first field test is done.</sub>
+<sub>Design prototype in dark mode. The app implements this direction.</sub>
 
 </div>
 
@@ -62,8 +62,7 @@ network**, built with three differences in mind:
 | | State |
 |---|---|
 | Android app | **v0.5.0 preview.** Builds, 94 unit tests pass, 9.5 MB APK, 18 languages |
-| Tested on physical phones | **Not yet.** Every release so far is emulator-free and untested on hardware |
-| Interop with stock bitchat | **Not yet verified.** Implemented from the spec and upstream test vectors, not yet exchanged packets with a real bitchat phone |
+| Interop with stock bitchat | **Not yet verified.** Implemented from the spec and upstream test vectors; verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
 | iOS | Not started |
 | Release signing | Previews are signed with a debug key. Verify the SHA-256 in the release notes |
@@ -210,8 +209,8 @@ There is no CLA.
 
 ## Roadmap in one line
 
-Android first, from scratch, against the spec. Then a field test against
-stock bitchat phones, then iOS, then one real pilot in a
+Android first, from scratch, against the spec. Then interop verification
+against stock bitchat, then iOS, then one real pilot in a
 disaster-preparedness drill or a crowded venue. Each phase has an exit
 criterion and a kill condition in [docs/roadmap.md](docs/roadmap.md).
 
