@@ -213,4 +213,14 @@
     </plurals>
     <string name="board_post">게시판에 올리기</string>
     <string name="board_urgent_line">📌 %1$s 님의 긴급 공지: %2$s</string>
+    <string name="bridge_title">근처 무리를 인터넷으로 연결</string>
+    <string name="bridge_body">블루투스는 멀리 가지 못합니다. 켜면 근처 메시지가 이 지역(약 1km)의 인터넷 릴레이로도 가고, 몇 블록 떨어진 사람들의 말도 근처에 보입니다. 인터넷이 없는 휴대폰은 회원님 휴대폰을 통해 주고받습니다. 대신 공개 메시지가 지역용 익명 이름으로 전파 밖으로 나갑니다.</string>
+    <string name="bridge_need_cell">지역을 기다리는 중: 지역 탭에서 위치를 쓰거나, 연결 중인 휴대폰 근처에 있으세요.</string>
+    <string name="bridge_online">#%1$s · 온라인</string>
+    <string name="bridge_offline">#%1$s · 인터넷 없음: 근처 연결 휴대폰을 통해 보냅니다</string>
+    <plurals name="bridge_across">
+        <item quantity="one">건너편 %d명</item>
+        <item quantity="other">건너편 %d명</item>
+    </plurals>
+    <string name="bridge_via">브리지 경유</string>
 </resources>

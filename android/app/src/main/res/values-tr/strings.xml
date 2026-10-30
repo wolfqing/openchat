@@ -217,4 +217,14 @@
     </plurals>
     <string name="board_post">Panoya as</string>
     <string name="board_urgent_line">📌 %1$s acil duyuru: %2$s</string>
+    <string name="bridge_title">Yakındaki grupları internetle bağla</string>
+    <string name="bridge_body">Bluetooth uzağa gitmez. Açıkken Yakında mesajlarınız bölgenizin (~1 km) internet rölelerine de gider ve birkaç sokak ötedekilerin yazdıkları görünür. İnterneti olmayan telefonlar sizinki üzerinden gönderip alır. Herkese açık mesajlarınız, bölgeye özel anonim bir adla, radyonun dışına çıkar.</string>
+    <string name="bridge_need_cell">Bölgeniz bekleniyor: Konum sekmesinde konumunuzu açın ya da köprü kuran bir telefonun yakınında kalın.</string>
+    <string name="bridge_online">#%1$s · çevrimiçi</string>
+    <string name="bridge_offline">#%1$s · internet yok: mesajlarınız yakındaki köprü telefon üzerinden gider</string>
+    <plurals name="bridge_across">
+        <item quantity="one">köprünün öbür yanında %d kişi</item>
+        <item quantity="other">köprünün öbür yanında %d kişi</item>
+    </plurals>
+    <string name="bridge_via">köprüden</string>
 </resources>

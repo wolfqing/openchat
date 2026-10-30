@@ -213,4 +213,14 @@
     </plurals>
     <string name="board_post">貼到公告板</string>
     <string name="board_urgent_line">📌 %1$s 發了緊急公告：%2$s</string>
+    <string name="bridge_title">經網際網路連接附近的人群</string>
+    <string name="bridge_body">藍牙只能傳一小段距離。打開後，你在「附近」發的訊息也會送到你所在區域（約 1 公里）的網際網路中繼，幾條街外的人說的話也會出現在「附近」。沒網的手機可以借你的手機收發。代價是：你的公開訊息會以該區域的匿名名字離開藍牙、上到網際網路。</string>
+    <string name="bridge_need_cell">等待確定區域：請在「地區」頁使用位置，或靠近一支正在橋接的手機。</string>
+    <string name="bridge_online">#%1$s · 已連網</string>
+    <string name="bridge_offline">#%1$s · 沒有網路：你的訊息會經身邊正在橋接的手機送出</string>
+    <plurals name="bridge_across">
+        <item quantity="one">橋對面 %d 人</item>
+        <item quantity="other">橋對面 %d 人</item>
+    </plurals>
+    <string name="bridge_via">經橋接</string>
 </resources>

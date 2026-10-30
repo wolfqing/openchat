@@ -225,4 +225,14 @@
     </plurals>
     <string name="board_post">Повесить на доску</string>
     <string name="board_urgent_line">📌 срочное объявление от %1$s: %2$s</string>
+    <string name="bridge_title">Связать группы рядом через интернет</string>
+    <string name="bridge_body">Bluetooth бьёт недалеко. Если включить, ваши сообщения «Рядом» уйдут и на интернет-релеи вашей местности (~1 км), а в «Рядом» появится то, что пишут через пару улиц. Телефоны без интернета будут отправлять и получать через ваш. Ваши публичные сообщения под анонимным именем для местности при этом выходят за пределы радио.</string>
+    <string name="bridge_need_cell">Ждём местность: включите геопозицию на вкладке «Местность» или будьте рядом с телефоном-мостом.</string>
+    <string name="bridge_online">#%1$s · в сети</string>
+    <string name="bridge_offline">#%1$s · нет интернета: сообщения уходят через телефон-мост рядом</string>
+    <plurals name="bridge_across">
+        <item quantity="one">по ту сторону: %d</item>
+        <item quantity="other">по ту сторону: %d</item>
+    </plurals>
+    <string name="bridge_via">через мост</string>
 </resources>

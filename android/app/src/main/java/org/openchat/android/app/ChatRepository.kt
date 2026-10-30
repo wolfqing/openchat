@@ -38,6 +38,7 @@ data class ChatMessage(
     val system: Boolean = false, // a local line (command output), never sent
     val attachment: String? = null, // path of an image or voice note in the media cache (§18)
     val audio: Boolean = false,
+    val bridged: Boolean = false, // came across the mesh bridge from another island (§24); senderKey is a Nostr key
 )
 
 /**
@@ -60,7 +61,7 @@ data class PeerLabel(val name: String, val suffix: String) {
         fun mesh(nickname: String?, peerHex: String) = PeerLabel(clean(nickname), suffix(peerHex.take(4)))
         fun nostr(nickname: String?, pubkeyHex: String) = PeerLabel(clean(nickname), suffix(pubkeyHex.takeLast(4)))
         fun of(m: ChatMessage) =
-            if (m.conversation.startsWith("geo:") || m.conversation.startsWith("gdm:")) nostr(m.senderName, m.senderKey) else mesh(m.senderName, m.senderKey)
+            if (m.bridged || m.conversation.startsWith("geo:") || m.conversation.startsWith("gdm:")) nostr(m.senderName, m.senderKey) else mesh(m.senderName, m.senderKey)
     }
 }
 
@@ -120,6 +121,7 @@ interface ChatController {
     fun sendGroup(idHex: String, text: String)
     fun postToBoard(text: String, urgent: Boolean, days: Int): Boolean
     fun deleteBoardPost(idHex: String)
+    fun setBridge(on: Boolean)
     /** Leaves a note at the device's building-level cell; false when the place is unknown. */
     fun dropNote(text: String): Boolean
     fun watchNotes(cell: String?)
@@ -188,6 +190,14 @@ object ChatRepository {
     }
 
     fun clear(conversation: String) = _messages.update { it - conversation }
+
+    fun remove(conversation: String, id: String) = _messages.update { all ->
+        all[conversation]?.let { list -> all + (conversation to list.filter { it.id != id }) } ?: all
+    }
+
+    private val _bridge = MutableStateFlow(BridgeStatus())
+    val bridge: StateFlow<BridgeStatus> = _bridge.asStateFlow()
+    fun setBridge(s: BridgeStatus) { _bridge.value = s }
 
     private val _board = MutableStateFlow<List<BoardItem>>(emptyList())
     val board: StateFlow<List<BoardItem>> = _board.asStateFlow()

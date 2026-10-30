@@ -82,6 +82,10 @@ interface MeshListener {
     fun onGroupState(peerHex: String, sessionKey: ByteArray, invite: Boolean, payload: ByteArray) {}
     /** A sealed group message (§22.3); only members can open it. */
     fun onGroupMessage(payload: ByteArray, timestamp: Long) {}
+    /** A Nostr carrier packet (§24.3); [directed] when it was addressed to us. */
+    fun onCarrier(senderHex: String, payload: ByteArray, directed: Boolean) {}
+    /** Mail for an absent peer was sealed; with the bridge on it may also be parked on relays (§24.4). */
+    fun onDrop(envelope: ByteArray, recipientTagHex: String, expiresAt: Long) {}
     /** The board changed (§23). [arrived] is a post first seen just now; [live] is false for synced history. */
     fun onBoardChanged(arrived: BoardPost?, live: Boolean) {}
 }
@@ -110,6 +114,8 @@ class MeshEngine(
         var lastSeen: Long,
         var directLinks: MutableSet<String> = mutableSetOf(),
         var announce: Packet? = null, // latest verified announce, served to sync requests (§14.4)
+        var capabilities: Long = 0,
+        var bridgeCell: String? = null, // the rendezvous cell a bridge phone advertises (§24.2)
     )
 
     private class Session(val handshake: HandshakeXX?, val startedAt: Long) {
@@ -261,12 +267,14 @@ class MeshEngine(
 
     // ---------------------------------------------------------------- sending API
 
-    fun sendPublic(text: String) {
+    /** Returns the packet timestamp, which the bridge needs for its stable message ID, or 0. */
+    fun sendPublic(text: String): Long {
         val p = sign(Packet(type = MessageType.MESSAGE, senderId = identity.peerId, timestamp = scheduler.now(), payload = text.toByteArray(Charsets.UTF_8)))
-            ?: return
+            ?: return 0
         dedup.markIfNew(Deduplicator.key(p))
         storeHistory(p)
         broadcast(p, exclude = null)
+        return p.timestamp
     }
 
     /**
@@ -285,7 +293,7 @@ class MeshEngine(
             val q = QueuedMessage(id, peerHex, plain, now)
             outbox[id] = q
             while (outbox.size > OUTBOX_CAP) outbox.remove(outbox.keys.first())
-            if (reachable) sendNoise(peerHex, plain) else { listener.onQueued(peerHex, id); deposit(q) }
+            if (reachable) sendNoise(peerHex, plain) else { listener.onQueued(peerHex, id); deposit(q); drop(q) }
             ids.add(id)
         }
         listener.onStateChanged()
@@ -319,7 +327,8 @@ class MeshEngine(
         if (!force && now < nextAnnounceDue) return
         if (now - lastAnnounce < 1000) return
         // No neighbour list: it hands any listener the local social graph, and routing falls back to flooding (§20).
-        val payload = Announcement(identity.nickname, identity.noise.publicKey, identity.signing.publicKey, emptyList(), AuthPeerState.CAP_PRIVATE_MEDIA).encode() ?: return
+        val caps = AuthPeerState.CAP_PRIVATE_MEDIA or (if (bridgeCell != null) CAP_BRIDGE else 0L)
+        val payload = Announcement(identity.nickname, identity.noise.publicKey, identity.signing.publicKey, emptyList(), caps, bridgeCell).encode() ?: return
         val p = sign(Packet(type = MessageType.ANNOUNCE, senderId = identity.peerId, timestamp = now, payload = payload)) ?: return
         dedup.markIfNew(Deduplicator.key(p))
         myAnnounce = p
@@ -397,6 +406,15 @@ class MeshEngine(
             MessageType.REQUEST_SYNC -> { if (forMe || p.isBroadcast) handleSyncRequest(p, linkId); return }
             MessageType.GROUP_MESSAGE -> if (p.isBroadcast && !handleGroupMessage(p)) return
             MessageType.BOARD_POST -> if (p.isBroadcast && !handleBoard(p)) return
+            MessageType.NOSTR_CARRIER -> {
+                if (forMe) {
+                    // A deposit is work done on the sender's behalf: only from a peer whose signature we can check.
+                    val key = peers[senderHex]?.signingKey ?: return
+                    if (verify(p, key)) listener.onCarrier(senderHex, p.payload, directed = true)
+                    return
+                }
+                if (p.isBroadcast) listener.onCarrier(senderHex, p.payload, directed = false)
+            }
             MessageType.FILE_TRANSFER -> if (p.isBroadcast || forMe) { if (!handleFile(p, forMe)) return; if (forMe) return }
         }
         // Reassembled packets were already relayed as fragments.
@@ -434,6 +452,8 @@ class MeshEngine(
         val changed = existing == null || existing.nickname != a.nickname
         state.nickname = a.nickname
         state.lastSeen = now
+        state.capabilities = a.capabilities ?: 0
+        state.bridgeCell = a.bridgeGeohash?.takeIf { it.isNotEmpty() }
         if ((state.announce?.timestamp ?: 0) <= p.timestamp) state.announce = p
         // An announce at full TTL straight off a link came from that link's device.
         var newlyDirect = false
@@ -494,6 +514,60 @@ class MeshEngine(
         val body = file.encode() ?: return false
         sendNoise(peerHex, NoisePayload(NoisePayloadType.PRIVATE_FILE, body).encode())
         return true
+    }
+
+    // ---------------------------------------------------------------- mesh bridge (§24)
+
+    /** Our advertised rendezvous cell while the bridge is on, or null. Re-announces on change. */
+    @Volatile var bridgeCell: String? = null
+        private set
+
+    fun setBridgeCell(cell: String?) {
+        if (cell == bridgeCell) return
+        bridgeCell = cell
+        lastAnnounce = 0
+        sendAnnounce(force = true)
+    }
+
+    /** Reachable peers that bridge, with the cell they advertise. */
+    fun bridgePeers(): List<Pair<String, String?>> =
+        peers.filter { (_, s) -> s.capabilities and CAP_BRIDGE != 0L }.map { (hex, s) -> hex to s.bridgeCell }
+
+    fun sendCarrier(payload: ByteArray, toPeerHex: String?) {
+        val p = sign(Packet(type = MessageType.NOSTR_CARRIER, senderId = identity.peerId, recipientId = toPeerHex?.hexToBytes(), timestamp = scheduler.now(), payload = payload)) ?: return
+        if (toPeerHex != null) { sendDirected(toPeerHex, p); return }
+        dedup.markIfNew(Deduplicator.key(p))
+        broadcast(p, exclude = null)
+    }
+
+    private fun drop(q: QueuedMessage) {
+        val key = noiseKeyOf(q.peerHex) ?: return
+        val bytes = seal(q, key, scheduler.now(), 1) ?: return
+        val env = CourierEnvelope.decode(bytes) ?: return
+        listener.onDrop(bytes, env.recipientTag.toHex(), env.expiry)
+    }
+
+    /** Recipient tags worth watching on relays: ours, and those of verified peers in reach (gateway duty). */
+    fun dropTags(maxPeers: Int = 16): Set<String> {
+        val now = scheduler.now()
+        val out = CourierEnvelope.candidateTags(identity.noise.publicKey, now).toMutableSet()
+        peers.values.filter { it.directLinks.any { l -> links.containsKey(l) } }.take(maxPeers)
+            .forEach { out += CourierEnvelope.candidateTags(it.noiseKey, now) }
+        return out
+    }
+
+    /** A drop fetched from a relay: open it if it is ours, else hand it to the peer in reach it is for. */
+    fun receiveDrop(envelope: ByteArray) {
+        val env = CourierEnvelope.decode(envelope) ?: return
+        val now = scheduler.now()
+        if (env.isExpired(now)) return
+        val tag = env.recipientTag.toHex()
+        if (tag in CourierEnvelope.candidateTags(identity.noise.publicKey, now)) { open(env); return }
+        for ((hex, s) in peers) {
+            if (tag !in CourierEnvelope.candidateTags(s.noiseKey, now)) continue
+            courierPacket(env.withCopies(1).encode() ?: return, hex)?.let { sendOnDirectLink(hex, it) }
+            return
+        }
     }
 
     // ---------------------------------------------------------------- notice board (§23)
@@ -1078,6 +1152,7 @@ class MeshEngine(
         // History sync (§14, §11).
         private const val HISTORY_CAP = 1000
         private const val GROUP_HISTORY_CAP = 200
+        const val CAP_BRIDGE = 1L shl 7
         private val SYNC_TYPES = SyncTypes.PUBLIC or SyncTypes.GROUP or SyncTypes.BOARD
         private const val HISTORY_MAX_AGE_MS = 900_000L
         private const val FUTURE_SKEW_MS = 120_000L

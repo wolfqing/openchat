@@ -213,4 +213,14 @@
     </plurals>
     <string name="board_post">Pasang di papan</string>
     <string name="board_urgent_line">📌 pengumuman penting dari %1$s: %2$s</string>
+    <string name="bridge_title">Hubungkan kelompok sekitar lewat internet</string>
+    <string name="bridge_body">Bluetooth tak menjangkau jauh. Jika aktif, pesan Sekitar Anda juga dikirim ke relay internet wilayah Anda (sekitar 1 km), dan Sekitar menampilkan obrolan orang beberapa jalan jauhnya. Ponsel tanpa internet mengirim dan menerima lewat ponsel Anda. Pesan publik Anda, dengan nama anonim wilayah, lalu keluar dari radio.</string>
+    <string name="bridge_need_cell">Menunggu wilayah: aktifkan lokasi di tab Wilayah, atau tetap dekat ponsel yang menjembatani.</string>
+    <string name="bridge_online">#%1$s · daring</string>
+    <string name="bridge_offline">#%1$s · tanpa internet: pesan Anda lewat ponsel penjembatan di dekat Anda</string>
+    <plurals name="bridge_across">
+        <item quantity="one">%d orang di seberang</item>
+        <item quantity="other">%d orang di seberang</item>
+    </plurals>
+    <string name="bridge_via">lewat jembatan</string>
 </resources>

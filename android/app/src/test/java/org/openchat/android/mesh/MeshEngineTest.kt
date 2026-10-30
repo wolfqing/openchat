@@ -54,6 +54,10 @@ class Recorder : MeshListener {
     val verified = ArrayList<String>()
     val groupStates = ArrayList<Pair<String, Boolean>>() // sender peer, invite
     val groupMessages = ArrayList<ByteArray>()
+    val carriers = ArrayList<Pair<Boolean, ByteArray>>() // directed, payload
+    val drops = ArrayList<ByteArray>()
+    override fun onCarrier(senderHex: String, payload: ByteArray, directed: Boolean) { carriers += directed to payload }
+    override fun onDrop(envelope: ByteArray, recipientTagHex: String, expiresAt: Long) { drops += envelope }
     override fun onGroupState(peerHex: String, sessionKey: ByteArray, invite: Boolean, payload: ByteArray) { groupStates += peerHex to invite }
     override fun onGroupMessage(payload: ByteArray, timestamp: Long) { groupMessages += payload }
     val files = ArrayList<Pair<String, Boolean>>() // mime, private
@@ -540,5 +544,40 @@ class MeshEngineTest {
         assertEquals(0, dave.boardPosts().size)
         val restored = MeshState.deserialize(dave.exportState().serialize())!!
         assertEquals(1, restored.board.size) // the tombstone, kept until the post would have expired
+    }
+
+    @Test
+    fun bridgeCellIsAdvertisedAndCarriersTravel() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!; val carol = net.engines["carol"]!!
+        bob.setBridgeCell("u4pruy")
+        net.scheduler.advance(3_000)
+        assertEquals(listOf(bob.myPeerHex to "u4pruy"), alice.bridgePeers())
+        // A deposit goes to the bridge phone alone; a downlink reaches everyone.
+        alice.sendCarrier(byteArrayOf(1), bob.myPeerHex)
+        bob.sendCarrier(byteArrayOf(2), null)
+        net.scheduler.advance(3_000)
+        assertEquals(listOf(true), net.recorders["bob"]!!.carriers.map { it.first })
+        assertEquals(listOf(false), net.recorders["carol"]!!.carriers.map { it.first })
+        assertEquals(listOf(false), net.recorders["alice"]!!.carriers.map { it.first })
+        bob.setBridgeCell(null)
+        net.scheduler.advance(3_000)
+        assertEquals(emptyList<Pair<String, String?>>(), alice.bridgePeers())
+    }
+
+    @Test
+    fun mailForAnAbsentPeerCanBeDroppedAndOpenedFromARelay() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "carol").forEach { net.node(it).start() }
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        net.connect("alice", "carol"); net.scheduler.advance(5_000)
+        net.disconnect("alice", "carol"); net.scheduler.advance(70_000)
+        alice.sendPrivate(carol.myPeerHex, "left at the relay")
+        val drop = net.recorders["alice"]!!.drops.single()
+        assertTrue(carol.dropTags().isNotEmpty())
+        carol.receiveDrop(drop)
+        assertEquals(listOf("left at the relay"), net.recorders["carol"]!!.privates.map { it.second })
+        carol.receiveDrop(drop) // a second relay's copy is not shown twice
+        assertEquals(1, net.recorders["carol"]!!.privates.size)
     }
 }

@@ -189,6 +189,28 @@ fun NotificationSection() {
     }
 }
 
+/** The mesh bridge (§24): off by default; it puts this phone's public messages online. */
+@Composable
+fun BridgeSection() {
+    val b by ChatRepository.bridge.collectAsState()
+    val ctx = LocalContext.current
+    Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.bridge_title), fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.bridge_body), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (b.enabled) {
+                val line = when {
+                    b.cell == null -> ctx.getString(R.string.bridge_need_cell)
+                    b.online -> ctx.getString(R.string.bridge_online, b.cell) + " · " + ctx.resources.getQuantityString(R.plurals.bridge_across, b.across, b.across)
+                    else -> ctx.getString(R.string.bridge_offline, b.cell)
+                }
+                Text(line, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+            }
+        }
+        Switch(checked = b.enabled, onCheckedChange = { ChatRepository.controller?.setBridge(it) })
+    }
+}
+
 /** Tor routing for relay traffic: on by default, fail-closed (§19). */
 @Composable
 fun TorSection() {

@@ -149,7 +149,8 @@ Signed types in v0.1: `announce`, `message`, `leave`. `noiseHandshake`,
 | `0x21` | requestSync | send, receive; never relayed (§14) |
 | `0x22` | fileTransfer | send, receive, relay (§18) |
 | `0x23` | boardPost | send, receive, relay (§23) |
-| `0x24`–`0x29`, `0x2C` | prekeyBundle, groupMessage, ping, pong, nostrCarrier, voiceFrame, announceV2 | relay only |
+| `0x28` | nostrCarrier | send, receive, relay (§24.3) |
+| `0x24`–`0x27`, `0x29`, `0x2C` | prekeyBundle, groupMessage, ping, pong, nostrCarrier, voiceFrame, announceV2 | relay only |
 
 A relay forwards unknown types it can parse under the normal rules (§7).
 
@@ -390,7 +391,6 @@ ID) and keeps running. This is local behaviour and needs no wire support.
   and board posts (openchat syncs only announces and public messages, §14)
 - courier envelope v2 (sealed to a one-time prekey, TLV `0x05`): openchat
   carries and hands over such envelopes but cannot open one addressed to it
-- the bridge courier drop (envelopes parked on Nostr relays)
 - files other than images and audio, live push-to-talk voice, prekeys, ping/pong, source-route
   origination, peer ID rotation (`announceV2`, still a draft upstream)
 
@@ -864,4 +864,60 @@ geohash) for 1, 3 or 7 days, optionally urgent; posts tagged with a
 geohash by bitchat are shown with their area. A new urgent post that is
 live and under 10 minutes old adds one line to the Nearby chat; other new
 posts only raise the board's badge. Authors can take their posts down.
+
+## 24. Mesh bridge (v0.6)
+
+Opt-in, off by default. Bluetooth islands that share a neighbourhood cell
+(geohash precision 6, about 1.2 km) meet on that cell's Nostr relays (the
+five nearest, §9).
+
+### 24.1 Rendezvous events
+
+A bridged public message is a kind 20000 event signed by the per-cell key
+(§9) with tags `["r", cell]`, `["n", nickname]` and `["m", id, sender peer
+ID hex, timestamp ms]`, where `id` = the first 32 hex digits of SHA-256(
+lowercase sender ID ‖ `|` ‖ timestamp ‖ `|` ‖ trimmed text) of the radio
+message (upstream's pinned vector checks it). `r`, not `g`, keeps it out of
+location channels. Presence is kind 20001 with only `["r", cell]`, every
+4 min. A bridging phone subscribes to kinds 20000 and 20001 with `#r` = its
+cell and the eight around it, since 15 min ago. An event counts only if its
+own `r` cell is in that ring, it is at most 15 min from now, its text is
+1–16 000 bytes, and its pubkey is not ours for that cell. The `m` tag is a
+hint only (its fields are public): it lets a phone skip a copy of a radio
+message it already has, and when the radio copy arrives after a bridged
+row, the radio copy replaces it. Bridged rows are keyed by event ID.
+
+### 24.2 Advertising
+
+While bridging and online, a phone sets capability bit 7 (bridge) and the
+announce `bridgeGeohash` TLV (`0x06`) to its cell. A phone without its own
+location uses a bridging neighbour's advertised cell.
+
+### 24.3 Carrier (`0x28`)
+
+Payload TLVs, 1-byte type and 2-byte length: `0x01` direction, `0x02`
+cell (1–12 bytes), `0x03` the complete signed event as JSON (≤ 16 KiB).
+`0x03` toBridge: a mesh-only bridging phone sends its signed event,
+directed and signed, to a bridging neighbour, which verifies the Schnorr
+signature and publishes it (10 per depositor per minute; up to 20 queued
+while offline, 5 per depositor). `0x04` fromBridge: a bridging phone with
+internet broadcasts events from other islands onto the radio, after a 0.2–
+1.5 s holdoff in which another phone's copy cancels its own, at most 20 a
+minute. Receiving fromBridge needs no toggle. Loop rules: an event that
+came over the radio is never published or rebroadcast; an event this
+phone published is never rebroadcast; each event is rebroadcast at most
+once, and never when the radio copy is already present. `0x01`/`0x02`
+(geohash-chat gateway) are not implemented and are relayed only.
+
+### 24.4 Courier drops
+
+With the bridge on, mail sealed for an absent peer (§13.2, a single-copy
+envelope) is also published as kind 1401 to the private-message relays
+(§15.4): content = standard base64 of the envelope, tags `["x", recipient
+tag hex]` and NIP-40 `["expiration", envelope expiry s]`, signed by a fresh
+throwaway key. Drops are queued (20) while offline. A bridging phone
+subscribes to kind 1401 with `#x` = its own candidate tags (§13.3) and
+those of up to 16 verified direct neighbours, since 24 h ago; it opens its
+own and hands the others to their recipients as directed courier packets.
+Message-ID dedup absorbs a message arriving by drop, courier and direct link.
 

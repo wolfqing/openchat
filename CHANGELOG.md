@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- Mesh bridge, wire-compatible with bitchat ([spec §24](docs/protocol-spec.md)),
+  off by default (Me tab). Bluetooth reaches only so far: with the bridge on,
+  Nearby messages also go to the internet relays for your neighbourhood
+  cell (about 1.2 km) under an unlinkable per-cell key, and what people in
+  other islands of that area say appears in Nearby, marked "via bridge". A
+  bridging phone with internet serves its island: it publishes messages
+  that bridging phones without internet hand to it, and carries other
+  islands' messages onto the radio (holdoff, 20 a minute, bitchat's loop
+  rules). A copy of a radio message is skipped, and the radio copy replaces
+  a bridged row that got there first.
+- Courier drops: with the bridge on, mail for someone out of reach is also
+  parked on relays as a sealed kind-1401 drop under a throwaway key, so it
+  arrives as soon as either side is online; a bridging phone also fetches
+  drops for verified neighbours and hands them over.
+- 5 new tests (including upstream's pinned message-ID vector), 125 in all.
+  The bridge's own relay-side logic is not unit-tested yet.
+
 - Notice board, wire-compatible with bitchat ([spec §23](docs/protocol-spec.md)).
   Board on the Nearby tab: pin a notice for 1, 3 or 7 days, mark it urgent,
   take it down later. Posts are signed by their author and pass from phone

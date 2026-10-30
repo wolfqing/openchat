@@ -217,4 +217,14 @@
     </plurals>
     <string name="board_post">सूचना पट पर लगाएँ</string>
     <string name="board_urgent_line">📌 %1$s की ज़रूरी सूचना: %2$s</string>
+    <string name="bridge_title">आस-पास के समूहों को इंटरनेट से जोड़ें</string>
+    <string name="bridge_body">ब्लूटूथ दूर तक नहीं पहुँचता। चालू करने पर आपके आस-पास वाले संदेश आपके इलाके (करीब 1 किमी) के इंटरनेट रिले पर भी जाते हैं, और कुछ गलियाँ दूर के लोगों की बातें भी दिखती हैं। बिना इंटरनेट वाले फ़ोन आपके फ़ोन से भेजते-पाते हैं। आपके सार्वजनिक संदेश, इलाके के अनाम नाम से, तब रेडियो से बाहर जाते हैं।</string>
+    <string name="bridge_need_cell">इलाके का इंतज़ार: क्षेत्र टैब में लोकेशन चालू करें, या जोड़ रहे किसी फ़ोन के पास रहें।</string>
+    <string name="bridge_online">#%1$s · ऑनलाइन</string>
+    <string name="bridge_offline">#%1$s · इंटरनेट नहीं: आपके संदेश पास के जोड़ने वाले फ़ोन से जाते हैं</string>
+    <plurals name="bridge_across">
+        <item quantity="one">पुल के पार %d लोग</item>
+        <item quantity="other">पुल के पार %d लोग</item>
+    </plurals>
+    <string name="bridge_via">पुल से</string>
 </resources>

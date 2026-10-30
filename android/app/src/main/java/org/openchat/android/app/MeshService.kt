@@ -72,6 +72,7 @@ class MeshService : Service(), ChatController {
     private lateinit var nostr: NostrDirect
     private lateinit var tor: Tor
     private lateinit var groups: GroupManager
+    private lateinit var bridge: Bridge
     private lateinit var nostrSeenStore: SealedFile
     private val publicLimiter = RateLimiter()
     private val nostrSeen = LinkedHashSet<String>() // message IDs already shown from Nostr, kept across restarts
@@ -142,7 +143,9 @@ class MeshService : Service(), ChatController {
         // Installed only now that everything it touches exists.
         Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)); nostr.setExtraRelays(s.relays) } }
         ble = BleTransport(this, handler) { engine }
-        geo = GeoChannels(RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText()), identity.nostrSeed, { engine.identity.nickname }) { from, text ->
+        val directory = RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText())
+        bridge = Bridge(this, directory, { engine }, { task -> handler.post(task) }) { s -> ChatRepository.setBridge(s) }
+        geo = GeoChannels(directory, identity.nostrSeed, { engine.identity.nickname }) { from, text ->
             notifyMention(from, text)
         }
         groups = GroupManager(this, SealedFile(this, "groups.bin"), { engine }) { from, text -> notifyPrivate(from, text) }
@@ -183,6 +186,7 @@ class MeshService : Service(), ChatController {
         }
         geo.close()
         nostr.close()
+        bridge.close()
         tor.stop()
         ChatRepository.updateMesh { it.copy(running = false, links = 0) }
         super.onDestroy()
@@ -200,6 +204,7 @@ class MeshService : Service(), ChatController {
 
     private fun periodic() {
         publishStatus()
+        bridge.tick()
         tor.poll()
         handler.postDelayed({ periodic() }, 5_000)
     }
@@ -236,6 +241,7 @@ class MeshService : Service(), ChatController {
 
         override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean) {
             // Synced history arrives in a burst by design; only live traffic is limited.
+            bridge.onRadioMessage(senderHex, timestamp, text)
             if (!replayed && !publicLimiter.allow("mesh:$senderHex", text)) return
             val me = engine.identity
             val ambiguous = ChatRepository.peers.value.any { it.peerIdHex != me.peerIdHex && it.nickname.equals(me.nickname, ignoreCase = true) }
@@ -279,6 +285,10 @@ class MeshService : Service(), ChatController {
             groups.onState(peerHex, sessionKey, invite, payload)
 
         override fun onGroupMessage(payload: ByteArray, timestamp: Long) = groups.onMessage(payload, timestamp)
+
+        override fun onCarrier(senderHex: String, payload: ByteArray, directed: Boolean) = bridge.onCarrier(senderHex, payload, directed)
+
+        override fun onDrop(envelope: ByteArray, recipientTagHex: String, expiresAt: Long) = bridge.deposit(envelope, recipientTagHex, expiresAt)
 
         override fun onBoardChanged(arrived: BoardPost?, live: Boolean) {
             publishBoard()
@@ -382,7 +392,7 @@ class MeshService : Service(), ChatController {
         val id = engine.identity
         val now = System.currentTimeMillis()
         ChatRepository.add(ChatMessage("${id.peerIdHex}-$now", Conversation.Mesh.key, id.nickname, id.peerIdHex, text, now, mine = true))
-        handler.post { engine.sendPublic(text) }
+        handler.post { engine.sendPublic(text).takeIf { it > 0 }?.let { bridge.outgoing(text, it) } }
     }
 
     override fun sendPrivate(peerHex: String, text: String) {
@@ -544,6 +554,8 @@ class MeshService : Service(), ChatController {
 
     override fun setTor(on: Boolean) = tor.setWanted(on)
 
+    override fun setBridge(on: Boolean) { handler.post { bridge.setEnabled(on) } }
+
     override fun postToBoard(text: String, urgent: Boolean, days: Int): Boolean =
         java.util.concurrent.FutureTask { engine.postToBoard(text, urgent, days) }.also { handler.post(it) }.get()
     override fun deleteBoardPost(idHex: String) { handler.post { engine.deleteBoardPost(idHex) } }
@@ -597,6 +609,7 @@ class MeshService : Service(), ChatController {
         startInForeground()
         handler.post {
             handler.removeCallbacks(saveState)
+            bridge.wipe()
             groups.wipe()
             stateStore.destroy()
             socialStore.delete()

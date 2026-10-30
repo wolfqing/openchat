@@ -213,4 +213,14 @@
     </plurals>
     <string name="board_post">掲示板に貼る</string>
     <string name="board_urgent_line">📌 %1$s からの緊急のお知らせ：%2$s</string>
+    <string name="bridge_title">近くのグループをインターネットでつなぐ</string>
+    <string name="bridge_body">Bluetoothは遠くまで届きません。オンにすると「近く」の発言がこの地域（約1km）のインターネットリレーにも送られ、数ブロック先の人の発言も「近く」に表示されます。ネットのない端末はあなたの端末経由で送受信できます。その代わり、あなたの公開メッセージは地域ごとの匿名名で電波の外に出ます。</string>
+    <string name="bridge_need_cell">地域を待っています：「地域」タブで位置情報を使うか、橋渡し中の端末の近くにいてください。</string>
+    <string name="bridge_online">#%1$s · オンライン</string>
+    <string name="bridge_offline">#%1$s · ネットなし：近くの橋渡し中の端末経由で送ります</string>
+    <plurals name="bridge_across">
+        <item quantity="one">向こう側に%d人</item>
+        <item quantity="other">向こう側に%d人</item>
+    </plurals>
+    <string name="bridge_via">橋渡し経由</string>
 </resources>

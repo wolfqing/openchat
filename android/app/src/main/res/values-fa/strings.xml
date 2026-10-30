@@ -217,4 +217,14 @@
     </plurals>
     <string name="board_post">نصب روی تابلو</string>
     <string name="board_urgent_line">📌 اطلاعیه فوری از %1$s: %2$s</string>
+    <string name="bridge_title">اتصال گروه‌های نزدیک از طریق اینترنت</string>
+    <string name="bridge_body">بلوتوث برد کمی دارد. با روشن کردن این، پیام‌های «نزدیک» شما به رله‌های اینترنتی منطقه (حدود ۱ کیلومتر) هم می‌رود و حرف کسانی که چند خیابان آن‌طرف‌ترند نمایش داده می‌شود. گوشی‌های بدون اینترنت از طریق شما ارسال و دریافت می‌کنند. پیام‌های عمومی شما با نامی ناشناس برای منطقه از رادیو بیرون می‌روند.</string>
+    <string name="bridge_need_cell">در انتظار منطقه: مکان خود را در زبانه منطقه فعال کنید یا نزدیک گوشی‌ای که پل می‌زند بمانید.</string>
+    <string name="bridge_online">#%1$s · آنلاین</string>
+    <string name="bridge_offline">#%1$s · بدون اینترنت: پیام‌هایتان از گوشی پل در نزدیکی می‌رود</string>
+    <plurals name="bridge_across">
+        <item quantity="one">%d نفر آن سوی پل</item>
+        <item quantity="other">%d نفر آن سوی پل</item>
+    </plurals>
+    <string name="bridge_via">از طریق پل</string>
 </resources>

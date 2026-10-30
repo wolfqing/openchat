@@ -213,4 +213,14 @@
     </plurals>
     <string name="board_post">ဘုတ်ပေါ် တင်ရန်</string>
     <string name="board_urgent_line">📌 %1$s ထံမှ အရေးပေါ်ကြေညာချက်- %2$s</string>
+    <string name="bridge_title">အနီးရှိ လူအုပ်စုများကို အင်တာနက်ဖြင့် ချိတ်ရန်</string>
+    <string name="bridge_body">ဘလူးတုသ်သည် အဝေးမရောက်ပါ။ ဖွင့်ပါက အနီးအနားစာများကို သင့်ဒေသ (၁ ကီလိုမီတာခန့်) ၏ အင်တာနက်ရီလေးသို့လည်း ပို့ပြီး လမ်းအနည်းငယ်အကွာရှိသူများ၏စာကိုလည်း ပြမည်။ အင်တာနက်မရှိသောဖုန်းများက သင့်ဖုန်းမှတစ်ဆင့် ပို့လက်ခံနိုင်သည်။ သင့်အများသုံးစာများသည် ဒေသအမည်မသိအမည်ဖြင့် ရေဒီယိုအပြင်သို့ ထွက်သွားမည်။</string>
+    <string name="bridge_need_cell">ဒေသကို စောင့်နေသည်- ဒေသ တဘ်တွင် တည်နေရာ ဖွင့်ပါ သို့မဟုတ် ချိတ်ပေးနေသောဖုန်းအနီးတွင် နေပါ။</string>
+    <string name="bridge_online">#%1$s · အွန်လိုင်း</string>
+    <string name="bridge_offline">#%1$s · အင်တာနက်မရှိ- အနီးရှိ ချိတ်ပေးသည့်ဖုန်းမှ ပို့မည်</string>
+    <plurals name="bridge_across">
+        <item quantity="one">တံတားတစ်ဖက်တွင် %d ဦး</item>
+        <item quantity="other">တံတားတစ်ဖက်တွင် %d ဦး</item>
+    </plurals>
+    <string name="bridge_via">တံတားမှ</string>
 </resources>

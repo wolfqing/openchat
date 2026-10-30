@@ -516,8 +516,11 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = if (m.mine) Alignment.End else Alignment.Start) {
         if (!m.mine) {
             Text(
-                labelText(PeerLabel.of(m), m.teleported, verified = !m.conversation.startsWith("geo:") && Social.state.collectAsState().value.isVerifiedPeer(m.senderKey)), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.let { if (onSenderClick != null) it.clickable { onSenderClick(m) } else it },
+                buildAnnotatedString {
+                    append(labelText(PeerLabel.of(m), m.teleported, verified = !m.bridged && !m.conversation.startsWith("geo:") && Social.state.collectAsState().value.isVerifiedPeer(m.senderKey)))
+                    if (m.bridged) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Normal)) { append(" · " + stringResource(R.string.bridge_via)) }
+                }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.let { if (onSenderClick != null && !m.bridged) it.clickable { onSenderClick(m) } else it },
             )
         }
         Surface(
@@ -1208,6 +1211,7 @@ private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> U
             Text(stringResource(R.string.me_carrying, mesh.carriedCount), fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
         }
         NotificationSection()
+        BridgeSection()
         TorSection()
         RelaySection()
         BlockedList()

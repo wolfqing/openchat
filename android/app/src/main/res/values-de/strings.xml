@@ -217,4 +217,14 @@
     </plurals>
     <string name="board_post">An die Pinnwand</string>
     <string name="board_urgent_line">📌 dringender Aushang von %1$s: %2$s</string>
+    <string name="bridge_title">Gruppen in der Nähe übers Internet verbinden</string>
+    <string name="bridge_body">Bluetooth reicht nicht weit. Damit gehen deine Nachrichten unter „In der Nähe“ auch an Internet-Relays für dein Gebiet (etwa 1 km), und du siehst, was Leute ein paar Straßen weiter schreiben. Telefone ohne Internet senden und empfangen über deins. Deine öffentlichen Nachrichten verlassen dann, unter einem anonymen Namen fürs Gebiet, den Funk.</string>
+    <string name="bridge_need_cell">Warte auf dein Gebiet: Standort im Tab „Ort“ freigeben oder in der Nähe eines verbindenden Telefons bleiben.</string>
+    <string name="bridge_online">#%1$s · online</string>
+    <string name="bridge_offline">#%1$s · kein Internet: deine Nachrichten gehen über ein verbindendes Telefon in der Nähe</string>
+    <plurals name="bridge_across">
+        <item quantity="one">%d Person drüben</item>
+        <item quantity="other">%d Personen drüben</item>
+    </plurals>
+    <string name="bridge_via">über Brücke</string>
 </resources>

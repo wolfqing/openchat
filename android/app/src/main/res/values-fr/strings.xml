@@ -221,4 +221,14 @@
     </plurals>
     <string name="board_post">Épingler au tableau</string>
     <string name="board_urgent_line">📌 annonce urgente de %1$s : %2$s</string>
+    <string name="bridge_title">Relier les groupes proches par internet</string>
+    <string name="bridge_body">Le Bluetooth porte peu. Activé, vos messages « À proximité » partent aussi vers des relais internet de votre zone (~1 km), et vous voyez ce que disent des gens à quelques rues. Les téléphones sans internet passent par le vôtre. Vos messages publics, sous un nom anonyme pour la zone, quittent alors la radio.</string>
+    <string name="bridge_need_cell">En attente de votre zone : utilisez votre position dans l\'onglet Zone, ou restez près d\'un téléphone qui relie.</string>
+    <string name="bridge_online">#%1$s · en ligne</string>
+    <string name="bridge_offline">#%1$s · pas d\'internet : vos messages passent par un téléphone relais proche</string>
+    <plurals name="bridge_across">
+        <item quantity="one">%d personne de l\'autre côté</item>
+        <item quantity="other">%d personnes de l\'autre côté</item>
+    </plurals>
+    <string name="bridge_via">via le pont</string>
 </resources>

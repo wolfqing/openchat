@@ -233,4 +233,14 @@
     </plurals>
     <string name="board_post">ثبّت على اللوحة</string>
     <string name="board_urgent_line">📌 إعلان عاجل من %1$s: %2$s</string>
+    <string name="bridge_title">اربط المجموعات القريبة عبر الإنترنت</string>
+    <string name="bridge_body">لا يصل البلوتوث بعيدًا. عند التفعيل تذهب رسائلك في «القريبون» أيضًا إلى مرحّلات الإنترنت لمنطقتك (نحو 1 كم)، ويظهر ما يقوله من يبعدون بضعة شوارع. الهواتف بلا إنترنت ترسل وتستقبل عبر هاتفك. رسائلك العامة، باسم مجهول للمنطقة، تغادر عندها نطاق الراديو.</string>
+    <string name="bridge_need_cell">بانتظار تحديد المنطقة: استخدم موقعك في تبويب الموقع، أو ابقَ قرب هاتف يقوم بالربط.</string>
+    <string name="bridge_online">#%1$s · متصل</string>
+    <string name="bridge_offline">#%1$s · لا إنترنت: تمر رسائلك عبر هاتف قريب يقوم بالربط</string>
+    <plurals name="bridge_across">
+        <item quantity="one">%d عبر الجسر</item>
+        <item quantity="other">%d عبر الجسر</item>
+    </plurals>
+    <string name="bridge_via">عبر الجسر</string>
 </resources>

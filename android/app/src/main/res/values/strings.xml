@@ -231,4 +231,14 @@
     </plurals>
     <string name="board_post">Pin to the board</string>
     <string name="board_urgent_line">📌 urgent notice from %1$s: %2$s</string>
+    <string name="bridge_title">Bridge nearby groups over the internet</string>
+    <string name="bridge_body">Bluetooth reaches only so far. With this on, your Nearby messages also go to internet relays for your area (about 1 km), and Nearby shows what people a few streets away say. Phones without internet send and receive through yours. Your public messages, under an anonymous name for the area, then leave the radio.</string>
+    <string name="bridge_need_cell">Waiting for your area: use your location on the Location tab, or stay near a phone that bridges.</string>
+    <string name="bridge_online">#%1$s · online</string>
+    <string name="bridge_offline">#%1$s · no internet: your messages go through a bridging phone nearby</string>
+    <plurals name="bridge_across">
+        <item quantity="one">%d person across the bridge</item>
+        <item quantity="other">%d people across the bridge</item>
+    </plurals>
+    <string name="bridge_via">via bridge</string>
 </resources>
