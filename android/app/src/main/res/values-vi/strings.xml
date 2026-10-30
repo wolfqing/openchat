@@ -150,4 +150,16 @@
     <string name="relays_add">Thêm</string>
     <string name="relays_remove">Xóa</string>
     <string name="relays_invalid">Không phải địa chỉ relay. Dùng wss://host, hoặc ws://… cho .onion.</string>
+    <string name="notify_quiet_message">Tin nhắn mới</string>
+    <string name="notify_quiet_mention">Có người nhắc đến bạn</string>
+    <string name="notify_previews_title">Hiện tên và nội dung trong thông báo</string>
+    <string name="notify_previews_off">Tắt: thông báo chỉ báo có tin mới, nên điện thoại đang khóa không để lộ cuộc trò chuyện cho người cầm nó.</string>
+    <string name="notify_previews_on">Bật: thông báo hiện tên và đầu tin nhắn. Màn hình khóa vẫn chỉ báo có tin mới.</string>
+    <string name="media_tap_to_show">Chạm để xem</string>
+    <string name="share_channel">Chia sẻ</string>
+    <string name="share_channel_text">vào kênh #%1$s trên bitchat hoặc openchat: bitchat://geohash/%1$s — hoặc gõ #%1$s ở kênh khu vực.</string>
+    <string name="share_channel_warn_title">Đây là khu vực nhỏ</string>
+    <string name="share_channel_warn_body">#%1$s chỉ khoảng một khu phố hoặc nhỏ hơn. Ai chuyển đoạn văn này, như nhà mạng hay ứng dụng bạn dùng để chia sẻ, sẽ biết bạn quan tâm nơi nào.</string>
+    <string name="share_anyway">Vẫn chia sẻ</string>
+    <string name="cancel">Hủy</string>
 </resources>

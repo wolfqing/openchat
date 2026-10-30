@@ -134,11 +134,13 @@ data class NostrEvent(
             return NostrEvent(id, key.publicKeyHex, createdAt, kind, tags, content, sig)
         }
 
-        fun geohashMessage(key: NostrKey, geohash: String, nickname: String?, text: String, teleported: Boolean): NostrEvent {
+        fun geohashMessage(key: NostrKey, geohash: String, nickname: String?, text: String, teleported: Boolean, mine: Boolean = false): NostrEvent {
             val tags = mutableListOf(listOf("g", geohash))
             if (!nickname.isNullOrBlank()) tags.add(listOf("n", nickname))
             if (teleported) tags.add(listOf("t", "teleport"))
-            return create(key, KIND_GEOHASH_MESSAGE, tags, text)
+            val createdAt = System.currentTimeMillis() / 1000
+            if (mine) Pow.mine(key.publicKeyHex, createdAt, KIND_GEOHASH_MESSAGE, tags, text)?.let { tags.add(it) }
+            return create(key, KIND_GEOHASH_MESSAGE, tags, text, createdAt)
         }
 
         /** A location note (§17): kind 1, at building precision, fading after [ttlS]. */

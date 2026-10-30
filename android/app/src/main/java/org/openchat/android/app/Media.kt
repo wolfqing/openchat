@@ -44,6 +44,13 @@ object Media {
     fun store(context: Context, bytes: ByteArray, ext: String): File =
         File(dir(context), "${UUID.randomUUID()}.$ext").apply { writeBytes(bytes) }
 
+    /** The same picture reduced to about [blocks] cells across, for the covered view. */
+    fun pixelate(bmp: Bitmap, blocks: Int = 12): Bitmap {
+        val w = blocks.coerceAtLeast(1)
+        val h = maxOf(1, w * bmp.height / maxOf(1, bmp.width))
+        return Bitmap.createScaledBitmap(bmp, w, h, true)
+    }
+
     /** Decodes an image for display, sampled down to about [maxSide] pixels. */
     fun thumbnail(path: String, maxSide: Int = 720): Bitmap? = try {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }

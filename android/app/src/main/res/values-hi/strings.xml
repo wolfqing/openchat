@@ -154,4 +154,16 @@
     <string name="relays_add">जोड़ें</string>
     <string name="relays_remove">हटाएँ</string>
     <string name="relays_invalid">यह रिले पता नहीं है। wss://host लिखें, .onion के लिए ws://… भी चलेगा।</string>
+    <string name="notify_quiet_message">नया संदेश</string>
+    <string name="notify_quiet_mention">किसी ने आपका ज़िक्र किया</string>
+    <string name="notify_previews_title">सूचनाओं में नाम और संदेश दिखाएँ</string>
+    <string name="notify_previews_off">बंद: सूचना बस इतना बताती है कि कुछ आया है, ताकि लॉक फ़ोन किसी के हाथ में आपकी बातचीत न दिखाए।</string>
+    <string name="notify_previews_on">चालू: सूचनाओं में नाम और संदेश की शुरुआत दिखती है। लॉक स्क्रीन पर अब भी बस इतना दिखता है कि कुछ आया।</string>
+    <string name="media_tap_to_show">दिखाने के लिए टैप करें</string>
+    <string name="share_channel">शेयर करें</string>
+    <string name="share_channel_text">bitchat या openchat पर #%1$s चैनल में आइए: bitchat://geohash/%1$s — या क्षेत्र चैनलों में #%1$s लिखें।</string>
+    <string name="share_channel_warn_title">यह छोटा क्षेत्र है</string>
+    <string name="share_channel_warn_body">#%1$s लगभग एक मोहल्ला या उससे छोटा है। जो भी यह संदेश आगे पहुँचाएगा, जैसे आपका ऑपरेटर या शेयर करने वाला ऐप, जान जाएगा कि आपकी रुचि किस जगह में है।</string>
+    <string name="share_anyway">फिर भी शेयर करें</string>
+    <string name="cancel">रद्द करें</string>
 </resources>

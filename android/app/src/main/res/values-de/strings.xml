@@ -154,4 +154,16 @@
     <string name="relays_add">Hinzufügen</string>
     <string name="relays_remove">Entfernen</string>
     <string name="relays_invalid">Keine Relay-Adresse. wss://host verwenden, für .onion auch ws://….</string>
+    <string name="notify_quiet_message">Neue Nachricht</string>
+    <string name="notify_quiet_mention">Jemand hat dich erwähnt</string>
+    <string name="notify_previews_title">Namen und Text in Benachrichtigungen zeigen</string>
+    <string name="notify_previews_off">Aus: Eine Benachrichtigung sagt nur, dass etwas ankam. Ein gesperrtes Telefon liest niemandem deine Chats vor.</string>
+    <string name="notify_previews_on">An: Namen und Nachrichtenanfang erscheinen in Benachrichtigungen. Der Sperrbildschirm zeigt weiterhin nur, dass etwas ankam.</string>
+    <string name="media_tap_to_show">Zum Anzeigen tippen</string>
+    <string name="share_channel">Teilen</string>
+    <string name="share_channel_text">Komm in den Kanal #%1$s bei bitchat oder openchat: bitchat://geohash/%1$s — oder gib #%1$s bei den Ortskanälen ein.</string>
+    <string name="share_channel_warn_title">Das ist ein kleines Gebiet</string>
+    <string name="share_channel_warn_body">#%1$s umfasst etwa ein Viertel oder weniger. Wer diesen Text transportiert, etwa dein Mobilfunkanbieter oder die App zum Teilen, erfährt, welcher Ort dich interessiert.</string>
+    <string name="share_anyway">Trotzdem teilen</string>
+    <string name="cancel">Abbrechen</string>
 </resources>

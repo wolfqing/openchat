@@ -27,6 +27,7 @@ import org.openchat.android.core.Mentions
 import org.openchat.android.core.NoisePayloadType
 import org.openchat.android.core.NostrEmbedded
 import org.openchat.android.core.PrivateMessage
+import org.openchat.android.core.RateLimiter
 import org.openchat.android.core.VerifyQr
 import org.openchat.android.core.hexToBytes
 import org.openchat.android.core.sha256
@@ -70,6 +71,7 @@ class MeshService : Service(), ChatController {
     private lateinit var nostr: NostrDirect
     private lateinit var tor: Tor
     private lateinit var nostrSeenStore: SealedFile
+    private val publicLimiter = RateLimiter()
     private val nostrSeen = LinkedHashSet<String>() // message IDs already shown from Nostr, kept across restarts
     // Noise static keys by peer ID, readable from the UI thread (the engine's maps are not).
     private val noiseKeys = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
@@ -232,7 +234,9 @@ class MeshService : Service(), ChatController {
             ChatRepository.updateMesh { it.copy(links = engine.linkCount) }
         }
 
-        override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long) {
+        override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean) {
+            // Synced history arrives in a burst by design; only live traffic is limited.
+            if (!replayed && !publicLimiter.allow("mesh:$senderHex", text)) return
             val me = engine.identity
             val ambiguous = ChatRepository.peers.value.any { it.peerIdHex != me.peerIdHex && it.nickname.equals(me.nickname, ignoreCase = true) }
             val mentioned = Mentions.mentionsMe(text, me.nickname, me.peerIdHex.take(4), ambiguous)
@@ -548,6 +552,7 @@ class MeshService : Service(), ChatController {
      */
     override fun panic() {
         ChatRepository.wipe()
+        NotificationPrivacy.reset(this)
         Social.wipe()
         noiseKeys.clear()
         val nm = getSystemService(NotificationManager::class.java)
@@ -598,18 +603,27 @@ class MeshService : Service(), ChatController {
     }
 
     private var notifySeq = 100
-    private fun notifyPrivate(from: String, text: String) {
-        val n = builder(CHANNEL_MESSAGES)
-            .setContentTitle(from)
+    /**
+     * A message notification. Unless the user chose to show previews, it names neither the
+     * sender nor the place nor the text (§21.3); the lock screen always gets that quiet form.
+     */
+    private fun notifyPrivate(from: String, text: String, mention: Boolean = false) {
+        val quiet = builder(CHANNEL_MESSAGES)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(if (mention) R.string.notify_quiet_mention else R.string.notify_quiet_message))
+            .setAutoCancel(true)
+            .build()
+        val n = if (!NotificationPrivacy.showPreviews(this)) quiet else builder(CHANNEL_MESSAGES)
+            .setContentTitle(if (mention) getString(R.string.mention_notify, from) else from)
             .setContentText(text.take(120))
             .setAutoCancel(true)
-            // Keeps the text off the lock screen and out of the notification history (Android 11+).
-            .setVisibility(Notification.VISIBILITY_SECRET)
+            .setVisibility(Notification.VISIBILITY_PRIVATE)
+            .setPublicVersion(quiet)
             .build()
         try { getSystemService(NotificationManager::class.java).notify(notifySeq++, n) } catch (e: SecurityException) { }
     }
 
-    private fun notifyMention(from: String, text: String) = notifyPrivate(getString(R.string.mention_notify, from), text)
+    private fun notifyMention(from: String, text: String) = notifyPrivate(from, text, mention = true)
 
     private fun builder(channel: String): Notification.Builder {
         val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, channel) else @Suppress("DEPRECATION") Notification.Builder(this)

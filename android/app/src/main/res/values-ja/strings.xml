@@ -150,4 +150,16 @@
     <string name="relays_add">追加</string>
     <string name="relays_remove">削除</string>
     <string name="relays_invalid">リレーのアドレスではありません。wss://ホスト名、.onionならws://…を使ってください。</string>
+    <string name="notify_quiet_message">新しいメッセージ</string>
+    <string name="notify_quiet_mention">誰かがあなたをメンションしました</string>
+    <string name="notify_previews_title">通知に名前と本文を表示</string>
+    <string name="notify_previews_off">オフ：通知は何か届いたことだけを伝えます。ロック中の端末を手にした人に会話が見えることはありません。</string>
+    <string name="notify_previews_on">オン：通知に名前と本文の冒頭が出ます。ロック画面では引き続き「届いた」ことだけが表示されます。</string>
+    <string name="media_tap_to_show">タップして表示</string>
+    <string name="share_channel">共有</string>
+    <string name="share_channel_text">bitchat か openchat の #%1$s チャンネルへどうぞ：bitchat://geohash/%1$s ——地域チャンネルで #%1$s と入力しても入れます。</string>
+    <string name="share_channel_warn_title">狭い範囲です</string>
+    <string name="share_channel_warn_body">#%1$s は街区程度かそれより狭い範囲です。この文を運ぶ相手（通信会社や共有に使うアプリなど）に、あなたが気にかけている場所が分かります。</string>
+    <string name="share_anyway">それでも共有</string>
+    <string name="cancel">キャンセル</string>
 </resources>

@@ -150,4 +150,16 @@
     <string name="relays_add">ထည့်ရန်</string>
     <string name="relays_remove">ဖယ်ရန်</string>
     <string name="relays_invalid">ရီလေး လိပ်စာ မဟုတ်ပါ။ wss://host ကိုသုံးပါ၊ .onion အတွက် ws://… ရသည်။</string>
+    <string name="notify_quiet_message">စာအသစ်</string>
+    <string name="notify_quiet_mention">တစ်စုံတစ်ယောက်က သင့်ကို ဖော်ပြခဲ့သည်</string>
+    <string name="notify_previews_title">အသိပေးချက်တွင် အမည်နှင့် စာကို ပြရန်</string>
+    <string name="notify_previews_off">ပိတ်ထားသည်- အသိပေးချက်က တစ်ခုခုရောက်ကြောင်းသာ ပြသဖြင့် သော့ခတ်ထားသောဖုန်းက သင့်ချက်တင်များကို မပြပါ။</string>
+    <string name="notify_previews_on">ဖွင့်ထားသည်- အသိပေးချက်တွင် အမည်နှင့် စာအစကို ပြမည်။ သော့ခတ်မျက်နှာပြင်တွင်မူ တစ်ခုခုရောက်ကြောင်းသာ ပြမည်။</string>
+    <string name="media_tap_to_show">ပြရန် နှိပ်ပါ</string>
+    <string name="share_channel">မျှဝေရန်</string>
+    <string name="share_channel_text">bitchat သို့မဟုတ် openchat ရှိ #%1$s ချန်နယ်သို့ လာပါ- bitchat://geohash/%1$s — သို့မဟုတ် ဒေသချန်နယ်တွင် #%1$s ရိုက်ပါ။</string>
+    <string name="share_channel_warn_title">ဤသည် ဧရိယာငယ်ဖြစ်သည်</string>
+    <string name="share_channel_warn_body">#%1$s သည် ရပ်ကွက်တစ်ခုခန့် သို့မဟုတ် ပိုငယ်သည်။ ဤစာကို သယ်ဆောင်သူ (ဖုန်းဝန်ဆောင်မှု သို့မဟုတ် မျှဝေသည့်အက်ပ်) က သင်စိတ်ဝင်စားသည့်နေရာကို သိမည်။</string>
+    <string name="share_anyway">မည်သို့ပင်ဖြစ်စေ မျှဝေရန်</string>
+    <string name="cancel">မလုပ်တော့ပါ</string>
 </resources>
