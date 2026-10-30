@@ -124,7 +124,12 @@ class MeshService : Service(), ChatController {
             return
         }
         ChatRepository.updateMesh { it.copy(storageLocked = false) }
-        engine = MeshEngine(identity, scheduler, { link, bytes -> ble.write(link, bytes) }, listener)
+        // Media is kept in the clear in the cache for the timeline, which does not survive a restart; neither should it.
+        Media.dir(this).deleteRecursively()
+        engine = MeshEngine(identity, scheduler, object : org.openchat.android.mesh.LinkWriter {
+            override fun write(linkId: String, bytes: ByteArray) = ble.write(linkId, bytes)
+            override fun pending(linkId: String) = ble.pending(linkId)
+        }, listener)
         stateStore.load()?.let { s -> engine.importState(s); s.known.forEach { (hex, k) -> noiseKeys[hex] = k.noiseKey } }
         publishBoard()
         // Route relay traffic before any relay socket opens (§19).
@@ -665,6 +670,10 @@ class MeshService : Service(), ChatController {
         val nm = getSystemService(NotificationManager::class.java)
         nm.cancelAll()
         startInForeground()
+        // Tor's guards, state and circuits were chosen under the old identity; relays would see the new
+        // keys arrive over the same circuits. Stop it (relay sockets fail closed meanwhile), wipe its
+        // directory, and come back on fresh guards after a pause that does not line up with the wipe.
+        tor.wipeAndRestart(Handler(mainLooper), delayMs = 2_000L + (Math.random() * 6_000).toLong())
         handler.post {
             handler.removeCallbacks(saveState)
             bridge.wipe()

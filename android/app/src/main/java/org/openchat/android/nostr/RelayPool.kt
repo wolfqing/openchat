@@ -68,19 +68,24 @@ class RelayPool(private val onEvent: (relay: String, event: NostrEvent) -> Unit)
     private fun ensure(relay: String) {
         wanted.add(relay)
         if (sockets.containsKey(relay)) return
+        // An onion address only exists through Tor; handing it to the system resolver tells the network which hidden service we wanted.
+        if (relay.contains(".onion") && !NetRoute.torWanted) return
         val client = NetRoute.client() ?: run {
             // Tor is wanted but not up yet: wait rather than go clearnet.
             timer.schedule({ if (wanted.contains(relay)) ensure(relay) }, 3, TimeUnit.SECONDS)
             return
         }
-        val ws = client.newWebSocket(Request.Builder().url(relay).build(), Listener(relay))
+        val ws = client.newWebSocket(Request.Builder().url(relay).build(), Listener(relay, NetRoute.generation))
         sockets[relay] = ws
     }
 
     private fun req(subId: String, filter: JSONObject) = JSONArray().put("REQ").put(subId).put(filter).toString()
 
-    private inner class Listener(private val relay: String) : WebSocketListener() {
+    private inner class Listener(private val relay: String, private val route: Long) : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
+            // Opened under a route that changed meanwhile (Tor came on between picking the client and
+            // connecting): this socket may be clearnet. Drop it; the reconnect uses the current route.
+            if (route != NetRoute.generation) { webSocket.cancel(); return }
             connected.add(relay)
             backoff.remove(relay)
             subs.forEach { (id, v) -> if (relay in v.first) webSocket.send(req(id, v.second)) }

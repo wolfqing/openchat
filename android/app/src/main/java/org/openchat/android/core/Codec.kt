@@ -189,12 +189,14 @@ object PacketCodec {
         val version = r.u8() ?: return null
         val header = headerSize(version)
         if (header < 0) return null
-        r.u8() ?: return null
+        val type = r.u8() ?: return null
         r.u8() ?: return null
         r.u64() ?: return null
         val flags = r.u8() ?: return null
         val payloadLength = (if (version == 2) r.u32() else r.u16()?.toLong()) ?: return null
-        if (payloadLength > MessageType.MAX_FRAMED_FILE_BYTES) return null
+        // The per-type cap (§2.7) rather than the global one: a stray byte read as a header
+        // must not make the framer wait for a megabyte that is never coming.
+        if (payloadLength > MessageType.maxPayloadBytes(type)) return null
         var total = header + ID_SIZE
         if (flags and Flags.HAS_RECIPIENT != 0) total += ID_SIZE
         if (version >= 2 && flags and Flags.HAS_ROUTE != 0) {

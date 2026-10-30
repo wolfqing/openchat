@@ -16,6 +16,9 @@ object NetRoute {
         private set
     @Volatile var socksPort = 0
         private set
+    /** Bumped on every route change, so a socket can tell whether it was opened under the current one. */
+    @Volatile var generation = 0L
+        private set
     private val listeners = CopyOnWriteArrayList<() -> Unit>()
     private val direct = OkHttpClient.Builder().pingInterval(30, TimeUnit.SECONDS).connectTimeout(15, TimeUnit.SECONDS).build()
     @Volatile private var viaTor: Pair<Int, OkHttpClient>? = null
@@ -39,6 +42,7 @@ object NetRoute {
         if (this.torWanted == torWanted && this.socksPort == socksPort) return
         this.torWanted = torWanted
         this.socksPort = socksPort
+        generation++
         listeners.forEach { it() }
     }
 
