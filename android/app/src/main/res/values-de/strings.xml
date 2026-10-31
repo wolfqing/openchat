@@ -253,4 +253,12 @@
     <string name="media_mic_hint">Sprache: zum Sprechen halten oder tippen zum Starten und erneut tippen zum Senden</string>
     <string name="live_voice_title">Live-Sprache</string>
     <string name="live_voice_body">Sprachnachrichten in In der Nähe und privaten Chats sind für andere schon hörbar, während du noch sprichst, und ihre laufen bei dir, wenn der Chat offen ist. Aus: nur fertige Nachrichten, in beide Richtungen.</string>
+    <string name="media_play">Abspielen</string>
+    <string name="media_stop">Stopp</string>
+    <string name="me_wipe_title">Alles löschen</string>
+    <string name="me_wipe_body">Löscht Identität, Chats und Einstellungen auf diesem Telefon und gibt dir eine neue Identität. Dasselbe wie dreimal auf das Logo zu tippen.</string>
+    <string name="me_wipe_button">Alles löschen…</string>
+    <string name="me_wipe_confirm">Das lässt sich nicht rückgängig machen. Deine Gesprächspartner sehen dich danach als Fremden.</string>
+    <string name="me_wipe_do">Löschen</string>
+    <string name="panic_logo">openchat. Dreimal tippen, um alles zu löschen.</string>
 </resources>

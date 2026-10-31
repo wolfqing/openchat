@@ -261,4 +261,12 @@
     <string name="media_mic_hint">Голос: удерживайте, чтобы говорить, или нажмите для начала и ещё раз для отправки</string>
     <string name="live_voice_title">Голос в реальном времени</string>
     <string name="live_voice_body">Голосовые в «Рядом» и личных чатах слышны другим, пока вы ещё говорите, а их голосовые играют у вас, когда чат открыт. Выкл.: только законченные сообщения в обе стороны.</string>
+    <string name="media_play">Воспроизвести</string>
+    <string name="media_stop">Стоп</string>
+    <string name="me_wipe_title">Стереть всё</string>
+    <string name="me_wipe_body">Удаляет вашу личность, чаты и настройки на этом телефоне и создаёт новую личность. То же, что трижды нажать на логотип.</string>
+    <string name="me_wipe_button">Стереть всё…</string>
+    <string name="me_wipe_confirm">Это нельзя отменить. Собеседники потом увидят вас как незнакомца.</string>
+    <string name="me_wipe_do">Стереть</string>
+    <string name="panic_logo">openchat. Нажмите три раза, чтобы стереть всё.</string>
 </resources>

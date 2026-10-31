@@ -253,4 +253,12 @@
     <string name="media_mic_hint">आवाज़: बोलने के लिए दबाए रखें, या शुरू करने को टैप करें और भेजने को फिर टैप करें</string>
     <string name="live_voice_title">लाइव आवाज़</string>
     <string name="live_voice_body">आस-पास और निजी चैट में आपके बोलते-बोलते दूसरे सुन सकते हैं, और उनकी आवाज़ आपको तब सुनाई देती है जब वह चैट खुली हो। बंद: दोनों ओर केवल पूरे वॉइस नोट।</string>
+    <string name="media_play">चलाएँ</string>
+    <string name="media_stop">रोकें</string>
+    <string name="me_wipe_title">सब कुछ मिटाएँ</string>
+    <string name="me_wipe_body">इस फ़ोन पर आपकी पहचान, चैट और सेटिंग हटा देता है और आपको नई पहचान देता है। लोगो पर तीन बार टैप करने जैसा ही।</string>
+    <string name="me_wipe_button">सब कुछ मिटाएँ…</string>
+    <string name="me_wipe_confirm">इसे पूर्ववत नहीं किया जा सकता। बाद में आपके चैट साथी आपको अजनबी के रूप में देखेंगे।</string>
+    <string name="me_wipe_do">मिटाएँ</string>
+    <string name="panic_logo">openchat। सब कुछ मिटाने के लिए तीन बार टैप करें।</string>
 </resources>

@@ -14,6 +14,14 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -330,7 +338,7 @@ fun MainScreen(
                             BadgedBox(badge = { if (count > 0) Badge { Text("$count") } }) {
                                 Icon(
                                     when (t) { Tab.NEARBY -> Icons.Filled.Share; Tab.PRIVATE -> Icons.Filled.Lock; Tab.LOCATION -> Icons.Filled.LocationOn; Tab.ME -> Icons.Filled.Person },
-                                    contentDescription = stringResource(t.label),
+                                    contentDescription = null, // the label names the tab; a description here would be read twice
                                 )
                             }
                         },
@@ -351,7 +359,7 @@ fun MainScreen(
                 )
                 Tab.PRIVATE -> PrivateList(onOpen = { openChat = if (it.startsWith("gdm:") || it.startsWith("grp:")) it else Conversation.Private(it).key })
                 Tab.LOCATION -> LocationPane(onRequestLocation, onOpen = { openChat = Conversation.Geo(it).key })
-                Tab.ME -> MePane(onShareApp, onLanguage, onScan)
+                Tab.ME -> MePane(onShareApp, onLanguage, onScan, onPanic)
             }
         }
     }
@@ -544,7 +552,9 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
                     append(labelText(PeerLabel.of(m), m.teleported, verified = mesh && social.isVerifiedPeer(m.senderKey), vouched = mesh && social.isVouchedPeer(m.senderKey)))
                     if (m.bridged) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Normal)) { append(" · " + stringResource(R.string.bridge_via)) }
                 }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.let { if (onSenderClick != null && !m.bridged) it.clickable { onSenderClick(m) } else it },
+                modifier = Modifier.let {
+                    if (onSenderClick != null && !m.bridged) it.clickable(role = Role.Button) { onSenderClick(m) }.defaultMinSize(minHeight = 32.dp).wrapContentHeight(Alignment.CenterVertically) else it
+                },
             )
         }
         Surface(
@@ -629,9 +639,20 @@ private fun MediaButtons(conversation: String) {
         }
     }
     val hint = stringResource(R.string.media_mic_hint)
+    val stopHint = stringResource(R.string.media_stop)
+    // What a screen reader's activation does: no holding or tapping in rhythm, one click starts, the next sends.
+    fun toggle() {
+        if (recording) { stopAndSend(); return }
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (granted) recording = begin() else mic.launch(android.Manifest.permission.RECORD_AUDIO)
+    }
     // Hold to talk, release to send; a quick tap keeps recording until the next tap.
     Box(
-        Modifier.size(48.dp).semantics { contentDescription = hint }.pointerInput(conversation) {
+        Modifier.size(48.dp).clearAndSetSemantics {
+            contentDescription = if (recording) stopHint else hint
+            role = Role.Button
+            onClick { toggle(); true }
+        }.pointerInput(conversation) {
             detectTapGestures(onPress = {
                 if (recording) { if (tryAwaitRelease()) stopAndSend(); return@detectTapGestures }
                 val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -694,11 +715,15 @@ private fun VoiceNote(path: String) {
     }
     DisposableEffect(path) { onDispose { player?.release() } }
     Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = {
-            val p = player
-            if (p != null) { p.release(); player = null }
-            else player = try { MediaPlayer().apply { setDataSource(path); setOnCompletionListener { it.release(); player = null }; prepare(); start() } } catch (e: Exception) { null }
-        }) { Text(if (player != null) "■" else "▶", fontSize = 18.sp) }
+        val label = stringResource(if (player != null) R.string.media_stop else R.string.media_play)
+        IconButton(
+            onClick = {
+                val p = player
+                if (p != null) { p.release(); player = null }
+                else player = try { MediaPlayer().apply { setDataSource(path); setOnCompletionListener { it.release(); player = null }; prepare(); start() } } catch (e: Exception) { null }
+            },
+            modifier = Modifier.semantics { contentDescription = label },
+        ) { if (player != null) Text("■", fontSize = 18.sp) else Icon(Icons.Filled.PlayArrow, contentDescription = null) }
         Text(stringResource(R.string.media_voice) + " · " + "%d:%02d".format(duration / 60_000, (duration / 1000) % 60), fontSize = 14.sp, modifier = Modifier.padding(end = 12.dp))
     }
 }
@@ -1274,7 +1299,7 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
 // ---------------------------------------------------------------- me
 
 @Composable
-private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> Unit, onScan: () -> Unit) {
+private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> Unit, onScan: () -> Unit, onPanic: () -> Unit) {
     val mesh by ChatRepository.mesh.collectAsState()
     var nick by rememberSaveable(mesh.myNickname) { mutableStateOf(mesh.myNickname) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
@@ -1318,6 +1343,32 @@ private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> U
         RelaySection()
         BlockedList()
         Spacer(Modifier.height(24.dp))
+        WipeSection(onPanic)
+        Spacer(Modifier.height(24.dp))
         Text(stringResource(R.string.me_about), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+/**
+ * The triple tap on the logo or title is out of reach for screen readers and unsteady hands.
+ * This button does the same after a confirmation; the triple tap itself stays unconfirmed (§10).
+ */
+@Composable
+private fun WipeSection(onPanic: () -> Unit) {
+    var confirm by remember { mutableStateOf(false) }
+    Text(stringResource(R.string.me_wipe_title), fontWeight = FontWeight.SemiBold)
+    Text(stringResource(R.string.me_wipe_body), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Spacer(Modifier.height(8.dp))
+    OutlinedButton(
+        onClick = { confirm = true },
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+    ) { Text(stringResource(R.string.me_wipe_button)) }
+    if (confirm) AlertDialog(
+        onDismissRequest = { confirm = false },
+        title = { Text(stringResource(R.string.me_wipe_title)) },
+        text = { Text(stringResource(R.string.me_wipe_confirm)) },
+        confirmButton = { TextButton(onClick = { confirm = false; onPanic() }) { Text(stringResource(R.string.me_wipe_do), color = MaterialTheme.colorScheme.error) } },
+        dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) } },
+    )
 }

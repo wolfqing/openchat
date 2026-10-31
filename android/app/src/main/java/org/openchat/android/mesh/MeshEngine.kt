@@ -143,7 +143,8 @@ class MeshEngine(
         var remoteStatic: ByteArray? = null // the Noise key the handshake proved
         val established get() = send != null
         val pending get() = handshake != null && send == null
-        fun wipe() { send?.clear(); recv?.clear(); send = null; recv = null }
+        /** Zeroes every key this attempt or session holds, including a half-done handshake's. */
+        fun wipe() { send?.clear(); recv?.clear(); send = null; recv = null; handshake?.destroy() }
     }
 
     private val links = LinkedHashMap<String, Link>()
@@ -245,8 +246,10 @@ class MeshEngine(
 
     /** Clears every piece of state tied to the old identity (panic wipe, §10). */
     fun resetIdentity(newIdentity: Identity) {
+        val old = identity
         identity = newIdentity
-        peers.clear(); sessions.values.forEach { it.wipe() }; sessions.clear(); candidates.clear(); pendingNoise.clear(); lastHandshakeStart.clear(); earlyCiphertexts.clear()
+        peers.clear(); sessions.values.forEach { it.wipe() }; sessions.clear(); candidates.values.forEach { it.wipe() }; candidates.clear()
+        pendingNoise.clear(); lastHandshakeStart.clear(); earlyCiphertexts.clear()
         known.clear(); outbox.clear(); carried.clear(); seenIds.clear(); acked.clear(); pendingAcks.clear()
         history.clear(); groupHistory.clear(); board.clear(); pendingVerify.clear(); peerCaps.clear(); myAnnounce = null; pendingSync.clear(); syncReplies.clear()
         probes.values.forEach { it.timeout.cancel() }; probes.clear(); pingReplies.clear()
@@ -255,6 +258,8 @@ class MeshEngine(
         dedup.clear()
         assembler = FragmentAssembler(clock = scheduler::now)
         links.values.forEach { it.peerHex = null; it.framer.reset() }
+        // The old private keys stay in memory only as long as the garbage collector pleases; zero them now.
+        if (old !== newIdentity) old.destroy()
         publishPeers()
         sendAnnounce(force = true)
     }
@@ -405,11 +410,11 @@ class MeshEngine(
     private fun expireHandshakes(now: Long) {
         val timedOut = sessions.filterValues { it.pending && now - it.startedAt > HANDSHAKE_TIMEOUT_MS }.keys.toList()
         for (hex in timedOut) {
-            sessions.remove(hex)
+            sessions.remove(hex)?.wipe()
             earlyCiphertexts.remove(hex)
             if (pendingNoise[hex]?.isNotEmpty() == true && peers.containsKey(hex)) startHandshake(hex)
         }
-        candidates.entries.removeAll { now - it.value.startedAt > HANDSHAKE_TIMEOUT_MS }
+        candidates.entries.removeAll { (now - it.value.startedAt > HANDSHAKE_TIMEOUT_MS).also { gone -> if (gone) it.value.wipe() } }
         lastHandshakeStart.entries.removeAll { now - it.value > HANDSHAKE_TIMEOUT_MS }
         sessions.entries.removeAll { (hex, s) ->
             (s.established && !peers.containsKey(hex) && now - s.lastUsed > SESSION_IDLE_MS).also { if (it) s.wipe() }
@@ -1010,6 +1015,7 @@ class MeshEngine(
         while (sessions.count { it.value.pending } + candidates.size >= PENDING_HANDSHAKE_CAP) {
             val oldest = (sessions.entries.filter { it.value.pending } + candidates.entries).minByOrNull { it.value.startedAt } ?: return
             if (!sessions.remove(oldest.key, oldest.value)) candidates.remove(oldest.key, oldest.value)
+            oldest.value.wipe()
             earlyCiphertexts.remove(oldest.key)
         }
     }
@@ -1044,6 +1050,7 @@ class MeshEngine(
         } catch (e: Exception) {
             // A bad message poisons the Noise state; drop this attempt. The timeout sweep retries if we still have mail.
             if (!candidates.remove(peerHex, target)) sessions.remove(peerHex, target)
+            target.wipe()
             return
         }
         if (hs.isComplete) completeHandshake(peerHex, hs, target)
@@ -1053,9 +1060,11 @@ class MeshEngine(
         val remote = hs.remoteStatic
         if (remote == null || Identity.peerIdFor(remote).toHex() != peerHex) {
             if (!candidates.remove(peerHex, attempt)) sessions.remove(peerHex, attempt)
+            attempt.wipe()
             return
         }
         val (send, recv) = hs.split()
+        hs.destroy() // the transport keys are out; nothing else from the handshake is needed
         val now = scheduler.now()
         val s = Session(null, now).also { it.send = send; it.recv = recv; it.establishedAt = now; it.remoteStatic = remote }
         val replaced = sessions.put(peerHex, s)

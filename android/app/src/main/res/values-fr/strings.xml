@@ -257,4 +257,12 @@
     <string name="media_mic_hint">Voix : maintenez pour parler, ou touchez pour commencer et touchez à nouveau pour envoyer</string>
     <string name="live_voice_title">Voix en direct</string>
     <string name="live_voice_body">Les messages vocaux dans À proximité et les discussions privées s\'entendent pendant que vous parlez encore, et ceux des autres se lisent quand la discussion est ouverte. Désactivé : seulement les messages terminés, dans les deux sens.</string>
+    <string name="media_play">Lire</string>
+    <string name="media_stop">Arrêter</string>
+    <string name="me_wipe_title">Tout effacer</string>
+    <string name="me_wipe_body">Supprime votre identité, vos discussions et vos réglages sur ce téléphone et vous donne une nouvelle identité. Comme toucher le logo trois fois.</string>
+    <string name="me_wipe_button">Tout effacer…</string>
+    <string name="me_wipe_confirm">Cette action est irréversible. Vos interlocuteurs vous verront ensuite comme un inconnu.</string>
+    <string name="me_wipe_do">Effacer</string>
+    <string name="panic_logo">openchat. Touchez trois fois pour tout effacer.</string>
 </resources>

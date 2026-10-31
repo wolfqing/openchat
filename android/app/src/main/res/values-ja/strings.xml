@@ -249,4 +249,12 @@
     <string name="media_mic_hint">音声：押している間話す、またはタップで開始してもう一度タップで送信</string>
     <string name="live_voice_title">ライブ音声</string>
     <string name="live_voice_body">「近く」と個人チャットでは、話している最中から相手に聞こえ、相手の音声もそのチャットを開いていればその場で再生されます。オフ：双方とも録音し終えたメッセージのみ。</string>
+    <string name="media_play">再生</string>
+    <string name="media_stop">停止</string>
+    <string name="me_wipe_title">すべて消去</string>
+    <string name="me_wipe_body">この端末のアイデンティティ、チャット、設定を削除し、新しいアイデンティティにします。ロゴを3回タップするのと同じです。</string>
+    <string name="me_wipe_button">すべて消去…</string>
+    <string name="me_wipe_confirm">この操作は取り消せません。その後、チャット相手にはあなたは知らない人として見えます。</string>
+    <string name="me_wipe_do">消去</string>
+    <string name="panic_logo">openchat。3回タップするとすべて消去します。</string>
 </resources>

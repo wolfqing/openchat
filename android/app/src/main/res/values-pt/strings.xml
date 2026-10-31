@@ -257,4 +257,12 @@
     <string name="media_mic_hint">Voz: mantenha premido para falar, ou toque para começar e toque de novo para enviar</string>
     <string name="live_voice_title">Voz em direto</string>
     <string name="live_voice_body">As mensagens de voz em Perto e nas conversas privadas ouvem-se enquanto ainda fala, e as dos outros tocam quando essa conversa está aberta. Desligado: só mensagens terminadas, nos dois sentidos.</string>
+    <string name="media_play">Reproduzir</string>
+    <string name="media_stop">Parar</string>
+    <string name="me_wipe_title">Apagar tudo</string>
+    <string name="me_wipe_body">Apaga sua identidade, conversas e configurações neste telefone e cria uma identidade nova. O mesmo que tocar três vezes no logotipo.</string>
+    <string name="me_wipe_button">Apagar tudo…</string>
+    <string name="me_wipe_confirm">Isso não pode ser desfeito. Depois, as pessoas com quem você conversa vão ver você como um desconhecido.</string>
+    <string name="me_wipe_do">Apagar</string>
+    <string name="panic_logo">openchat. Toque três vezes para apagar tudo.</string>
 </resources>

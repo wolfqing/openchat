@@ -157,7 +157,7 @@ fun MyQrDialog(onDismiss: () -> Unit) {
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (bitmap != null) {
-                    Image(bitmap, contentDescription = null, modifier = Modifier.fillMaxWidth().aspectRatio(1f).background(Color.White).padding(8.dp))
+                    Image(bitmap, contentDescription = stringResource(R.string.verify_my_qr), modifier = Modifier.fillMaxWidth().aspectRatio(1f).background(Color.White).padding(8.dp))
                 }
                 Text(stringResource(R.string.verify_my_qr_note), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

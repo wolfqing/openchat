@@ -267,4 +267,11 @@
     <string name="media_mic_hint">Voice: hold to talk, or tap to start and tap again to send</string>
     <string name="live_voice_title">Live voice</string>
     <string name="live_voice_body">Voice notes in Nearby and private chats play for others while you are still talking, and theirs play for you when that chat is open. Off: only finished notes, both ways.</string>
+    <string name="media_play">Play</string>
+    <string name="media_stop">Stop</string>
+    <string name="me_wipe_title">Erase everything</string>
+    <string name="me_wipe_body">Deletes your identity, chats and settings on this phone and gives you a new identity. The same as tapping the logo three times.</string>
+    <string name="me_wipe_button">Erase everything…</string>
+    <string name="me_wipe_confirm">This cannot be undone. People you chat with will see you as a stranger afterwards.</string>
+    <string name="me_wipe_do">Erase</string>
 </resources>

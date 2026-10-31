@@ -249,4 +249,12 @@
     <string name="media_mic_hint">Giọng nói: giữ để nói, hoặc chạm để bắt đầu và chạm lần nữa để gửi</string>
     <string name="live_voice_title">Giọng nói trực tiếp</string>
     <string name="live_voice_body">Tin nhắn thoại ở Gần đây và trò chuyện riêng phát cho người khác ngay khi bạn còn đang nói, và của họ phát cho bạn khi cuộc trò chuyện đó đang mở. Tắt: chỉ tin đã ghi xong, cả hai chiều.</string>
+    <string name="media_play">Phát</string>
+    <string name="media_stop">Dừng</string>
+    <string name="me_wipe_title">Xóa mọi thứ</string>
+    <string name="me_wipe_body">Xóa danh tính, tin nhắn và cài đặt trên điện thoại này và tạo cho bạn một danh tính mới. Giống như chạm vào logo ba lần.</string>
+    <string name="me_wipe_button">Xóa mọi thứ…</string>
+    <string name="me_wipe_confirm">Không thể hoàn tác. Sau đó, những người bạn trò chuyện sẽ thấy bạn như người lạ.</string>
+    <string name="me_wipe_do">Xóa</string>
+    <string name="panic_logo">openchat. Chạm ba lần để xóa mọi thứ.</string>
 </resources>
