@@ -61,7 +61,7 @@
     <string name="geo_elsewhere">Kunjungi area lain</string>
     <string name="geo_hint">geohash, mis. wtw3s</string>
     <string name="geo_enter">Buka</string>
-    <string name="geo_teleport_note">Kamu tidak berada di sana, jadi orang lain akan melihat ✈ di samping namamu.</string>
+    <string name="geo_teleport_note">Kamu tidak berada di sana, jadi orang lain akan melihat ✈︎ di samping namamu.</string>
     <string name="geo_joined">Bergabung</string>
     <string name="geo_connecting">Menghubungkan…</string>
     <plurals name="geo_recent">
@@ -131,7 +131,7 @@
     <string name="notes_hint">Siapa pun yang datang dalam jarak sekitar 40 m dalam 24 jam ke depan bisa membacanya. Perlu internet.</string>
     <string name="notes_placeholder">Tinggalkan catatan di sini…</string>
     <string name="notes_empty">Tidak ada catatan di sini dalam 24 jam terakhir.</string>
-    <string name="note_dropped">📍 catatan ditinggalkan — hilang dalam 24 jam</string>
+    <string name="note_dropped">catatan ditinggalkan — hilang dalam 24 jam</string>
     <string name="note_no_location">meninggalkan catatan perlu lokasi Anda — aktifkan dulu di tab Wilayah</string>
     <string name="media_photo">Foto</string>
     <string name="media_voice">Pesan suara</string>
@@ -212,7 +212,7 @@
         <item quantity="other">%d hari</item>
     </plurals>
     <string name="board_post">Pasang di papan</string>
-    <string name="board_urgent_line">📌 pengumuman penting dari %1$s: %2$s</string>
+    <string name="board_urgent_line">pengumuman penting dari %1$s: %2$s</string>
     <string name="bridge_title">Hubungkan kelompok sekitar lewat internet</string>
     <string name="bridge_body">Bluetooth tak menjangkau jauh. Jika aktif, pesan Sekitar Anda juga dikirim ke relay internet wilayah Anda (sekitar 1 km), dan Sekitar menampilkan obrolan orang beberapa jalan jauhnya. Ponsel tanpa internet mengirim dan menerima lewat ponsel Anda. Pesan publik Anda, dengan nama anonim wilayah, lalu keluar dari radio.</string>
     <string name="bridge_need_cell">Menunggu wilayah: aktifkan lokasi di tab Wilayah, atau tetap dekat ponsel yang menjembatani.</string>

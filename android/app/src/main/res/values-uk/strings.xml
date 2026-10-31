@@ -70,7 +70,7 @@
     <string name="geo_elsewhere">Перейти в інший район</string>
     <string name="geo_hint">geohash, наприклад wtw3s</string>
     <string name="geo_enter">Перейти</string>
-    <string name="geo_teleport_note">Вас там немає, тому інші побачать ✈ біля вашого імені.</string>
+    <string name="geo_teleport_note">Вас там немає, тому інші побачать ✈︎ біля вашого імені.</string>
     <string name="geo_joined">Ви в каналі</string>
     <string name="geo_connecting">Підключення…</string>
     <plurals name="geo_recent">
@@ -143,7 +143,7 @@
     <string name="notes_hint">Її прочитає кожен, хто опиниться в межах ~40 м протягом 24 годин. Потрібен інтернет.</string>
     <string name="notes_placeholder">Залишити нотатку тут…</string>
     <string name="notes_empty">За останні 24 години тут нотаток немає.</string>
-    <string name="note_dropped">📍 нотатку залишено — зникне за 24 год</string>
+    <string name="note_dropped">нотатку залишено — зникне за 24 год</string>
     <string name="note_no_location">для нотатки потрібне місцеположення — спершу увімкніть його на вкладці «Місцевість»</string>
     <string name="media_photo">Фото</string>
     <string name="media_voice">Голосове</string>
@@ -224,7 +224,7 @@
         <item quantity="other">%d дн.</item>
     </plurals>
     <string name="board_post">Повісити на дошку</string>
-    <string name="board_urgent_line">📌 термінове оголошення від %1$s: %2$s</string>
+    <string name="board_urgent_line">термінове оголошення від %1$s: %2$s</string>
     <string name="bridge_title">Зв\'язати групи поруч через інтернет</string>
     <string name="bridge_body">Bluetooth б\'є недалеко. Якщо увімкнути, ваші повідомлення «Поруч» підуть і на інтернет-релеї вашої місцевості (~1 км), а в «Поруч» з\'явиться те, що пишуть за кілька вулиць. Телефони без інтернету надсилатимуть і отримуватимуть через ваш. Ваші публічні повідомлення під анонімним ім\'ям для місцевості при цьому виходять за межі радіо.</string>
     <string name="bridge_need_cell">Чекаємо на місцевість: увімкніть геопозицію на вкладці «Місцевість» або будьте поруч із телефоном-мостом.</string>

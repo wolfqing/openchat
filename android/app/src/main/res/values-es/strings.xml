@@ -67,7 +67,7 @@
     <string name="geo_elsewhere">Visitar otra zona</string>
     <string name="geo_hint">geohash, p. ej. wtw3s</string>
     <string name="geo_enter">Ir</string>
-    <string name="geo_teleport_note">No estás allí, así que los demás verán ✈ junto a tu nombre.</string>
+    <string name="geo_teleport_note">No estás allí, así que los demás verán ✈︎ junto a tu nombre.</string>
     <string name="geo_joined">Unido</string>
     <string name="geo_connecting">Conectando…</string>
     <plurals name="geo_recent">
@@ -139,7 +139,7 @@
     <string name="notes_hint">Cualquiera que pase a unos 40 m en las próximas 24 horas puede leerla. Necesita internet.</string>
     <string name="notes_placeholder">Deja una nota aquí…</string>
     <string name="notes_empty">No hay notas aquí en las últimas 24 horas.</string>
-    <string name="note_dropped">📍 nota dejada aquí — desaparece en 24 h</string>
+    <string name="note_dropped">nota dejada aquí — desaparece en 24 h</string>
     <string name="note_no_location">dejar una nota requiere tu ubicación — actívala primero en la pestaña Zona</string>
     <string name="media_photo">Foto</string>
     <string name="media_voice">Nota de voz</string>
@@ -220,7 +220,7 @@
         <item quantity="other">%d días</item>
     </plurals>
     <string name="board_post">Publicar en el tablón</string>
-    <string name="board_urgent_line">📌 aviso urgente de %1$s: %2$s</string>
+    <string name="board_urgent_line">aviso urgente de %1$s: %2$s</string>
     <string name="bridge_title">Unir grupos cercanos por internet</string>
     <string name="bridge_body">El Bluetooth llega poco. Con esto activado, tus mensajes de Cerca también van a relés de internet de tu zona (~1 km), y Cerca muestra lo que dicen a unas calles. Los teléfonos sin internet envían y reciben a través del tuyo. Tus mensajes públicos, con un nombre anónimo de la zona, salen entonces de la radio.</string>
     <string name="bridge_need_cell">Esperando tu zona: usa tu ubicación en la pestaña Zona o quédate cerca de un teléfono que haga de puente.</string>

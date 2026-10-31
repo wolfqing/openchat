@@ -67,7 +67,7 @@
     <string name="geo_elsewhere">Visiter une autre zone</string>
     <string name="geo_hint">geohash, p. ex. wtw3s</string>
     <string name="geo_enter">Aller</string>
-    <string name="geo_teleport_note">Vous n\'y êtes pas, les autres verront donc ✈ à côté de votre nom.</string>
+    <string name="geo_teleport_note">Vous n\'y êtes pas, les autres verront donc ✈︎ à côté de votre nom.</string>
     <string name="geo_joined">Rejoint</string>
     <string name="geo_connecting">Connexion…</string>
     <plurals name="geo_recent">
@@ -139,7 +139,7 @@
     <string name="notes_hint">Toute personne passant à environ 40 m dans les 24 h peut la lire. Nécessite internet.</string>
     <string name="notes_placeholder">Laisser une note ici…</string>
     <string name="notes_empty">Aucune note ici depuis 24 heures.</string>
-    <string name="note_dropped">📍 note laissée ici — elle s\'efface en 24 h</string>
+    <string name="note_dropped">note laissée ici — elle s\'efface en 24 h</string>
     <string name="note_no_location">laisser une note demande votre position — activez-la d\'abord dans l\'onglet Zone</string>
     <string name="media_photo">Photo</string>
     <string name="media_voice">Message vocal</string>
@@ -220,7 +220,7 @@
         <item quantity="other">%d jours</item>
     </plurals>
     <string name="board_post">Épingler au tableau</string>
-    <string name="board_urgent_line">📌 annonce urgente de %1$s : %2$s</string>
+    <string name="board_urgent_line">annonce urgente de %1$s : %2$s</string>
     <string name="bridge_title">Relier les groupes proches par internet</string>
     <string name="bridge_body">Le Bluetooth porte peu. Activé, vos messages « À proximité » partent aussi vers des relais internet de votre zone (~1 km), et vous voyez ce que disent des gens à quelques rues. Les téléphones sans internet passent par le vôtre. Vos messages publics, sous un nom anonyme pour la zone, quittent alors la radio.</string>
     <string name="bridge_need_cell">En attente de votre zone : utilisez votre position dans l\'onglet Zone, ou restez près d\'un téléphone qui relie.</string>

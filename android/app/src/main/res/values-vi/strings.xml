@@ -61,7 +61,7 @@
     <string name="geo_elsewhere">Ghé khu vực khác</string>
     <string name="geo_hint">geohash, ví dụ wtw3s</string>
     <string name="geo_enter">Vào</string>
-    <string name="geo_teleport_note">Bạn không ở đó, nên người khác sẽ thấy ✈ cạnh tên bạn.</string>
+    <string name="geo_teleport_note">Bạn không ở đó, nên người khác sẽ thấy ✈︎ cạnh tên bạn.</string>
     <string name="geo_joined">Đã tham gia</string>
     <string name="geo_connecting">Đang kết nối…</string>
     <plurals name="geo_recent">
@@ -131,7 +131,7 @@
     <string name="notes_hint">Ai đến trong bán kính khoảng 40 m trong 24 giờ tới đều đọc được. Cần internet.</string>
     <string name="notes_placeholder">Để lại ghi chú ở đây…</string>
     <string name="notes_empty">Không có ghi chú nào ở đây trong 24 giờ qua.</string>
-    <string name="note_dropped">📍 đã để lại ghi chú — biến mất sau 24 giờ</string>
+    <string name="note_dropped">đã để lại ghi chú — biến mất sau 24 giờ</string>
     <string name="note_no_location">để lại ghi chú cần vị trí của bạn — hãy bật ở tab Khu vực trước</string>
     <string name="media_photo">Ảnh</string>
     <string name="media_voice">Tin nhắn thoại</string>
@@ -212,7 +212,7 @@
         <item quantity="other">%d ngày</item>
     </plurals>
     <string name="board_post">Ghim lên bảng tin</string>
-    <string name="board_urgent_line">📌 thông báo khẩn từ %1$s: %2$s</string>
+    <string name="board_urgent_line">thông báo khẩn từ %1$s: %2$s</string>
     <string name="bridge_title">Nối các nhóm gần đây qua internet</string>
     <string name="bridge_body">Bluetooth không đi xa. Khi bật, tin Gần đây của bạn cũng được gửi tới relay internet của khu vực (khoảng 1 km), và Gần đây hiện cả lời của người cách vài con phố. Máy không có internet gửi và nhận qua máy bạn. Đổi lại, tin công khai của bạn, dưới tên ẩn danh của khu vực, sẽ rời khỏi sóng radio.</string>
     <string name="bridge_need_cell">Đang chờ xác định khu vực: bật vị trí ở tab Khu vực, hoặc ở gần một máy đang làm cầu nối.</string>

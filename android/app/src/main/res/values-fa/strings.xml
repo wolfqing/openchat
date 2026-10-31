@@ -64,7 +64,7 @@
     <string name="geo_elsewhere">رفتن به منطقه‌ای دیگر</string>
     <string name="geo_hint">geohash، مثلاً wtw3s</string>
     <string name="geo_enter">برو</string>
-    <string name="geo_teleport_note">تو آنجا نیستی، پس دیگران کنار نامت ✈ می‌بینند.</string>
+    <string name="geo_teleport_note">تو آنجا نیستی، پس دیگران کنار نامت ✈︎ می‌بینند.</string>
     <string name="geo_joined">پیوستی</string>
     <string name="geo_connecting">در حال اتصال…</string>
     <plurals name="geo_recent">
@@ -135,7 +135,7 @@
     <string name="notes_hint">هر کس طی ۲۴ ساعت آینده تا حدود ۴۰ متری بیاید می‌تواند یادداشت را بخواند. به اینترنت نیاز دارد.</string>
     <string name="notes_placeholder">اینجا یادداشت بگذارید…</string>
     <string name="notes_empty">در ۲۴ ساعت گذشته یادداشتی اینجا نیست.</string>
-    <string name="note_dropped">📍 یادداشت اینجا گذاشته شد — پس از ۲۴ ساعت محو می‌شود</string>
+    <string name="note_dropped">یادداشت اینجا گذاشته شد — پس از ۲۴ ساعت محو می‌شود</string>
     <string name="note_no_location">گذاشتن یادداشت به مکان شما نیاز دارد — ابتدا در زبانه منطقه فعالش کنید</string>
     <string name="media_photo">عکس</string>
     <string name="media_voice">پیام صوتی</string>
@@ -216,7 +216,7 @@
         <item quantity="other">%d روز</item>
     </plurals>
     <string name="board_post">نصب روی تابلو</string>
-    <string name="board_urgent_line">📌 اطلاعیه فوری از %1$s: %2$s</string>
+    <string name="board_urgent_line">اطلاعیه فوری از %1$s: %2$s</string>
     <string name="bridge_title">اتصال گروه‌های نزدیک از طریق اینترنت</string>
     <string name="bridge_body">بلوتوث برد کمی دارد. با روشن کردن این، پیام‌های «نزدیک» شما به رله‌های اینترنتی منطقه (حدود ۱ کیلومتر) هم می‌رود و حرف کسانی که چند خیابان آن‌طرف‌ترند نمایش داده می‌شود. گوشی‌های بدون اینترنت از طریق شما ارسال و دریافت می‌کنند. پیام‌های عمومی شما با نامی ناشناس برای منطقه از رادیو بیرون می‌روند.</string>
     <string name="bridge_need_cell">در انتظار منطقه: مکان خود را در زبانه منطقه فعال کنید یا نزدیک گوشی‌ای که پل می‌زند بمانید.</string>
