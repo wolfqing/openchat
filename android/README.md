@@ -40,7 +40,7 @@ as tested code, as upstream's draft does (spec §20). See spec §12.
 
 ## Build
 
-Requires JDK 17 and the Android SDK (platform 35).
+Requires JDK 17 and the Android SDK (platform 36).
 
 ```bash
 cd android

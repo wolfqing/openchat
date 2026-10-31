@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+Fourth round from the 2026-10-29 code review (hygiene). No wire-format change.
+
+- Bluetooth scanning follows the duty cycle of [spec §11](docs/protocol-spec.md):
+  5 s on, 10 s off (3 s / 15 s with six or more links) instead of scanning
+  without pause; no scan is started while the central table is full, and a
+  scan that fails to start is retried after 10, 20, 40, then 60 s. Discovery
+  of a new neighbour may now take up to 10 s longer; the radio sleeps two
+  thirds of the time.
+- Key material is zeroed when it is done with: a handshake that is given up
+  (timeout, bad message, eviction, key mismatch, panic) wipes its ephemeral
+  key and symmetric state, and the handshake state is destroyed as soon as
+  the transport keys are derived; a panic wipe zeroes the old identity's
+  private keys and Nostr seed; the sealed identity file's plaintext buffers
+  are zeroed after use.
+- Screen readers: tab icons no longer repeat the tab name; the record button
+  is a button (one activation starts, the next sends; the hold-to-talk
+  gesture is unchanged for everyone else); the play button says play or stop;
+  a sender's name is a 32 dp button; the verification QR has a description.
+  The Me tab has an "Erase everything" button with a confirmation, for people
+  who cannot tap three times in half-second steps; the triple tap itself
+  stays unconfirmed. The logo's description is now translated in all 18
+  languages, not only English and Chinese.
+- `Screens.kt` (1374 lines) is split into Theme, Onboarding, MainScreen,
+  ChatPane, PrivateChats, LocationScreens and MeScreen. Code moved, not
+  changed.
+- Toolchain and libraries brought up to date: Gradle 8.14.6, Android Gradle
+  plugin 8.13.2, Kotlin 2.4.21, Compose BOM 2026.06.00, compileSdk 36
+  (targetSdk stays 35), OkHttp 5.4.0, Bouncy Castle 1.86, coroutines 1.11.0,
+  ZXing 3.5.4, activity-compose 1.13.0, core-ktx 1.18.0. The two lifecycle
+  libraries that nothing referenced are gone. Compose 1.12, core 1.19 and
+  OkHttp 5.5 need Android Gradle plugin 9.1 and compileSdk 37; that step
+  (built-in Kotlin, new DSL) is left for its own change.
+- 3 new tests, 159 in all.
+
 - Live voice, compatible with bitchat ([spec §29](docs/protocol-spec.md)).
   Hold the mic to talk and release to send (a quick tap still starts and
   stops a recording). In Nearby and private chats people hear you while you

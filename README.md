@@ -179,7 +179,7 @@ useful on their own.
 
 ## Build from source
 
-Requires JDK 17 and the Android SDK with platform 35.
+Requires JDK 17 and the Android SDK with platform 36.
 
 ```bash
 cd android

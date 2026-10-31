@@ -132,7 +132,7 @@ openchat 是**同一张网络上的独立客户端，MIT 许可**，带着三个
 
 ## 从源码构建
 
-需要 JDK 17 和带 platform 35 的 Android SDK。
+需要 JDK 17 和带 platform 36 的 Android SDK。
 
 ```bash
 cd android
