@@ -12,6 +12,14 @@ import java.io.File
  * installed app, with no app store and no internet.
  */
 object ApkShare {
+    /** Copies the APK off the main thread (it is tens of megabytes), then opens the share sheet. */
+    fun share(activity: android.app.Activity) {
+        Thread {
+            val i = intent(activity)
+            activity.runOnUiThread { if (!activity.isFinishing) activity.startActivity(i) }
+        }.start()
+    }
+
     fun intent(context: Context): Intent {
         val dir = File(context.cacheDir, "share").apply { mkdirs() }
         val out = File(dir, "openchat.apk")

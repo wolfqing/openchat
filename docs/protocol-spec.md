@@ -148,7 +148,9 @@ Signed types in v0.1: `announce`, `message`, `leave`. `noiseHandshake`,
 | `0x20` | fragment | send, receive, relay |
 | `0x21` | requestSync | send, receive; never relayed (§14) |
 | `0x22` | fileTransfer | send, receive, relay (§18) |
-| `0x23`–`0x29`, `0x2C` | boardPost, prekeyBundle, groupMessage, ping, pong, nostrCarrier, voiceFrame, announceV2 | relay only |
+| `0x23` | boardPost | send, receive, relay (§23) |
+| `0x28` | nostrCarrier | send, receive, relay (§24.3) |
+| `0x24`–`0x27`, `0x29`, `0x2C` | prekeyBundle, groupMessage, ping, pong, nostrCarrier, voiceFrame, announceV2 | relay only |
 
 A relay forwards unknown types it can parse under the normal rules (§7).
 
@@ -322,7 +324,7 @@ First byte is the payload type, the rest is its body.
 | `0x01` | privateMessage | TLVs: `0x00` message ID (UTF-8 ≤ 255), `0x01` content (UTF-8 ≤ 255). 1-byte type, 1-byte length. Both required |
 | `0x02` | readReceipt | original message ID, UTF-8 |
 | `0x03` | delivered | message ID, UTF-8 |
-| `0x06`, `0x07` | group invite, key update | not in v0.1 |
+| `0x06`, `0x07` | group invite, key update | §22.2 |
 | `0x08` | voice frame | not in v0.1 |
 | `0x10`, `0x11` | verify challenge, response | §16.2 |
 | `0x12` | vouch | not in v0.1 |
@@ -389,8 +391,7 @@ ID) and keeps running. This is local behaviour and needs no wire support.
   and board posts (openchat syncs only announces and public messages, §14)
 - courier envelope v2 (sealed to a one-time prekey, TLV `0x05`): openchat
   carries and hands over such envelopes but cannot open one addressed to it
-- the bridge courier drop (envelopes parked on Nostr relays)
-- files other than images and audio, live push-to-talk voice, groups, boards, prekeys, ping/pong, source-route
+- files other than images and audio, live push-to-talk voice, prekeys, ping/pong, source-route
   origination, peer ID rotation (`announceV2`, still a draft upstream)
 
 ## 13. Store-and-forward (v0.4)
@@ -743,4 +744,350 @@ once both bitchat clients ship them:
 - `announceV2` (`0x2C`) TLVs, 1-byte type and length (assumed, as v1):
   `0x01` epoch (4), `0x02` tags (64), `0x03` capabilities, `0x04` bridge
   geohash. Received v2 announces are relayed and otherwise ignored.
+
+## 21. Privacy and flood protection (v0.6)
+
+### 21.1 Rate limit on incoming public messages
+
+Two token buckets, as bitchat: one per sender (capacity 5, refill 1/s)
+and one per normalised text (capacity 3, refill 0.5/s; lower case, URL
+query and fragment dropped, whitespace collapsed, first 256 characters).
+At most 2000 buckets each, idle ones (10 min) evicted first. A message over
+either limit is not shown; the mesh still relays it. History that arrives by
+sync (§14) or as a relay's stored backlog (events older than 60 s) is not
+limited, since it comes in a burst by design.
+
+### 21.2 Proof of work in location channels
+
+Outgoing kind 20000 messages carry a NIP-13 `["nonce", <16 hex>, <target>]`
+tag mined to 8 leading zero bits of the event ID (2 s budget, then half
+the difficulty with 150 ms, down to 0). An incoming event's work counts
+only if its ID really has the committed number of zero bits; 8 or more
+bits skip the per-sender bucket, never the per-text one. Work is never
+required.
+
+### 21.3 Notifications
+
+By default a notification says only "New message" or "Someone mentioned
+you": no sender, place or text. The user may turn previews on; the lock
+screen still gets the quiet form (`VISIBILITY_PRIVATE` with that public
+version). A panic wipe turns previews off again.
+
+### 21.4 Received photos
+
+A received photo is shown as coarse blocks (about 12 across) until tapped.
+
+### 21.5 Sharing a location channel
+
+A plain-text invite with a `bitchat://geohash/<cell>` link, which both
+apps open. Cells of 6 characters or more (a neighbourhood or smaller) ask
+for confirmation first, since whoever carries the text learns the place.
+
+## 22. Private groups (v0.6)
+
+Creator-managed groups of at most 16, as bitchat's v1: the creator signs
+the roster and the key; messages are sealed with the group key and flooded
+like public messages. Group TLVs below use a 1-byte type and a **2-byte**
+big-endian length; unknown types are skipped.
+
+### 22.1 Group state
+
+| Type | Value |
+|---|---|
+| `0x01` | group ID, 16 random bytes |
+| `0x02` | name, UTF-8 (≤ 40 characters) |
+| `0x03` | key, 32 bytes, for this epoch |
+| `0x04` | epoch, BE32, starts at 1 and rises on every roster change |
+| `0x05` | roster: count byte, then per member the 32-byte fingerprint (SHA-256 of the Noise key), the 32-byte Ed25519 key, a length byte and the nickname (≤ 64 bytes, cut on a character boundary) |
+| `0x06` | creator fingerprint, 32 bytes |
+| `0x07` | Ed25519 signature by the creator over `"bitchat-group-v1"` ‖ group ID ‖ BE32 epoch ‖ SHA-256(key) ‖ SHA-256(roster bytes) ‖ SHA-256(name) |
+
+### 22.2 Invites and key updates
+
+State travels only inside a Noise session (§8.3): `groupInvite` (`0x06`) to
+a new member, `groupKeyUpdate` (`0x07`) to the others. A receiver accepts it
+only if the session peer's fingerprint is the creator fingerprint, the
+signature verifies with the creator's key in the roster, it is in the
+roster itself, and, for a group it already holds, the creator (fingerprint
+and key) is unchanged and the epoch does not go down. A valid state without
+the receiver in the roster removes the group. Every invite and removal
+draws a new random key and raises the epoch; a removed member is sent that
+state with an all-zero key so it learns it is out. Leaving is local. Members
+who are away when the key changes miss it (v1 limitation, as upstream).
+
+### 22.3 Group messages (`0x25`)
+
+Broadcast, unsigned outer packet, TTL 7, relayed like a public message.
+Payload TLVs: `0x01` group ID, `0x02` BE32 epoch, `0x03` 12-byte nonce,
+`0x04` ciphertext ‖ 16-byte tag. ChaCha20-Poly1305 with the epoch key and
+additional data group ID ‖ BE32 epoch. Inside: `0x01` message ID, `0x02`
+sender Ed25519 key, `0x03` nickname, `0x04` BE64 timestamp ms, `0x05`
+content, `0x06` Ed25519 signature over `"bitchat-group-msg-v1"` ‖ group ID ‖
+BE32 epoch ‖ message ID ‖ BE64 timestamp ‖ content. A member shows a message
+only for the current epoch, with a valid signature from a key in the roster,
+not its own, not blocked. Group messages are kept for history sync (§14,
+type bit 10, newest 200, 900 s) so members who were away catch up.
+
+## 23. Notice board (v0.6)
+
+### 23.1 Wire format (`0x23` payload)
+
+TLVs with a 1-byte type and 2-byte big-endian length; unknown types are
+skipped. `0x01` kind (`0x01` post, `0x02` tombstone), `0x02` post ID (16
+random bytes), `0x03` geohash (UTF-8, ≤ 12 base32 characters; empty = the
+mesh board), `0x04` content (1–512 bytes), `0x05` author Ed25519 key,
+`0x06` nickname (≤ 64 bytes), `0x07` created ms BE64, `0x08` expires ms
+BE64 (after created, at most 7 days), `0x09` flags (bit 0 urgent), `0x0A`
+signature, `0x0B` deleted ms BE64 (tombstone). A post signs: length byte +
+`"bitchat-board-v1"` ‖ post ID ‖ (BE16 length ‖ geohash) ‖ (BE16 length ‖
+content) ‖ author key ‖ (BE16 length ‖ nickname) ‖ created ‖ expires ‖
+flags. A tombstone signs: length byte + `"bitchat-board-del-v1"` ‖ post ID ‖
+deleted. The outer packet is a signed broadcast, but posts are verified by
+their own signature, so they stay valid after the author has left.
+
+### 23.2 Store and spread
+
+A post is refused if expired, created more than 1 h in the future, expiring
+beyond 7 days + 1 h from now, or already deleted. At most 5 posts per author
+and 200 in all, oldest evicted. A tombstone is accepted only from the post's
+author key, removes the post and is kept until the post would have expired;
+one that arrives before its post is kept 7 days (at most 5 per author, 100
+in all) and suppresses the post. Accepted and duplicate packets are
+relayed; refused ones are not. Board packets are offered in history sync
+(§14, type bit 8) for as long as they live, not just 900 s, and persisted
+with the §13.7 state, re-verified on load. A panic wipe clears them.
+
+### 23.3 In openchat
+
+The board lives on the Nearby tab. Posting goes to the mesh board (empty
+geohash) for 1, 3 or 7 days, optionally urgent; posts tagged with a
+geohash by bitchat are shown with their area. A new urgent post that is
+live and under 10 minutes old adds one line to the Nearby chat; other new
+posts only raise the board's badge. Authors can take their posts down.
+
+## 24. Mesh bridge (v0.6)
+
+Opt-in, off by default. Bluetooth islands that share a neighbourhood cell
+(geohash precision 6, about 1.2 km) meet on that cell's Nostr relays (the
+five nearest, §9).
+
+### 24.1 Rendezvous events
+
+A bridged public message is a kind 20000 event signed by the per-cell key
+(§9) with tags `["r", cell]`, `["n", nickname]` and `["m", id, sender peer
+ID hex, timestamp ms]`, where `id` = the first 32 hex digits of SHA-256(
+lowercase sender ID ‖ `|` ‖ timestamp ‖ `|` ‖ trimmed text) of the radio
+message (upstream's pinned vector checks it). `r`, not `g`, keeps it out of
+location channels. Presence is kind 20001 with only `["r", cell]`, every
+4 min. A bridging phone subscribes to kinds 20000 and 20001 with `#r` = its
+cell and the eight around it, since 15 min ago. An event counts only if its
+own `r` cell is in that ring, it is at most 15 min from now, its text is
+1–16 000 bytes, and its pubkey is not ours for that cell. The `m` tag is a
+hint only (its fields are public): it lets a phone skip a copy of a radio
+message it already has, and when the radio copy arrives after a bridged
+row, the radio copy replaces it. Bridged rows are keyed by event ID.
+
+### 24.2 Advertising
+
+While bridging and online, a phone sets capability bit 7 (bridge) and the
+announce `bridgeGeohash` TLV (`0x06`) to its cell. A phone without its own
+location uses a bridging neighbour's advertised cell.
+
+### 24.3 Carrier (`0x28`)
+
+Payload TLVs, 1-byte type and 2-byte length: `0x01` direction, `0x02`
+cell (1–12 bytes), `0x03` the complete signed event as JSON (≤ 16 KiB).
+`0x03` toBridge: a mesh-only bridging phone sends its signed event,
+directed and signed, to a bridging neighbour, which verifies the Schnorr
+signature and publishes it (10 per depositor per minute; up to 20 queued
+while offline, 5 per depositor). `0x04` fromBridge: a bridging phone with
+internet broadcasts events from other islands onto the radio, after a 0.2–
+1.5 s holdoff in which another phone's copy cancels its own, at most 20 a
+minute. Receiving fromBridge needs no toggle. Loop rules: an event that
+came over the radio is never published or rebroadcast; an event this
+phone published is never rebroadcast; each event is rebroadcast at most
+once, and never when the radio copy is already present. Directions
+`0x01`/`0x02` are the location-channel gateway (§24.5); other values are
+refused.
+
+### 24.4 Courier drops
+
+With the bridge on, mail sealed for an absent peer (§13.2, a single-copy
+envelope) is also published as kind 1401 to the private-message relays
+(§15.4): content = standard base64 of the envelope, tags `["x", recipient
+tag hex]` and NIP-40 `["expiration", envelope expiry s]`, signed by a fresh
+throwaway key. Drops are queued (20) while offline. A bridging phone
+subscribes to kind 1401 with `#x` = its own candidate tags (§13.3) and
+those of up to 16 verified direct neighbours, since 24 h ago; it opens its
+own and hands the others to their recipients as directed courier packets.
+Message-ID dedup absorbs a message arriving by drop, courier and direct link.
+
+### 24.5 Location-channel gateway
+
+Capability bit 2 in the announce. A phone advertises it while the bridge
+toggle is on and it has a working relay connection; it then shares that
+connection with the mesh for location channels (§9):
+
+- Deposit (`0x01`, directed to the gateway): a phone that just sent a
+  kind-20000 channel event and has no relay connection hands the finished,
+  signed event to one gateway peer. No toggle is needed for this. The
+  gateway checks kind, a `g` tag equal to the carrier geohash, age ≤ 15 min,
+  dedup, 10 deposits per depositor per minute, and only then the Schnorr
+  signature; it publishes to that cell's relays, or queues (20, 5 per
+  depositor) until it is online. If it is in that channel itself, the event
+  also shows on its own timeline.
+- Downlink (`0x02`, broadcast): a gateway carries each fresh, verified
+  kind-20000 event its own channel subscriptions deliver onto the radio,
+  at most 30 a minute (30 waiting, oldest dropped), each at most once,
+  marked only after it is sent. Never one it learned from the radio or
+  published itself.
+- Receiving `0x02` needs no toggle: after the same checks and the
+  signature, the event is marked as radio-carried (never published or
+  carried again) and shown if we are in that channel.
+
+## 25. Mesh diagnostics (v0.6)
+
+### 25.1 Ping (`0x26`) and pong (`0x27`)
+
+Payload, 9 bytes (longer is accepted, the rest ignored): an 8-byte random
+nonce, then the TTL the packet was sent with. Unsigned and unencrypted;
+TTL 7, addressed to one peer and relayed like any directed packet. The
+addressed peer answers with a pong addressed to the ping's sender, echoing
+the nonce, with its own launch TTL. A pong counts only if its nonce is one
+we sent to that very peer, within 10 s. Hops = launch TTL − received TTL +
+1 (1 = neighbour). Because the sender ID of an unsigned packet can be
+forged, the pong budget is per ingress link, not per claimed sender: at
+most 5 pongs per link per 10 s.
+
+### 25.2 Estimated path
+
+`/trace` is computed locally from the direct-neighbour lists other phones
+put in their announces (§4, TLV `0x04`); nothing is sent. A link counts if
+either end claims it, because openchat sends no list of its own (§20);
+the first hop is one of our own live links. Breadth-first, at most 6 hops.
+The result is an estimate, shown as such.
+
+## 26. Vouching (v0.6)
+
+A vouch says "I verified this identity in person" (§16), signed by the
+voucher and sent only inside a Noise session (payload type `0x12`), so the
+voucher is the session peer and is not named in it.
+
+Attestation, TLVs with 1-byte type and 1-byte length, unknown types skipped:
+`0x01` vouchee fingerprint (32, SHA-256 of its Noise static key), `0x02`
+vouchee Ed25519 key (32), `0x03` time (8, BE ms), `0x04` signature (64) by
+the voucher's signing key over `"bitchat-vouch-v1"` ‖ fingerprint ‖ key ‖
+time. Batch: a count byte, then each attestation behind a 2-byte BE length;
+at most 16, malformed entries skipped, a larger declared count ignored.
+
+Sending: when a session is up with a peer we verified, at most once per 24 h
+per peer, we send attestations for up to 16 other people we verified, most
+recently verified first, skipping any whose signing key we do not hold.
+Also re-tried when the peer list changes or we verify someone. A peer whose
+announce lists capabilities without bit 5 gets none; one that lists none
+may still get them.
+
+Accepting: only from a session peer we verified, each signature checked
+against that peer's announced signing key; time within 30 days back and one
+hour ahead. Stored per vouchee, the eight newest vouchers; never for
+ourselves as voucher of ourselves or for someone we verified directly.
+Whether a vouch counts is decided when read: its voucher must still be
+verified by us and it must be under 30 days old. Shown as a grey ✓ and as
+"verified by …" on the person. Kept in the sealed social state and wiped
+by the triple tap.
+
+openchat now announces capability bits 0 (prekeys, §27), 3 (groups), 4 (board), 5 (vouch),
+6 (diagnostics) and 8 (private media), plus 7 and 2 while bridging or
+serving as a gateway, both in the announce and in the in-session peer state.
+
+## 27. One-time prekeys (v0.6)
+
+Courier mail (§13) sealed to someone's static key can be read by whoever
+later steals that key. A prekey bundle publishes up to eight X25519 keys
+that are deleted after use, so mail sealed to one of them is forward
+secret.
+
+### 27.1 Bundle (`0x24` payload)
+
+TLVs with 1-byte type and 2-byte BE length, unknown types skipped: `0x01`
+owner Noise static key (32), `0x02` entries, each a 4-byte BE ID and a
+32-byte key (1–8 entries, IDs distinct), `0x03` generated-at (8, BE ms),
+`0x04` Ed25519 signature (64) by the owner over: 1-byte length and
+`"bitchat-prekey-bundle-v1"`, the owner key, the entry count (1 byte), each
+ID and key, the generated-at time. The packet is a signed broadcast from
+the owner (TTL 7); it rides with announces at most hourly, at once when the
+bundle changes, and syncs as type bit 9 (§14.3) for a day, ignoring the
+since cursor.
+
+Accepting: the packet's sender ID must be the owner's peer ID, and both
+the bundle and packet signatures must verify under the signing key the
+owner's announce bound to that Noise key; a bundle that arrives first waits
+(64 owners at most) for that announce. Newest generated-at per owner wins;
+200 owners at most, least recently updated evicted.
+
+### 27.2 Sealing and opening
+
+Sealing courier mail, including bridge drops (§24.4): if a verified bundle
+for the recipient is under 7 days old, the message is sealed with Noise X
+to the lowest unused prekey, with prologue `"bitchat-prekey-v1"` ‖ BE32(ID),
+and the envelope carries TLV `0x05` = ID (envelope v2). Each message keeps
+its assigned prekey for every re-deposit. A recipient currently on the mesh
+whose announce lacks capability bit 0 gets static sealing (§13.2) instead.
+The recipient tag stays the static-key tag.
+
+Our own prekeys: eight unspent, topped back up when fewer than three
+remain; opening mail sealed to one marks it spent and republishes the
+bundle under a newer time. A spent key's private half is kept 48 h for
+redelivered copies, an unspent one 30 days. Privates live in the sealed
+mesh state and die with the triple tap. Capability bit 0 is announced.
+
+## 28. Cashu tokens (v0.6)
+
+Nothing new on the wire: a Cashu ecash token travels as ordinary message
+text. `/pay <token>` (bare, `cashu:` or `cashu://`, percent-encoding
+undone) sends it only if it decodes cleanly to a positive amount. In a
+private chat it goes straight out; anywhere more than one person reads
+(Nearby, a group, a location channel) it needs `/pay <token> public`,
+since whoever redeems a bearer token first gets the money.
+
+Decoding, for display only, never for redemption (the app never contacts
+a mint): `cashuA` + base64url JSON (`token[].mint`, `token[].proofs[].amount`,
+`unit`, `memo`); `cashuB` + base64url CBOR, definite lengths only, depth 16,
+10 000 items per container (`m` mint, `u` unit, `d` memo, `t[].p[].a`
+amounts). Per-proof and total amounts are capped at 2.1 × 10^15; a total
+above that rejects the token. Shown: amount and unit (default sat), mint
+host (48 chars), memo (control characters removed, 80 chars). Tokens are
+at most 60 000 characters. A message containing tokens shows a card per
+token (at most 3) with "open in wallet" (`cashu:` link) and copy.
+
+## 29. Live voice (v0.6)
+
+A voice note streams while it is being recorded. Each burst packet is:
+burst ID (8 random bytes) ‖ seq (2, BE) ‖ flags (1) ‖ payload. Flags `0x01`
+START, payload = codec (`0x01` = AAC-LC, 16 kHz, mono, about 16 kbps;
+anything else is refused), seq 0. Flags `0x00` data, payload = 1–8 times
+[2-byte BE length ‖ raw AAC frame], seq from 1, each packet at most 210
+bytes so it fits one radio write after Noise. Flags `0x02` END, payload =
+data packet count (2, BE) ‖ duration ms (4, BE). Flags `0x04` CANCELED,
+empty. END and CANCELED take the next seq.
+
+Private chats: Noise payload type `0x08`, only over an established session.
+Nearby: packet type `0x29`, broadcast, TTL 7, signed; accepted (and so
+relayed) only within 30 s of its timestamp and with a valid signature from
+a peer whose announce we hold. Never synced.
+
+Receiving: a burst is keyed by sender, chat and burst ID, so a copied ID
+cannot hijack someone else's burst; 8 at a time. Packets are put back in
+order; a hole is skipped after 0.5 s; the burst ends when every data packet
+up to END is in, after 3 s without packets, or past 6 KB/s or 384 KiB.
+Frames are written with ADTS headers to a file, so even a partial burst is a
+replayable bubble; it plays live only when that chat is open with the app
+in front. A burst with nothing audible, or CANCELED, leaves no bubble.
+
+Finishing: the sender also writes the frames to `voice_<burst ID hex>.m4a`
+and sends that as an ordinary voice note (§18); a receiver that assembled
+the burst from the same sender in the same chat swaps the finished file
+into the existing bubble instead of showing a second one. Notes under
+0.7 s are canceled. One switch (Me tab, on by default as in bitchat) turns
+live sending and live playing on or off; off means finished notes only.
 

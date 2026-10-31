@@ -3,6 +3,8 @@ package org.openchat.android.app
 import org.json.JSONArray
 import org.json.JSONObject
 import org.openchat.android.core.Mentions
+import org.openchat.android.core.RateLimiter
+import org.openchat.android.nostr.Pow
 import org.openchat.android.nostr.Geohash
 import org.openchat.android.nostr.NostrEvent
 import org.openchat.android.nostr.NostrKey
@@ -25,6 +27,22 @@ class GeoChannels(
     private val joined = ConcurrentHashMap<String, Joined>()
     private val presence = ConcurrentHashMap<String, ConcurrentHashMap<String, Long>>() // geohash -> pubkey -> last seen (s)
     private val pool = RelayPool(::onEvent)
+    private val limiter = RateLimiter()
+    // Mining proof of work takes up to two seconds; never on the caller's thread.
+    private val sender = java.util.concurrent.Executors.newSingleThreadExecutor()
+
+    /** Gateway hooks (§24.5): live channel events a gateway may carry onto the radio, and our own events when offline. */
+    @Volatile var onLive: ((NostrEvent, String) -> Unit)? = null
+    @Volatile var onOfflineSend: ((NostrEvent, String) -> Unit)? = null
+
+    val online get() = pool.connectedCount > 0
+    fun isJoined(geohash: String) = joined.containsKey(geohash)
+
+    /** A signed channel event that came over the radio: shown like one from a relay. */
+    fun injectCarried(ev: NostrEvent) = onEvent(CARRIED, ev)
+
+    /** Publishes someone else's signed event, deposited with us as their gateway. */
+    fun publishCarried(ev: NostrEvent, geohash: String) = pool.publish(directory.closest(geohash, 5), ev)
 
     fun join(geohash: String, teleported: Boolean) {
         if (joined.containsKey(geohash)) return
@@ -50,11 +68,17 @@ class GeoChannels(
 
     fun send(geohash: String, text: String) {
         val j = joined[geohash] ?: return
-        val ev = NostrEvent.geohashMessage(j.key, geohash, nickname(), text, j.teleported)
-        pool.publish(j.relays, ev)
-        ChatRepository.add(
-            ChatMessage(ev.id, Conversation.Geo(geohash).key, nickname(), ev.pubkey, text, ev.createdAt * 1000, mine = true),
-        )
+        val name = nickname()
+        val localId = "pending-" + java.util.UUID.randomUUID()
+        val now = System.currentTimeMillis()
+        ChatRepository.add(ChatMessage(localId, Conversation.Geo(geohash).key, name, j.key.publicKeyHex, text, now, mine = true, state = DeliveryState.SENDING))
+        sender.execute {
+            val ev = NostrEvent.geohashMessage(j.key, geohash, name, text, j.teleported, mine = true)
+            pool.publish(j.relays, ev)
+            // No relay reachable: a gateway phone on the mesh can publish it for us.
+            if (!online) onOfflineSend?.invoke(ev, geohash)
+            ChatRepository.replaceId(Conversation.Geo(geohash).key, localId, ev.id, DeliveryState.SENT)
+        }
     }
 
     // ------------------------------------------------------------------ location notes (§17)
@@ -128,13 +152,14 @@ class GeoChannels(
 
     private fun subId(geohash: String) = "geo-$geohash"
 
-    private companion object { const val NOTES_SUB = "notes" }
+    private companion object { const val NOTES_SUB = "notes"; const val CARRIED = "mesh" }
 
     private fun onEvent(relay: String, ev: NostrEvent) {
         if (ev.kind == NostrEvent.KIND_TEXT_NOTE) return onNote(ev)
         val g = ev.tag("g") ?: return
         val j = joined[g] ?: return
         val nowS = System.currentTimeMillis() / 1000
+        if (relay != CARRIED && ev.kind == NostrEvent.KIND_GEOHASH_MESSAGE) onLive?.invoke(ev, g)
         presence.getOrPut(g) { ConcurrentHashMap() }[ev.pubkey] = ev.createdAt
         if (ev.pubkey in Social.state.value.geoBlocked) return publishStatus()
         if (ev.kind == NostrEvent.KIND_GEOHASH_MESSAGE && ev.content.isNotBlank()) {
@@ -142,6 +167,8 @@ class GeoChannels(
             val mine = ev.pubkey == j.key.publicKeyHex
             val mentioned = !mine && Mentions.mentionsMe(ev.content, nickname(), j.key.publicKeyHex.takeLast(4), ambiguous = false)
             val conv = Conversation.Geo(g).key
+            // Live traffic only: what relays replay on joining is history, and fine in a burst.
+            if (!mine && ev.createdAt >= nowS - 60 && !limiter.allow(ev.pubkey, ev.content, Pow.validatedBits(ev))) return publishStatus()
             if (mentioned && ev.createdAt >= nowS - 300 && ChatRepository.openConversation != conv && ChatRepository.messages.value[conv].orEmpty().none { it.id == ev.id }) {
                 onMention(PeerLabel.nostr(ev.tag("n"), ev.pubkey).toString() + " · #" + g, ev.content.take(200))
             }

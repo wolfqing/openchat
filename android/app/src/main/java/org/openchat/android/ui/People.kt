@@ -31,6 +31,7 @@ import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +41,7 @@ import org.openchat.android.R
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.NostrDirect
+import org.openchat.android.app.NotificationPrivacy
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.app.Social
 import org.openchat.android.app.TorState
@@ -84,6 +86,16 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                                 stringResource(if (verified) R.string.verify_badge_on else R.string.verify_badge_off),
                                 fontSize = 13.sp, color = if (verified) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            val vouchers = social.vouchersFor(fp)
+                            if (vouchers.isNotEmpty()) {
+                                val names by ChatRepository.names.collectAsState()
+                                val peers by ChatRepository.peers.collectAsState()
+                                val who = vouchers.joinToString(", ") { v ->
+                                    val hex = v.take(16)
+                                    PeerLabel.mesh(peers.firstOrNull { it.peerIdHex == hex }?.nickname ?: social.favorites[v]?.nickname ?: names[hex], hex).toString()
+                                }
+                                Text(stringResource(R.string.vouch_by, who), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                             Text(fp.chunked(4).joinToString(" "), fontFamily = FontFamily.Monospace, fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             TextButton(onClick = { Social.setVerified(fp, !verified) }) {
                                 Text(stringResource(if (verified) R.string.verify_unmark else R.string.verify_mark))
@@ -166,10 +178,60 @@ fun VerifySection(onScan: () -> Unit) {
     var show by remember { mutableStateOf(false) }
     if (show) MyQrDialog { show = false }
     Text(stringResource(R.string.verify_title), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 24.dp))
-    Text(stringResource(R.string.verify_body), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text(stringResource(R.string.verify_body) + " " + stringResource(R.string.vouch_note), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
         FilledTonalButton(onClick = { show = true }) { Text(stringResource(R.string.verify_show)) }
         OutlinedButton(onClick = onScan) { Text(stringResource(R.string.verify_scan)) }
+    }
+}
+
+/** Whether notifications may show sender and text; off by default (§21.3). */
+@Composable
+fun NotificationSection() {
+    val ctx = LocalContext.current
+    var show by remember { mutableStateOf(NotificationPrivacy.showPreviews(ctx)) }
+    Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.notify_previews_title), fontWeight = FontWeight.SemiBold)
+            Text(stringResource(if (show) R.string.notify_previews_on else R.string.notify_previews_off), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = show, onCheckedChange = { show = it; NotificationPrivacy.setShowPreviews(ctx, it) })
+    }
+}
+
+/** Live voice (§29): one switch for streaming your voice notes and playing others' as they come. */
+@Composable
+fun LiveVoiceSection() {
+    val ctx = LocalContext.current
+    var on by remember { mutableStateOf(org.openchat.android.app.LiveVoicePrefs.enabled(ctx)) }
+    Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.live_voice_title), fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.live_voice_body), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = on, onCheckedChange = { on = it; org.openchat.android.app.LiveVoicePrefs.setEnabled(ctx, it) })
+    }
+}
+
+/** The mesh bridge (§24): off by default; it puts this phone's public messages online. */
+@Composable
+fun BridgeSection() {
+    val b by ChatRepository.bridge.collectAsState()
+    val ctx = LocalContext.current
+    Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.bridge_title), fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.bridge_body) + " " + stringResource(R.string.bridge_gateway), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (b.enabled) {
+                val line = when {
+                    b.cell == null -> ctx.getString(R.string.bridge_need_cell)
+                    b.online -> ctx.getString(R.string.bridge_online, b.cell) + " · " + ctx.resources.getQuantityString(R.plurals.bridge_across, b.across, b.across)
+                    else -> ctx.getString(R.string.bridge_offline, b.cell)
+                }
+                Text(line, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+            }
+        }
+        Switch(checked = b.enabled, onCheckedChange = { ChatRepository.controller?.setBridge(it) })
     }
 }
 

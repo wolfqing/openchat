@@ -79,43 +79,72 @@ object RelayPolicy {
  * Cuts a link's byte stream into whole frames (docs/protocol-spec.md §1).
  * Not thread-safe; use one per link direction.
  */
-class StreamFramer(private val capBytes: Int = 8 * 1024 * 1024) {
+class StreamFramer(
+    private val capBytes: Int = 8 * 1024 * 1024,
+    private val clock: () -> Long = System::currentTimeMillis,
+) {
     private var buf = ByteArray(0)
+    private var lastChunkAt = 0L
 
     fun reset() { buf = ByteArray(0) }
 
+    /** Bytes held back waiting for the rest of a frame; for diagnostics and tests. */
+    val pendingBytes get() = buf.size
+
     fun append(chunk: ByteArray): List<ByteArray> {
         if (chunk.isEmpty()) return emptyList()
+        val now = clock()
+        // A partial frame whose next piece never came was lost on the radio. Keeping it would
+        // glue the next frame's bytes onto a dead one and lose that frame too (§1 rule 4).
+        if (buf.isNotEmpty() && now - lastChunkAt > STALL_MS) reset()
+        lastChunkAt = now
         buf += chunk
         if (buf.size > capBytes) { reset(); return emptyList() }
         val frames = ArrayList<ByteArray>()
-        while (buf.size >= PacketCodec.V1_HEADER + PacketCodec.ID_SIZE) {
-            val first = buf[0].toInt() and 0xFF
+        var start = 0
+        while (buf.size - start >= PacketCodec.V1_HEADER + PacketCodec.ID_SIZE) {
+            val first = buf[start].toInt() and 0xFF
             if (first != 1 && first != 2) {
-                if (!dropLeadingPadding()) { reset(); break }
+                // Padding left over from a Noise frame, or garbage after a loss: skip it and keep looking.
+                start += paddingAt(start).takeIf { it > 0 } ?: 1
                 continue
             }
-            val len = PacketCodec.frameLength(buf) ?: run { reset(); null } ?: break
-            if (buf.size < len) break
+            val len = PacketCodec.frameLength(buf, start)
+            if (len == null) {
+                // Not a header after all (a stray 0x01/0x02 inside lost traffic): resync one byte on.
+                start += 1
+                continue
+            }
+            if (buf.size - start < len) break
             // Noise frames are followed by their PKCS#7 padding; its length is fully
             // determined by the frame length, so consume it here instead of guessing later.
-            val type = buf[1].toInt() and 0xFF
+            val type = buf[start + 1].toInt() and 0xFF
             val pad = if (MessageType.padsOnWire(type)) Padding.targetSize(len) - len else 0
             val consumed = if (pad in 1..255) {
-                if (buf.size < len + pad) break
-                if ((len until len + pad).all { (buf[it].toInt() and 0xFF) == pad }) len + pad else len
+                if (buf.size - start < len + pad) break
+                if ((start + len until start + len + pad).all { (buf[it].toInt() and 0xFF) == pad }) len + pad else len
             } else len
-            frames.add(buf.copyOfRange(0, len))
-            buf = buf.copyOfRange(consumed, buf.size)
+            val frame = buf.copyOfRange(start, start + len)
+            // A header that passed the length check can still be a stray byte pair inside lost
+            // traffic; only a frame that decodes is one. Otherwise resync one byte on.
+            if (PacketCodec.decode(frame) == null) { start += 1; continue }
+            frames.add(frame)
+            start += consumed
         }
+        if (start > 0) buf = buf.copyOfRange(start, buf.size)
         return frames
     }
 
-    private fun dropLeadingPadding(): Boolean {
-        val n = buf[0].toInt() and 0xFF
-        if (n == 0 || n > buf.size) return false
-        for (i in 0 until n) if (buf[i] != buf[0]) return false
-        buf = buf.copyOfRange(n, buf.size)
-        return true
+    /** Length of a PKCS#7 padding run starting at [at], or 0 if the bytes there are not one. */
+    private fun paddingAt(at: Int): Int {
+        val n = buf[at].toInt() and 0xFF
+        if (n == 0 || n > buf.size - at) return 0
+        for (i in at until at + n) if (buf[i] != buf[at]) return 0
+        return n
+    }
+
+    companion object {
+        /** A frame whose pieces stop arriving for this long is abandoned (§1). */
+        const val STALL_MS = 250L
     }
 }

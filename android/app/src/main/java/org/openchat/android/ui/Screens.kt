@@ -10,6 +10,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -23,6 +27,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.aspectRatio
 import android.media.MediaPlayer
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -75,6 +82,12 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import android.util.LruCache
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -123,6 +136,7 @@ import org.openchat.android.app.Conversation
 import org.openchat.android.app.DeliveryState
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.app.Social
+import org.openchat.android.core.Cashu
 import org.openchat.android.core.Mentions
 import org.openchat.android.nostr.Geohash
 import java.text.DateFormat
@@ -181,7 +195,7 @@ fun LanguagePicker(onLanguage: (AppLanguage.Choice) -> Unit) {
 fun OnboardingScreen(onStart: () -> Unit, onLanguage: (AppLanguage.Choice) -> Unit) {
     Surface(Modifier.fillMaxSize()) {
         Column(
-            Modifier.fillMaxSize().padding(28.dp).verticalScroll(rememberScrollState()),
+            Modifier.fillMaxSize().safeDrawingPadding().padding(28.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Center,
         ) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) { LanguagePicker(onLanguage) }
@@ -277,6 +291,10 @@ fun MainScreen(
     val openRequest by ChatRepository.openRequest.collectAsState()
     LaunchedEffect(openRequest) { openRequest?.let { openChat = it; ChatRepository.requestOpen(null) } }
     person?.let { p -> PersonSheet(p, onDismiss = { person = null }, onMessage = { openChat = Conversation.Private(it).key }) }
+    openChat?.takeIf { it.startsWith("grp:") }?.let { key ->
+        GroupChatScreen(key.removePrefix("grp:"), onBack = { openChat = null }, onPanic = onPanic)
+        return
+    }
     Conversation.GeoPrivate.parse(openChat ?: "")?.let { c ->
         GeoPrivateChatScreen(c, onBack = { openChat = null }, onPanic = onPanic)
         return
@@ -285,6 +303,10 @@ fun MainScreen(
     val chat = openChat
     if (chat != null && chat.startsWith("dm:")) {
         PrivateChatScreen(chat.removePrefix("dm:"), onBack = { openChat = null }, onPanic = onPanic)
+        return
+    }
+    if (chat == BOARD) {
+        BoardScreen(onBack = { openChat = null }, onPanic = onPanic)
         return
     }
     if (chat != null && chat.startsWith("geo:")) {
@@ -297,6 +319,14 @@ fun MainScreen(
             TopAppBar(
                 navigationIcon = { PanicLogo(onPanic) },
                 title = { PanicTitle(stringResource(tab.label), onPanic) },
+                actions = {
+                    if (tab == Tab.NEARBY) {
+                        val unseen by ChatRepository.boardUnseen.collectAsState()
+                        TextButton(onClick = { openChat = BOARD }) {
+                            BadgedBox(badge = { if (unseen > 0) Badge { Text("$unseen") } }) { Text(stringResource(R.string.board_title)) }
+                        }
+                    }
+                },
             )
         },
         bottomBar = {
@@ -304,7 +334,7 @@ fun MainScreen(
                 Tab.entries.forEach { t ->
                     val count = when (t) {
                         Tab.NEARBY -> unread[Conversation.Mesh.key] ?: 0
-                        Tab.PRIVATE -> unread.filterKeys { it.startsWith("dm:") || it.startsWith("gdm:") }.values.sum()
+                        Tab.PRIVATE -> unread.filterKeys { it.startsWith("dm:") || it.startsWith("gdm:") || it.startsWith("grp:") }.values.sum()
                         Tab.LOCATION -> unread.filterKeys { it.startsWith("geo:") }.values.sum()
                         Tab.ME -> 0
                     }
@@ -335,7 +365,7 @@ fun MainScreen(
                     onSend = { ChatRepository.controller?.sendPublic(it) },
                     onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) person = PersonRef.Mesh(m.senderKey, m.senderName) },
                 )
-                Tab.PRIVATE -> PrivateList(onOpen = { openChat = if (it.startsWith("gdm:")) it else Conversation.Private(it).key })
+                Tab.PRIVATE -> PrivateList(onOpen = { openChat = if (it.startsWith("gdm:") || it.startsWith("grp:")) it else Conversation.Private(it).key })
                 Tab.LOCATION -> LocationPane(onRequestLocation, onOpen = { openChat = Conversation.Geo(it).key })
                 Tab.ME -> MePane(onShareApp, onLanguage, onScan)
             }
@@ -345,12 +375,13 @@ fun MainScreen(
 
 /** Name with its #xxxx suffix set smaller, monospaced and muted, so the name itself leads. */
 @Composable
-fun labelText(label: PeerLabel, teleported: Boolean = false, verified: Boolean = false): AnnotatedString = buildAnnotatedString {
+fun labelText(label: PeerLabel, teleported: Boolean = false, verified: Boolean = false, vouched: Boolean = false): AnnotatedString = buildAnnotatedString {
     append(label.name)
     withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal, fontSize = 0.8.em, color = MaterialTheme.colorScheme.onSurfaceVariant)) {
         append(label.suffix)
     }
     if (verified) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" \u2713\uFE0E") }
+    else if (vouched) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append(" \u2713\uFE0E") } // verified by someone we verified
     if (teleported) append(" \u2708\uFE0E")
 }
 
@@ -469,8 +500,18 @@ fun ChatPane(
         ChatRepository.clearUnread(conversation)
         onDispose { if (ChatRepository.openConversation == conversation) ChatRepository.openConversation = null }
     }
-    LaunchedEffect(list.size) {
-        if (list.isNotEmpty()) state.animateScrollToItem(list.size - 1)
+    // Follow the conversation only while the reader is at its end, or when the new line is theirs:
+    // a history sync inserting older lines, or a timeline at its cap, must not yank them around.
+    val atBottom by remember {
+        derivedStateOf {
+            val info = state.layoutInfo
+            val last = info.visibleItemsInfo.lastOrNull() ?: return@derivedStateOf true
+            last.index >= info.totalItemsCount - 2
+        }
+    }
+    val newest = list.lastOrNull()
+    LaunchedEffect(newest?.id, newest?.senderKey) {
+        if (newest != null && (newest.mine || atBottom)) state.animateScrollToItem(list.size - 1)
         ChatRepository.clearUnread(conversation)
         onVisible(list)
     }
@@ -513,8 +554,13 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = if (m.mine) Alignment.End else Alignment.Start) {
         if (!m.mine) {
             Text(
-                labelText(PeerLabel.of(m), m.teleported, verified = !m.conversation.startsWith("geo:") && Social.state.collectAsState().value.isVerifiedPeer(m.senderKey)), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.let { if (onSenderClick != null) it.clickable { onSenderClick(m) } else it },
+                buildAnnotatedString {
+                    val social by Social.state.collectAsState()
+                    val mesh = !m.bridged && !m.conversation.startsWith("geo:")
+                    append(labelText(PeerLabel.of(m), m.teleported, verified = mesh && social.isVerifiedPeer(m.senderKey), vouched = mesh && social.isVouchedPeer(m.senderKey)))
+                    if (m.bridged) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Normal)) { append(" · " + stringResource(R.string.bridge_via)) }
+                }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.let { if (onSenderClick != null && !m.bridged) it.clickable { onSenderClick(m) } else it },
             )
         }
         Surface(
@@ -525,8 +571,11 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
         ) {
             when {
                 m.attachment != null && m.audio -> VoiceNote(m.attachment)
-                m.attachment != null -> PhotoView(m.attachment)
-                else -> Text(withMentions(m.text), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
+                m.attachment != null -> PhotoView(m.attachment, covered = !m.mine)
+                else -> Column {
+                    Text(withMentions(m.text), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
+                    Cashu.tokensIn(m.text).take(3).forEach { CashuCard(it) }
+                }
             }
         }
         val status = if (m.mine) " · " + stringResource(
@@ -540,48 +589,124 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
     }
 }
 
+/** A Cashu token in a message: what it is worth, and a hand-off to a wallet app (§28). */
+@Composable
+private fun CashuCard(token: String) {
+    val ctx = LocalContext.current
+    val info = remember(token) { Cashu.decode(token) } ?: return
+    Column(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp)) {
+        Text((info.display ?: stringResource(R.string.pay_token)) + (info.mintHost?.let { " · $it" } ?: ""), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        info.memo?.let { Text(it, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(onClick = {
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("cashu:$token"))
+                try { ctx.startActivity(intent) } catch (e: android.content.ActivityNotFoundException) {
+                    android.widget.Toast.makeText(ctx, R.string.pay_no_wallet, android.widget.Toast.LENGTH_LONG).show()
+                }
+            }) { Text(stringResource(R.string.pay_open_wallet)) }
+            TextButton(onClick = {
+                val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("cashu", token))
+                android.widget.Toast.makeText(ctx, R.string.pay_copied, android.widget.Toast.LENGTH_SHORT).show()
+            }) { Text(stringResource(R.string.pay_copy)) }
+        }
+    }
+}
+
 /** Photo picker and a tap-to-start, tap-to-send voice recorder (§18). */
 @Composable
 private fun MediaButtons(conversation: String) {
     val ctx = LocalContext.current
-    val recorder = remember { VoiceRecorder(ctx) }
+    val recorder = remember { VoiceRecorder(ctx) } // fallback when the live encoder is unavailable
     var recording by remember { mutableStateOf(false) }
+    var viaRecorder by remember { mutableStateOf(false) }
     fun send(bytes: ByteArray?, mime: String) {
         val reason = if (bytes == null) R.string.media_too_big else ChatRepository.controller?.sendMedia(conversation, bytes, mime) ?: 0
         if (reason != 0) ChatRepository.addLocal(conversation, ctx.getString(reason))
     }
-    fun stopAndSend() { recording = false; recorder.stop()?.let { f -> send(f.readBytes(), "audio/mp4"); f.delete() } }
+    // Recording streams live where it can (§29): people hear it while you talk.
+    fun begin(): Boolean {
+        viaRecorder = ChatRepository.controller?.startVoice(conversation) != true
+        return if (viaRecorder) recorder.start() else true
+    }
+    fun stopAndSend() {
+        recording = false
+        if (viaRecorder) recorder.stop()?.let { f -> send(f.readBytes(), "audio/mp4"); f.delete() }
+        else Thread { ChatRepository.controller?.finishVoice() }.start() // waits for the encoder to drain
+    }
+    fun cancel() { recording = false; if (viaRecorder) recorder.cancel() else ChatRepository.controller?.cancelVoice() }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> uri?.let { send(Media.jpegFrom(ctx, it), "image/jpeg") } }
-    val mic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) recording = recorder.start() }
-    DisposableEffect(conversation) { onDispose { recorder.cancel() } }
+    val mic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) recording = begin() }
+    DisposableEffect(conversation) { onDispose { if (recording) cancel() } }
     LaunchedEffect(recording) { if (recording) { kotlinx.coroutines.delay(Media.MAX_VOICE_MS.toLong()); if (recording) stopAndSend() } }
     if (!recording) {
         IconButton(onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
             Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.media_photo))
         }
     }
-    IconButton(onClick = {
-        if (recording) stopAndSend()
-        else if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) recording = recorder.start()
-        else mic.launch(android.Manifest.permission.RECORD_AUDIO)
-    }) {
-        Icon(if (recording) Icons.Outlined.Stop else Icons.Outlined.Mic, contentDescription = stringResource(R.string.media_voice), tint = if (recording) MaterialTheme.colorScheme.error else LocalContentColor.current)
+    val hint = stringResource(R.string.media_mic_hint)
+    // Hold to talk, release to send; a quick tap keeps recording until the next tap.
+    Box(
+        Modifier.size(48.dp).semantics { contentDescription = hint }.pointerInput(conversation) {
+            detectTapGestures(onPress = {
+                if (recording) { if (tryAwaitRelease()) stopAndSend(); return@detectTapGestures }
+                val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                if (!granted) { mic.launch(android.Manifest.permission.RECORD_AUDIO); return@detectTapGestures }
+                recording = begin()
+                if (!recording) return@detectTapGestures
+                val pressedAt = System.currentTimeMillis()
+                if (!tryAwaitRelease()) cancel()
+                else if (System.currentTimeMillis() - pressedAt >= 400) stopAndSend()
+            })
+        },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(if (recording) Icons.Outlined.Stop else Icons.Outlined.Mic, contentDescription = null, tint = if (recording) MaterialTheme.colorScheme.error else LocalContentColor.current)
     }
     if (recording) Text(stringResource(R.string.media_recording), fontSize = 12.sp, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(end = 8.dp))
 }
 
+/**
+ * A received photo starts as coarse blocks and opens on a tap (§21.4), so nobody
+ * standing nearby gets an unwanted picture shown to them on the screen.
+ */
 @Composable
-private fun PhotoView(path: String) {
-    val bmp = remember(path) { Media.thumbnail(path)?.asImageBitmap() }
-    if (bmp == null) Icon(Icons.Outlined.Image, contentDescription = stringResource(R.string.media_photo), modifier = Modifier.padding(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-    else Image(bmp, contentDescription = stringResource(R.string.media_photo), modifier = Modifier.widthIn(max = 260.dp).heightIn(max = 320.dp).padding(4.dp))
+private fun PhotoView(path: String, covered: Boolean) {
+    var open by remember(path) { mutableStateOf(!covered) }
+    // Decoding happens off the main thread; a bubble scrolled out and back finds its bitmap in the cache.
+    val decoded by produceState(thumbnails.get(path), path) {
+        if (value == null) value = withContext(Dispatchers.IO) { Media.thumbnail(path)?.also { thumbnails.put(path, it) } }
+    }
+    val bmp = decoded ?: run { Icon(Icons.Outlined.Image, contentDescription = stringResource(R.string.media_photo), modifier = Modifier.padding(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant); return }
+    val shown = remember(path, open, bmp) { (if (open) bmp else Media.pixelate(bmp)).asImageBitmap() }
+    Box(contentAlignment = Alignment.Center) {
+        Image(
+            shown, contentDescription = stringResource(R.string.media_photo),
+            filterQuality = if (open) FilterQuality.Medium else FilterQuality.None,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.widthIn(max = 260.dp).heightIn(max = 320.dp).aspectRatio(bmp.width.toFloat() / bmp.height).padding(4.dp)
+                .let { if (!open) it.clickable { open = true } else it },
+        )
+        if (!open) {
+            Text(
+                stringResource(R.string.media_tap_to_show), fontSize = 13.sp, color = Color.White,
+                modifier = Modifier.background(Color(0x99000000), RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 6.dp),
+            )
+        }
+    }
 }
+
+private val thumbnails = LruCache<String, android.graphics.Bitmap>(24)
+private val voiceDurations = LruCache<String, Int>(64)
 
 @Composable
 private fun VoiceNote(path: String) {
     var player by remember { mutableStateOf<MediaPlayer?>(null) }
-    val duration = remember(path) {
-        try { MediaPlayer().run { setDataSource(path); prepare(); duration.also { release() } } } catch (e: Exception) { 0 }
+    // The length is read off the main thread once per file, not on every composition.
+    val duration by produceState(voiceDurations.get(path) ?: 0, path) {
+        if (voiceDurations.get(path) == null) value = withContext(Dispatchers.IO) {
+            try { MediaPlayer().run { setDataSource(path); prepare(); duration.also { release() } } } catch (e: Exception) { 0 }
+        }.also { voiceDurations.put(path, it) }
     }
     DisposableEffect(path) { onDispose { player?.release() } }
     Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -624,10 +749,44 @@ private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conv
             ChatRepository.controller?.setFavorite(o.person.key, o.person.label.name, o.on)
             local(ctx.getString(if (o.on) R.string.cmd_favorited else R.string.cmd_unfavorited, o.person.label.toString()))
         }
+        is Commands.Outcome.GroupCreate -> ChatRepository.controller?.createGroup(o.name)?.let { ChatRepository.requestOpen(it) }
+        is Commands.Outcome.GroupList -> local(
+            ChatRepository.groups.value.values.joinToString("\n") { "#${it.name} · ${it.members.size}/${org.openchat.android.core.Group.MAX_MEMBERS}" + if (it.iAmCreator) " \u2605\uFE0E" else "" }
+                .ifEmpty { ctx.getString(R.string.group_none) },
+        )
+        is Commands.Outcome.GroupInvite, is Commands.Outcome.GroupRemove, Commands.Outcome.GroupLeave -> {
+            val id = conversation.removePrefix("grp:").takeIf { conversation.startsWith("grp:") } ?: return local(ctx.getString(R.string.group_open_first))
+            val c = ChatRepository.controller ?: return
+            when (o) {
+                is Commands.Outcome.GroupInvite -> c.groupInvite(id, o.person.key)
+                is Commands.Outcome.GroupRemove -> {
+                    val n = o.name.lowercase()
+                    ChatRepository.groups.value[id]?.members?.firstOrNull { m ->
+                        m.nickname.lowercase() == n || PeerLabel.mesh(m.nickname, m.fingerprint.take(16)).toString().lowercase() == n
+                    }?.let { c.groupRemove(id, it.fingerprint) } ?: local(ctx.getString(R.string.cmd_not_found, o.name))
+                }
+                else -> c.groupLeave(id) // the group screen closes itself once the group is gone
+            }
+        }
+        is Commands.Outcome.Pay -> {
+            onSend(o.token)
+            local(ctx.getString(if (o.private) R.string.pay_sent_private else R.string.pay_sent_public, o.summary))
+        }
+        is Commands.Outcome.Ping -> {
+            local(ctx.getString(R.string.cmd_ping_started, o.person.label.toString()))
+            ChatRepository.controller?.ping(o.person.key, o.person.label.toString(), conversation)
+        }
+        is Commands.Outcome.Trace -> {
+            val path = ChatRepository.controller?.estimatePath(o.person.key)
+            local(
+                if (path == null) ctx.getString(R.string.cmd_trace_none, o.person.label.toString())
+                else ctx.getString(R.string.cmd_trace_path, (listOf(ctx.getString(R.string.cmd_trace_you)) + path + o.person.label.toString()).joinToString(" → "), path.size + 1),
+            )
+        }
         is Commands.Outcome.Drop -> local(ctx.getString(if (ChatRepository.controller?.dropNote(o.text) == true) R.string.note_dropped else R.string.note_no_location))
         is Commands.Outcome.Local -> local(
             when (o.note) {
-                Commands.Note.HELP -> ctx.getString(R.string.cmd_help)
+                Commands.Note.HELP -> ctx.getString(R.string.cmd_help) + "\n" + ctx.getString(R.string.cmd_help_group) + "\n" + ctx.getString(R.string.cmd_help_diag) + "\n" + ctx.getString(R.string.cmd_help_pay)
                 Commands.Note.WHO -> ctx.getString(R.string.cmd_who, o.arg)
                 Commands.Note.WHO_NONE -> ctx.getString(R.string.cmd_who_none)
                 Commands.Note.NOT_FOUND -> ctx.getString(R.string.cmd_not_found, o.arg)
@@ -635,6 +794,9 @@ private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conv
                 Commands.Note.UNKNOWN -> ctx.getString(R.string.cmd_unknown, o.arg)
                 Commands.Note.MESH_ONLY -> ctx.getString(R.string.cmd_mesh_only)
                 Commands.Note.NO_LOCATION -> ctx.getString(R.string.cmd_geo_only)
+                Commands.Note.PAY_NOT_TOKEN -> ctx.getString(R.string.pay_not_token)
+                Commands.Note.PAY_INVALID -> ctx.getString(R.string.pay_invalid)
+                Commands.Note.PAY_CONFIRM_PUBLIC -> ctx.getString(R.string.pay_confirm_public)
                 else -> o.arg
             },
         )
@@ -659,7 +821,7 @@ private fun withMentions(text: String): AnnotatedString {
 }
 
 /** "HH:mm" today, otherwise the short local date as well. */
-private fun stampText(ts: Long): String {
+internal fun stampText(ts: Long): String {
     val locale = Locale.getDefault()
     val clock = SimpleDateFormat("HH:mm", locale).format(Date(ts))
     val day = SimpleDateFormat("yyyyDDD", locale)
@@ -698,7 +860,7 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
         }
     }
     Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (!conversation.startsWith("geo:") && !conversation.startsWith("gdm:")) MediaButtons(conversation)
+        if (!conversation.startsWith("geo:") && !conversation.startsWith("gdm:") && !conversation.startsWith("grp:")) MediaButtons(conversation)
         OutlinedTextField(
             value = text, onValueChange = { if (it.length <= 1000) set(it) },
             placeholder = { Text(placeholder) },
@@ -729,7 +891,7 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
             title = {
                 Column {
-                    PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex)), onPanic)
+                    PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex), vouched = social.isVouchedPeer(peerHex)), onPanic)
                     Text(
                         stringResource(
                             when {
@@ -759,6 +921,105 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
             )
         }
     }
+}
+
+@Composable
+private fun NewGroupDialog(onDismiss: () -> Unit, onCreated: (String) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.group_new)) },
+        text = {
+            Column {
+                OutlinedTextField(name, { name = it.take(org.openchat.android.core.Group.MAX_NAME) }, singleLine = true, placeholder = { Text(stringResource(R.string.group_name_hint)) })
+                Text(stringResource(R.string.group_new_note), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = name.isNotBlank(), onClick = { ChatRepository.controller?.createGroup(name)?.let(onCreated) }) { Text(stringResource(R.string.group_create)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+/** A private group: sealed with the group key, flooded over the mesh (§22). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GroupChatScreen(idHex: String, onBack: () -> Unit, onPanic: () -> Unit) {
+    val groups by ChatRepository.groups.collectAsState()
+    val g = groups[idHex]
+    var members by remember { mutableStateOf(false) }
+    BackHandler(onBack = onBack)
+    if (g == null) { LaunchedEffect(Unit) { onBack() }; return }
+    if (members) GroupMembersDialog(g, onDismiss = { members = false }, onLeave = { members = false; ChatRepository.controller?.groupLeave(idHex); onBack() })
+    Scaffold(topBar = {
+        TopAppBar(
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
+            title = {
+                Column {
+                    PanicTitle("#" + g.name, onPanic)
+                    Text(stringResource(R.string.group_status, plural(R.plurals.group_members, g.members.size)), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            actions = { TextButton(onClick = { members = true }) { Text(stringResource(R.string.group_members_title)) } },
+        )
+    }) { padding ->
+        Box(Modifier.padding(padding)) {
+            ChatPane(
+                conversation = Conversation.Group(idHex).key,
+                emptyText = stringResource(R.string.group_empty),
+                placeholder = stringResource(R.string.group_placeholder, g.name),
+                onSend = { ChatRepository.controller?.sendGroup(idHex, it) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun GroupMembersDialog(g: org.openchat.android.app.GroupInfo, onDismiss: () -> Unit, onLeave: () -> Unit) {
+    val peers by ChatRepository.peers.collectAsState()
+    val memberIds = g.members.map { it.fingerprint.take(16) }.toSet()
+    val invitable = peers.filter { it.peerIdHex !in memberIds }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+        dismissButton = { TextButton(onClick = onLeave) { Text(stringResource(R.string.group_leave), color = MaterialTheme.colorScheme.error) } },
+        title = { Text("#" + g.name) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                g.members.forEach { m ->
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            buildAnnotatedString {
+                                append(labelText(PeerLabel.mesh(m.nickname, m.fingerprint.take(16))))
+                                if (m.fingerprint == g.myFingerprint) append(" · " + stringResource(R.string.group_you))
+                            },
+                            Modifier.weight(1f), fontSize = 14.sp,
+                        )
+                        if (m.fingerprint == g.creatorFingerprint) {
+                            Text("\u2605\uFE0E " + stringResource(R.string.group_creator), fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                        } else if (g.iAmCreator) {
+                            TextButton(onClick = { ChatRepository.controller?.groupRemove(g.idHex, m.fingerprint) }) { Text(stringResource(R.string.group_remove)) }
+                        }
+                    }
+                }
+                if (g.iAmCreator) {
+                    Text(stringResource(R.string.group_invite_title), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
+                    if (invitable.isEmpty()) Text(stringResource(R.string.group_none_nearby), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    invitable.forEach { p ->
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(labelText(PeerLabel.mesh(p.nickname, p.peerIdHex)), Modifier.weight(1f), fontSize = 14.sp)
+                            TextButton(enabled = g.members.size < org.openchat.android.core.Group.MAX_MEMBERS, onClick = { ChatRepository.controller?.groupInvite(g.idHex, p.peerIdHex) }) {
+                                Text(stringResource(R.string.group_invite))
+                            }
+                        }
+                    }
+                } else {
+                    Text(stringResource(R.string.group_creator_manages), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
+                }
+            }
+        },
+    )
 }
 
 /** Private chat with someone met in a location channel, over Nostr under my persona for that cell. */
@@ -807,13 +1068,33 @@ private fun PrivateList(onOpen: (String) -> Unit) {
     val withHistory = all.keys.filter { it.startsWith("dm:") }.map { it.removePrefix("dm:") }
     val ids = (peers.map { it.peerIdHex } + withHistory).distinct().filter { it != me.myPeerHex }
     val geoChats = all.keys.filter { it.startsWith("gdm:") }
-    if (ids.isEmpty() && geoChats.isEmpty()) {
+    val groups by ChatRepository.groups.collectAsState()
+    var creating by remember { mutableStateOf(false) }
+    if (creating) NewGroupDialog(onDismiss = { creating = false }, onCreated = { creating = false; onOpen(it) })
+    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
+        TextButton(onClick = { creating = true }) { Text(stringResource(R.string.group_new)) }
+    }
+    if (ids.isEmpty() && geoChats.isEmpty() && groups.isEmpty()) {
         Box(Modifier.fillMaxSize()) {
             Text(stringResource(R.string.dm_list_empty), Modifier.align(Alignment.Center).padding(32.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
     LazyColumn {
+        items(groups.values.toList(), key = { "grp:" + it.idHex }) { g ->
+            val key = Conversation.Group(g.idHex).key
+            Row(Modifier.fillMaxWidth().clickable { onOpen(key) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("#", fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.size(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(g.name, fontWeight = FontWeight.SemiBold)
+                    Text(all[key]?.lastOrNull { !it.system }?.text ?: plural(R.plurals.group_members, g.members.size), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                }
+                val n = unread[key] ?: 0
+                if (n > 0) Badge { Text("$n") }
+            }
+            HorizontalDivider()
+        }
         items(geoChats, key = { it }) { key ->
             val c = Conversation.GeoPrivate.parse(key)!!
             val last = all[key]?.lastOrNull()
@@ -839,7 +1120,7 @@ private fun PrivateList(onOpen: (String) -> Unit) {
                     val fav = social.favoriteOf(hex)
                     Text(
                         buildAnnotatedString {
-                            append(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex), verified = social.isVerifiedPeer(hex)))
+                            append(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex), verified = social.isVerifiedPeer(hex), vouched = social.isVouchedPeer(hex)))
                             if (fav?.mine == true) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" \u2605\uFE0E") }
                         },
                         fontWeight = FontWeight.SemiBold,
@@ -899,6 +1180,32 @@ private fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Unit
             geo.joined.sorted().forEach { g -> TextButton(onClick = { onOpen(g) }) { Text("#$g") } }
         }
     }
+}
+
+/**
+ * Plain-text invite to a location channel (§21.5): readable without the app, and a
+ * `bitchat://geohash/` link both apps open. A fine-grained cell asks first, since
+ * whoever carries the text learns which small area you care about.
+ */
+@Composable
+private fun ShareChannelButton(geohash: String) {
+    val ctx = LocalContext.current
+    var confirm by remember { mutableStateOf(false) }
+    fun share() {
+        val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+            .putExtra(android.content.Intent.EXTRA_TEXT, ctx.getString(R.string.share_channel_text, geohash))
+        ctx.startActivity(android.content.Intent.createChooser(send, null))
+    }
+    if (confirm) {
+        AlertDialog(
+            onDismissRequest = { confirm = false },
+            title = { Text(stringResource(R.string.share_channel_warn_title)) },
+            text = { Text(stringResource(R.string.share_channel_warn_body, geohash)) },
+            confirmButton = { TextButton(onClick = { confirm = false; share() }) { Text(stringResource(R.string.share_anyway)) } },
+            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    TextButton(onClick = { if (geohash.length >= 6) confirm = true else share() }) { Text(stringResource(R.string.share_channel)) }
 }
 
 /** Notes left at this building-level cell and the ones around it (§17). */
@@ -962,7 +1269,10 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
                     Text(if (geo.relaysConnected == 0) stringResource(R.string.geo_connecting) else plural(R.plurals.geo_recent, n), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
-            actions = { TextButton(onClick = { ChatRepository.controller?.leaveGeo(geohash); onBack() }) { Text(stringResource(R.string.geo_leave)) } },
+            actions = {
+                ShareChannelButton(geohash)
+                TextButton(onClick = { ChatRepository.controller?.leaveGeo(geohash); onBack() }) { Text(stringResource(R.string.geo_leave)) }
+            },
         )
     }) { padding ->
         Box(Modifier.padding(padding)) {
@@ -1017,6 +1327,9 @@ private fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> U
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.me_carrying, mesh.carriedCount), fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
         }
+        NotificationSection()
+        LiveVoiceSection()
+        BridgeSection()
         TorSection()
         RelaySection()
         BlockedList()

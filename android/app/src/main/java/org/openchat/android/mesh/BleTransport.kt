@@ -44,6 +44,11 @@ class BleTransport(
         private const val MAX_CENTRAL_LINKS = 6
         private const val RSSI_FLOOR = -90
         private const val DEFAULT_WRITE = 20
+        /** Chunks a link may hold back; a frame that would not fit is refused whole, never cut (§1). */
+        private const val QUEUE_CAP = 2_000
+        /** Consecutive write failures after which the link is given up: the stack has stopped taking data. */
+        private const val WRITE_FAILURE_LIMIT = 40
+        private const val CONNECT_TIMEOUT_MS = 15_000L
     }
 
     private val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -56,7 +61,9 @@ class BleTransport(
     /** Outgoing queue per link: Android allows one GATT operation in flight at a time. */
     private class LinkQueue(var maxWrite: Int) {
         val chunks = ArrayDeque<ByteArray>()
+        var queuedBytes = 0
         var busy = false
+        var failures = 0
     }
 
     // Central role: we connected to them.
@@ -84,7 +91,8 @@ class BleTransport(
         try { adapter?.bluetoothLeScanner?.stopScan(scanCallback) } catch (e: Exception) { }
         try { adapter?.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) } catch (e: Exception) { }
         centrals.values.forEach { try { it.disconnect(); it.close() } catch (e: Exception) { } }
-        centrals.clear(); centralChars.clear()
+        centrals.keys.toList().forEach { linkDown(centralLink(it)) }
+        centrals.clear(); centralChars.clear(); connecting.clear()
         subscribers.keys.toList().forEach { linkDown(peripheralLink(it)) }
         subscribers.clear()
         queues.clear()
@@ -166,6 +174,11 @@ class BleTransport(
             }
         }
 
+        /** A central finishing a prepared (long) write expects an answer, or it stalls the link. */
+        override fun onExecuteWrite(device: BluetoothDevice, requestId: Int, execute: Boolean) {
+            server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null)
+        }
+
         override fun onCharacteristicReadRequest(device: BluetoothDevice, requestId: Int, offset: Int, ch: BluetoothGattCharacteristic) {
             server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, ByteArray(0))
         }
@@ -225,8 +238,13 @@ class BleTransport(
         else device.connectGatt(context, false, gattCallback)
         if (gatt == null) connecting.remove(address)
         handler.postDelayed({
-            if (connecting.remove(address)) try { gatt?.disconnect(); gatt?.close() } catch (e: Exception) { }
-        }, 15_000)
+            // Still not ready (MTU, discovery or the CCCD write never answered): forget every trace of
+            // the attempt, or the address stays "connected" in our tables and is never tried again.
+            if (connecting.remove(address)) {
+                centrals.remove(address); centralChars.remove(address); queues.remove(centralLink(address))
+                try { gatt?.disconnect(); gatt?.close() } catch (e: Exception) { }
+            }
+        }, CONNECT_TIMEOUT_MS)
     }
 
     private val gattCallback = object : BluetoothGattCallback() {
@@ -306,14 +324,21 @@ class BleTransport(
     override fun write(linkId: String, bytes: ByteArray) {
         val q = queues[linkId] ?: return
         val step = maxOf(DEFAULT_WRITE, q.maxWrite)
+        val pieces = (bytes.size + step - 1) / step
+        // Dropping chunks from a full queue would cut a frame in half and leave the far end's framer
+        // hunting for the next header inside our tail. A frame goes out whole or not at all.
+        if (q.chunks.size + pieces > QUEUE_CAP) { Log.w(TAG, "queue full on $linkId, frame of ${bytes.size} bytes dropped"); return }
         var i = 0
         while (i < bytes.size) {
             q.chunks.addLast(bytes.copyOfRange(i, minOf(i + step, bytes.size)))
             i += step
         }
-        if (q.chunks.size > 2_000) repeat(q.chunks.size - 2_000) { q.chunks.removeFirst() }
+        q.queuedBytes += bytes.size
         pump(linkId)
     }
+
+    /** Bytes still waiting on a link, so the engine can pace fragments to what the radio takes. */
+    override fun pending(linkId: String): Int = queues[linkId]?.queuedBytes ?: 0
 
     private fun pump(linkId: String) {
         val q = queues[linkId] ?: return
@@ -342,10 +367,24 @@ class BleTransport(
         }
         if (ok) {
             q.busy = true
+            q.failures = 0
+            q.queuedBytes -= chunk.size
             // Safety net in case the stack never reports completion.
             handler.postDelayed({ if (q.busy) { q.busy = false; pump(linkId) } }, 300)
         } else {
             q.chunks.addFirst(chunk)
+            if (++q.failures >= WRITE_FAILURE_LIMIT) {
+                // The stack refuses everything: the connection is gone in all but name. Drop the link
+                // rather than retry every 50 ms until the phone dies.
+                Log.w(TAG, "link $linkId stopped taking writes, dropping it")
+                q.chunks.clear(); q.queuedBytes = 0
+                if (linkId.startsWith("c:")) {
+                    centralChars.remove(address)
+                    centrals.remove(address)?.let { g -> try { g.disconnect(); g.close() } catch (e: Exception) { } }
+                } else subscribers.remove(address)
+                linkDown(linkId)
+                return
+            }
             handler.postDelayed({ pump(linkId) }, 50)
         }
     }

@@ -11,6 +11,8 @@ sealed class Conversation(val key: String) {
     object Mesh : Conversation("mesh")
     data class Private(val peerHex: String) : Conversation("dm:$peerHex")
     data class Geo(val geohash: String) : Conversation("geo:$geohash")
+    /** A private group (§22), keyed by its group ID. */
+    data class Group(val idHex: String) : Conversation("grp:$idHex")
     /** Private chat with a location-channel persona, under my persona for that cell (§15.5). */
     data class GeoPrivate(val geohash: String, val pubkey: String) : Conversation("gdm:$geohash:$pubkey") {
         companion object {
@@ -36,6 +38,7 @@ data class ChatMessage(
     val system: Boolean = false, // a local line (command output), never sent
     val attachment: String? = null, // path of an image or voice note in the media cache (§18)
     val audio: Boolean = false,
+    val bridged: Boolean = false, // came across the mesh bridge from another island (§24); senderKey is a Nostr key
 )
 
 /**
@@ -61,7 +64,7 @@ data class PeerLabel(val name: String, val suffix: String) {
             PeerLabel(clean(nickname?.takeUnless { peerHex.length >= 8 && it.equals(peerHex.take(8), ignoreCase = true) }), suffix(peerHex.take(4)))
         fun nostr(nickname: String?, pubkeyHex: String) = PeerLabel(clean(nickname), suffix(pubkeyHex.takeLast(4)))
         fun of(m: ChatMessage) =
-            if (m.conversation.startsWith("geo:") || m.conversation.startsWith("gdm:")) nostr(m.senderName, m.senderKey) else mesh(m.senderName, m.senderKey)
+            if (m.bridged || m.conversation.startsWith("geo:") || m.conversation.startsWith("gdm:")) nostr(m.senderName, m.senderKey) else mesh(m.senderName, m.senderKey)
     }
 }
 
@@ -74,6 +77,12 @@ data class MeshStatus(
     val fingerprint: String = "",
     val carriedCount: Int = 0, // sealed envelopes held for others (§13.4)
     val storageLocked: Boolean = false, // the saved identity exists but could not be opened; nothing runs until it can
+)
+
+/** A notice-board post as the UI shows it (§23). */
+data class BoardItem(
+    val idHex: String, val nickname: String, val authorKeyHex: String, val content: String,
+    val createdAt: Long, val expiresAt: Long, val urgent: Boolean, val mine: Boolean, val geohash: String,
 )
 
 /** A note left at a place (§17), visible to anyone nearby for 24 hours. */
@@ -107,11 +116,29 @@ interface ChatController {
     fun leaveGeo(geohash: String)
     fun sendGeo(geohash: String, text: String)
     fun sendGeoPrivate(geohash: String, pubkey: String, text: String)
+    /** Creates a group and returns its conversation key, or null for an empty name. */
+    fun createGroup(name: String): String?
+    fun groupInvite(idHex: String, peerHex: String)
+    fun groupRemove(idHex: String, fingerprint: String)
+    fun groupLeave(idHex: String)
+    fun sendGroup(idHex: String, text: String)
+    fun postToBoard(text: String, urgent: Boolean, days: Int): Boolean
+    fun deleteBoardPost(idHex: String)
+    fun setBridge(on: Boolean)
+    /** Pings a mesh peer; the answer, or its absence, appears later as a local line in [conversation]. */
+    fun ping(peerHex: String, label: String, conversation: String)
+    /** Labels of the peers between us and [peerHex] (empty for a neighbour), or null when no path is known. */
+    fun estimatePath(peerHex: String): List<String>?
     /** Leaves a note at the device's building-level cell; false when the place is unknown. */
     fun dropNote(text: String): Boolean
     fun watchNotes(cell: String?)
     /** Sends a photo or voice note into a Nearby or private chat; returns a reason string resource on immediate refusal, or 0. A refusal decided later shows as a local line in that chat. */
-    fun sendMedia(conversation: String, bytes: ByteArray, mime: String): Int
+    fun sendMedia(conversation: String, bytes: ByteArray, mime: String, fileName: String? = null): Int
+    /** Starts recording a voice note that also streams live where it can (§29); false if the microphone failed. */
+    fun startVoice(conversation: String): Boolean
+    /** Stops and sends the note; false when it was too short. */
+    fun finishVoice(): Boolean
+    fun cancelVoice()
     fun setTor(on: Boolean)
     fun refreshLocation()
     fun panic()
@@ -142,14 +169,18 @@ object ChatRepository {
 
     @Volatile var controller: ChatController? = null
     @Volatile var openConversation: String? = null
+    /** Whether the app is on screen; live voice never starts playing from the background. */
+    @Volatile var foreground = false
 
     fun add(m: ChatMessage) {
+        var added = false
         _messages.update { all ->
             val list = all[m.conversation].orEmpty()
-            if (list.any { it.id == m.id && it.senderKey == m.senderKey }) return@update all
+            added = list.none { it.id == m.id && it.senderKey == m.senderKey }
+            if (!added) return@update all
             all + (m.conversation to (list + m).sortedBy { it.timestamp }.takeLast(TIMELINE_CAP))
         }
-        if (!m.mine && openConversation != m.conversation) {
+        if (added && !m.mine && openConversation != m.conversation) {
             _unread.update { it + (m.conversation to (it[m.conversation] ?: 0) + 1) }
         }
     }
@@ -163,12 +194,38 @@ object ChatRepository {
 
     fun clearUnread(conversation: String) = _unread.update { it - conversation }
 
+    /** A message sent before its final ID existed (location channels mine proof of work first). */
+    fun replaceId(conversation: String, oldId: String, newId: String, state: DeliveryState) = _messages.update { all ->
+        val list = all[conversation] ?: return@update all
+        all + (conversation to list.map { if (it.id == oldId) it.copy(id = newId, state = state) else it })
+    }
+
     fun addLocal(conversation: String, text: String) {
         val now = System.currentTimeMillis()
         add(ChatMessage("local-$now-${text.hashCode()}", conversation, "", "", text, now, mine = true, system = true))
     }
 
     fun clear(conversation: String) = _messages.update { it - conversation }
+
+    fun remove(conversation: String, id: String) = _messages.update { all ->
+        all[conversation]?.let { list -> all + (conversation to list.filter { it.id != id }) } ?: all
+    }
+
+    private val _bridge = MutableStateFlow(BridgeStatus())
+    val bridge: StateFlow<BridgeStatus> = _bridge.asStateFlow()
+    fun setBridge(s: BridgeStatus) { _bridge.value = s }
+
+    private val _board = MutableStateFlow<List<BoardItem>>(emptyList())
+    val board: StateFlow<List<BoardItem>> = _board.asStateFlow()
+    private val _boardUnseen = MutableStateFlow(0)
+    val boardUnseen: StateFlow<Int> = _boardUnseen.asStateFlow()
+    fun setBoard(items: List<BoardItem>) { _board.value = items }
+    fun addBoardUnseen() = _boardUnseen.update { it + 1 }
+    fun clearBoardUnseen() { _boardUnseen.value = 0 }
+
+    private val _groups = MutableStateFlow<Map<String, GroupInfo>>(emptyMap())
+    val groups: StateFlow<Map<String, GroupInfo>> = _groups.asStateFlow()
+    fun setGroups(g: Map<String, GroupInfo>) { _groups.value = g }
 
     /** A chat the UI should open next (from /msg); consumed by the main screen. */
     private val _openRequest = MutableStateFlow<String?>(null)
@@ -187,6 +244,7 @@ object ChatRepository {
 
     /** Panic wipe of everything held in memory. */
     fun wipe() {
+        _board.value = emptyList(); _boardUnseen.value = 0
         _messages.value = emptyMap()
         _peers.value = emptyList()
         _unread.value = emptyMap()

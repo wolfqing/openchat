@@ -10,6 +10,7 @@ import org.openchat.android.core.MessageType
 import org.openchat.android.core.Packet
 import org.openchat.android.core.PacketCodec
 import org.openchat.android.core.hexToBytes
+import org.openchat.android.core.toHex
 import org.openchat.android.crypto.Crypto
 import java.util.PriorityQueue
 import kotlin.random.Random
@@ -52,11 +53,23 @@ class Recorder : MeshListener {
     val queued = ArrayList<String>()
     val carried = ArrayList<String>()
     val verified = ArrayList<String>()
+    val groupStates = ArrayList<Pair<String, Boolean>>() // sender peer, invite
+    val groupMessages = ArrayList<ByteArray>()
+    val carriers = ArrayList<Pair<Boolean, ByteArray>>() // directed, payload
+    val drops = ArrayList<ByteArray>()
+    val vouches = ArrayList<Pair<ByteArray, ByteArray>>() // session key, signing key
+    val voice = ArrayList<Boolean>() // private
+    override fun onVoiceFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean) { voice += isPrivate }
+    override fun onVouch(peerHex: String, sessionKey: ByteArray, signingKey: ByteArray, batch: ByteArray) { vouches += sessionKey to signingKey }
+    override fun onCarrier(senderHex: String, payload: ByteArray, directed: Boolean) { carriers += directed to payload }
+    override fun onDrop(envelope: ByteArray, recipientTagHex: String, expiresAt: Long) { drops += envelope }
+    override fun onGroupState(peerHex: String, sessionKey: ByteArray, invite: Boolean, payload: ByteArray) { groupStates += peerHex to invite }
+    override fun onGroupMessage(payload: ByteArray, timestamp: Long) { groupMessages += payload }
     val files = ArrayList<Pair<String, Boolean>>() // mime, private
     override fun onFile(senderHex: String, nickname: String, file: org.openchat.android.core.FilePacket, isPrivate: Boolean, timestamp: Long) { files += file.mimeType.orEmpty() to isPrivate }
     override fun onVerified(peerHex: String) { verified += peerHex }
     override fun onPeersChanged(peers: List<MeshPeer>) { this.peers = peers }
-    override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long) { publics += "$nickname:$text" }
+    override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean) { publics += "$nickname:$text" }
     override fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) { privates += messageId to text }
     override fun onDelivered(peerHex: String, messageId: String) { delivered += messageId }
     override fun onRead(peerHex: String, messageId: String) { reads += messageId }
@@ -486,5 +499,277 @@ class MeshEngineTest {
         net.connect("alice", "bob")
         net.scheduler.advance(5_000)
         assertTrue(bob.peersSnapshot().any { it.peerIdHex == alice.myPeerHex && it.signingPublicKey.contentEquals(alice.identity.signing.publicKey) })
+    }
+
+    @Test
+    fun newLinkHearsOurAnnounceWithinTwoSeconds() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "bob").forEach { net.node(it).start() } // both announce now, into no links
+        net.scheduler.advance(500)
+        net.connect("alice", "bob") // inside the 1 s announce rate limit
+        net.scheduler.advance(1_500)
+        assertTrue(net.recorders["bob"]!!.peers.any { it.nickname == "alice" })
+        assertTrue(net.recorders["alice"]!!.peers.any { it.nickname == "bob" })
+    }
+
+    @Test
+    fun syncedAnnounceDoesNotPassForPresence() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "bob", "carol").forEach { net.node(it).start() }
+        val carol = net.engines["carol"]!!.identity
+        net.connect("bob", "carol")
+        net.scheduler.advance(10_000)
+        net.disconnect("bob", "carol") // carol walks off without a leave; bob keeps her for up to a minute
+        net.scheduler.advance(5_000)
+        net.connect("alice", "bob")
+        net.scheduler.advance(10_000) // alice's first sync with bob brings carol's cached announce
+        // Bob's reply may legitimately leave it out (the sync filter has a 1/128 false-positive rate,
+        // §14.3), so a copy also arrives as a reply on the same link, which alice asked within the window.
+        val payload = Announcement(carol.nickname, carol.noise.publicKey, carol.signing.publicKey, emptyList()).encode()!!
+        val plain = Packet(type = MessageType.ANNOUNCE, senderId = carol.peerId, timestamp = net.scheduler.now() - 20_000, payload = payload, ttl = 0, isRsr = true)
+        val reply = plain.copy(signature = Crypto.ed25519Sign(carol.signing.privateKey, PacketCodec.signingBytes(plain)!!))
+        net.engines["alice"]!!.onBytes("to-bob", PacketCodec.encode(reply)!!)
+        net.scheduler.advance(100)
+        assertTrue("carol is not here", net.recorders["alice"]!!.peers.none { it.nickname == "carol" })
+        assertTrue(net.engines["alice"]!!.knownCount >= 2) // but her keys are remembered for verifying synced messages
+        net.scheduler.advance(120_000)
+        assertTrue(net.recorders["bob"]!!.peers.none { it.nickname == "carol" })
+    }
+
+    @Test
+    fun linkThatChangesIdentityDropsTheOldPeer() {
+        val net = pair()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        val oldBob = bob.myPeerHex
+        bob.resetIdentity(Identity.generate("bob2")) // panic wipe on the same connection
+        net.scheduler.advance(70_000)
+        val seen = alice.peersSnapshot()
+        assertTrue(seen.any { it.nickname == "bob2" && it.direct })
+        assertTrue("the old identity on this link is gone", seen.none { it.peerIdHex == oldBob })
+    }
+
+    @Test
+    fun fragmentsWaitForTheLinkToDrain() {
+        val scheduler = VirtualScheduler()
+        var backlog = 0
+        val writes = ArrayList<ByteArray>()
+        val engine = MeshEngine(Identity.generate("alice"), scheduler, object : LinkWriter {
+            override fun write(linkId: String, bytes: ByteArray) { writes += bytes }
+            override fun pending(linkId: String) = backlog
+        }, Recorder(), Random(1))
+        engine.start()
+        engine.onLinkUp("l", 182)
+        scheduler.advance(100)
+        fun fragments() = writes.map { PacketCodec.decode(it)!! }.filter { it.type == MessageType.FRAGMENT }
+        backlog = 10_000 // the radio is still busy with earlier traffic
+        engine.sendPublic(Random(7).nextBytes(1_500).toHex()) // compresses to well over one frame
+        scheduler.advance(2_000)
+        assertEquals("nothing goes out onto a backed-up link", 0, fragments().size)
+        backlog = 0
+        scheduler.advance(2_000)
+        // The prekey bundle is fragmented too, so judge each fragmented packet by its own fragment ID.
+        val byPacket = fragments().groupBy { it.payload.copyOfRange(0, 8).toList() }.values
+        assertTrue(byPacket.any { it.size >= 7 })
+        byPacket.forEach { f -> assertEquals(f.size, f.map { it.payload.copyOfRange(8, 10).toList() }.distinct().size) } // every index exactly once
+    }
+
+    @Test
+    fun fragmentsGiveUpWhenTheLinkNeverDrains() {
+        val scheduler = VirtualScheduler()
+        val writes = ArrayList<ByteArray>()
+        val engine = MeshEngine(Identity.generate("alice"), scheduler, object : LinkWriter {
+            override fun write(linkId: String, bytes: ByteArray) { writes += bytes }
+            override fun pending(linkId: String) = 10_000
+        }, Recorder(), Random(1))
+        engine.start()
+        engine.onLinkUp("l", 182)
+        scheduler.advance(100)
+        engine.sendPublic(Random(7).nextBytes(1_500).toHex())
+        scheduler.advance(60_000)
+        assertEquals(0, writes.map { PacketCodec.decode(it)!! }.count { it.type == MessageType.FRAGMENT })
+    }
+
+    @Test
+    fun groupStateGoesOverNoiseAndMessagesFloodAndSync() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        alice.sendGroupState(carol.myPeerHex, invite = true, payload = byteArrayOf(1, 2, 3))
+        net.scheduler.advance(5_000)
+        assertEquals(listOf(alice.myPeerHex to true), net.recorders["carol"]!!.groupStates)
+        assertEquals(0, net.recorders["bob"]!!.groupStates.size)
+        alice.broadcastGroupMessage(byteArrayOf(7, 7, 7))
+        net.scheduler.advance(5_000)
+        assertEquals(1, net.recorders["carol"]!!.groupMessages.size) // relayed through bob
+        assertEquals(1, net.recorders["bob"]!!.groupMessages.size)   // bob sees it but cannot open it
+        // Dave turns up later next to carol and gets the sealed message by history sync.
+        net.node("dave").start()
+        net.connect("carol", "dave"); net.scheduler.advance(40_000)
+        assertEquals(1, net.recorders["dave"]!!.groupMessages.size)
+    }
+
+    @Test
+    fun aSyncCopyDoesNotCancelTheRelay() {
+        // Same timing as the group test: alice's broadcast lands while bob's sync request to her is
+        // in flight, so bob gets her sync reply while his relay to carol is still waiting.
+        val net = line()
+        net.scheduler.advance(5_000)
+        net.engines["alice"]!!.sendPublic("first light")
+        net.scheduler.advance(5_000)
+        assertEquals(listOf("alice:first light"), net.recorders["carol"]!!.publics)
+    }
+
+    @Test
+    fun boardPostsFloodSyncAndComeDown() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        assertTrue(alice.postToBoard("Water at the north gate until 18:00", urgent = true, days = 1))
+        net.scheduler.advance(5_000)
+        assertEquals(listOf("Water at the north gate until 18:00"), carol.boardPosts().map { it.content })
+        // Someone who arrives later still reads it, past the 15-minute window of chat history.
+        net.scheduler.advance(30 * 60_000L)
+        net.node("dave").start()
+        net.connect("carol", "dave"); net.scheduler.advance(40_000)
+        val dave = net.engines["dave"]!!
+        assertEquals(1, dave.boardPosts().size)
+        // Taking it down spreads the same way, and survives a restart of the board.
+        assertTrue(alice.deleteBoardPost(alice.boardPosts()[0].idHex))
+        net.scheduler.advance(40_000)
+        assertEquals(0, dave.boardPosts().size)
+        val restored = MeshState.deserialize(dave.exportState().serialize())!!
+        assertEquals(1, restored.board.size) // the tombstone, kept until the post would have expired
+    }
+
+    @Test
+    fun bridgeCellIsAdvertisedAndCarriersTravel() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!; val carol = net.engines["carol"]!!
+        bob.setBridgeCell("u4pruy")
+        net.scheduler.advance(3_000)
+        assertEquals(listOf(bob.myPeerHex to "u4pruy"), alice.bridgePeers())
+        // A deposit goes to the bridge phone alone; a downlink reaches everyone.
+        alice.sendCarrier(byteArrayOf(1), bob.myPeerHex)
+        bob.sendCarrier(byteArrayOf(2), null)
+        net.scheduler.advance(3_000)
+        assertEquals(listOf(true), net.recorders["bob"]!!.carriers.map { it.first })
+        assertEquals(listOf(false), net.recorders["carol"]!!.carriers.map { it.first })
+        assertEquals(listOf(false), net.recorders["alice"]!!.carriers.map { it.first })
+        bob.setBridgeCell(null)
+        net.scheduler.advance(3_000)
+        assertEquals(emptyList<Pair<String, String?>>(), alice.bridgePeers())
+    }
+
+    @Test
+    fun mailForAnAbsentPeerCanBeDroppedAndOpenedFromARelay() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "carol").forEach { net.node(it).start() }
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        net.connect("alice", "carol"); net.scheduler.advance(5_000)
+        net.disconnect("alice", "carol"); net.scheduler.advance(70_000)
+        alice.sendPrivate(carol.myPeerHex, "left at the relay")
+        val drop = net.recorders["alice"]!!.drops.single()
+        assertTrue(carol.dropTags().isNotEmpty())
+        carol.receiveDrop(drop)
+        assertEquals(listOf("left at the relay"), net.recorders["carol"]!!.privates.map { it.second })
+        carol.receiveDrop(drop) // a second relay's copy is not shown twice
+        assertEquals(1, net.recorders["carol"]!!.privates.size)
+    }
+
+    @Test
+    fun pingsComeBackWithHopsAndAreBudgetedPerLink() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!; val carol = net.engines["carol"]!!
+        val results = ArrayList<PingResult?>()
+        alice.ping(carol.myPeerHex) { results += it }
+        alice.ping(bob.myPeerHex) { results += it }
+        net.scheduler.advance(2_000)
+        assertEquals(listOf(1, 2), results.map { it!!.hops!! }.sorted())
+        // Nobody answers for a peer that is not there.
+        alice.ping("0011223344556677") { results += it }
+        net.scheduler.advance(11_000)
+        assertEquals(null, results.last())
+        // Bob answers at most five pings a link per ten seconds.
+        results.clear()
+        repeat(7) { alice.ping(bob.myPeerHex) { results += it } }
+        net.scheduler.advance(11_000)
+        assertEquals(5, results.count { it != null })
+    }
+
+    @Test
+    fun pathIsEstimatedFromAnnouncedNeighbours() {
+        val net = pair()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        val x = Identity.generate("x"); val y = Identity.generate("y")
+        val inject = rogueLink(net, "alice")
+        fun announce(id: Identity, neighbours: List<ByteArray>) {
+            val payload = Announcement(id.nickname, id.noise.publicKey, id.signing.publicKey, neighbours).encode()!!
+            val plain = Packet(type = MessageType.ANNOUNCE, senderId = id.peerId, timestamp = net.scheduler.now(), payload = payload, ttl = 5)
+            inject(plain.copy(signature = Crypto.ed25519Sign(id.signing.privateKey, PacketCodec.signingBytes(plain)!!)))
+        }
+        announce(x, listOf(bob.identity.peerId)) // bob claims nothing; x's claim is enough
+        announce(y, listOf(x.peerId))
+        net.scheduler.advance(1_000)
+        assertEquals(emptyList<String>(), alice.estimatePath(bob.myPeerHex))
+        assertEquals(listOf(bob.myPeerHex, x.peerIdHex), alice.estimatePath(y.peerIdHex))
+        assertEquals(null, alice.estimatePath("0011223344556677"))
+    }
+
+    @Test
+    fun gatewayBitIsAdvertisedAndWithdrawn() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        carol.setGateway(true)
+        net.scheduler.advance(3_000)
+        assertEquals(listOf(carol.myPeerHex), alice.gatewayPeers())
+        assertEquals(emptyList<Pair<String, String?>>(), alice.bridgePeers()) // a gateway is not a bridge
+        carol.setGateway(false)
+        net.scheduler.advance(3_000)
+        assertEquals(emptyList<String>(), alice.gatewayPeers())
+    }
+
+    @Test
+    fun vouchesTravelInsideTheSessionAndNameTheSessionPeer() {
+        val net = pair()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        alice.sendPrivate(bob.myPeerHex, "hi") // brings the session up
+        net.scheduler.advance(5_000)
+        val v = org.openchat.android.core.Vouch.create(ByteArray(32) { 7 }, ByteArray(32) { 8 }, net.scheduler.now(), alice.identity.signing)!!
+        alice.sendVouches(bob.myPeerHex, org.openchat.android.core.Vouch.encodeList(listOf(v))!!)
+        net.scheduler.advance(2_000)
+        val (session, signing) = net.recorders["bob"]!!.vouches.single()
+        assertTrue(session.contentEquals(alice.identity.noise.publicKey))
+        assertTrue(signing.contentEquals(alice.identity.signing.publicKey))
+        // Vouching is part of what a phone announces it can do.
+        assertTrue(bob.capabilitiesOf(alice.myPeerHex) and MeshEngine.CAP_VOUCH != 0L)
+    }
+
+    @Test
+    fun mailForAnAbsentPeerIsSealedToAOneTimePrekey() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "carol").forEach { net.node(it).start() }
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        net.connect("alice", "carol"); net.scheduler.advance(10_000)
+        net.disconnect("alice", "carol"); net.scheduler.advance(70_000)
+        alice.sendPrivate(carol.myPeerHex, "forward secret")
+        val drop = net.recorders["alice"]!!.drops.single()
+        assertTrue("sealed to carol's prekey", org.openchat.android.core.CourierEnvelope.decode(drop)!!.prekeyId != null)
+        carol.receiveDrop(drop)
+        assertEquals(listOf("forward secret"), net.recorders["carol"]!!.privates.map { it.second })
+        // Bundles and spent keys survive a restart of the sealed state.
+        val restored = MeshState.deserialize(alice.exportState().serialize())!!
+        assertEquals(1, restored.bundles.size)
+        assertTrue(restored.localPrekeys != null)
+    }
+
+    @Test
+    fun voiceFramesGoOverNoiseOrAsSignedBroadcasts() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val bob = net.engines["bob"]!!
+        alice.sendPrivate(bob.myPeerHex, "hi")
+        net.scheduler.advance(5_000)
+        alice.sendVoiceFrame(bob.myPeerHex, byteArrayOf(1, 2, 3))
+        alice.sendVoiceFrame(null, byteArrayOf(4, 5, 6))
+        net.scheduler.advance(2_000)
+        assertEquals(listOf(false, true), net.recorders["bob"]!!.voice.sorted())
+        assertEquals(listOf(false), net.recorders["carol"]!!.voice) // relayed to the next hop
     }
 }
