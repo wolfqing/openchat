@@ -10,7 +10,7 @@
     <string name="onboard_start">Começar</string>
     <string name="onboard_next">Em seguida, você precisará permitir o Bluetooth para o app encontrar pessoas por perto.</string>
     <string name="safety_title">Antes de começar</string>
-    <string name="safety_body">· O canal “Por perto” é público. Todos ao alcance podem vê-lo.\n· As mensagens privadas são criptografadas, mas quem está por perto pode saber que você usa este app e reconhecer o mesmo celular ao longo do tempo.\n· Este app ainda não passou por uma auditoria de segurança independente completa. Se ser identificado puder colocar você em grave perigo, não confie nele.\n· Toque três vezes no título no topo para apagar todos os dados de uma vez.</string>
+    <string name="safety_body">· O canal “Por perto” é público. Todos ao alcance podem vê-lo.\n· As mensagens privadas são criptografadas, mas quem está por perto pode saber que você usa este app e reconhecer o mesmo celular ao longo do tempo.\n· Este app ainda não passou por uma auditoria de segurança independente completa. Se ser identificado puder colocar você em grave perigo, não confie nele.\n· Toque três vezes no logo no canto superior esquerdo para apagar todos os dados de uma vez.</string>
     <string name="tab_nearby">Por perto</string>
     <string name="tab_private">Privado</string>
     <string name="tab_location">Local</string>

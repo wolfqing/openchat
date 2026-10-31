@@ -10,7 +10,7 @@
     <string name="onboard_start">Başla</string>
     <string name="onboard_next">Sonraki adımda, uygulamanın yakındaki kişileri bulabilmesi için Bluetooth izni istenecek.</string>
     <string name="safety_title">Başlamadan önce</string>
-    <string name="safety_body">· \"Yakında\" kanalı herkese açıktır. Menzildeki herkes görebilir.\n· Özel mesajlar şifrelidir, ancak yakındakiler bu uygulamayı kullandığını anlayabilir ve aynı telefonu zamanla tanıyabilir.\n· Bu uygulama henüz kapsamlı bir bağımsız güvenlik denetiminden geçmedi. Kimliğinin ortaya çıkması seni ciddi tehlikeye sokacaksa ona güvenme.\n· Tüm verileri tek seferde silmek için üstteki başlığa üç kez dokun.</string>
+    <string name="safety_body">· \"Yakında\" kanalı herkese açıktır. Menzildeki herkes görebilir.\n· Özel mesajlar şifrelidir, ancak yakındakiler bu uygulamayı kullandığını anlayabilir ve aynı telefonu zamanla tanıyabilir.\n· Bu uygulama henüz kapsamlı bir bağımsız güvenlik denetiminden geçmedi. Kimliğinin ortaya çıkması seni ciddi tehlikeye sokacaksa ona güvenme.\n· Tüm verileri tek seferde silmek için sol üstteki logoya üç kez dokun.</string>
     <string name="tab_nearby">Yakında</string>
     <string name="tab_private">Özel</string>
     <string name="tab_location">Konum</string>

@@ -10,7 +10,7 @@
     <string name="onboard_start">Commencer</string>
     <string name="onboard_next">Ensuite, on vous demandera d\'autoriser le Bluetooth pour que l\'application trouve les personnes à proximité.</string>
     <string name="safety_title">Avant de commencer</string>
-    <string name="safety_body">· Le canal « À proximité » est public. Tout le monde à portée peut le voir.\n· Les messages privés sont chiffrés, mais les personnes proches peuvent savoir que vous utilisez cette application et reconnaître le même téléphone au fil du temps.\n· Cette application n\'a pas encore fait l\'objet d\'un audit de sécurité indépendant complet. Si être identifié vous mettait en grave danger, ne vous y fiez pas.\n· Touchez trois fois le titre en haut pour effacer toutes les données d\'un coup.</string>
+    <string name="safety_body">· Le canal « À proximité » est public. Tout le monde à portée peut le voir.\n· Les messages privés sont chiffrés, mais les personnes proches peuvent savoir que vous utilisez cette application et reconnaître le même téléphone au fil du temps.\n· Cette application n\'a pas encore fait l\'objet d\'un audit de sécurité indépendant complet. Si être identifié vous mettait en grave danger, ne vous y fiez pas.\n· Touchez trois fois le logo en haut à gauche pour effacer toutes les données d\'un coup.</string>
     <string name="tab_nearby">À proximité</string>
     <string name="tab_private">Privé</string>
     <string name="tab_location">Lieu</string>

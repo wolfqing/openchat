@@ -61,11 +61,11 @@ network**, built with three differences in mind:
 
 | | State |
 |---|---|
-| Android app | **v0.5.0 preview.** Builds, 94 unit tests pass, 9.5 MB APK, 18 languages |
+| Android app | **v0.6.0 preview.** Builds, 161 unit tests pass, 8.8 MB APK, 18 languages |
 | Interop with stock bitchat | **Not yet verified.** Implemented from the spec and upstream test vectors; verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
 | iOS | Not started |
-| Release signing | Builds after v0.5.0 carry a dedicated release key; its certificate fingerprint is in [SECURITY.md](SECURITY.md). Previews up to v0.5.0 were debug-signed. Verify the APK SHA-256 in the release notes |
+| Release signing | v0.6.0 and later carry a dedicated release key; its certificate fingerprint is in [SECURITY.md](SECURITY.md). Previews up to v0.5.0 were debug-signed. Verify the APK SHA-256 in the release notes |
 
 Do not rely on openchat where being identified has serious consequences.
 The app says so on first launch. See [SECURITY.md](SECURITY.md).
@@ -188,7 +188,7 @@ echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
 ```
 
 The debug APK lands in `app/build/outputs/apk/debug/`. Release previews
-are built with `assembleRelease` (R8, ARM only, about 9.5 MB).
+are built with `assembleRelease` (R8, ARM only, about 9 MB).
 
 ## Contributing
 
