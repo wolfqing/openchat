@@ -253,4 +253,12 @@
     <string name="media_mic_hint">صدا: برای صحبت نگه دارید، یا بزنید تا شروع شود و دوباره بزنید تا فرستاده شود</string>
     <string name="live_voice_title">صدای زنده</string>
     <string name="live_voice_body">پیام‌های صوتی در «نزدیک» و گفتگوهای خصوصی وقتی هنوز صحبت می‌کنید برای دیگران پخش می‌شود و پیام‌های آن‌ها وقتی آن گفتگو باز است برای شما پخش می‌شود. خاموش: فقط پیام‌های کامل، در هر دو جهت.</string>
+    <string name="media_play">پخش</string>
+    <string name="media_stop">توقف</string>
+    <string name="me_wipe_title">پاک کردن همه چیز</string>
+    <string name="me_wipe_body">هویت، گفتگوها و تنظیمات شما را در این گوشی حذف می‌کند و هویتی نو به شما می‌دهد. مانند سه بار ضربه زدن روی نشان برنامه.</string>
+    <string name="me_wipe_button">پاک کردن همه چیز…</string>
+    <string name="me_wipe_confirm">این کار قابل بازگشت نیست. پس از آن، هم‌صحبت‌هایتان شما را غریبه می‌بینند.</string>
+    <string name="me_wipe_do">پاک کردن</string>
+    <string name="panic_logo">openchat. برای پاک کردن همه چیز سه بار ضربه بزنید.</string>
 </resources>

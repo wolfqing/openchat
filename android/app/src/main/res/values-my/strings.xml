@@ -249,4 +249,12 @@
     <string name="media_mic_hint">အသံ- ပြောရန် ဖိထားပါ၊ သို့မဟုတ် စရန် တို့ပြီး ပို့ရန် ထပ်တို့ပါ</string>
     <string name="live_voice_title">တိုက်ရိုက်အသံ</string>
     <string name="live_voice_body">အနီးအနားနှင့် သီးသန့်ချက်များတွင် သင်ပြောနေစဉ် အခြားသူများ ကြားရပြီး ၎င်းတို့၏ အသံကို ထိုချက်ဖွင့်ထားလျှင် သင်ကြားရသည်။ ပိတ်ထားလျှင် နှစ်ဖက်စလုံး ပြီးဆုံးသော မက်ဆေ့ချ်များသာ။</string>
+    <string name="media_play">ဖွင့်ရန်</string>
+    <string name="media_stop">ရပ်ရန်</string>
+    <string name="me_wipe_title">အားလုံးကို ဖျက်ရန်</string>
+    <string name="me_wipe_body">ဤဖုန်းရှိ သင့်အထောက်အထား၊ စကားပြောများနှင့် ဆက်တင်များကို ဖျက်ပြီး အထောက်အထားအသစ် ပေးသည်။ လိုဂိုကို သုံးကြိမ် တို့ခြင်းနှင့် အတူတူပင်။</string>
+    <string name="me_wipe_button">အားလုံးကို ဖျက်ရန်…</string>
+    <string name="me_wipe_confirm">ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍ မရပါ။ ထို့နောက် သင်စကားပြောသူများက သင့်ကို သူစိမ်းအဖြစ် မြင်ပါမည်။</string>
+    <string name="me_wipe_do">ဖျက်ရန်</string>
+    <string name="panic_logo">openchat။ အားလုံးကို ဖျက်ရန် သုံးကြိမ် တို့ပါ။</string>
 </resources>

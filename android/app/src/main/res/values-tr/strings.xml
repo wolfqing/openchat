@@ -253,4 +253,12 @@
     <string name="media_mic_hint">Ses: konuşmak için basılı tut ya da başlatmak için dokun, göndermek için tekrar dokun</string>
     <string name="live_voice_title">Canlı ses</string>
     <string name="live_voice_body">Yakında ve özel sohbetlerde sen konuşurken diğerleri dinler, onlarınki de o sohbet açıkken sana çalar. Kapalı: iki yönde de yalnızca bitmiş sesli mesajlar.</string>
+    <string name="media_play">Oynat</string>
+    <string name="media_stop">Durdur</string>
+    <string name="me_wipe_title">Her şeyi sil</string>
+    <string name="me_wipe_body">Bu telefondaki kimliğinizi, sohbetlerinizi ve ayarlarınızı siler ve size yeni bir kimlik verir. Logoya üç kez dokunmakla aynıdır.</string>
+    <string name="me_wipe_button">Her şeyi sil…</string>
+    <string name="me_wipe_confirm">Bu geri alınamaz. Sohbet ettiğiniz kişiler sizi sonra yabancı olarak görür.</string>
+    <string name="me_wipe_do">Sil</string>
+    <string name="panic_logo">openchat. Her şeyi silmek için üç kez dokunun.</string>
 </resources>

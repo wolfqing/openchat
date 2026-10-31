@@ -249,4 +249,12 @@
     <string name="media_mic_hint">음성: 누르고 말하기, 또는 탭해서 시작하고 다시 탭해서 보내기</string>
     <string name="live_voice_title">실시간 음성</string>
     <string name="live_voice_body">근처와 개인 채팅에서 말하는 동안 상대가 바로 듣고, 상대의 음성도 그 채팅을 열어 두면 바로 재생됩니다. 끄면 양쪽 모두 완성된 음성만 주고받습니다.</string>
+    <string name="media_play">재생</string>
+    <string name="media_stop">중지</string>
+    <string name="me_wipe_title">모두 지우기</string>
+    <string name="me_wipe_body">이 휴대전화의 신원, 대화, 설정을 삭제하고 새 신원을 만듭니다. 로고를 세 번 탭하는 것과 같습니다.</string>
+    <string name="me_wipe_button">모두 지우기…</string>
+    <string name="me_wipe_confirm">되돌릴 수 없습니다. 이후 대화 상대에게는 낯선 사람으로 보입니다.</string>
+    <string name="me_wipe_do">지우기</string>
+    <string name="panic_logo">openchat. 세 번 탭하면 모두 지워집니다.</string>
 </resources>

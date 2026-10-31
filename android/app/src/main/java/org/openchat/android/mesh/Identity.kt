@@ -24,6 +24,16 @@ class Identity(
 
     fun withNickname(name: String) = Identity(noise, signing, name, nostrSeed)
 
+    /**
+     * Zeroes the private keys and the Nostr seed once this identity has been replaced
+     * (panic wipe). Identities made with [withNickname] share these arrays.
+     */
+    fun destroy() {
+        noise.privateKey.fill(0)
+        signing.privateKey.fill(0)
+        nostrSeed.fill(0)
+    }
+
     fun serialize(): ByteArray {
         val nick = nickname.toByteArray(Charsets.UTF_8)
         return ByteWriter()

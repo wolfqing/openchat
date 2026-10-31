@@ -76,6 +76,11 @@ class BleTransport(
     private val peripheralMtu = HashMap<String, Int>()
     private val lastAttempt = HashMap<String, Long>()
 
+    // Scan duty cycle (§11): on for a short window, off for a longer one; see ScanDutyCycle.
+    private var scanning = false
+    private var scanFailures = 0
+    private val scanTick = Runnable { scanCycle() }
+
     val isEnabled get() = adapter?.isEnabled == true
 
     fun start() {
@@ -83,12 +88,13 @@ class BleTransport(
         running = true
         openServer()
         startAdvertising()
-        startScanning()
+        scheduleScan(0)
     }
 
     fun stop() {
         running = false
-        try { adapter?.bluetoothLeScanner?.stopScan(scanCallback) } catch (e: Exception) { }
+        handler.removeCallbacks(scanTick)
+        stopScanning()
         try { adapter?.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) } catch (e: Exception) { }
         centrals.values.forEach { try { it.disconnect(); it.close() } catch (e: Exception) { } }
         centrals.keys.toList().forEach { linkDown(centralLink(it)) }
@@ -208,21 +214,58 @@ class BleTransport(
 
     // ------------------------------------------------------------- central role
 
-    private fun startScanning() {
-        val scanner = adapter?.bluetoothLeScanner ?: return
+    private fun scheduleScan(delayMs: Long) {
+        handler.removeCallbacks(scanTick)
+        handler.postDelayed(scanTick, delayMs)
+    }
+
+    /**
+     * One step of the duty cycle: scanning stops after its window and rests for the off window;
+     * a rest ends with a new scan unless the central table is full, in which case the rest goes
+     * on. Android allows five scan starts per 30 s; this cycle uses at most two.
+     */
+    private fun scanCycle() {
+        if (!running) return
+        val links = centrals.size + subscribers.size
+        if (scanning) { stopScanning(); scheduleScan(ScanDutyCycle.offMs(links)); return }
+        if (!ScanDutyCycle.wanted(centrals.size, connecting.size, MAX_CENTRAL_LINKS)) { scheduleScan(ScanDutyCycle.offMs(links)); return }
+        if (startScanning()) scheduleScan(ScanDutyCycle.onMs(links))
+        else scheduleScan(ScanDutyCycle.retryMs(++scanFailures))
+    }
+
+    private fun startScanning(): Boolean {
+        val scanner = adapter?.bluetoothLeScanner ?: return false
         val filter = ScanFilter.Builder().setServiceUuid(ParcelUuid(SERVICE_UUID)).build()
         val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build()
-        scanner.startScan(listOf(filter), settings, scanCallback)
+        return try {
+            scanner.startScan(listOf(filter), settings, scanCallback)
+            scanning = true
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "scan start failed: $e")
+            false
+        }
+    }
+
+    private fun stopScanning() {
+        if (!scanning) return
+        scanning = false
+        try { adapter?.bluetoothLeScanner?.stopScan(scanCallback) } catch (e: Exception) { }
     }
 
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
-            handler.post { maybeConnect(result.device, result.rssi) }
+            handler.post { scanFailures = 0; maybeConnect(result.device, result.rssi) }
         }
         override fun onBatchScanResults(results: MutableList<ScanResult>) {
-            handler.post { results.forEach { maybeConnect(it.device, it.rssi) } }
+            handler.post { scanFailures = 0; results.forEach { maybeConnect(it.device, it.rssi) } }
         }
-        override fun onScanFailed(errorCode: Int) { Log.w(TAG, "scan failed $errorCode") }
+        override fun onScanFailed(errorCode: Int) {
+            Log.w(TAG, "scan failed $errorCode")
+            if (errorCode == SCAN_FAILED_ALREADY_STARTED) return // the stack is scanning for us after all
+            // The start did not take (registration failed, too many starts, hardware busy): try again later.
+            handler.post { scanning = false; if (running) scheduleScan(ScanDutyCycle.retryMs(++scanFailures)) }
+        }
     }
 
     private fun maybeConnect(device: BluetoothDevice, rssi: Int) {

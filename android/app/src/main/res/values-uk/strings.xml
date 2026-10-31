@@ -261,4 +261,12 @@
     <string name="media_mic_hint">Голос: утримуйте, щоб говорити, або торкніться, щоб почати, і ще раз, щоб надіслати</string>
     <string name="live_voice_title">Голос наживо</string>
     <string name="live_voice_body">Голосові в «Поруч» і приватних чатах чути іншим, поки ви ще говорите, а їхні грають у вас, коли чат відкрито. Вимк.: лише завершені повідомлення в обидва боки.</string>
+    <string name="media_play">Відтворити</string>
+    <string name="media_stop">Стоп</string>
+    <string name="me_wipe_title">Стерти все</string>
+    <string name="me_wipe_body">Видаляє вашу особу, чати й налаштування на цьому телефоні та створює нову особу. Те саме, що тричі торкнутися логотипа.</string>
+    <string name="me_wipe_button">Стерти все…</string>
+    <string name="me_wipe_confirm">Це не можна скасувати. Співрозмовники потім бачитимуть вас як незнайомця.</string>
+    <string name="me_wipe_do">Стерти</string>
+    <string name="panic_logo">openchat. Торкніться тричі, щоб стерти все.</string>
 </resources>

@@ -261,4 +261,11 @@
     <string name="media_mic_hint">语音：按住说话，或点一下开始、再点一下发送</string>
     <string name="live_voice_title">实时语音</string>
     <string name="live_voice_body">在「附近」和私聊里，你说话时别人就能边听；别人的语音在你打开该聊天时也会实时播放。关闭后双方都只收发录完的语音。</string>
+    <string name="media_play">播放</string>
+    <string name="media_stop">停止</string>
+    <string name="me_wipe_title">清空所有数据</string>
+    <string name="me_wipe_body">删除这台手机上的身份、聊天和设置，并生成新身份。效果与连点三下标志相同。</string>
+    <string name="me_wipe_button">清空所有数据…</string>
+    <string name="me_wipe_confirm">此操作无法撤销。之后聊过的人会把你当作陌生人。</string>
+    <string name="me_wipe_do">清空</string>
 </resources>

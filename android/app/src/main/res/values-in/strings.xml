@@ -249,4 +249,12 @@
     <string name="media_mic_hint">Suara: tahan untuk bicara, atau ketuk untuk mulai dan ketuk lagi untuk mengirim</string>
     <string name="live_voice_title">Suara langsung</string>
     <string name="live_voice_body">Pesan suara di Sekitar dan obrolan pribadi terdengar oleh orang lain saat kamu masih bicara, dan milik mereka terputar saat obrolan itu terbuka. Mati: hanya pesan yang selesai, dua arah.</string>
+    <string name="media_play">Putar</string>
+    <string name="media_stop">Berhenti</string>
+    <string name="me_wipe_title">Hapus semuanya</string>
+    <string name="me_wipe_body">Menghapus identitas, obrolan, dan pengaturan di ponsel ini lalu memberi kamu identitas baru. Sama seperti mengetuk logo tiga kali.</string>
+    <string name="me_wipe_button">Hapus semuanya…</string>
+    <string name="me_wipe_confirm">Ini tidak bisa dibatalkan. Setelahnya, orang yang kamu ajak mengobrol akan melihatmu sebagai orang asing.</string>
+    <string name="me_wipe_do">Hapus</string>
+    <string name="panic_logo">openchat. Ketuk tiga kali untuk menghapus semuanya.</string>
 </resources>

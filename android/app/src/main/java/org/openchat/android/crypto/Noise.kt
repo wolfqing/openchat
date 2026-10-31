@@ -123,6 +123,13 @@ class SymmetricState(protocolName: String) {
         chainingKey.fill(0)
         return CipherState(k1, extractedNonce) to CipherState(k2, extractedNonce)
     }
+
+    /** Zeroes the chaining key, the handshake hash and the handshake cipher key. */
+    fun destroy() {
+        chainingKey.fill(0)
+        hash.fill(0)
+        cipher.clear()
+    }
 }
 
 /**
@@ -212,6 +219,18 @@ class HandshakeXX(
         val (c1, c2) = ss.split(extractedNonce)
         e?.privateKey?.fill(0)
         return if (initiator) c1 to c2 else c2 to c1
+    }
+
+    /**
+     * Zeroes the ephemeral private key and the symmetric state. Called when a handshake is
+     * abandoned, and after [split] once the handshake hash is no longer needed; the object is
+     * unusable afterwards.
+     */
+    fun destroy() {
+        e?.privateKey?.fill(0)
+        e = null
+        re = null
+        ss.destroy()
     }
 }
 

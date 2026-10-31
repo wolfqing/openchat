@@ -257,4 +257,12 @@
     <string name="media_mic_hint">Voz: mantén pulsado para hablar, o toca para empezar y toca otra vez para enviar</string>
     <string name="live_voice_title">Voz en directo</string>
     <string name="live_voice_body">Las notas de voz en Cerca y en chats privados se oyen mientras aún hablas, y las de los demás suenan para ti cuando ese chat está abierto. Desactivado: solo notas terminadas, en ambos sentidos.</string>
+    <string name="media_play">Reproducir</string>
+    <string name="media_stop">Detener</string>
+    <string name="me_wipe_title">Borrar todo</string>
+    <string name="me_wipe_body">Elimina tu identidad, chats y ajustes en este teléfono y te da una identidad nueva. Es lo mismo que tocar el logotipo tres veces.</string>
+    <string name="me_wipe_button">Borrar todo…</string>
+    <string name="me_wipe_confirm">Esto no se puede deshacer. Después, las personas con las que chateas te verán como un desconocido.</string>
+    <string name="me_wipe_do">Borrar</string>
+    <string name="panic_logo">openchat. Toca tres veces para borrar todo.</string>
 </resources>

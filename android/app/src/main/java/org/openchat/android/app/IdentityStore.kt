@@ -111,11 +111,18 @@ class IdentityStore(context: Context) {
      */
     fun loadOrCreate(): Identity {
         val bytes = try { file.read() } catch (e: SealedFile.Unreadable) { throw Locked(e) }
-        if (bytes != null) return Identity.deserialize(bytes) ?: throw Locked(IllegalStateException("undecodable identity"))
+        if (bytes != null) {
+            // The decoded identity holds its own copies; the plaintext buffer is zeroed right away.
+            val identity = try { Identity.deserialize(bytes) } finally { bytes.fill(0) }
+            return identity ?: throw Locked(IllegalStateException("undecodable identity"))
+        }
         return Identity.generate().also { save(it) }
     }
 
-    fun save(identity: Identity): Boolean = file.write(identity.serialize())
+    fun save(identity: Identity): Boolean {
+        val bytes = identity.serialize()
+        return try { file.write(bytes) } finally { bytes.fill(0) }
+    }
 
     /** Panic wipe: destroys the sealed file and the Keystore key that could open it. */
     fun destroy() {
