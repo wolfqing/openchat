@@ -64,6 +64,6 @@ class Identity(
             return Identity(Crypto.x25519FromPrivate(noise), Crypto.ed25519FromPrivate(signing), String(nick, Charsets.UTF_8), seed)
         }
 
-        fun defaultNickname(): String = "anon" + (1000 + Crypto.random.nextInt(9000))
+        fun defaultNickname(): String = "anon" // the UI adds #xxxx; a number here would make two
     }
 }

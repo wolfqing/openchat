@@ -76,7 +76,7 @@
     <string name="geo_elsewhere">زيارة منطقة أخرى</string>
     <string name="geo_hint">geohash، مثل wtw3s</string>
     <string name="geo_enter">انتقال</string>
-    <string name="geo_teleport_note">أنت لست هناك، لذلك سيرى الآخرون ✈ بجانب اسمك.</string>
+    <string name="geo_teleport_note">أنت لست هناك، لذلك سيرى الآخرون ✈︎ بجانب اسمك.</string>
     <string name="geo_joined">منضم</string>
     <string name="geo_connecting">جارٍ الاتصال…</string>
     <plurals name="geo_recent">
@@ -151,7 +151,7 @@
     <string name="notes_hint">يمكن لأي شخص يقترب لمسافة 40 م تقريبًا خلال 24 ساعة قراءة الملاحظة. يتطلب الإنترنت.</string>
     <string name="notes_placeholder">اترك ملاحظة هنا…</string>
     <string name="notes_empty">لا توجد ملاحظات هنا خلال آخر 24 ساعة.</string>
-    <string name="note_dropped">📍 تُركت الملاحظة هنا — تختفي بعد 24 ساعة</string>
+    <string name="note_dropped">تُركت الملاحظة هنا — تختفي بعد 24 ساعة</string>
     <string name="note_no_location">ترك ملاحظة يتطلب موقعك — فعّله في تبويب الموقع أولًا</string>
     <string name="media_photo">صورة</string>
     <string name="media_voice">رسالة صوتية</string>
@@ -232,7 +232,7 @@
         <item quantity="other">%d يوم</item>
     </plurals>
     <string name="board_post">ثبّت على اللوحة</string>
-    <string name="board_urgent_line">📌 إعلان عاجل من %1$s: %2$s</string>
+    <string name="board_urgent_line">إعلان عاجل من %1$s: %2$s</string>
     <string name="bridge_title">اربط المجموعات القريبة عبر الإنترنت</string>
     <string name="bridge_body">لا يصل البلوتوث بعيدًا. عند التفعيل تذهب رسائلك في «القريبون» أيضًا إلى مرحّلات الإنترنت لمنطقتك (نحو 1 كم)، ويظهر ما يقوله من يبعدون بضعة شوارع. الهواتف بلا إنترنت ترسل وتستقبل عبر هاتفك. رسائلك العامة، باسم مجهول للمنطقة، تغادر عندها نطاق الراديو.</string>
     <string name="bridge_need_cell">بانتظار تحديد المنطقة: استخدم موقعك في تبويب الموقع، أو ابقَ قرب هاتف يقوم بالربط.</string>

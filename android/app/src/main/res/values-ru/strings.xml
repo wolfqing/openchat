@@ -70,7 +70,7 @@
     <string name="geo_elsewhere">Перейти в другой район</string>
     <string name="geo_hint">geohash, например wtw3s</string>
     <string name="geo_enter">Перейти</string>
-    <string name="geo_teleport_note">Вас там нет, поэтому другие увидят ✈ рядом с вашим именем.</string>
+    <string name="geo_teleport_note">Вас там нет, поэтому другие увидят ✈︎ рядом с вашим именем.</string>
     <string name="geo_joined">Вы в канале</string>
     <string name="geo_connecting">Подключение…</string>
     <plurals name="geo_recent">
@@ -143,7 +143,7 @@
     <string name="notes_hint">Её прочтёт любой, кто окажется в пределах ~40 м в ближайшие 24 часа. Нужен интернет.</string>
     <string name="notes_placeholder">Оставить заметку здесь…</string>
     <string name="notes_empty">За последние 24 часа здесь заметок нет.</string>
-    <string name="note_dropped">📍 заметка оставлена — исчезнет через 24 ч</string>
+    <string name="note_dropped">заметка оставлена — исчезнет через 24 ч</string>
     <string name="note_no_location">для заметки нужно местоположение — сначала включите его на вкладке «Местность»</string>
     <string name="media_photo">Фото</string>
     <string name="media_voice">Голосовое</string>
@@ -224,7 +224,7 @@
         <item quantity="other">%d дн.</item>
     </plurals>
     <string name="board_post">Повесить на доску</string>
-    <string name="board_urgent_line">📌 срочное объявление от %1$s: %2$s</string>
+    <string name="board_urgent_line">срочное объявление от %1$s: %2$s</string>
     <string name="bridge_title">Связать группы рядом через интернет</string>
     <string name="bridge_body">Bluetooth бьёт недалеко. Если включить, ваши сообщения «Рядом» уйдут и на интернет-релеи вашей местности (~1 км), а в «Рядом» появится то, что пишут через пару улиц. Телефоны без интернета будут отправлять и получать через ваш. Ваши публичные сообщения под анонимным именем для местности при этом выходят за пределы радио.</string>
     <string name="bridge_need_cell">Ждём местность: включите геопозицию на вкладке «Местность» или будьте рядом с телефоном-мостом.</string>

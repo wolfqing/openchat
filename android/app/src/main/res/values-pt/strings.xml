@@ -67,7 +67,7 @@
     <string name="geo_elsewhere">Visitar outra área</string>
     <string name="geo_hint">geohash, ex.: wtw3s</string>
     <string name="geo_enter">Ir</string>
-    <string name="geo_teleport_note">Você não está lá, então os outros verão ✈ ao lado do seu nome.</string>
+    <string name="geo_teleport_note">Você não está lá, então os outros verão ✈︎ ao lado do seu nome.</string>
     <string name="geo_joined">Participando</string>
     <string name="geo_connecting">Conectando…</string>
     <plurals name="geo_recent">
@@ -139,7 +139,7 @@
     <string name="notes_hint">Quem chegar a uns 40 m nas próximas 24 horas pode ler o recado. Precisa de internet.</string>
     <string name="notes_placeholder">Deixe um recado aqui…</string>
     <string name="notes_empty">Nenhum recado aqui nas últimas 24 horas.</string>
-    <string name="note_dropped">📍 recado deixado aqui — some em 24 h</string>
+    <string name="note_dropped">recado deixado aqui — some em 24 h</string>
     <string name="note_no_location">deixar um recado precisa da sua localização — ative primeiro na aba Região</string>
     <string name="media_photo">Foto</string>
     <string name="media_voice">Mensagem de voz</string>
@@ -220,7 +220,7 @@
         <item quantity="other">%d dias</item>
     </plurals>
     <string name="board_post">Fixar no mural</string>
-    <string name="board_urgent_line">📌 aviso urgente de %1$s: %2$s</string>
+    <string name="board_urgent_line">aviso urgente de %1$s: %2$s</string>
     <string name="bridge_title">Ligar grupos próximos pela internet</string>
     <string name="bridge_body">O Bluetooth não vai longe. Ligado, suas mensagens de Por perto também vão para relays de internet da sua área (~1 km), e Por perto mostra o que dizem pessoas a algumas ruas. Telefones sem internet enviam e recebem pelo seu. Suas mensagens públicas, com um nome anônimo da área, saem então do rádio.</string>
     <string name="bridge_need_cell">Aguardando sua área: use a localização na aba Região ou fique perto de um telefone que faça ponte.</string>

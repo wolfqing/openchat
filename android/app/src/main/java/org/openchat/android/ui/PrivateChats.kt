@@ -182,7 +182,7 @@ private fun GroupMembersDialog(g: org.openchat.android.app.GroupInfo, onDismiss:
                             Modifier.weight(1f), fontSize = 14.sp,
                         )
                         if (m.fingerprint == g.creatorFingerprint) {
-                            Text("★ " + stringResource(R.string.group_creator), fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                            Text("\u2605\uFE0E " + stringResource(R.string.group_creator), fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                         } else if (g.iAmCreator) {
                             TextButton(onClick = { ChatRepository.controller?.groupRemove(g.idHex, m.fingerprint) }) { Text(stringResource(R.string.group_remove)) }
                         }
@@ -306,7 +306,7 @@ internal fun PrivateList(onOpen: (String) -> Unit) {
                     Text(
                         buildAnnotatedString {
                             append(labelText(PeerLabel.mesh(peer?.nickname ?: names[hex], hex), verified = social.isVerifiedPeer(hex), vouched = social.isVouchedPeer(hex)))
-                            if (fav?.mine == true) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" ★") }
+                            if (fav?.mine == true) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" \u2605\uFE0E") }
                         },
                         fontWeight = FontWeight.SemiBold,
                     )

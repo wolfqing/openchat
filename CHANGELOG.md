@@ -34,7 +34,7 @@ Fourth round from the 2026-10-29 code review (hygiene). No wire-format change.
   libraries that nothing referenced are gone. Compose 1.12, core 1.19 and
   OkHttp 5.5 need Android Gradle plugin 9.1 and compileSdk 37; that step
   (built-in Kotlin, new DSL) is left for its own change.
-- 3 new tests, 159 in all.
+- 3 new tests, 161 in all.
 
 - Live voice, compatible with bitchat ([spec §29](docs/protocol-spec.md)).
   Hold the mic to talk and release to send (a quick tap still starts and

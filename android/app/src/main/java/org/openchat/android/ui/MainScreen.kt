@@ -14,10 +14,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Sensors
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.outlined.Sensors
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -63,7 +68,13 @@ import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.PeerLabel
 
-private enum class Tab(@StringRes val label: Int) { NEARBY(R.string.tab_nearby), PRIVATE(R.string.tab_private), LOCATION(R.string.tab_location), ME(R.string.tab_me) }
+// One icon family: outlined, filled when the tab is selected.
+private enum class Tab(@StringRes val label: Int, val icon: ImageVector, val selectedIcon: ImageVector) {
+    NEARBY(R.string.tab_nearby, Icons.Outlined.Sensors, Icons.Filled.Sensors),
+    PRIVATE(R.string.tab_private, Icons.Outlined.ChatBubbleOutline, Icons.Filled.ChatBubble),
+    LOCATION(R.string.tab_location, Icons.Outlined.Place, Icons.Filled.Place),
+    ME(R.string.tab_me, Icons.Outlined.Person, Icons.Filled.Person),
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -166,7 +177,7 @@ fun MainScreen(
                         icon = {
                             BadgedBox(badge = { if (count > 0) Badge { Text("$count") } }) {
                                 Icon(
-                                    when (t) { Tab.NEARBY -> Icons.Filled.Share; Tab.PRIVATE -> Icons.Filled.Lock; Tab.LOCATION -> Icons.Filled.LocationOn; Tab.ME -> Icons.Filled.Person },
+                                    if (tab == t) t.selectedIcon else t.icon,
                                     contentDescription = null, // the label names the tab; a description here would be read twice
                                 )
                             }
@@ -201,9 +212,9 @@ fun labelText(label: PeerLabel, teleported: Boolean = false, verified: Boolean =
     withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal, fontSize = 0.8.em, color = MaterialTheme.colorScheme.onSurfaceVariant)) {
         append(label.suffix)
     }
-    if (verified) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" ✓") }
-    else if (vouched) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append(" ✓") } // verified by someone we verified
-    if (teleported) append(" ✈")
+    if (verified) withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" \u2713\uFE0E") }
+    else if (vouched) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append(" \u2713\uFE0E") } // verified by someone we verified
+    if (teleported) append(" \u2708\uFE0E")
 }
 
 /** Title that wipes everything on a triple tap, with no confirmation (docs/protocol-spec.md §10). */

@@ -33,6 +33,18 @@ class PeerLabelTest {
         assertEquals("anon#beef", PeerLabel.of(m).toString())
     }
 
+    @Test fun noDigitsBeforeTheSuffix() {
+        assertEquals("anon#e887", PeerLabel.mesh("anon4821", "e88713f0b45c0011").toString())
+        assertEquals("Agent#e887", PeerLabel.mesh("Agent 47", "e88713f0b45c0011").toString())
+        assertEquals("anon#e887", PeerLabel.mesh("2024", "e88713f0b45c0011").toString())
+        assertEquals("anon#beef", PeerLabel.nostr("anon7", "ff".repeat(31) + "beef").toString())
+        assertEquals("R2D2x", PeerLabel.mesh("R2D2x", "").toString()) // only digits right before the # go
+    }
+
+    @Test fun unnamedPeerIsNotShownAsHex() {
+        assertEquals("anon#e887", PeerLabel.mesh("e88713f0", "e88713f0b45c0011").toString())
+    }
+
     @Test fun missingKeyGivesNoSuffix() {
         assertEquals("李白", PeerLabel.mesh("李白", "").toString())
     }

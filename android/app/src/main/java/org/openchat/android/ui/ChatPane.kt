@@ -16,7 +16,11 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Stop
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -224,7 +228,7 @@ private fun CashuCard(token: String) {
     val ctx = LocalContext.current
     val info = remember(token) { Cashu.decode(token) } ?: return
     Column(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp)) {
-        Text("🥜 " + (info.display ?: stringResource(R.string.pay_token)) + (info.mintHost?.let { " · $it" } ?: ""), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        Text((info.display ?: stringResource(R.string.pay_token)) + (info.mintHost?.let { " · $it" } ?: ""), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
         info.memo?.let { Text(it, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(onClick = {
@@ -301,7 +305,7 @@ private fun MediaButtons(conversation: String) {
         },
         contentAlignment = Alignment.Center,
     ) {
-        Text(if (recording) "■" else "🎙", color = if (recording) MaterialTheme.colorScheme.error else Color.Unspecified, fontSize = 20.sp)
+        Icon(if (recording) Icons.Outlined.Stop else Icons.Outlined.Mic, contentDescription = null, tint = if (recording) MaterialTheme.colorScheme.error else LocalContentColor.current)
     }
     if (recording) Text(stringResource(R.string.media_recording), fontSize = 12.sp, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(end = 8.dp))
 }
@@ -317,7 +321,7 @@ private fun PhotoView(path: String, covered: Boolean) {
     val decoded by produceState(thumbnails.get(path), path) {
         if (value == null) value = withContext(Dispatchers.IO) { Media.thumbnail(path)?.also { thumbnails.put(path, it) } }
     }
-    val bmp = decoded ?: run { Text("🖼", Modifier.padding(12.dp)); return }
+    val bmp = decoded ?: run { Icon(Icons.Outlined.Image, contentDescription = stringResource(R.string.media_photo), modifier = Modifier.padding(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant); return }
     val shown = remember(path, open, bmp) { (if (open) bmp else Media.pixelate(bmp)).asImageBitmap() }
     Box(contentAlignment = Alignment.Center) {
         Image(
@@ -358,7 +362,7 @@ private fun VoiceNote(path: String) {
                 else player = try { MediaPlayer().apply { setDataSource(path); setOnCompletionListener { it.release(); player = null }; prepare(); start() } } catch (e: Exception) { null }
             },
             modifier = Modifier.semantics { contentDescription = label },
-        ) { if (player != null) Text("■", fontSize = 18.sp) else Icon(Icons.Filled.PlayArrow, contentDescription = null) }
+        ) { Icon(if (player != null) Icons.Outlined.Stop else Icons.Outlined.PlayArrow, contentDescription = null) } // the button itself says play or stop
         Text(stringResource(R.string.media_voice) + " · " + "%d:%02d".format(duration / 60_000, (duration / 1000) % 60), fontSize = 14.sp, modifier = Modifier.padding(end = 12.dp))
     }
 }
@@ -395,7 +399,7 @@ private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conv
         }
         is Commands.Outcome.GroupCreate -> ChatRepository.controller?.createGroup(o.name)?.let { ChatRepository.requestOpen(it) }
         is Commands.Outcome.GroupList -> local(
-            ChatRepository.groups.value.values.joinToString("\n") { "#${it.name} · ${it.members.size}/${org.openchat.android.core.Group.MAX_MEMBERS}" + if (it.iAmCreator) " ★" else "" }
+            ChatRepository.groups.value.values.joinToString("\n") { "#${it.name} · ${it.members.size}/${org.openchat.android.core.Group.MAX_MEMBERS}" + if (it.iAmCreator) " \u2605\uFE0E" else "" }
                 .ifEmpty { ctx.getString(R.string.group_none) },
         )
         is Commands.Outcome.GroupInvite, is Commands.Outcome.GroupRemove, Commands.Outcome.GroupLeave -> {

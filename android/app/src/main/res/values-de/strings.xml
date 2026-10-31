@@ -64,7 +64,7 @@
     <string name="geo_elsewhere">Andere Gegend besuchen</string>
     <string name="geo_hint">geohash, z. B. wtw3s</string>
     <string name="geo_enter">Los</string>
-    <string name="geo_teleport_note">Du bist nicht dort, deshalb sehen andere ✈ neben deinem Namen.</string>
+    <string name="geo_teleport_note">Du bist nicht dort, deshalb sehen andere ✈︎ neben deinem Namen.</string>
     <string name="geo_joined">Beigetreten</string>
     <string name="geo_connecting">Verbinde…</string>
     <plurals name="geo_recent">
@@ -135,7 +135,7 @@
     <string name="notes_hint">Wer in den nächsten 24 Stunden bis etwa 40 m herankommt, kann die Notiz lesen. Braucht Internet.</string>
     <string name="notes_placeholder">Hier eine Notiz hinterlassen…</string>
     <string name="notes_empty">Keine Notizen in den letzten 24 Stunden.</string>
-    <string name="note_dropped">📍 Notiz hinterlassen — sie verschwindet nach 24 h</string>
+    <string name="note_dropped">Notiz hinterlassen — sie verschwindet nach 24 h</string>
     <string name="note_no_location">Für eine Notiz brauchst du deinen Standort — zuerst im Tab „Ort“ freigeben</string>
     <string name="media_photo">Foto</string>
     <string name="media_voice">Sprachnachricht</string>
@@ -216,7 +216,7 @@
         <item quantity="other">%d Tage</item>
     </plurals>
     <string name="board_post">An die Pinnwand</string>
-    <string name="board_urgent_line">📌 dringender Aushang von %1$s: %2$s</string>
+    <string name="board_urgent_line">dringender Aushang von %1$s: %2$s</string>
     <string name="bridge_title">Gruppen in der Nähe übers Internet verbinden</string>
     <string name="bridge_body">Bluetooth reicht nicht weit. Damit gehen deine Nachrichten unter „In der Nähe“ auch an Internet-Relays für dein Gebiet (etwa 1 km), und du siehst, was Leute ein paar Straßen weiter schreiben. Telefone ohne Internet senden und empfangen über deins. Deine öffentlichen Nachrichten verlassen dann, unter einem anonymen Namen fürs Gebiet, den Funk.</string>
     <string name="bridge_need_cell">Warte auf dein Gebiet: Standort im Tab „Ort“ freigeben oder in der Nähe eines verbindenden Telefons bleiben.</string>
