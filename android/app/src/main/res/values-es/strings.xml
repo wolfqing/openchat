@@ -10,7 +10,7 @@
     <string name="onboard_start">Empezar</string>
     <string name="onboard_next">A continuación se te pedirá permiso de Bluetooth para que la app encuentre a gente cerca.</string>
     <string name="safety_title">Antes de empezar</string>
-    <string name="safety_body">· El canal «Cerca» es público. Todos los que estén al alcance pueden verlo.\n· Los mensajes privados están cifrados, pero la gente cercana puede saber que usas esta app y reconocer el mismo teléfono con el tiempo.\n· Esta app aún no ha pasado una auditoría de seguridad independiente completa. Si ser identificado te pondría en grave peligro, no confíes en ella.\n· Toca tres veces el título de arriba para borrar todos los datos de una vez.</string>
+    <string name="safety_body">· El canal «Cerca» es público. Todos los que estén al alcance pueden verlo.\n· Los mensajes privados están cifrados, pero la gente cercana puede saber que usas esta app y reconocer el mismo teléfono con el tiempo.\n· Esta app aún no ha pasado una auditoría de seguridad independiente completa. Si ser identificado te pondría en grave peligro, no confíes en ella.\n· Toca tres veces el logo de la esquina superior izquierda para borrar todos los datos de una vez.</string>
     <string name="tab_nearby">Cerca</string>
     <string name="tab_private">Privado</string>
     <string name="tab_location">Lugar</string>

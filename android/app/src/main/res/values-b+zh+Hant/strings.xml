@@ -10,7 +10,7 @@
     <string name="onboard_start">開始</string>
     <string name="onboard_next">下一步會請你允許使用藍牙，用來發現附近的人。</string>
     <string name="safety_title">請先了解</string>
-    <string name="safety_body">· 「附近」頻道是公開的，範圍內所有人都看得到。\n· 私訊有加密，但附近的人看得出你在用這個 App，也能長期認出同一支手機。\n· 本軟體未經完整的獨立安全稽核。如果被認出來會有嚴重後果，請不要依賴它。\n· 連點三下頂部標題，立刻清除所有資料。</string>
+    <string name="safety_body">· 「附近」頻道是公開的，範圍內所有人都看得到。\n· 私訊有加密，但附近的人看得出你在用這個 App，也能長期認出同一支手機。\n· 本軟體未經完整的獨立安全稽核。如果被認出來會有嚴重後果，請不要依賴它。\n· 連點三下左上角的 logo，立刻清除所有資料。</string>
     <string name="tab_nearby">附近</string>
     <string name="tab_private">私訊</string>
     <string name="tab_location">位置頻道</string>

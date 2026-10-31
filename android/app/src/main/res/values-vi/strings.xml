@@ -10,7 +10,7 @@
     <string name="onboard_start">Bắt đầu</string>
     <string name="onboard_next">Tiếp theo, bạn sẽ được yêu cầu cho phép Bluetooth để ứng dụng tìm được người ở gần.</string>
     <string name="safety_title">Trước khi bắt đầu</string>
-    <string name="safety_body">· Kênh \"Gần đây\" là công khai. Mọi người trong phạm vi đều thấy được.\n· Tin nhắn riêng được mã hóa, nhưng người ở gần có thể biết bạn dùng ứng dụng này và nhận ra cùng một điện thoại theo thời gian.\n· Ứng dụng này chưa qua kiểm định bảo mật độc lập đầy đủ. Nếu bị nhận diện có thể khiến bạn gặp nguy hiểm nghiêm trọng, đừng dựa vào nó.\n· Chạm vào tiêu đề phía trên ba lần để xóa toàn bộ dữ liệu ngay lập tức.</string>
+    <string name="safety_body">· Kênh \"Gần đây\" là công khai. Mọi người trong phạm vi đều thấy được.\n· Tin nhắn riêng được mã hóa, nhưng người ở gần có thể biết bạn dùng ứng dụng này và nhận ra cùng một điện thoại theo thời gian.\n· Ứng dụng này chưa qua kiểm định bảo mật độc lập đầy đủ. Nếu bị nhận diện có thể khiến bạn gặp nguy hiểm nghiêm trọng, đừng dựa vào nó.\n· Chạm vào logo ở góc trên bên trái ba lần để xóa toàn bộ dữ liệu ngay lập tức.</string>
     <string name="tab_nearby">Gần đây</string>
     <string name="tab_private">Riêng tư</string>
     <string name="tab_location">Vị trí</string>

@@ -10,7 +10,7 @@
     <string name="onboard_start">Los geht\'s</string>
     <string name="onboard_next">Als Nächstes wirst du gebeten, Bluetooth zu erlauben, damit die App Leute in der Nähe finden kann.</string>
     <string name="safety_title">Bevor du anfängst</string>
-    <string name="safety_body">· Der Kanal „In der Nähe“ ist öffentlich. Alle in Reichweite können ihn sehen.\n· Private Nachrichten sind verschlüsselt, aber Leute in der Nähe können erkennen, dass du diese App nutzt, und dasselbe Handy über längere Zeit wiedererkennen.\n· Diese App wurde noch nicht vollständig unabhängig auf Sicherheit geprüft. Wenn es dich ernsthaft gefährden würde, erkannt zu werden, verlass dich nicht darauf.\n· Tippe dreimal auf den Titel oben, um alle Daten auf einmal zu löschen.</string>
+    <string name="safety_body">· Der Kanal „In der Nähe“ ist öffentlich. Alle in Reichweite können ihn sehen.\n· Private Nachrichten sind verschlüsselt, aber Leute in der Nähe können erkennen, dass du diese App nutzt, und dasselbe Handy über längere Zeit wiedererkennen.\n· Diese App wurde noch nicht vollständig unabhängig auf Sicherheit geprüft. Wenn es dich ernsthaft gefährden würde, erkannt zu werden, verlass dich nicht darauf.\n· Tippe dreimal auf das Logo oben links, um alle Daten auf einmal zu löschen.</string>
     <string name="tab_nearby">In der Nähe</string>
     <string name="tab_private">Privat</string>
     <string name="tab_location">Ort</string>

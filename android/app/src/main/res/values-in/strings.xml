@@ -10,7 +10,7 @@
     <string name="onboard_start">Mulai</string>
     <string name="onboard_next">Selanjutnya, kamu akan diminta mengizinkan Bluetooth agar aplikasi bisa menemukan orang di sekitar.</string>
     <string name="safety_title">Sebelum mulai</string>
-    <string name="safety_body">· Saluran \"Sekitar\" bersifat publik. Semua orang dalam jangkauan bisa melihatnya.\n· Pesan pribadi dienkripsi, tetapi orang di sekitar bisa tahu kamu memakai aplikasi ini dan mengenali ponsel yang sama dari waktu ke waktu.\n· Aplikasi ini belum menjalani audit keamanan independen yang lengkap. Jika identitasmu ketahuan bisa sangat membahayakanmu, jangan mengandalkannya.\n· Ketuk judul di bagian atas tiga kali untuk menghapus semua data sekaligus.</string>
+    <string name="safety_body">· Saluran \"Sekitar\" bersifat publik. Semua orang dalam jangkauan bisa melihatnya.\n· Pesan pribadi dienkripsi, tetapi orang di sekitar bisa tahu kamu memakai aplikasi ini dan mengenali ponsel yang sama dari waktu ke waktu.\n· Aplikasi ini belum menjalani audit keamanan independen yang lengkap. Jika identitasmu ketahuan bisa sangat membahayakanmu, jangan mengandalkannya.\n· Ketuk logo di pojok kiri atas tiga kali untuk menghapus semua data sekaligus.</string>
     <string name="tab_nearby">Sekitar</string>
     <string name="tab_private">Pribadi</string>
     <string name="tab_location">Lokasi</string>

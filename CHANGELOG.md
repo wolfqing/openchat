@@ -1,134 +1,93 @@
 # Changelog
 
-## Unreleased
+## Android v0.6.0 (preview) — 2026-10-30
 
-Fourth round from the 2026-10-29 code review (hygiene). No wire-format change.
+Everything merged to `main` since v0.5.0 (PRs #7, #8, #11, #13, #14, #15,
+#16). The new features are the ones bitchat has, wire-compatible with it;
+none of the fixes changes a format v0.5.0 already spoke.
 
-- Bluetooth scanning follows the duty cycle of [spec §11](docs/protocol-spec.md):
-  5 s on, 10 s off (3 s / 15 s with six or more links) instead of scanning
-  without pause; no scan is started while the central table is full, and a
-  scan that fails to start is retried after 10, 20, 40, then 60 s. Discovery
-  of a new neighbour may now take up to 10 s longer; the radio sleeps two
-  thirds of the time.
-- Key material is zeroed when it is done with: a handshake that is given up
-  (timeout, bad message, eviction, key mismatch, panic) wipes its ephemeral
-  key and symmetric state, and the handshake state is destroyed as soon as
-  the transport keys are derived; a panic wipe zeroes the old identity's
-  private keys and Nostr seed; the sealed identity file's plaintext buffers
-  are zeroed after use.
-- Screen readers: tab icons no longer repeat the tab name; the record button
-  is a button (one activation starts, the next sends; the hold-to-talk
-  gesture is unchanged for everyone else); the play button says play or stop;
-  a sender's name is a 32 dp button; the verification QR has a description.
-  The Me tab has an "Erase everything" button with a confirmation, for people
-  who cannot tap three times in half-second steps; the triple tap itself
-  stays unconfirmed. The logo's description is now translated in all 18
-  languages, not only English and Chinese.
-- `Screens.kt` (1374 lines) is split into Theme, Onboarding, MainScreen,
-  ChatPane, PrivateChats, LocationScreens and MeScreen. Code moved, not
-  changed.
-- Toolchain and libraries brought up to date: Gradle 8.14.6, Android Gradle
-  plugin 8.13.2, Kotlin 2.4.21, Compose BOM 2026.06.00, compileSdk 36
-  (targetSdk stays 35), OkHttp 5.4.0, Bouncy Castle 1.86, coroutines 1.11.0,
-  ZXing 3.5.4, activity-compose 1.13.0, core-ktx 1.18.0. The two lifecycle
-  libraries that nothing referenced are gone. Compose 1.12, core 1.19 and
-  OkHttp 5.5 need Android Gradle plugin 9.1 and compileSdk 37; that step
-  (built-in Kotlin, new DSL) is left for its own change.
-- 3 new tests, 161 in all.
+**First release-signed build.** It does not install over v0.5.0 or earlier,
+which carried the build machine's debug key: uninstall first. Identity,
+favorites and verifications are lost with the uninstall; this is the
+one-time cost of making the switch now. The certificate fingerprint is in
+[SECURITY.md](SECURITY.md).
 
-- Live voice, compatible with bitchat ([spec §29](docs/protocol-spec.md)).
-  Hold the mic to talk and release to send (a quick tap still starts and
-  stops a recording). In Nearby and private chats people hear you while you
-  are still talking: their bubble appears at once and plays live if they
-  have that chat open, and the finished note then slots into the same
-  bubble. Public bursts are signed and accepted for 30 seconds; floods are
-  capped. A Me-tab switch, on by default, turns live voice off in both
-  directions. Not yet tried on a phone.
-- 6 new tests, 148 in all.
+### New, compatible with bitchat
 
-- `/pay` and Cashu cards, compatible with bitchat ([spec §28](docs/protocol-spec.md)).
+- Private groups ([spec §22](docs/protocol-spec.md)). New group on the
+  Private tab or `/group create`; the creator invites people nearby from
+  Members (or `/group invite @name`), removes them, and anyone can leave.
+  Up to 16 members. The creator signs the roster and a fresh key on every
+  change and hands them out inside Noise sessions; messages are sealed with
+  ChaCha20-Poly1305 under the group key, signed by their author, and
+  flooded over the mesh like public ones, so only members read them.
+  Members who were away pick up missed messages by history sync. Text only
+  for now. Groups and keys are sealed on disk and go with the triple tap.
+- Notice board ([spec §23](docs/protocol-spec.md)). Board on the Nearby
+  tab: pin a notice for 1, 3 or 7 days, mark it urgent, take it down later.
+  Posts are signed by their author and pass from phone to phone, including
+  by history sync, so people who arrive days later still read them; a
+  takedown spreads the same way. Five posts per author, 200 in all. A fresh
+  urgent notice adds a line to the Nearby chat; others raise a badge. Kept
+  with the sealed mesh state, wiped by the triple tap.
+- Mesh bridge ([spec §24](docs/protocol-spec.md)), off by default (Me tab).
+  Bluetooth reaches only so far: with the bridge on, Nearby messages also
+  go to the internet relays for your neighbourhood cell (about 1.2 km)
+  under an unlinkable per-cell key, and what people in other islands of
+  that area say appears in Nearby, marked "via bridge". A bridging phone
+  with internet serves its island: it publishes messages that bridging
+  phones without internet hand to it, and carries other islands' messages
+  onto the radio (holdoff, 20 a minute, bitchat's loop rules). A copy of a
+  radio message is skipped, and the radio copy replaces a bridged row that
+  got there first. The bridge's own relay-side logic is not unit-tested yet.
+- Courier drops: with the bridge on, mail for someone out of reach is also
+  parked on relays as a sealed kind-1401 drop under a throwaway key, so it
+  arrives as soon as either side is online; a bridging phone also fetches
+  drops for verified neighbours and hands them over.
+- Location-channel gateway ([spec §24.5](docs/protocol-spec.md)). With the
+  bridge on and internet working, your phone also serves people nearby who
+  have none: what they post in a location channel goes out through you, and
+  the channels you are in come in for them over the radio (30 a minute).
+  Without internet, your own channel messages go out through such a phone
+  automatically. Every carried event is signature-checked; bitchat's loop
+  rules apply. The bridge explanation in the Me tab says so.
+- `/ping @name` and `/trace @name` in Nearby and private chats
+  ([spec §25](docs/protocol-spec.md)). Ping shows the round trip and how
+  many hops away someone is; trace shows an estimated path from the
+  neighbour lists bitchat phones announce. Pongs are budgeted per radio
+  link, so a forged sender cannot turn a phone into a pong cannon.
+- Vouching ([spec §26](docs/protocol-spec.md)). People you verified in
+  person also tell your phone, over an encrypted session and at most once a
+  day, whom they verified; those people get a grey ✓ and "verified by …" on
+  their card. Only vouches from people you verified count, and they lapse
+  after 30 days or as soon as you un-verify the voucher. openchat now
+  announces the capabilities it has (groups, board, vouching, diagnostics),
+  so bitchat phones offer them.
+- One-time prekeys ([spec §27](docs/protocol-spec.md)). Each phone
+  publishes eight single-use keys that spread like board posts. Mail for
+  someone out of reach, whether carried by other phones or parked on
+  relays, is now sealed to one of their single-use keys when one is known,
+  and that key is deleted two days after the mail is opened, so stealing
+  the phone later does not unlock mail captured on the way. Opening
+  bitchat's forward-secret mail works too.
+- `/pay` and Cashu cards ([spec §28](docs/protocol-spec.md)).
   `/pay <token>` sends a Cashu ecash token after checking it is real money;
   outside a private chat it needs `/pay <token> public`, because whoever
   redeems a token first gets it. Tokens in messages show as a card with the
   amount, mint and memo, an "Open in wallet" button and Copy. The app never
   talks to a mint.
-- 5 new tests, 142 in all.
+- Live voice ([spec §29](docs/protocol-spec.md)). Hold the mic to talk and
+  release to send (a quick tap still starts and stops a recording). In
+  Nearby and private chats people hear you while you are still talking:
+  their bubble appears at once and plays live if they have that chat open,
+  and the finished note then slots into the same bubble. Public bursts are
+  signed and accepted for 30 seconds; floods are capped. A Me-tab switch,
+  on by default, turns live voice off in both directions.
+- Location channels have a Share button: a text invite with a
+  `bitchat://geohash/` link that bitchat and openchat both open (openchat
+  now opens such links). Small areas ask before sharing.
 
-- One-time prekeys, compatible with bitchat ([spec §27](docs/protocol-spec.md)).
-  Each phone publishes eight single-use keys that spread like board posts.
-  Mail for someone out of reach, whether carried by other phones or parked
-  on relays, is now sealed to one of their single-use keys when one is
-  known, and that key is deleted two days after the mail is opened, so
-  stealing the phone later does not unlock mail captured on the way.
-  Opening bitchat's forward-secret mail works too.
-- 4 new tests.
-
-- Vouching, compatible with bitchat ([spec §26](docs/protocol-spec.md)).
-  People you verified in person also tell your phone, over an encrypted
-  session and at most once a day, whom they verified; those people get a
-  grey ✓ and "verified by …" on their card. Only vouches from people you
-  verified count, and they lapse after 30 days or as soon as you un-verify
-  the voucher.
-- openchat now announces the capabilities it has (groups, board, vouching,
-  diagnostics), so bitchat phones offer them.
-- 5 new tests.
-
-- Location-channel gateway, compatible with bitchat ([spec §24.5](docs/protocol-spec.md)).
-  With the bridge on and internet working, your phone also serves people
-  nearby who have none: what they post in a location channel goes out
-  through you, and the channels you are in come in for them over the radio
-  (30 a minute). Without internet, your own channel messages go out through
-  such a phone automatically. Every carried event is signature-checked;
-  bitchat's loop rules apply. The bridge explanation in the Me tab says so.
-- Unread counts no longer grow when the same message arrives twice.
-
-- `/ping @name` and `/trace @name` in Nearby and private chats, compatible
-  with bitchat ([spec §25](docs/protocol-spec.md)). Ping shows the round
-  trip and how many hops away someone is; trace shows an estimated path
-  from the neighbour lists bitchat phones announce. Pongs are budgeted per
-  radio link, so a forged sender cannot turn a phone into a pong cannon.
-- 2 new tests.
-
-- Mesh bridge, wire-compatible with bitchat ([spec §24](docs/protocol-spec.md)),
-  off by default (Me tab). Bluetooth reaches only so far: with the bridge on,
-  Nearby messages also go to the internet relays for your neighbourhood
-  cell (about 1.2 km) under an unlinkable per-cell key, and what people in
-  other islands of that area say appears in Nearby, marked "via bridge". A
-  bridging phone with internet serves its island: it publishes messages
-  that bridging phones without internet hand to it, and carries other
-  islands' messages onto the radio (holdoff, 20 a minute, bitchat's loop
-  rules). A copy of a radio message is skipped, and the radio copy replaces
-  a bridged row that got there first.
-- Courier drops: with the bridge on, mail for someone out of reach is also
-  parked on relays as a sealed kind-1401 drop under a throwaway key, so it
-  arrives as soon as either side is online; a bridging phone also fetches
-  drops for verified neighbours and hands them over.
-- 5 new tests (including upstream's pinned message-ID vector), 125 in all.
-  The bridge's own relay-side logic is not unit-tested yet.
-
-- Notice board, wire-compatible with bitchat ([spec §23](docs/protocol-spec.md)).
-  Board on the Nearby tab: pin a notice for 1, 3 or 7 days, mark it urgent,
-  take it down later. Posts are signed by their author and pass from phone
-  to phone, including by history sync, so people who arrive days later
-  still read them; a takedown spreads the same way. Five posts per author,
-  200 in all. A fresh urgent notice adds a line to the Nearby chat; others
-  raise a badge. Kept with the sealed mesh state, wiped by the triple tap.
-- 5 new tests, 120 in all.
-
-- Private groups, wire-compatible with bitchat ([spec §22](docs/protocol-spec.md)).
-  New group on the Private tab or `/group create`; the creator invites
-  people nearby from Members (or `/group invite @name`), removes them, and
-  anyone can leave. Up to 16 members. The creator signs the roster and a
-  fresh key on every change and hands them out inside Noise sessions;
-  messages are sealed with ChaCha20-Poly1305 under the group key, signed
-  by their author, and flooded over the mesh like public ones, so only
-  members read them. Members who were away pick up missed messages by
-  history sync. Text only for now. Groups and keys are sealed on disk and
-  go with the triple tap.
-- Fix: a history-sync copy arriving while a relay waited cancelled the
-  relay, so a message could stop one hop short. A sync reply goes to one
-  phone only and no longer counts as someone else having relayed it.
-- 6 new tests, 115 in all.
+### Privacy and spam
 
 - Flood protection, as bitchat ([spec §21](docs/protocol-spec.md)): a
   sender may post five public messages at once and then one a second, and
@@ -141,22 +100,60 @@ Fourth round from the 2026-10-29 code review (hygiene). No wire-format change.
 - Notifications are quiet by default: "New message", no name, place or
   text, so a locked phone does not read chats out to whoever holds it. A
   switch on the Me tab shows previews; the lock screen stays quiet either
-  way, and the triple tap turns previews off again.
+  way, and the triple tap turns previews off again. Message notifications
+  are marked secret, so their text stays off the lock screen and out of the
+  notification history.
 - Received photos appear as coarse blocks until tapped.
-- Location channels have a Share button: a text invite with a
-  `bitchat://geohash/` link that bitchat and openchat both open (openchat
-  now opens such links). Small areas ask before sharing.
-- 5 new tests, 109 in all.
+- Panic wipe: Tor is stopped, its directory (guards, state, cached
+  descriptors) deleted and Tor restarted on fresh guards after a 2–8 s
+  pause, with relay sockets closed in between, so the new identity's first
+  contact with the relays shares no circuit with the old one. Receipts
+  still waiting their turn in the Nostr pacer are discarded rather than
+  sent as the old persona. Media files in the cache are deleted at every
+  service start, since the timeline they belong to does not survive one.
+- Key material is zeroed when it is done with: a handshake that is given up
+  (timeout, bad message, eviction, key mismatch, panic) wipes its ephemeral
+  key and symmetric state, and the handshake state is destroyed as soon as
+  the transport keys are derived; a panic wipe zeroes the old identity's
+  private keys and Nostr seed; the sealed identity file's plaintext buffers
+  are zeroed after use.
 
-- The app mark now sits in the top-left corner of the main screen and is a
+### Interface
+
+- The app mark sits in the top-left corner of the main screen and is a
   48 dp target for the triple-tap wipe. The title still works too. Each
-  counted tap gives a short haptic tick, and the three taps are now judged
-  by the gap between them (500 ms each) instead of an 800 ms window from
-  the first tap, which was too tight on a real phone. The first-run safety
-  note points at the logo. Only the English and Chinese notes were
-  updated; the other sixteen still say "title".
+  counted tap gives a short haptic tick, and the three taps are judged by
+  the gap between them (500 ms each) instead of an 800 ms window from the
+  first tap, which was too tight on a real phone. The first-run safety note
+  points at the logo in all 18 languages.
+- One icon style: the 🎙/🖼 emoji and ■/▶ glyphs are outlined Material
+  icons (Mic, Stop, PlayArrow, Image); the name badges ✓ ✈ ★ render as
+  monochrome text; pictographic emoji are gone from UI strings in all 18
+  languages. Each bottom tab has an outlined icon that fills when selected.
+- The default nickname is `anon`. Labels drop digits directly before the
+  suffix, so bitchat's `anon1234` shows as `anon#xxxx`, and peers that
+  never announced a name no longer show their hex ID as the name.
+- Screen readers: tab icons no longer repeat the tab name; the record button
+  is a button (one activation starts, the next sends; the hold-to-talk
+  gesture is unchanged for everyone else); the play button says play or
+  stop; a sender's name is a 32 dp button; the verification QR has a
+  description. The Me tab has an "Erase everything" button with a
+  confirmation, for people who cannot tap three times in half-second steps;
+  the triple tap itself stays unconfirmed. The logo's description is
+  translated in all 18 languages.
+- Chat view: the list follows new messages only while you are at the end of
+  it or the message is yours, so a history sync inserting older lines (or a
+  timeline at its 500-line cap) no longer yanks you to the bottom. Photos
+  and voice-note lengths are decoded off the main thread and cached, so
+  scrolling a media-heavy chat does not stutter. The APK copy behind "share
+  the app" no longer runs on the UI thread.
+- Edge-to-edge drawing is requested explicitly (Android 15 enforces it), and
+  the first-run screen keeps its language menu and start button clear of
+  the system bars.
+- Unread counts no longer grow when the same message arrives twice.
+- `/help` lists `/drop` in location channels.
 
-Fixes from the 2026-10-29 code review. None change the wire format.
+### Fixes from the 2026-10-29 code review
 
 - Private messages over Nostr: a favorite notice arriving over Nostr could
   bind any mesh peer's identity to the sender's own npub, because the sender
@@ -165,7 +162,7 @@ Fixes from the 2026-10-29 code review. None change the wire format.
   the npub already recorded for a person speaks for them over Nostr
   (`NostrSenders`, [spec §15.1](docs/protocol-spec.md)); the first binding
   happens over a Noise session or a verification QR, where the key is
-  proven. 4 new tests.
+  proven.
 - Sealed files (identity, mesh state, block list) are written to a sibling
   file and renamed over the old one, so a crash mid-write cannot leave half
   a file. An identity file that exists but will not open (Keystore not
@@ -198,20 +195,6 @@ Fixes from the 2026-10-29 code review. None change the wire format.
   answered only within 10 minutes of its timestamp. Before, every reconnect
   replayed two days of envelopes and each got a fresh receipt, which also
   told the sender when this phone restarted.
-- 104 unit tests in all (10 new).
-- Release builds are signed with a dedicated release key when
-  `android/keystore.properties` is present (git-ignored, see
-  android/README.md). Previews up to v0.5.0 were signed with the build
-  machine's debug key, which cannot be recovered if that machine is lost
-  and would have forced every user to reinstall at some later, worse time.
-  The first release-signed preview will not install over v0.5.0 or
-  earlier: uninstall first. Identity, favorites and verifications are lost
-  with the uninstall; this is the one-time cost of making the switch now.
-- `/help` lists `/drop` in location channels.
-
-Second round from the same review (link layer, engine, wipe, UI). Still
-no wire-format change.
-
 - Bluetooth link layer: a link's send queue used to shed the oldest chunks
   when it overflowed, which cut a frame in half and left the other phone's
   framer hunting for the next header inside our tail. A frame now goes out
@@ -224,7 +207,13 @@ no wire-format change.
   after lost traffic, and only hands up frames that decode. A link whose
   stack refuses 40 writes in a row is dropped instead of retried every
   50 ms forever. A central's prepared (long) write now gets its execute
-  response. 3 new tests.
+  response.
+- Bluetooth scanning follows the duty cycle of [spec §11](docs/protocol-spec.md):
+  5 s on, 10 s off (3 s / 15 s with six or more links) instead of scanning
+  without pause; no scan is started while the central table is full, and a
+  scan that fails to start is retried after 10, 20, 40, then 60 s. Discovery
+  of a new neighbour may now take up to 10 s longer; the radio sleeps two
+  thirds of the time.
 - A connection attempt that times out before the link is ready now clears
   every table it touched; before, the address could stay "connected" in our
   bookkeeping and was never tried again until the other phone rotated its
@@ -239,36 +228,51 @@ no wire-format change.
   Before, two neighbours could keep a departed peer "here" between them for
   up to 15 min, and private messages to it went to a handshake that could
   not complete instead of to a courier.
+- A history-sync copy arriving while a relay waited cancelled the relay, so
+  a message could stop one hop short. A sync reply goes to one phone only
+  and no longer counts as someone else having relayed it.
 - A new link gets our announce as soon as the 1 s announce rate limit
   allows; before, a link that opened within a second of the last announce
-  waited 15–38 s for the next periodic one. 4 new engine tests.
-- Panic wipe: Tor is stopped, its directory (guards, state, cached
-  descriptors) deleted and Tor restarted on fresh guards after a 2–8 s
-  pause, with relay sockets closed in between, so the new identity's first
-  contact with the relays shares no circuit with the old one. Receipts still
-  waiting their turn in the Nostr pacer are discarded rather than sent as
-  the old persona. Media files in the cache are deleted at every service
-  start, since the timeline they belong to does not survive one. Message
-  notifications are marked secret, so their text stays off the lock screen
-  and out of the notification history.
+  waited 15–38 s for the next periodic one.
 - Tor: the ON state is now taken from the service's status, not from a
   static port number that outlives a stop, so a Tor restart no longer shows
   ON while it is still bootstrapping. A relay socket that was opened just
   as the route changed is dropped on open rather than kept as a clearnet
   socket. An `.onion` relay is never handed to the system resolver while
   Tor is off.
-- Chat view: the list follows new messages only while you are at the end of
-  it or the message is yours, so a history sync inserting older lines (or a
-  timeline at its 500-line cap) no longer yanks you to the bottom. Photos
-  and voice-note lengths are decoded off the main thread and cached, so
-  scrolling a media-heavy chat does not stutter. The APK copy behind "share
-  the app" no longer runs on the UI thread.
-- Edge-to-edge drawing is requested explicitly (Android 15 enforces it), and
-  the first-run screen keeps its language menu and start button clear of
-  the system bars.
-- 156 unit tests in all (8 new). `fragmentsReassemble` failed once in a
-  full run and passed on every rerun; it uses a random payload and is on
-  the list to pin down.
+
+### Build and project
+
+- Release builds are signed with a dedicated release key when
+  `android/keystore.properties` is present (git-ignored, see
+  android/README.md). Previews up to v0.5.0 were signed with the build
+  machine's debug key, which cannot be recovered if that machine is lost
+  and would have forced every user to reinstall at some later, worse time.
+- `Screens.kt` (1374 lines) is split into Theme, Onboarding, MainScreen,
+  ChatPane, PrivateChats, LocationScreens and MeScreen. Code moved, not
+  changed.
+- Toolchain and libraries brought up to date: Gradle 8.14.6, Android Gradle
+  plugin 8.13.2, Kotlin 2.4.21, Compose BOM 2026.06.00, compileSdk 36
+  (targetSdk stays 35), OkHttp 5.4.0, Bouncy Castle 1.86, coroutines 1.11.0,
+  ZXing 3.5.4, activity-compose 1.13.0, core-ktx 1.18.0, plus
+  `material-icons-extended` (R8 removes what is unused; the debug APK grows
+  to about 44 MB). The two lifecycle libraries that nothing referenced are
+  gone. Compose 1.12, core 1.19 and OkHttp 5.5 need Android Gradle plugin
+  9.1 and compileSdk 37; that step (built-in Kotlin, new DSL) is left for
+  its own change.
+- 161 unit tests (67 new since v0.5.0), including upstream's pinned
+  message-ID vector. A CI-only failure of the synced-announce test was the
+  sync filter's 1-in-128 false positive; the test now injects the packet
+  itself. `fragmentsReassemble` failed once during the second review round
+  and passed on every rerun; it uses a random payload and is still on the
+  list to pin down.
+- versionCode 8, versionName 0.6.0. Does not install over v0.5.0 or earlier
+  (release key, see above): uninstall first.
+- Release: <https://github.com/wolfqing/openchat/releases/tag/v0.6.0>,
+  APK SHA-256 `659b40d79cfadad5fd26c58ba1db5ce752425fcc76f9bd6058f9f9ad059886ca`.
+- Not yet checked on a device or against a bitchat phone. Nothing since
+  v0.5.0 has run on a phone; the scan duty cycle, live voice, the bridge
+  and TalkBack behaviour in particular need a real device.
 
 ## Android v0.5.0 (preview) — 2026-10-29
 

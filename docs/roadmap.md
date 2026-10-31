@@ -102,7 +102,7 @@ Phase 1 and Phase 2 plans above:
   repository stays MIT.
 - Android ships first, then iOS.
 
-**Status**: Android v0.5.0 preview (see [../android/README.md](../android/README.md))
+**Status**: Android v0.6.0 preview (see [../android/README.md](../android/README.md))
 implements every feature in the 2026-10-27 TechFlow article: BLE mesh relay,
 no accounts, public nearby channel, Noise private messages, Nostr geohash
 channels, triple-tap panic wipe, offline APK sharing. Unit tests pass,

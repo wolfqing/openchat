@@ -1,6 +1,6 @@
 # openchat for Android
 
-Status: **v0.5.0 preview.** Builds and passes its 94 unit tests. Not yet
+Status: **v0.6.0 preview.** Builds and passes its 161 unit tests. Not yet
 verified against a stock bitchat client. See [SECURITY.md](../SECURITY.md)
 before relying on it.
 
@@ -50,7 +50,7 @@ echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
 
 The APK lands in `app/build/outputs/apk/debug/app-debug.apk`. Previews are
 published from `./gradlew :app:assembleRelease` (R8-shrunk, ARM only, about
-9.5 MB). minSdk 26
+9 MB). minSdk 26
 (Android 8.0), targetSdk 35.
 
 ## Tests

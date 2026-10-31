@@ -10,7 +10,7 @@
     <string name="onboard_start">시작하기</string>
     <string name="onboard_next">다음으로, 근처 사람을 찾을 수 있도록 블루투스 권한을 요청합니다.</string>
     <string name="safety_title">시작하기 전에</string>
-    <string name="safety_body">· \'근처\' 채널은 공개입니다. 범위 안의 모든 사람이 볼 수 있습니다.\n· 개인 메시지는 암호화되지만, 근처 사람은 당신이 이 앱을 쓴다는 것을 알 수 있고 같은 휴대폰을 계속 알아볼 수 있습니다.\n· 이 앱은 아직 완전한 독립 보안 감사를 받지 않았습니다. 신원이 드러나면 심각한 위험에 처할 수 있다면 이 앱에 의존하지 마세요.\n· 상단 제목을 세 번 탭하면 모든 데이터가 한 번에 지워집니다.</string>
+    <string name="safety_body">· \'근처\' 채널은 공개입니다. 범위 안의 모든 사람이 볼 수 있습니다.\n· 개인 메시지는 암호화되지만, 근처 사람은 당신이 이 앱을 쓴다는 것을 알 수 있고 같은 휴대폰을 계속 알아볼 수 있습니다.\n· 이 앱은 아직 완전한 독립 보안 감사를 받지 않았습니다. 신원이 드러나면 심각한 위험에 처할 수 있다면 이 앱에 의존하지 마세요.\n· 왼쪽 위 로고를 세 번 탭하면 모든 데이터가 한 번에 지워집니다.</string>
     <string name="tab_nearby">근처</string>
     <string name="tab_private">개인</string>
     <string name="tab_location">지역</string>
