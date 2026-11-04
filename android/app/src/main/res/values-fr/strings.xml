@@ -67,6 +67,12 @@
     <string name="geo_elsewhere">Visiter une autre zone</string>
     <string name="geo_hint">geohash, p. ex. wtw3s</string>
     <string name="geo_enter">Aller</string>
+    <string name="globe_open">Choisir sur le globe</string>
+    <string name="globe_title">Choisir un lieu</string>
+    <string name="globe_hint">Glissez pour tourner, pincez pour zoomer, touchez pour centrer</string>
+    <string name="globe_select">Entrer dans ce canal</string>
+    <string name="globe_zoom_in">Case plus fine</string>
+    <string name="globe_zoom_out">Case plus grande</string>
     <string name="geo_teleport_note">Vous n\'y êtes pas, les autres verront donc ✈︎ à côté de votre nom.</string>
     <string name="geo_joined">Rejoint</string>
     <string name="geo_connecting">Connexion…</string>

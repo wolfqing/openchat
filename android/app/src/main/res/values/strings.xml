@@ -76,6 +76,12 @@
     <string name="geo_elsewhere">Visit another area</string>
     <string name="geo_hint">geohash, e.g. wtw3s</string>
     <string name="geo_enter">Go</string>
+    <string name="globe_open">Pick on the globe</string>
+    <string name="globe_title">Choose a place</string>
+    <string name="globe_hint">Drag to spin, pinch to zoom, tap to focus</string>
+    <string name="globe_select">Enter this channel</string>
+    <string name="globe_zoom_in">Finer cell</string>
+    <string name="globe_zoom_out">Larger cell</string>
     <string name="geo_teleport_note">You aren\'t there, so others will see ✈︎ next to your name.</string>
     <string name="geo_joined">Joined</string>
     <string name="geo_connecting">Connecting…</string>

@@ -1,0 +1,90 @@
+package org.openchat.android.ui.globe
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.openchat.android.nostr.Geohash
+import java.io.File
+
+class GlobeTest {
+    @Test
+    fun projectionCentreAndInverse() {
+        val v = GlobeView(48.85, 2.35, 1.0)
+        val p = DoubleArray(3)
+        v.project(48.85, 2.35, p)
+        assertEquals(0.0, p[0], 1e-9); assertEquals(0.0, p[1], 1e-9); assertEquals(1.0, p[2], 1e-9)
+        v.project(-48.85, -177.65, p) // the antipode is hidden
+        assertTrue(p[2] < -0.99)
+        for ((lat, lon) in listOf(50.0 to 5.0, 40.0 to -10.0, 60.0 to 30.0)) {
+            v.project(lat, lon, p)
+            val (la, lo) = v.unproject(p[0], p[1])!!
+            assertEquals(lat, la, 1e-6); assertEquals(lon, lo, 1e-6)
+        }
+        assertNull(v.unproject(0.8, 0.8))
+    }
+
+    @Test
+    fun inverseAcrossTheAntimeridian() {
+        val v = GlobeView(0.0, 179.0, 1.0)
+        val p = DoubleArray(3)
+        v.project(0.0, -178.0, p)
+        assertEquals(-178.0, v.unproject(p[0], p[1])!!.second, 1e-6)
+        assertEquals(-179.0, GlobeView.normalizeLon(181.0), 1e-9)
+    }
+
+    @Test
+    fun precisionFollowsZoomAndBackAgain() {
+        var last = 0
+        var z = GlobeView.MIN_ZOOM
+        while (z < GlobeView.MAX_ZOOM) {
+            val p = GlobeView.precisionFor(z)
+            assertTrue("precision never goes down as you zoom in", p >= last)
+            last = p; z *= 1.3
+        }
+        assertEquals(GlobeView.MIN_PRECISION, GlobeView.precisionFor(1.0))
+        assertEquals(GlobeView.MAX_PRECISION, last)
+        // Framing a precision lands on that precision, so the -/+ buttons step exactly one level.
+        for (p in GlobeView.MIN_PRECISION..GlobeView.MAX_PRECISION) assertEquals(p, GlobeView.precisionFor(GlobeView.zoomFor(p)))
+    }
+
+    @Test
+    fun dragTurnsTheGlobeAndClampsAtThePoles() {
+        val v = GlobeView(0.0, 0.0, 1.0)
+        assertTrue(v.dragged(0.1, 0.0).lon < 0) // finger moves right, the map follows it
+        assertTrue(v.dragged(0.0, 0.1).lat > 0)
+        assertEquals(GlobeView.MAX_LAT, v.dragged(0.0, 10.0).lat, 1e-9)
+        // At high zoom the same drag turns it far less.
+        assertTrue(abs(GlobeView(0.0, 0.0, 1000.0).dragged(0.1, 0.0).lon) < 0.01)
+    }
+
+    @Test
+    fun cellBoundsAndSizes() {
+        val b = Geohash.bounds("wtw3s")!!
+        val (lat, lon) = Geohash.center("wtw3s")!!
+        assertTrue(lat in b.latLo..b.latHi && lon in b.lonLo..b.lonHi)
+        assertEquals(Geohash.cellSize(5).first, b.lonHi - b.lonLo, 1e-12)
+        assertEquals(Geohash.cellSize(5).second, b.latHi - b.latLo, 1e-12)
+        assertEquals("wtw3s", Geohash.encode(lat, lon, 5))
+        assertEquals(8, Geohash.neighbors("wtw3s").size)
+        // A city-level cell near Shanghai is roughly 4–5 km wide.
+        assertTrue(GlobeView.cellWidthMeters("wtw3s") in 3_500.0..5_000.0)
+        assertNull(Geohash.bounds("wtw3a"))
+    }
+
+    @Test
+    fun bundledMapDataParses() {
+        val d = GlobeData.parse(File("src/main/assets/globe.bin").readBytes())
+        assertNotNull(d)
+        d!!
+        assertTrue(d.coastCoarse.size > 100 && d.coastFine.size > d.coastCoarse.size && d.borders.isNotEmpty())
+        assertTrue(d.cities.any { it.name == "Tokyo" && abs(it.lat - 35.7f) < 0.3f })
+        assertTrue(d.coastFine.all { pl -> pl.lat.all { it in -90f..90f } && pl.lon.all { it in -180f..180f } })
+        assertNull(GlobeData.parse("nope".toByteArray()))
+        assertNull(GlobeData.parse(File("src/main/assets/globe.bin").readBytes().copyOf(1000)))
+    }
+
+    private fun abs(x: Double) = kotlin.math.abs(x)
+    private fun abs(x: Float) = kotlin.math.abs(x)
+}

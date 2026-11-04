@@ -70,6 +70,12 @@
     <string name="geo_elsewhere">Перейти в другой район</string>
     <string name="geo_hint">geohash, например wtw3s</string>
     <string name="geo_enter">Перейти</string>
+    <string name="globe_open">Выбрать на глобусе</string>
+    <string name="globe_title">Выберите место</string>
+    <string name="globe_hint">Тяните, чтобы вращать, сводите пальцы для масштаба, нажмите, чтобы навести</string>
+    <string name="globe_select">Войти в этот канал</string>
+    <string name="globe_zoom_in">Клетка мельче</string>
+    <string name="globe_zoom_out">Клетка крупнее</string>
     <string name="geo_teleport_note">Вас там нет, поэтому другие увидят ✈︎ рядом с вашим именем.</string>
     <string name="geo_joined">Вы в канале</string>
     <string name="geo_connecting">Подключение…</string>

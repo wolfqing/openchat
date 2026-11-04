@@ -61,6 +61,12 @@
     <string name="geo_elsewhere">Ghé khu vực khác</string>
     <string name="geo_hint">geohash, ví dụ wtw3s</string>
     <string name="geo_enter">Vào</string>
+    <string name="globe_open">Chọn trên quả địa cầu</string>
+    <string name="globe_title">Chọn một nơi</string>
+    <string name="globe_hint">Kéo để xoay, chụm để thu phóng, chạm để căn giữa</string>
+    <string name="globe_select">Vào kênh này</string>
+    <string name="globe_zoom_in">Ô nhỏ hơn</string>
+    <string name="globe_zoom_out">Ô lớn hơn</string>
     <string name="geo_teleport_note">Bạn không ở đó, nên người khác sẽ thấy ✈︎ cạnh tên bạn.</string>
     <string name="geo_joined">Đã tham gia</string>
     <string name="geo_connecting">Đang kết nối…</string>

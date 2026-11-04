@@ -265,11 +265,12 @@ fun PanicLogo(onPanic: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         // The launcher foreground keeps its pixels inside the adaptive-icon safe zone (about half
-        // the canvas), so scale it up to fill the box.
+        // the canvas). 1.7x would fill the box; the mark is drawn at two thirds of that, and the
+        // 48 dp box stays as the tap target.
         Image(
             painterResource(R.drawable.ic_launcher_foreground),
             contentDescription = stringResource(R.string.panic_logo),
-            modifier = Modifier.fillMaxSize().scale(1.7f),
+            modifier = Modifier.fillMaxSize().scale(1.7f * 2 / 3),
         )
     }
 }

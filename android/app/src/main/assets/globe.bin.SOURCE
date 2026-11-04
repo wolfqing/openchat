@@ -1,0 +1,4 @@
+globe.bin: coastlines (1:110m and 1:50m), land borders (1:110m) and 243 populated
+places from Natural Earth (public domain), github.com/nvkelso/natural-earth-vector
+geojson/ at master, fetched 2026-11-03. Packed by android/tools/pack_globe.py:
+  python3 tools/pack_globe.py <dir with the four .geojson files> app/src/main/assets/globe.bin
