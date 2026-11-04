@@ -61,6 +61,12 @@
     <string name="geo_elsewhere">다른 지역 가기</string>
     <string name="geo_hint">geohash, 예: wtw3s</string>
     <string name="geo_enter">이동</string>
+    <string name="globe_open">지구본에서 고르기</string>
+    <string name="globe_title">장소 선택</string>
+    <string name="globe_hint">드래그로 회전, 핀치로 확대·축소, 탭으로 이동</string>
+    <string name="globe_select">이 채널로 들어가기</string>
+    <string name="globe_zoom_in">더 작은 칸</string>
+    <string name="globe_zoom_out">더 큰 칸</string>
     <string name="geo_teleport_note">그곳에 있지 않으므로 다른 사람에게는 이름 옆에 ✈︎가 표시됩니다.</string>
     <string name="geo_joined">참여 중</string>
     <string name="geo_connecting">연결 중…</string>

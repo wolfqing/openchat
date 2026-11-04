@@ -71,6 +71,12 @@
     <string name="geo_elsewhere">去别的地区看看</string>
     <string name="geo_hint">geohash，如 wtw3s</string>
     <string name="geo_enter">进入</string>
+    <string name="globe_open">在地球上选</string>
+    <string name="globe_title">选择地点</string>
+    <string name="globe_hint">拖动旋转，双指缩放，点按聚焦</string>
+    <string name="globe_select">进入这个频道</string>
+    <string name="globe_zoom_in">更小的格子</string>
+    <string name="globe_zoom_out">更大的格子</string>
     <string name="geo_teleport_note">你不在那里，所以别人会看到你的名字旁有 ✈︎ 标记。</string>
     <string name="geo_joined">已加入</string>
     <string name="geo_connecting">正在连接网络…</string>

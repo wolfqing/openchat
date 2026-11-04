@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,11 +55,23 @@ import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.nostr.Geohash
+import org.openchat.android.ui.globe.GlobePickerDialog
 
 @Composable
 internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Unit) {
     val geo by ChatRepository.geo.collectAsState()
     var manual by rememberSaveable { mutableStateOf("") }
+    var globe by rememberSaveable { mutableStateOf(false) }
+    if (globe) {
+        val here = geo.locationGeohash
+        // Fly to the typed geohash, else a joined channel, else the coarsest cell around you.
+        val start = manual.takeIf { Geohash.isValid(it) && it.length >= 2 } ?: geo.joined.sorted().firstOrNull() ?: here?.take(2)
+        GlobePickerDialog(start, onDismiss = { globe = false }, onSelect = { cell ->
+            globe = false
+            ChatRepository.controller?.joinGeo(cell, teleported = here == null || !here.startsWith(cell))
+            onOpen(cell)
+        })
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text(stringResource(R.string.geo_intro), lineHeight = 22.sp)
         Spacer(Modifier.height(16.dp))
@@ -87,6 +100,11 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
             Button(enabled = Geohash.isValid(manual) && manual.length >= 2, onClick = {
                 ChatRepository.controller?.joinGeo(manual, teleported = true); onOpen(manual)
             }) { Text(stringResource(R.string.geo_enter)) }
+        }
+        OutlinedButton(onClick = { globe = true }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            Icon(Icons.Outlined.Public, contentDescription = null)
+            Spacer(Modifier.size(8.dp))
+            Text(stringResource(R.string.globe_open))
         }
         Text(stringResource(R.string.geo_teleport_note), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (geo.joined.isNotEmpty()) {

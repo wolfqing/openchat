@@ -64,6 +64,12 @@
     <string name="geo_elsewhere">Başka bir bölgeye git</string>
     <string name="geo_hint">geohash, ör. wtw3s</string>
     <string name="geo_enter">Git</string>
+    <string name="globe_open">Küre üzerinde seç</string>
+    <string name="globe_title">Bir yer seç</string>
+    <string name="globe_hint">Döndürmek için sürükle, yakınlaştırmak için kıstır, ortalamak için dokun</string>
+    <string name="globe_select">Bu kanala gir</string>
+    <string name="globe_zoom_in">Daha küçük hücre</string>
+    <string name="globe_zoom_out">Daha büyük hücre</string>
     <string name="geo_teleport_note">Orada değilsin, bu yüzden diğerleri adının yanında ✈︎ görecek.</string>
     <string name="geo_joined">Katıldın</string>
     <string name="geo_connecting">Bağlanılıyor…</string>

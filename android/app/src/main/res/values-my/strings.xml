@@ -61,6 +61,12 @@
     <string name="geo_elsewhere">အခြားဒေသသို့ သွားမည်</string>
     <string name="geo_hint">geohash ဥပမာ wtw3s</string>
     <string name="geo_enter">သွားမည်</string>
+    <string name="globe_open">ကမ္ဘာလုံးပေါ်တွင် ရွေးပါ</string>
+    <string name="globe_title">နေရာ ရွေးပါ</string>
+    <string name="globe_hint">လှည့်ရန် ဆွဲပါ၊ ချဲ့ချုံ့ရန် လက်နှစ်ချောင်းသုံးပါ၊ အလယ်ထားရန် တို့ပါ</string>
+    <string name="globe_select">ဤချန်နယ်ထဲ ဝင်ပါ</string>
+    <string name="globe_zoom_in">အကွက်ငယ်</string>
+    <string name="globe_zoom_out">အကွက်ကြီး</string>
     <string name="geo_teleport_note">သင်ထိုနေရာတွင် မရှိသဖြင့် အခြားသူများက သင့်အမည်ဘေးတွင် ✈︎ ကို မြင်ရပါမည်။</string>
     <string name="geo_joined">ဝင်ရောက်ပြီး</string>
     <string name="geo_connecting">ချိတ်ဆက်နေသည်…</string>

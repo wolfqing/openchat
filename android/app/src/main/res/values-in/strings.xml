@@ -61,6 +61,12 @@
     <string name="geo_elsewhere">Kunjungi area lain</string>
     <string name="geo_hint">geohash, mis. wtw3s</string>
     <string name="geo_enter">Buka</string>
+    <string name="globe_open">Pilih di globe</string>
+    <string name="globe_title">Pilih tempat</string>
+    <string name="globe_hint">Seret untuk memutar, cubit untuk zoom, ketuk untuk memusatkan</string>
+    <string name="globe_select">Masuk ke kanal ini</string>
+    <string name="globe_zoom_in">Sel lebih kecil</string>
+    <string name="globe_zoom_out">Sel lebih besar</string>
     <string name="geo_teleport_note">Kamu tidak berada di sana, jadi orang lain akan melihat ✈︎ di samping namamu.</string>
     <string name="geo_joined">Bergabung</string>
     <string name="geo_connecting">Menghubungkan…</string>

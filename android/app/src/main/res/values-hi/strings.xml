@@ -64,6 +64,12 @@
     <string name="geo_elsewhere">किसी दूसरे इलाके में जाएँ</string>
     <string name="geo_hint">geohash, जैसे wtw3s</string>
     <string name="geo_enter">जाएँ</string>
+    <string name="globe_open">ग्लोब पर चुनें</string>
+    <string name="globe_title">जगह चुनें</string>
+    <string name="globe_hint">घुमाने के लिए खींचें, ज़ूम के लिए पिंच करें, बीच में लाने के लिए टैप करें</string>
+    <string name="globe_select">इस चैनल में जाएँ</string>
+    <string name="globe_zoom_in">छोटा खाना</string>
+    <string name="globe_zoom_out">बड़ा खाना</string>
     <string name="geo_teleport_note">आप वहाँ नहीं हैं, इसलिए दूसरों को आपके नाम के पास ✈︎ दिखेगा।</string>
     <string name="geo_joined">जुड़ गए</string>
     <string name="geo_connecting">जुड़ रहा है…</string>

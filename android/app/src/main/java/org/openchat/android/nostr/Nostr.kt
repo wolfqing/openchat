@@ -37,8 +37,11 @@ object Geohash {
         return sb.toString()
     }
 
-    /** Centre of a geohash cell as (lat, lon), or null for invalid input. */
-    fun center(hash: String): Pair<Double, Double>? {
+    /** A cell's edges in degrees. */
+    data class Bounds(val latLo: Double, val latHi: Double, val lonLo: Double, val lonHi: Double)
+
+    /** Edges of a geohash cell, or null for invalid input. */
+    fun bounds(hash: String): Bounds? {
         var latLo = -90.0; var latHi = 90.0; var lonLo = -180.0; var lonHi = 180.0
         var even = true
         for (c in hash.lowercase()) {
@@ -51,7 +54,17 @@ object Geohash {
                 even = !even
             }
         }
-        return (latLo + latHi) / 2 to (lonLo + lonHi) / 2
+        return Bounds(latLo, latHi, lonLo, lonHi)
+    }
+
+    /** Centre of a geohash cell as (lat, lon), or null for invalid input. */
+    fun center(hash: String): Pair<Double, Double>? =
+        bounds(hash)?.let { (it.latLo + it.latHi) / 2 to (it.lonLo + it.lonHi) / 2 }
+
+    /** Width and height of a cell at [precision] in degrees: bits alternate, longitude first. */
+    fun cellSize(precision: Int): Pair<Double, Double> {
+        val bits = precision * 5
+        return 360.0 / (1L shl ((bits + 1) / 2)).toDouble() to 180.0 / (1L shl (bits / 2)).toDouble()
     }
 
     fun isValid(hash: String) = hash.isNotEmpty() && hash.length <= 12 && hash.all { it.lowercaseChar() in BASE32 }
@@ -59,10 +72,7 @@ object Geohash {
     /** The eight cells around [hash] at the same precision (fewer at the poles). */
     fun neighbors(hash: String): List<String> {
         val (lat, lon) = center(hash) ?: return emptyList()
-        // Cell size from the precision: bits split between longitude (ceil) and latitude (floor).
-        val bits = hash.length * 5
-        val dLon = 360.0 / (1L shl ((bits + 1) / 2)).toDouble()
-        val dLat = 180.0 / (1L shl (bits / 2)).toDouble()
+        val (dLon, dLat) = cellSize(hash.length)
         val out = LinkedHashSet<String>()
         for (dy in -1..1) for (dx in -1..1) {
             if (dx == 0 && dy == 0) continue

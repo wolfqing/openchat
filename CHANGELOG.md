@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **v0.6.0 crashed on launch.** Kotlin 2.4 needs R8 9.1.29 or later
+  ([kotlin-support](https://developer.android.com/build/kotlin-support)),
+  but AGP 8.13 bundles R8 8.13, which reads Kotlin metadata only up to 2.3.
+  It shrank the v0.6.0 release without understanding it (the build log is
+  full of "error occurred when parsing kotlin metadata"). R8 9.5.29 is now
+  pinned on the buildscript classpath; the warnings are gone and a rebuilt
+  APK starts on the owner's phone. Debug builds were never affected.
+
+### New
+
+- Globe picker for location channels: "Pick on the globe" on the Location
+  tab opens a full-screen orthographic globe, as bitchat has on Android and
+  iOS. Drag to spin (a flick keeps it turning), pinch to zoom, tap to
+  centre, double tap to go one level finer. The cell under the crosshair is
+  the selection, drawn with its eight neighbours and their geohashes; zoom
+  sets the precision from region to block, and −/+ step it. It flies in to
+  the typed geohash, else a joined channel, else the region around you;
+  with animations turned off it jumps. "Enter this channel" joins, as
+  teleported unless the cell contains your own location. Coastlines,
+  borders and 243 cities come from Natural Earth (public domain), packed
+  into a 275 KB asset by `android/tools/pack_globe.py`. Lines only, no land
+  fill, so no polygon has to be clipped at the horizon. No wire change. 6
+  new strings in 18 languages.
+
+### Changed
+
+- The logo at the top left is drawn at two thirds of its former size; the
+  48 dp tap target for the triple-tap wipe is unchanged.
+
 ## Android v0.6.0 (preview) — 2026-10-30
 
 Everything merged to `main` since v0.5.0 (PRs #7, #8, #11, #13, #14, #15,

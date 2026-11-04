@@ -64,6 +64,12 @@
     <string name="geo_elsewhere">رفتن به منطقه‌ای دیگر</string>
     <string name="geo_hint">geohash، مثلاً wtw3s</string>
     <string name="geo_enter">برو</string>
+    <string name="globe_open">انتخاب روی کره</string>
+    <string name="globe_title">یک مکان انتخاب کنید</string>
+    <string name="globe_hint">برای چرخاندن بکشید، با دو انگشت بزرگ‌نمایی کنید، برای تمرکز ضربه بزنید</string>
+    <string name="globe_select">ورود به این کانال</string>
+    <string name="globe_zoom_in">خانهٔ کوچک‌تر</string>
+    <string name="globe_zoom_out">خانهٔ بزرگ‌تر</string>
     <string name="geo_teleport_note">تو آنجا نیستی، پس دیگران کنار نامت ✈︎ می‌بینند.</string>
     <string name="geo_joined">پیوستی</string>
     <string name="geo_connecting">در حال اتصال…</string>

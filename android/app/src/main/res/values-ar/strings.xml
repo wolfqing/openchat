@@ -76,6 +76,12 @@
     <string name="geo_elsewhere">زيارة منطقة أخرى</string>
     <string name="geo_hint">geohash، مثل wtw3s</string>
     <string name="geo_enter">انتقال</string>
+    <string name="globe_open">اختر على الكرة الأرضية</string>
+    <string name="globe_title">اختر مكانًا</string>
+    <string name="globe_hint">اسحب للتدوير، وقرّب بإصبعين، واضغط للتوسيط</string>
+    <string name="globe_select">ادخل هذه القناة</string>
+    <string name="globe_zoom_in">خلية أصغر</string>
+    <string name="globe_zoom_out">خلية أكبر</string>
     <string name="geo_teleport_note">أنت لست هناك، لذلك سيرى الآخرون ✈︎ بجانب اسمك.</string>
     <string name="geo_joined">منضم</string>
     <string name="geo_connecting">جارٍ الاتصال…</string>

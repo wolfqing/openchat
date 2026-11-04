@@ -61,6 +61,12 @@
     <string name="geo_elsewhere">別の地域へ行く</string>
     <string name="geo_hint">geohash（例: wtw3s）</string>
     <string name="geo_enter">移動</string>
+    <string name="globe_open">地球儀で選ぶ</string>
+    <string name="globe_title">場所を選ぶ</string>
+    <string name="globe_hint">ドラッグで回転、ピンチで拡大縮小、タップで中央へ</string>
+    <string name="globe_select">このチャンネルに入る</string>
+    <string name="globe_zoom_in">小さいマス</string>
+    <string name="globe_zoom_out">大きいマス</string>
     <string name="geo_teleport_note">その場所にいないため、ほかの人にはあなたの名前の横に✈︎が表示されます。</string>
     <string name="geo_joined">参加中</string>
     <string name="geo_connecting">接続中…</string>
