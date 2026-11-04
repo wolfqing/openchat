@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## Android v0.6.1 (preview) — 2026-11-04
+
+Fixes the v0.6.0 launch crash and adds the globe picker. Signed with the
+same release key as v0.6.0, so it installs over it. 167 unit tests.
+APK SHA-256 `1f5d692571859de58e4373b7780bdbec230204f27743a5423ec2a693abbdcb1f`.
 
 ### Fixed
 
