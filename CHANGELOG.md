@@ -1,5 +1,17 @@
 # Changelog
 
+## Android v0.6.2 (preview) — 2026-11-06
+
+Same release key as v0.6.0 and v0.6.1; installs over them. 167 unit tests.
+APK SHA-256 `c31a8a6a184e20b68fe1efe81b4c231e7c44f7612410bf0bc3c341e03c512292`.
+
+### Changed
+
+- The Me tab ends with the installed version, `openchat 0.6.2 (10)`, read
+  from the package, so a report can name its build.
+- "Pick on the globe" is the first control on the Location tab, as a tonal
+  button. It used to sit under the levels and the notes, often off screen.
+
 ## Android v0.6.1 (preview) — 2026-11-04
 
 Fixes the v0.6.0 launch crash and adds the globe picker. Signed with the
