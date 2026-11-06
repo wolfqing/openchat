@@ -75,6 +75,13 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text(stringResource(R.string.geo_intro), lineHeight = 22.sp)
         Spacer(Modifier.height(16.dp))
+        // First on the tab: below the levels and the notes it was off screen.
+        FilledTonalButton(onClick = { globe = true }, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Outlined.Public, contentDescription = null)
+            Spacer(Modifier.size(8.dp))
+            Text(stringResource(R.string.globe_open))
+        }
+        Spacer(Modifier.height(12.dp))
         val here = geo.locationGeohash
         if (here == null) {
             FilledTonalButton(onClick = onRequestLocation) { Text(stringResource(R.string.geo_use_location)) }
@@ -100,11 +107,6 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
             Button(enabled = Geohash.isValid(manual) && manual.length >= 2, onClick = {
                 ChatRepository.controller?.joinGeo(manual, teleported = true); onOpen(manual)
             }) { Text(stringResource(R.string.geo_enter)) }
-        }
-        OutlinedButton(onClick = { globe = true }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            Icon(Icons.Outlined.Public, contentDescription = null)
-            Spacer(Modifier.size(8.dp))
-            Text(stringResource(R.string.globe_open))
         }
         Text(stringResource(R.string.geo_teleport_note), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (geo.joined.isNotEmpty()) {
