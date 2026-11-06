@@ -28,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -87,6 +88,18 @@ internal fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> 
         WipeSection(onPanic)
         Spacer(Modifier.height(24.dp))
         Text(stringResource(R.string.me_about), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(8.dp))
+        Text(appVersion(), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** "openchat 0.6.1 (9)": the installed versionName and versionCode, so a report names its build. */
+@Composable
+private fun appVersion(): String {
+    val context = LocalContext.current
+    return remember {
+        val info = context.packageManager.getPackageInfo(context.packageName, 0)
+        "openchat ${info.versionName} (${androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(info)})"
     }
 }
 
