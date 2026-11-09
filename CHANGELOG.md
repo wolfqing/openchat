@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## Android v0.7.0 (preview) — 2026-11-08
+
+The mesh made visible, as the README screenshots show it, and a globe picker
+that stays readable. Same release key as v0.6.0–v0.6.2; installs over them.
+174 unit tests. 9.1 MB.
+APK SHA-256 `8e4c75b7fe32b732eb59c8c3d3e16d12452555552b0490fbf4dbb4d1985e80df`.
 
 ### Added
 
