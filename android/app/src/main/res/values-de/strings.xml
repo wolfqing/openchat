@@ -277,6 +277,7 @@
     <string name="chip_encrypted">Verschlüsselt</string>
     <string name="radar_title">Noch niemand in der Nähe</string>
     <string name="radar_body">Handys mit openchat oder bitchat verbinden sich im Umkreis einiger Dutzend Meter automatisch.</string>
+    <string name="radar_history">Frühere Nachrichten anzeigen</string>
     <string name="tip_open_title">Bitte sie, openchat auch zu öffnen</string>
     <string name="tip_open_body">bitchat geht auch. Es läuft bei gesperrtem Bildschirm weiter, aber wisch die App nicht weg.</string>
     <string name="tip_window_title">Geh ins Freie, in die Nähe eines Fensters</string>

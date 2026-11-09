@@ -274,6 +274,7 @@
     <string name="chip_encrypted">ကုဒ်ဝှက်ထားသည်</string>
     <string name="radar_title">အနီးတွင် မည်သူမျှ မရှိသေးပါ</string>
     <string name="radar_body">openchat သို့မဟုတ် bitchat သုံးသော ဖုန်းများသည် မီတာ ဆယ်ဂဏန်းအတွင်း အလိုအလျောက် ချိတ်ဆက်သည်။</string>
+    <string name="radar_history">ယခင် မက်ဆေ့ချ်များကို ကြည့်ရန်</string>
     <string name="tip_open_title">သူတို့ကိုလည်း openchat ဖွင့်ခိုင်းပါ</string>
     <string name="tip_open_body">bitchat လည်း ရပါသည်။ မျက်နှာပြင် လော့ခ်ချထားလည်း အလုပ်လုပ်သော်လည်း အက်ပ်ကို ပွတ်ဆွဲ မပိတ်ပါနှင့်။</string>
     <string name="tip_window_title">ဟင်းလင်းပြင်၊ ပြတင်းပေါက်အနီးသို့ ရွှေ့ပါ</string>

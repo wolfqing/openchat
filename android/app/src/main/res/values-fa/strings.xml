@@ -277,6 +277,7 @@
     <string name="chip_encrypted">رمزگذاری‌شده</string>
     <string name="radar_title">هنوز کسی نزدیک نیست</string>
     <string name="radar_body">گوشی‌هایی که openchat یا bitchat دارند در فاصله چند ده متری خودکار وصل می‌شوند.</string>
+    <string name="radar_history">دیدن پیام‌های قبلی</string>
     <string name="tip_open_title">از آن‌ها بخواهید openchat را هم باز کنند</string>
     <string name="tip_open_body">bitchat هم کار می‌کند. با صفحه قفل هم کار می‌کند، اما برنامه را با کشیدن نبندید.</string>
     <string name="tip_window_title">به فضای باز، نزدیک پنجره بروید</string>

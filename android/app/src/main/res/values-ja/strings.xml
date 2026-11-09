@@ -274,6 +274,7 @@
     <string name="chip_encrypted">暗号化</string>
     <string name="radar_title">まだ近くに誰もいません</string>
     <string name="radar_body">openchat か bitchat を使っているスマホは、数十メートル以内なら自動でつながります。</string>
+    <string name="radar_history">これまでのメッセージを見る</string>
     <string name="tip_open_title">相手にも openchat を開いてもらう</string>
     <string name="tip_open_body">bitchat でも大丈夫です。画面ロック中も動きますが、アプリをスワイプで閉じないでください。</string>
     <string name="tip_window_title">開けた場所、窓の近くへ</string>

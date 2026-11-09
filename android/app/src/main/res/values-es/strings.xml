@@ -280,6 +280,7 @@
     <string name="chip_encrypted">Cifrado</string>
     <string name="radar_title">Todavía no hay nadie cerca</string>
     <string name="radar_body">Los teléfonos con openchat o bitchat se conectan solos a unas decenas de metros.</string>
+    <string name="radar_history">Ver mensajes anteriores</string>
     <string name="tip_open_title">Pídeles que abran openchat también</string>
     <string name="tip_open_body">bitchat también sirve. Funciona con la pantalla bloqueada, pero no cierres la app deslizándola.</string>
     <string name="tip_window_title">Sal a un lugar abierto, cerca de una ventana</string>

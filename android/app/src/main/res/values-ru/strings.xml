@@ -283,6 +283,7 @@
     <string name="chip_encrypted">Зашифровано</string>
     <string name="radar_title">Рядом пока никого нет</string>
     <string name="radar_body">Телефоны с openchat или bitchat подключаются сами на расстоянии нескольких десятков метров.</string>
+    <string name="radar_history">Показать прошлые сообщения</string>
     <string name="tip_open_title">Попросите их тоже открыть openchat</string>
     <string name="tip_open_body">Подойдёт и bitchat. Приложение работает при заблокированном экране, но не смахивайте его.</string>
     <string name="tip_window_title">Выйдите на открытое место, ближе к окну</string>

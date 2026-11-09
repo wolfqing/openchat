@@ -290,6 +290,7 @@
     <string name="chip_encrypted">Encrypted</string>
     <string name="radar_title">Nobody nearby yet</string>
     <string name="radar_body">Phones running openchat or bitchat connect automatically within a few dozen meters.</string>
+    <string name="radar_history">Show earlier messages</string>
     <string name="tip_open_title">Ask them to open openchat too</string>
     <string name="tip_open_body">bitchat works as well. It keeps working with the screen locked, but don\'t swipe the app away.</string>
     <string name="tip_window_title">Move into the open, near a window</string>

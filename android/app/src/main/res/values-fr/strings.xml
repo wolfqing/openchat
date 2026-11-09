@@ -280,6 +280,7 @@
     <string name="chip_encrypted">Chiffré</string>
     <string name="radar_title">Personne à proximité pour l\'instant</string>
     <string name="radar_body">Les téléphones avec openchat ou bitchat se connectent tout seuls à quelques dizaines de mètres.</string>
+    <string name="radar_history">Voir les messages précédents</string>
     <string name="tip_open_title">Demandez-leur d\'ouvrir openchat aussi</string>
     <string name="tip_open_body">bitchat fonctionne aussi. L\'app continue écran verrouillé, mais ne la fermez pas d\'un glissement.</string>
     <string name="tip_window_title">Allez à découvert, près d\'une fenêtre</string>

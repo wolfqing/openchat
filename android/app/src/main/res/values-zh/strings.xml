@@ -285,6 +285,7 @@
     <string name="chip_encrypted">已加密</string>
     <string name="radar_title">附近还没有人</string>
     <string name="radar_body">运行 openchat 或 bitchat 的手机在几十米内会自动连接。</string>
+    <string name="radar_history">查看之前的消息</string>
     <string name="tip_open_title">请对方也打开 openchat</string>
     <string name="tip_open_body">bitchat 也可以。锁屏后仍能工作，但不要把应用划掉。</string>
     <string name="tip_window_title">到开阔处，靠近窗户</string>

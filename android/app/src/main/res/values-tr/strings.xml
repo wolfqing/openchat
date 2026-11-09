@@ -277,6 +277,7 @@
     <string name="chip_encrypted">Şifreli</string>
     <string name="radar_title">Henüz yakında kimse yok</string>
     <string name="radar_body">openchat veya bitchat çalıştıran telefonlar birkaç düzine metre içinde kendiliğinden bağlanır.</string>
+    <string name="radar_history">Önceki mesajları göster</string>
     <string name="tip_open_title">Onlardan da openchat\'i açmalarını isteyin</string>
     <string name="tip_open_body">bitchat da olur. Ekran kilitliyken çalışır, ama uygulamayı kaydırarak kapatmayın.</string>
     <string name="tip_window_title">Açık bir yere, pencere yakınına geçin</string>
