@@ -61,7 +61,7 @@ network**, built with three differences in mind:
 
 | | State |
 |---|---|
-| Android app | **v0.6.0 preview.** Builds, 161 unit tests pass, 8.8 MB APK, 18 languages |
+| Android app | **v0.7.0 preview.** Builds, 174 unit tests pass, 9.1 MB APK, 18 languages |
 | Interop with stock bitchat | **Not yet verified.** Implemented from the spec and upstream test vectors; verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
 | iOS | Not started |
