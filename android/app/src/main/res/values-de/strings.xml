@@ -20,12 +20,7 @@
     <string name="banner_need_permission">Die Bluetooth-Berechtigung wird benötigt, um Leute in der Nähe zu finden</string>
     <string name="banner_bt_off">Bluetooth ist aus. Hier tippen zum Einschalten</string>
     <string name="banner_starting">Wird gestartet…</string>
-    <string name="banner_searching">Suche nach Leuten in der Nähe…</string>
     <string name="banner_storage_locked">Die gespeicherte Identität lässt sich gerade nicht entsperren. Zum Wiederholen tippen.</string>
-    <plurals name="banner_connected">
-        <item quantity="one">Mit %d Person in der Nähe verbunden</item>
-        <item quantity="other">Mit %d Personen in der Nähe verbunden</item>
-    </plurals>
     <string name="nearby_empty_alone">Noch niemand in der Nähe.\nHandys mit openchat verbinden sich automatisch im Umkreis von einigen Dutzend Metern.\nbitchat-Nutzer im selben Mesh können deine Nachrichten auch empfangen.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">%d Person in der Nähe. Schreib etwas, alle können es sehen.</item>
@@ -36,7 +31,6 @@
     <string name="state_sent">Gesendet</string>
     <string name="state_delivered">Zugestellt</string>
     <string name="state_read">Gelesen</string>
-    <string name="state_failed">Nicht gesendet</string>
     <string name="state_queued">Wartet auf Empfänger</string>
     <string name="state_carried">Wird weitergetragen</string>
     <string name="send">Senden</string>
@@ -267,4 +261,38 @@
     <string name="me_wipe_confirm">Das lässt sich nicht rückgängig machen. Deine Gesprächspartner sehen dich danach als Fremden.</string>
     <string name="me_wipe_do">Löschen</string>
     <string name="panic_logo">openchat. Dreimal tippen, um alles zu löschen.</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">Alle in Reichweite können das sehen</string>
+    <string name="band_direct">Direkt</string>
+    <string name="band_reach">Reichweite</string>
+    <string name="band_scanning">Suche läuft · 0 Personen</string>
+    <string name="band_for">seit %1$s</string>
+    <string name="hops_direct">direkt</string>
+    <string name="dm_status_direct">In der Nähe · direkt neben dir</string>
+    <string name="dm_day_note">Ende-zu-Ende-verschlüsselt, weiterleitende Handys können es nicht lesen</string>
+    <string name="state_undelivered">Nicht zugestellt</string>
+    <string name="retry">Erneut senden</string>
+    <string name="chip_public">Öffentlich</string>
+    <string name="chip_encrypted">Verschlüsselt</string>
+    <string name="radar_title">Noch niemand in der Nähe</string>
+    <string name="radar_body">Handys mit openchat oder bitchat verbinden sich im Umkreis einiger Dutzend Meter automatisch.</string>
+    <string name="tip_open_title">Bitte sie, openchat auch zu öffnen</string>
+    <string name="tip_open_body">bitchat geht auch. Es läuft bei gesperrtem Bildschirm weiter, aber wisch die App nicht weg.</string>
+    <string name="tip_window_title">Geh ins Freie, in die Nähe eines Fensters</string>
+    <string name="tip_window_body">Wände und Menschenmengen blockieren Bluetooth. Drinnen liegt die Reichweite oft bei etwa 10 m.</string>
+    <string name="tip_share_title">Keine App auf ihrem Handy? Gib sie weiter</string>
+    <string name="tip_share_body">Schick die Installationsdatei per Bluetooth oder Quick Share. Kein Internet nötig.</string>
+    <plurals name="hops_count">
+        <item quantity="one">%d Hop</item>
+        <item quantity="other">%d Hops</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="one">%1$d Hop bis %2$s</item>
+        <item quantity="other">%1$d Hops bis %2$s</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="one">In der Nähe · über %d Handy</item>
+        <item quantity="other">In der Nähe · über %d Handys</item>
+    </plurals>
 </resources>

@@ -20,12 +20,7 @@
     <string name="banner_need_permission">برای پیدا کردن افراد نزدیک، اجازهٔ بلوتوث لازم است</string>
     <string name="banner_bt_off">بلوتوث خاموش است. برای روشن کردن اینجا بزن</string>
     <string name="banner_starting">در حال شروع…</string>
-    <string name="banner_searching">در حال جست‌وجوی افراد نزدیک…</string>
     <string name="banner_storage_locked">هویت ذخیره‌شده در حال حاضر باز نمی‌شود. برای تلاش دوباره ضربه بزنید.</string>
-    <plurals name="banner_connected">
-        <item quantity="one">متصل به %d نفر در نزدیکی</item>
-        <item quantity="other">متصل به %d نفر در نزدیکی</item>
-    </plurals>
     <string name="nearby_empty_alone">هنوز کسی نزدیک نیست.\nگوشی‌هایی که openchat دارند در فاصلهٔ چند ده متری خودکار به هم وصل می‌شوند.\nکاربران bitchat در همان شبکه هم پیام‌های تو را دریافت می‌کنند.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">%d نفر نزدیک‌اند. چیزی بنویس تا همه ببینند.</item>
@@ -36,7 +31,6 @@
     <string name="state_sent">ارسال شد</string>
     <string name="state_delivered">تحویل شد</string>
     <string name="state_read">خوانده شد</string>
-    <string name="state_failed">ارسال نشد</string>
     <string name="state_queued">در انتظار گیرنده</string>
     <string name="state_carried">دیگران حمل می‌کنند</string>
     <string name="send">ارسال</string>
@@ -267,4 +261,38 @@
     <string name="me_wipe_confirm">این کار قابل بازگشت نیست. پس از آن، هم‌صحبت‌هایتان شما را غریبه می‌بینند.</string>
     <string name="me_wipe_do">پاک کردن</string>
     <string name="panic_logo">openchat. برای پاک کردن همه چیز سه بار ضربه بزنید.</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">همه کسانی که در محدوده‌اند این را می‌بینند</string>
+    <string name="band_direct">مستقیم</string>
+    <string name="band_reach">دسترسی</string>
+    <string name="band_scanning">در حال جست‌وجو · ۰ نفر</string>
+    <string name="band_for">%1$s گذشته</string>
+    <string name="hops_direct">مستقیم</string>
+    <string name="dm_status_direct">نزدیک · درست کنار شما</string>
+    <string name="dm_day_note">رمزگذاری سرتاسری، گوشی‌های رله نمی‌توانند آن را بخوانند</string>
+    <string name="state_undelivered">تحویل نشد</string>
+    <string name="retry">تلاش دوباره</string>
+    <string name="chip_public">عمومی</string>
+    <string name="chip_encrypted">رمزگذاری‌شده</string>
+    <string name="radar_title">هنوز کسی نزدیک نیست</string>
+    <string name="radar_body">گوشی‌هایی که openchat یا bitchat دارند در فاصله چند ده متری خودکار وصل می‌شوند.</string>
+    <string name="tip_open_title">از آن‌ها بخواهید openchat را هم باز کنند</string>
+    <string name="tip_open_body">bitchat هم کار می‌کند. با صفحه قفل هم کار می‌کند، اما برنامه را با کشیدن نبندید.</string>
+    <string name="tip_window_title">به فضای باز، نزدیک پنجره بروید</string>
+    <string name="tip_window_body">دیوارها و جمعیت جلوی بلوتوث را می‌گیرند. در فضای بسته برد اغلب حدود ۱۰ متر است.</string>
+    <string name="tip_share_title">برنامه را ندارند؟ برایشان بفرستید</string>
+    <string name="tip_share_body">فایل نصب را با بلوتوث یا Quick Share بفرستید. اینترنت لازم نیست.</string>
+    <plurals name="hops_count">
+        <item quantity="one">%d پرش</item>
+        <item quantity="other">%d پرش</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="one">%1$d پرش تا %2$s</item>
+        <item quantity="other">%1$d پرش تا %2$s</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="one">نزدیک · با رله %d گوشی</item>
+        <item quantity="other">نزدیک · با رله %d گوشی</item>
+    </plurals>
 </resources>

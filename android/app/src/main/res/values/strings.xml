@@ -26,12 +26,7 @@
     <string name="banner_need_permission">Bluetooth permission is needed to find people nearby</string>
     <string name="banner_bt_off">Bluetooth is off. Tap here to turn it on</string>
     <string name="banner_starting">Starting…</string>
-    <string name="banner_searching">Looking for people nearby…</string>
     <string name="banner_storage_locked">Your saved identity can\'t be unlocked right now. Tap to try again.</string>
-    <plurals name="banner_connected">
-        <item quantity="one">Connected to %d person nearby</item>
-        <item quantity="other">Connected to %d people nearby</item>
-    </plurals>
 
     <!-- chat -->
     <string name="nearby_empty_alone">Nobody nearby yet.\nPhones running openchat connect automatically within a few dozen meters.\nbitchat users on the same mesh can also receive your messages.</string>
@@ -44,7 +39,6 @@
     <string name="state_sent">Sent</string>
     <string name="state_delivered">Delivered</string>
     <string name="state_read">Read</string>
-    <string name="state_failed">Not sent</string>
     <string name="state_queued">Waiting for them</string>
     <string name="state_carried">Carried by others</string>
     <string name="send">Send</string>
@@ -280,4 +274,38 @@
     <string name="me_wipe_button">Erase everything…</string>
     <string name="me_wipe_confirm">This cannot be undone. People you chat with will see you as a stranger afterwards.</string>
     <string name="me_wipe_do">Erase</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">Everyone in range can see this</string>
+    <string name="band_direct">Direct</string>
+    <string name="band_reach">Reach</string>
+    <string name="band_scanning">Scanning · 0 people</string>
+    <string name="band_for">for %1$s</string>
+    <string name="hops_direct">direct</string>
+    <string name="dm_status_direct">Nearby · right next to you</string>
+    <string name="dm_day_note">end-to-end encrypted, relaying phones can\'t read it</string>
+    <string name="state_undelivered">Not delivered</string>
+    <string name="retry">Retry</string>
+    <string name="chip_public">Public</string>
+    <string name="chip_encrypted">Encrypted</string>
+    <string name="radar_title">Nobody nearby yet</string>
+    <string name="radar_body">Phones running openchat or bitchat connect automatically within a few dozen meters.</string>
+    <string name="tip_open_title">Ask them to open openchat too</string>
+    <string name="tip_open_body">bitchat works as well. It keeps working with the screen locked, but don\'t swipe the app away.</string>
+    <string name="tip_window_title">Move into the open, near a window</string>
+    <string name="tip_window_body">Walls and crowds block Bluetooth. Indoors the range is often about 10 m.</string>
+    <string name="tip_share_title">No app on their phone? Pass it on</string>
+    <string name="tip_share_body">Send the installer over Bluetooth or Quick Share. No internet needed.</string>
+    <plurals name="hops_count">
+        <item quantity="one">%d hop</item>
+        <item quantity="other">%d hops</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="one">%1$d hop to %2$s</item>
+        <item quantity="other">%1$d hops to %2$s</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="one">Nearby · relayed by %d phone</item>
+        <item quantity="other">Nearby · relayed by %d phones</item>
+    </plurals>
 </resources>

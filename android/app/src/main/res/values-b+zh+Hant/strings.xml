@@ -20,11 +20,7 @@
     <string name="banner_need_permission">需要藍牙權限才能發現附近的人</string>
     <string name="banner_bt_off">藍牙已關閉，點這裡開啟</string>
     <string name="banner_starting">正在啟動…</string>
-    <string name="banner_searching">正在尋找附近的人…</string>
     <string name="banner_storage_locked">暫時無法解鎖已儲存的身分。點此重試。</string>
-    <plurals name="banner_connected">
-        <item quantity="other">已連上附近 %d 人</item>
-    </plurals>
     <string name="nearby_empty_alone">附近還沒有人。\n開著 openchat 的手機靠近到幾十公尺內，就會自動連上。\n同一網路裡的 bitchat 使用者也能收到你的訊息。</string>
     <plurals name="nearby_empty_peers">
         <item quantity="other">附近有 %d 人。說一句話，大家都看得到。</item>
@@ -34,7 +30,6 @@
     <string name="state_sent">已送出</string>
     <string name="state_delivered">已送達</string>
     <string name="state_read">已讀</string>
-    <string name="state_failed">傳送失敗</string>
     <string name="state_queued">等對方上線</string>
     <string name="state_carried">已託人轉交</string>
     <string name="send">傳送</string>
@@ -263,4 +258,35 @@
     <string name="me_wipe_confirm">此操作無法復原。之後聊過的人會把你當成陌生人。</string>
     <string name="me_wipe_do">清除</string>
     <string name="panic_logo">openchat。連點三下清除所有資料。</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">範圍內的所有人都看得到</string>
+    <string name="band_direct">直連</string>
+    <string name="band_reach">可達</string>
+    <string name="band_scanning">正在掃描 · 0 人</string>
+    <string name="band_for">已 %1$s</string>
+    <string name="hops_direct">直連</string>
+    <string name="dm_status_direct">附近 · 就在你身邊</string>
+    <string name="dm_day_note">端對端加密，轉發的手機無法讀取</string>
+    <string name="state_undelivered">未送達</string>
+    <string name="retry">重試</string>
+    <string name="chip_public">公開</string>
+    <string name="chip_encrypted">已加密</string>
+    <string name="radar_title">附近還沒有人</string>
+    <string name="radar_body">執行 openchat 或 bitchat 的手機在幾十公尺內會自動連線。</string>
+    <string name="tip_open_title">請對方也打開 openchat</string>
+    <string name="tip_open_body">bitchat 也可以。鎖定螢幕後仍能運作，但不要把 App 滑掉。</string>
+    <string name="tip_window_title">到開闊處，靠近窗戶</string>
+    <string name="tip_window_body">牆壁和人群會擋住藍牙。室內範圍通常只有 10 公尺左右。</string>
+    <string name="tip_share_title">對方沒裝 App？傳給他們</string>
+    <string name="tip_share_body">透過藍牙或快速分享傳送安裝檔，不需要網路。</string>
+    <plurals name="hops_count">
+        <item quantity="other">%d 跳</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="other">距 %2$s %1$d 跳</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="other">附近 · 經 %d 支手機轉發</item>
+    </plurals>
 </resources>

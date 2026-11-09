@@ -1091,3 +1091,33 @@ into the existing bubble instead of showing a second one. Notes under
 0.7 s are canceled. One switch (Me tab, on by default as in bitchat) turns
 live sending and live playing on or off; off means finished notes only.
 
+
+## 30. Showing the mesh (v0.7, local only)
+
+Nothing here goes on the wire; it is how openchat reads what already does.
+
+Hops: every bitchat client sends at TTL 7 and each relay takes one off
+before forwarding, so a packet that arrives with TTL `t ≤ 7` crossed
+`7 − t + 1` links: 1 means straight from a neighbour. Synced copies (RSR)
+and TTLs above 7 carry no path and show nothing. It is an estimate: a
+client that ever sends below 7, or a relay that trims TTL harder, makes a
+message look closer than it is. Received messages, photos and voice notes
+in Nearby and private chats show "direct" or "N hops"; a peer's distance
+is the hop count of its latest live announce, 1 while it holds a link to us.
+
+Signal band: neighbours with a link to us, everyone whose announce we heard
+in the last peer timeout ("reach"), and how long ago we last heard anyone.
+With nobody in range it says how long we have been scanning instead.
+
+Delivery path for private messages, four steps: sent (written to the mesh
+or queued), on its way (a courier holds a copy, §13), delivered, read.
+A message that leaves the outbox without a receipt, after the courier
+lifetime (24 h) or because the 200-message outbox overflowed, is shown as
+not delivered; Retry sends its text again under a new message ID.
+
+Identity emblem: a 5×5 left-right mirrored pattern and one of eight colours,
+from SHA-256 of the sender key as the UI holds it (peer ID hex on the mesh,
+the Nostr key for location channels). Colour index is byte 0 mod 8; cell
+`(row, col)` for `col < 3` is bit `row·3 + col` counting from byte 1's
+least significant bit, mirrored to column `4 − col`. An all-empty pattern
+lights the centre cell.

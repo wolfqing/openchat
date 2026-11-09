@@ -75,25 +75,37 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
         TopAppBar(
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
             title = {
-                Column {
-                    PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex), vouched = social.isVouchedPeer(peerHex)), onPanic)
-                    Text(
-                        stringResource(
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    EmblemView(peerHex, 32.dp)
+                    Column {
+                        PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex), vouched = social.isVouchedPeer(peerHex)), onPanic)
+                        val hops = peer?.hops
+                        Text(
                             when {
-                                social.isBlockedPeer(peerHex) -> R.string.peer_blocked_short
-                                peer != null -> R.string.dm_status_here
-                                social.favoriteOf(peerHex)?.let { it.mine && it.theyFavorited && it.theirNpub != null } == true -> R.string.dm_status_internet
-                                else -> R.string.dm_status_away
+                                social.isBlockedPeer(peerHex) -> stringResource(R.string.peer_blocked_short)
+                                peer != null && (peer.direct || hops == 1) -> stringResource(R.string.dm_status_direct)
+                                peer != null && hops != null -> plural(R.plurals.dm_status_relayed, hops - 1)
+                                peer != null -> stringResource(R.string.dm_status_here)
+                                social.favoriteOf(peerHex)?.let { it.mine && it.theyFavorited && it.theirNpub != null } == true -> stringResource(R.string.dm_status_internet)
+                                else -> stringResource(R.string.dm_status_away)
                             },
-                        ),
-                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2,
+                        )
+                    }
                 }
             },
-            actions = { IconButton(onClick = { sheet = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.peer_more)) } },
+            actions = {
+                AudiencePill(encrypted = true)
+                IconButton(onClick = { sheet = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.peer_more)) }
+            },
         )
     }) { padding ->
-        Box(Modifier.padding(padding)) {
+        Column(Modifier.padding(padding)) {
+            if (peer != null) {
+                val mesh by ChatRepository.mesh.collectAsState()
+                RouteBand(name, if (peer.direct) 1 else peer.hops, peers.count { it.direct && it.peerIdHex != mesh.myPeerHex }, peer.lastSeen)
+                HorizontalDivider()
+            }
             ChatPane(
                 conversation = Conversation.Private(peerHex).key,
                 emptyText = stringResource(R.string.dm_empty, name),

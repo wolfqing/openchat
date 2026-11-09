@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.HorizontalDivider
+import org.openchat.android.mesh.MeshPeer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.Image
@@ -150,7 +152,12 @@ fun MainScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = { PanicLogo(onPanic) },
-                title = { PanicTitle(stringResource(tab.label), onPanic) },
+                title = {
+                    Column {
+                        PanicTitle(stringResource(tab.label), onPanic)
+                        if (tab == Tab.NEARBY) Text(stringResource(R.string.nearby_subtitle), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
                 actions = {
                     if (tab == Tab.NEARBY) {
                         val unseen by ChatRepository.boardUnseen.collectAsState()
@@ -188,7 +195,7 @@ fun MainScreen(
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-            StatusBanner(missingPermissions, mesh.storageLocked, mesh.bluetoothOn, mesh.running, peers.size, onGrantPermissions, onEnableBluetooth)
+            StatusBanner(missingPermissions, mesh.storageLocked, mesh.bluetoothOn, mesh.running, peers.filter { it.peerIdHex != mesh.myPeerHex }, onGrantPermissions, onEnableBluetooth)
             when (tab) {
                 Tab.NEARBY -> ChatPane(
                     conversation = Conversation.Mesh.key,
@@ -196,6 +203,7 @@ fun MainScreen(
                     placeholder = stringResource(R.string.nearby_placeholder),
                     onSend = { ChatRepository.controller?.sendPublic(it) },
                     onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) person = PersonRef.Mesh(m.senderKey, m.senderName) },
+                    empty = if (peers.isEmpty() && mesh.running) ({ NobodyNearby(onShareApp) }) else null,
                 )
                 Tab.PRIVATE -> PrivateList(onOpen = { openChat = if (it.startsWith("gdm:") || it.startsWith("grp:")) it else Conversation.Private(it).key })
                 Tab.LOCATION -> LocationPane(onRequestLocation, onOpen = { openChat = Conversation.Geo(it).key })
@@ -276,32 +284,35 @@ fun PanicLogo(onPanic: () -> Unit) {
 }
 
 @Composable
-private fun StatusBanner(missing: Boolean, locked: Boolean, btOn: Boolean, running: Boolean, peers: Int, onGrant: () -> Unit, onEnable: () -> Unit) {
+private fun StatusBanner(missing: Boolean, locked: Boolean, btOn: Boolean, running: Boolean, peers: List<MeshPeer>, onGrant: () -> Unit, onEnable: () -> Unit) {
     val ctx = LocalContext.current
-    val (text, action) = when {
+    // While nothing is wrong, the band shows the mesh itself: neighbours, reach, and freshness (§30).
+    val problem = when {
         locked -> stringResource(R.string.banner_storage_locked) to { org.openchat.android.app.MeshService.start(ctx) }
         missing -> stringResource(R.string.banner_need_permission) to onGrant
         !btOn -> stringResource(R.string.banner_bt_off) to onEnable
         !running -> stringResource(R.string.banner_starting) to null
-        peers == 0 -> stringResource(R.string.banner_searching) to null
-        else -> plural(R.plurals.banner_connected, peers) to null
+        else -> null
     }
-    val warn = missing || locked || !btOn
-    val connected = !warn && running && peers > 0
-    Box(
-        Modifier.fillMaxWidth()
-            .background(if (warn) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant)
-            .let { if (action != null) it.clickable { action() } else it }
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-    ) {
-        Text(
-            text, fontSize = 14.sp,
-            fontFamily = if (connected) FontFamily.Monospace else null,
-            color = when {
-                warn -> MaterialTheme.colorScheme.onErrorContainer
-                connected -> MaterialTheme.colorScheme.primary
-                else -> MaterialTheme.colorScheme.onSurfaceVariant
-            },
-        )
+    val alone = peers.isEmpty()
+    val aloneSince = remember(alone, running) { System.currentTimeMillis() }
+    Column(Modifier.fillMaxWidth()) {
+        when {
+            problem != null -> {
+                val warn = missing || locked || !btOn
+                val (text, action) = problem
+                Box(
+                    Modifier.fillMaxWidth()
+                        .background(if (warn) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant)
+                        .let { if (action != null) it.clickable { action() } else it }
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    Text(text, fontSize = 14.sp, color = if (warn) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            alone -> ScanningBand(aloneSince)
+            else -> SignalBand(direct = peers.count { it.direct }, reach = peers.size, lastHeard = peers.maxOf { it.lastSeen })
+        }
+        HorizontalDivider()
     }
 }

@@ -24,11 +24,7 @@
     <string name="banner_need_permission">需要蓝牙权限才能发现附近的人</string>
     <string name="banner_bt_off">蓝牙已关闭，点这里打开</string>
     <string name="banner_starting">正在启动…</string>
-    <string name="banner_searching">正在寻找附近的人…</string>
     <string name="banner_storage_locked">暂时无法解锁已保存的身份。点此重试。</string>
-    <plurals name="banner_connected">
-        <item quantity="other">已连上附近 %d 人</item>
-    </plurals>
 
     <!-- chat -->
     <string name="nearby_empty_alone">附近还没有人。\n打开 openchat 的手机靠近到几十米内，就会自动连上。\n同一网络里的 bitchat 用户也能收到你的消息。</string>
@@ -40,7 +36,6 @@
     <string name="state_sent">已发出</string>
     <string name="state_delivered">已送达</string>
     <string name="state_read">已读</string>
-    <string name="state_failed">发送失败</string>
     <string name="state_queued">等对方上线</string>
     <string name="state_carried">已托人转交</string>
     <string name="send">发送</string>
@@ -274,4 +269,35 @@
     <string name="me_wipe_button">清空所有数据…</string>
     <string name="me_wipe_confirm">此操作无法撤销。之后聊过的人会把你当作陌生人。</string>
     <string name="me_wipe_do">清空</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">范围内的所有人都能看到</string>
+    <string name="band_direct">直连</string>
+    <string name="band_reach">可达</string>
+    <string name="band_scanning">正在扫描 · 0 人</string>
+    <string name="band_for">已 %1$s</string>
+    <string name="hops_direct">直连</string>
+    <string name="dm_status_direct">附近 · 就在你身边</string>
+    <string name="dm_day_note">端到端加密，转发的手机无法读取</string>
+    <string name="state_undelivered">未送达</string>
+    <string name="retry">重试</string>
+    <string name="chip_public">公开</string>
+    <string name="chip_encrypted">已加密</string>
+    <string name="radar_title">附近还没有人</string>
+    <string name="radar_body">运行 openchat 或 bitchat 的手机在几十米内会自动连接。</string>
+    <string name="tip_open_title">请对方也打开 openchat</string>
+    <string name="tip_open_body">bitchat 也可以。锁屏后仍能工作，但不要把应用划掉。</string>
+    <string name="tip_window_title">到开阔处，靠近窗户</string>
+    <string name="tip_window_body">墙壁和人群会挡住蓝牙。室内范围通常只有 10 米左右。</string>
+    <string name="tip_share_title">对方没装应用？传给他们</string>
+    <string name="tip_share_body">通过蓝牙或快速分享发送安装包，不需要网络。</string>
+    <plurals name="hops_count">
+        <item quantity="other">%d 跳</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="other">距 %2$s %1$d 跳</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="other">附近 · 经 %d 台手机转发</item>
+    </plurals>
 </resources>

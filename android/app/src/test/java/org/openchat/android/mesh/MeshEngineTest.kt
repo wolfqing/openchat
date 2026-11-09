@@ -66,11 +66,14 @@ class Recorder : MeshListener {
     override fun onGroupState(peerHex: String, sessionKey: ByteArray, invite: Boolean, payload: ByteArray) { groupStates += peerHex to invite }
     override fun onGroupMessage(payload: ByteArray, timestamp: Long) { groupMessages += payload }
     val files = ArrayList<Pair<String, Boolean>>() // mime, private
-    override fun onFile(senderHex: String, nickname: String, file: org.openchat.android.core.FilePacket, isPrivate: Boolean, timestamp: Long) { files += file.mimeType.orEmpty() to isPrivate }
+    override fun onFile(senderHex: String, nickname: String, file: org.openchat.android.core.FilePacket, isPrivate: Boolean, timestamp: Long, hops: Int?) { files += file.mimeType.orEmpty() to isPrivate }
     override fun onVerified(peerHex: String) { verified += peerHex }
     override fun onPeersChanged(peers: List<MeshPeer>) { this.peers = peers }
-    override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean) { publics += "$nickname:$text" }
-    override fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) { privates += messageId to text }
+    val hops = ArrayList<Int?>() // per public or private message, in arrival order
+    val expired = ArrayList<String>()
+    override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean, hops: Int?) { publics += "$nickname:$text"; this.hops += hops }
+    override fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long, hops: Int?) { privates += messageId to text; this.hops += hops }
+    override fun onExpired(peerHex: String, messageId: String) { expired += messageId }
     override fun onDelivered(peerHex: String, messageId: String) { delivered += messageId }
     override fun onRead(peerHex: String, messageId: String) { reads += messageId }
     override fun onQueued(peerHex: String, messageId: String) { queued += messageId }
@@ -771,5 +774,35 @@ class MeshEngineTest {
         net.scheduler.advance(2_000)
         assertEquals(listOf(false, true), net.recorders["bob"]!!.voice.sorted())
         assertEquals(listOf(false), net.recorders["carol"]!!.voice) // relayed to the next hop
+    }
+
+    @Test
+    fun messagesAndPeersCarryTheLinksTheyCrossed() {
+        val net = line()
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        alice.sendPublic("hello")
+        net.scheduler.advance(3_000)
+        assertEquals(listOf<Int?>(1), net.recorders["bob"]!!.hops)
+        assertEquals(listOf<Int?>(2), net.recorders["carol"]!!.hops)
+        alice.sendPrivate(carol.myPeerHex, "two links away")
+        net.scheduler.advance(5_000)
+        assertEquals(listOf<Int?>(2, 2), net.recorders["carol"]!!.hops)
+        val carolSees = net.recorders["carol"]!!.peers.associate { it.nickname to it.hops }
+        assertEquals(mapOf<String, Int?>("alice" to 2, "bob" to 1), carolSees)
+    }
+
+    @Test
+    fun undeliveredMailIsReportedWhenItExpires() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "carol").forEach { net.node(it).start() }
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        net.connect("alice", "carol"); net.scheduler.advance(10_000)
+        net.disconnect("alice", "carol"); net.scheduler.advance(70_000)
+        val id = alice.sendPrivate(carol.myPeerHex, "never arrives").single()
+        net.scheduler.advance(org.openchat.android.core.CourierEnvelope.LIFETIME_MS - 60_000)
+        assertTrue(net.recorders["alice"]!!.expired.isEmpty())
+        net.scheduler.advance(10 * 60_000)
+        assertEquals(listOf(id), net.recorders["alice"]!!.expired)
+        assertEquals(0, alice.outboxState(id))
     }
 }

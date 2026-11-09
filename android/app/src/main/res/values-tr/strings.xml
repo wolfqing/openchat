@@ -20,12 +20,7 @@
     <string name="banner_need_permission">Yakındaki kişileri bulmak için Bluetooth izni gerekiyor</string>
     <string name="banner_bt_off">Bluetooth kapalı. Açmak için buraya dokun</string>
     <string name="banner_starting">Başlatılıyor…</string>
-    <string name="banner_searching">Yakındaki kişiler aranıyor…</string>
     <string name="banner_storage_locked">Kayıtlı kimlik şu anda açılamıyor. Yeniden denemek için dokunun.</string>
-    <plurals name="banner_connected">
-        <item quantity="one">Yakındaki %d kişiye bağlı</item>
-        <item quantity="other">Yakındaki %d kişiye bağlı</item>
-    </plurals>
     <string name="nearby_empty_alone">Henüz yakında kimse yok.\nopenchat çalıştıran telefonlar birkaç on metre içinde otomatik olarak bağlanır.\nAynı ağdaki bitchat kullanıcıları da mesajlarını alabilir.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">Yakında %d kişi var. Bir şey yaz, herkes görsün.</item>
@@ -36,7 +31,6 @@
     <string name="state_sent">Gönderildi</string>
     <string name="state_delivered">İletildi</string>
     <string name="state_read">Okundu</string>
-    <string name="state_failed">Gönderilemedi</string>
     <string name="state_queued">Alıcı bekleniyor</string>
     <string name="state_carried">Başkaları taşıyor</string>
     <string name="send">Gönder</string>
@@ -267,4 +261,38 @@
     <string name="me_wipe_confirm">Bu geri alınamaz. Sohbet ettiğiniz kişiler sizi sonra yabancı olarak görür.</string>
     <string name="me_wipe_do">Sil</string>
     <string name="panic_logo">openchat. Her şeyi silmek için üç kez dokunun.</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">Menzildeki herkes bunu görebilir</string>
+    <string name="band_direct">Doğrudan</string>
+    <string name="band_reach">Erişim</string>
+    <string name="band_scanning">Taranıyor · 0 kişi</string>
+    <string name="band_for">%1$s süredir</string>
+    <string name="hops_direct">doğrudan</string>
+    <string name="dm_status_direct">Yakında · hemen yanınızda</string>
+    <string name="dm_day_note">uçtan uca şifreli, aktaran telefonlar okuyamaz</string>
+    <string name="state_undelivered">Teslim edilmedi</string>
+    <string name="retry">Tekrar dene</string>
+    <string name="chip_public">Herkese açık</string>
+    <string name="chip_encrypted">Şifreli</string>
+    <string name="radar_title">Henüz yakında kimse yok</string>
+    <string name="radar_body">openchat veya bitchat çalıştıran telefonlar birkaç düzine metre içinde kendiliğinden bağlanır.</string>
+    <string name="tip_open_title">Onlardan da openchat\'i açmalarını isteyin</string>
+    <string name="tip_open_body">bitchat da olur. Ekran kilitliyken çalışır, ama uygulamayı kaydırarak kapatmayın.</string>
+    <string name="tip_window_title">Açık bir yere, pencere yakınına geçin</string>
+    <string name="tip_window_body">Duvarlar ve kalabalık Bluetooth\'u engeller. İç mekânda menzil çoğu zaman 10 m civarındadır.</string>
+    <string name="tip_share_title">Telefonlarında uygulama yok mu? Aktarın</string>
+    <string name="tip_share_body">Yükleyiciyi Bluetooth veya Quick Share ile gönderin. İnternet gerekmez.</string>
+    <plurals name="hops_count">
+        <item quantity="one">%d atlama</item>
+        <item quantity="other">%d atlama</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="one">%2$s kişisine %1$d atlama</item>
+        <item quantity="other">%2$s kişisine %1$d atlama</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="one">Yakında · %d telefon aktarıyor</item>
+        <item quantity="other">Yakında · %d telefon aktarıyor</item>
+    </plurals>
 </resources>

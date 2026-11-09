@@ -20,6 +20,9 @@ import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Stop
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Sensors
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -114,6 +117,7 @@ fun ChatPane(
     onSend: (String) -> Unit,
     onSenderClick: ((ChatMessage) -> Unit)? = null,
     onVisible: (List<ChatMessage>) -> Unit = {},
+    empty: (@Composable () -> Unit)? = null,
 ) {
     val all by ChatRepository.messages.collectAsState()
     val social by Social.state.collectAsState()
@@ -125,6 +129,9 @@ fun ChatPane(
         }
     }
     val state = rememberLazyListState()
+    val rows = remember(list) { withDayBreaks(list) }
+    val private = conversation.startsWith("dm:") || conversation.startsWith("gdm:")
+    val note = if (private) stringResource(R.string.dm_day_note) else null
 
     DisposableEffect(conversation) {
         ChatRepository.openConversation = conversation
@@ -142,18 +149,25 @@ fun ChatPane(
     }
     val newest = list.lastOrNull()
     LaunchedEffect(newest?.id, newest?.senderKey) {
-        if (newest != null && (newest.mine || atBottom)) state.animateScrollToItem(list.size - 1)
+        if (newest != null && (newest.mine || atBottom)) state.animateScrollToItem(rows.size - 1)
         ChatRepository.clearUnread(conversation)
         onVisible(list)
     }
 
     Column(Modifier.fillMaxSize().imePadding()) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            if (list.isEmpty()) {
+            if (list.isEmpty() && empty != null) {
+                empty()
+            } else if (list.isEmpty()) {
                 Text(emptyText, Modifier.align(Alignment.Center).padding(32.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 22.sp)
             } else {
                 LazyColumn(state = state, contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(list, key = { it.senderKey + it.id }) { m -> Bubble(m, onSenderClick) }
+                    items(rows, key = { it.key }) { r ->
+                        when (r) {
+                            is TimelineRow.Day -> DayHeader(r.timestamp, note?.takeIf { r.first })
+                            is TimelineRow.Message -> Bubble(r.m, onSenderClick)
+                        }
+                    }
                 }
             }
         }
@@ -182,43 +196,74 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
         return
     }
     val time = remember(m.timestamp) { stampText(m.timestamp) }
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = if (m.mine) Alignment.End else Alignment.Start) {
-        if (!m.mine) {
-            Text(
-                buildAnnotatedString {
-                    val social by Social.state.collectAsState()
-                    val mesh = !m.bridged && !m.conversation.startsWith("geo:")
-                    append(labelText(PeerLabel.of(m), m.teleported, verified = mesh && social.isVerifiedPeer(m.senderKey), vouched = mesh && social.isVouchedPeer(m.senderKey)))
-                    if (m.bridged) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Normal)) { append(" · " + stringResource(R.string.bridge_via)) }
-                }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.let {
-                    if (onSenderClick != null && !m.bridged) it.clickable(role = Role.Button) { onSenderClick(m) }.defaultMinSize(minHeight = 32.dp).wrapContentHeight(Alignment.CenterVertically) else it
-                },
-            )
+    // In rooms each sender gets an emblem; a private chat's title already says who it is.
+    val roomSender = !m.mine && !m.conversation.startsWith("dm:") && !m.conversation.startsWith("gdm:")
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (roomSender) {
+            Box(Modifier.padding(top = 4.dp).let { if (onSenderClick != null && !m.bridged) it.clickable { onSenderClick(m) } else it }.clearAndSetSemantics { }) { EmblemView(m.senderKey) }
         }
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = if (m.mine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-            border = if (m.mentionsMe) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
-            modifier = Modifier.widthIn(max = 300.dp),
-        ) {
-            when {
-                m.attachment != null && m.audio -> VoiceNote(m.attachment)
-                m.attachment != null -> PhotoView(m.attachment, covered = !m.mine)
-                else -> Column {
-                    Text(withMentions(m.text), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
-                    Cashu.tokensIn(m.text).take(3).forEach { CashuCard(it) }
+        Column(Modifier.weight(1f), horizontalAlignment = if (m.mine) Alignment.End else Alignment.Start) {
+            if (!m.mine) {
+                Text(
+                    buildAnnotatedString {
+                        val social by Social.state.collectAsState()
+                        val mesh = !m.bridged && !m.conversation.startsWith("geo:")
+                        val label = labelText(PeerLabel.of(m), m.teleported, verified = mesh && social.isVerifiedPeer(m.senderKey), vouched = mesh && social.isVouchedPeer(m.senderKey))
+                        if (roomSender) withStyle(SpanStyle(color = Emblem.color(m.senderKey))) { append(label) } else append(label)
+                        if (m.bridged) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Normal)) { append(" · " + stringResource(R.string.bridge_via)) }
+                    }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.let {
+                        if (onSenderClick != null && !m.bridged) it.clickable(role = Role.Button) { onSenderClick(m) }.defaultMinSize(minHeight = 32.dp).wrapContentHeight(Alignment.CenterVertically) else it
+                    },
+                )
+            }
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = if (m.mine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                border = if (m.mentionsMe) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+                modifier = Modifier.widthIn(max = 300.dp),
+            ) {
+                when {
+                    m.attachment != null && m.audio -> VoiceNote(m.attachment)
+                    m.attachment != null -> PhotoView(m.attachment, covered = !m.mine)
+                    else -> Column {
+                        Text(withMentions(m.text), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 16.sp)
+                        Cashu.tokensIn(m.text).take(3).forEach { CashuCard(it) }
+                    }
                 }
             }
+            val status = if (m.mine) stringResource(
+                when (m.state) {
+                    DeliveryState.SENDING -> R.string.state_sending; DeliveryState.SENT -> R.string.state_sent; DeliveryState.DELIVERED -> R.string.state_delivered
+                    DeliveryState.QUEUED -> R.string.state_queued; DeliveryState.CARRIED -> R.string.state_carried
+                    DeliveryState.READ -> R.string.state_read; DeliveryState.FAILED -> R.string.state_undelivered
+                },
+            ) else null
+            val meta = FontFamily.Monospace
+            if (m.mine && m.conversation.startsWith("dm:")) {
+                // Private messages show how far they got: sent, on its way, delivered, read (§30).
+                val failed = m.state == DeliveryState.FAILED
+                val tone = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(time, fontSize = 11.sp, fontFamily = meta, color = tone)
+                    Box(Modifier.clearAndSetSemantics { }) { DeliveryPathDots(m.state) }
+                    Text(status!!, fontSize = 11.sp, fontFamily = meta, color = tone)
+                    if (failed && m.attachment == null) {
+                        Text(
+                            stringResource(R.string.retry), fontSize = 11.sp, fontFamily = meta, color = tone,
+                            textDecoration = TextDecoration.Underline,
+                            modifier = Modifier.clickable(role = Role.Button) { ChatRepository.controller?.retry(m.conversation, m.id) }
+                                .defaultMinSize(minHeight = 32.dp).wrapContentHeight(Alignment.CenterVertically).padding(horizontal = 4.dp),
+                        )
+                    }
+                }
+            } else {
+                // Received mesh messages say how many links they crossed; synced and bridged ones cannot know.
+                val hops = m.hops?.takeIf { !m.mine && !m.bridged && (m.conversation == "mesh" || m.conversation.startsWith("dm:")) }
+                val parts = listOfNotNull(time, status, hops?.let { hopsText(it) })
+                Text(parts.joinToString(" · "), fontSize = 11.sp, fontFamily = meta, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
-        val status = if (m.mine) " · " + stringResource(
-            when (m.state) {
-                DeliveryState.SENDING -> R.string.state_sending; DeliveryState.SENT -> R.string.state_sent; DeliveryState.DELIVERED -> R.string.state_delivered
-                DeliveryState.QUEUED -> R.string.state_queued; DeliveryState.CARRIED -> R.string.state_carried
-                DeliveryState.READ -> R.string.state_read; DeliveryState.FAILED -> R.string.state_failed
-            },
-        ) else ""
-        Text(time + status, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -512,6 +557,15 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
         OutlinedTextField(
             value = text, onValueChange = { if (it.length <= 1000) set(it) },
             placeholder = { Text(placeholder) },
+            leadingIcon = {
+                // Says who can read what is typed here, before it is sent.
+                val encrypted = !conversation.startsWith("mesh") && !conversation.startsWith("geo:")
+                Icon(
+                    if (encrypted) Icons.Outlined.Lock else Icons.Outlined.Sensors,
+                    contentDescription = stringResource(if (encrypted) R.string.chip_encrypted else R.string.chip_public),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp),
+                )
+            },
             modifier = Modifier.weight(1f),
             maxLines = 4,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),

@@ -60,6 +60,8 @@ data class MeshPeer(
     val signingPublicKey: ByteArray,
     val lastSeen: Long,
     val direct: Boolean,
+    /** Links crossed by its latest announce: 1 for a neighbour, null when unknown (§30). */
+    val hops: Int? = null,
 ) {
     val fingerprint: String get() = org.openchat.android.core.sha256(noisePublicKey).toHex()
 }
@@ -70,8 +72,9 @@ data class PingResult(val rttMs: Long, val hops: Int?)
 interface MeshListener {
     fun onPeersChanged(peers: List<MeshPeer>) {}
     /** [replayed]: it came from history sync (§14) rather than live. */
-    fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean = false) {}
-    fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) {}
+    /** [hops] counts the links a message crossed (1 = straight from a neighbour); null when unknown, as for synced history. */
+    fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean = false, hops: Int? = null) {}
+    fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long, hops: Int? = null) {}
     fun onDelivered(peerHex: String, messageId: String) {}
     fun onRead(peerHex: String, messageId: String) {}
     fun onSessionEstablished(peerHex: String) {}
@@ -79,10 +82,12 @@ interface MeshListener {
     fun onQueued(peerHex: String, messageId: String) {}
     /** A sealed copy of the message was handed to a courier (§13.1). */
     fun onCarried(peerHex: String, messageId: String) {}
+    /** A private message left the outbox without a receipt: it was never confirmed delivered. */
+    fun onExpired(peerHex: String, messageId: String) {}
     /** Outbox, carried mail or remembered keys changed; the owner should persist [MeshEngine.exportState]. */
     fun onStateChanged() {}
     /** An image or voice note arrived, public or private (§18). Already type-checked. */
-    fun onFile(senderHex: String, nickname: String, file: FilePacket, isPrivate: Boolean, timestamp: Long) {}
+    fun onFile(senderHex: String, nickname: String, file: FilePacket, isPrivate: Boolean, timestamp: Long, hops: Int? = null) {}
     /** The peer proved it holds the keys from the verification QR we scanned (§16.2). */
     fun onVerified(peerHex: String) {}
     /** A live voice packet (§29) from an authenticated sender. */
@@ -131,6 +136,7 @@ class MeshEngine(
         var capabilities: Long = 0,
         var bridgeCell: String? = null, // the rendezvous cell a bridge phone advertises (§24.2)
         var neighbors: Set<String> = emptySet(), // peer IDs its announce claims as direct links, for /trace (§25.2)
+        var hops: Int? = null, // links its latest live announce crossed (§30)
     )
 
     private class Session(val handshake: HandshakeXX?, val startedAt: Long) {
@@ -155,7 +161,7 @@ class MeshEngine(
     private val candidates = HashMap<String, Session>()
     private val pendingNoise = HashMap<String, ArrayDeque<ByteArray>>()
     // Ciphertexts that overtook the last handshake message on a relay path.
-    private val earlyCiphertexts = HashMap<String, ArrayDeque<ByteArray>>()
+    private val earlyCiphertexts = HashMap<String, ArrayDeque<Pair<ByteArray, Int?>>>() // ciphertext, hops
     private val lastHandshakeStart = HashMap<String, Long>()
     private val dedup = Deduplicator(clock = scheduler::now)
     private var assembler = FragmentAssembler(clock = scheduler::now)
@@ -335,7 +341,7 @@ class MeshEngine(
             val plain = NoisePayload(NoisePayloadType.PRIVATE_MESSAGE, body).encode()
             val q = QueuedMessage(id, peerHex, plain, now)
             outbox[id] = q
-            while (outbox.size > OUTBOX_CAP) outbox.remove(outbox.keys.first())
+            while (outbox.size > OUTBOX_CAP) outbox.remove(outbox.keys.first())?.let { listener.onExpired(it.peerHex, it.messageId) }
             if (reachable) sendNoise(peerHex, plain) else { listener.onQueued(peerHex, id); deposit(q); drop(q) }
             ids.add(id)
         }
@@ -355,7 +361,7 @@ class MeshEngine(
         sendNoise(peerHex, NoisePayload(NoisePayloadType.READ_RECEIPT, messageId.toByteArray(Charsets.UTF_8)).encode())
 
     fun peersSnapshot(): List<MeshPeer> = peers.map { (hex, s) ->
-        MeshPeer(hex, s.nickname, s.noiseKey, s.signingKey, s.lastSeen, s.directLinks.isNotEmpty())
+        MeshPeer(hex, s.nickname, s.noiseKey, s.signingKey, s.lastSeen, s.directLinks.isNotEmpty(), if (s.directLinks.isNotEmpty()) 1 else s.hops)
     }.sortedBy { it.nickname.lowercase() }
 
     /** Heard from recently, directly or through relays: mesh delivery is worth trying. */
@@ -423,6 +429,13 @@ class MeshEngine(
 
     private fun publishPeers() = listener.onPeersChanged(peersSnapshot())
 
+    /**
+     * Links a packet crossed, read off its TTL: every bitchat client sends at 7 and each relay
+     * takes one off, so 7 on arrival means straight from a neighbour (§30). Synced copies and
+     * TTLs above the default say nothing about the path.
+     */
+    private fun hopsOf(p: Packet): Int? = if (p.isRsr || p.ttl > Packet.DEFAULT_TTL) null else Packet.DEFAULT_TTL - p.ttl + 1
+
     // ---------------------------------------------------------------- receive pipeline
 
     private fun receive(p: Packet, linkId: String?, relayable: Boolean = true) {
@@ -452,7 +465,7 @@ class MeshEngine(
             MessageType.LEAVE -> if (!handleLeave(p)) return
             MessageType.MESSAGE -> if (!handlePublic(p)) return
             MessageType.NOISE_HANDSHAKE -> if (forMe) { handleHandshake(senderHex, p.payload); return }
-            MessageType.NOISE_ENCRYPTED -> if (forMe) { handleEncrypted(senderHex, p.payload); return }
+            MessageType.NOISE_ENCRYPTED -> if (forMe) { handleEncrypted(senderHex, p.payload, hopsOf(p)); return }
             MessageType.COURIER_ENVELOPE -> if (forMe) { handleCourier(p, linkId); return }
             MessageType.REQUEST_SYNC -> { if (forMe || p.isBroadcast) handleSyncRequest(p, linkId); return }
             MessageType.GROUP_MESSAGE -> if (p.isBroadcast && !handleGroupMessage(p)) return
@@ -518,6 +531,7 @@ class MeshEngine(
         state.capabilities = a.capabilities ?: 0
         state.bridgeCell = a.bridgeGeohash?.takeIf { it.isNotEmpty() }
         state.neighbors = a.directNeighbors.map { it.toHex() }.toSet()
+        hopsOf(p)?.let { state.hops = it }
         if ((state.announce?.timestamp ?: 0) <= p.timestamp) state.announce = p
         // An announce at full TTL straight off a link came from that link's device.
         var newlyDirect = false
@@ -567,7 +581,7 @@ class MeshEngine(
         val text = try { String(p.payload, Charsets.UTF_8) } catch (e: Exception) { return false }
         if (peer != null && !p.isRsr) peer.lastSeen = scheduler.now()
         if (p.isBroadcast) storeHistory(p)
-        listener.onPublicMessage(hex, peer?.nickname ?: known[hex]!!.nickname, text, p.timestamp, replayed = p.isRsr)
+        listener.onPublicMessage(hex, peer?.nickname ?: known[hex]!!.nickname, text, p.timestamp, replayed = p.isRsr, hops = hopsOf(p))
         return true
     }
 
@@ -889,7 +903,7 @@ class MeshEngine(
         if (!isFresh(p, scheduler.now())) return false
         if ((peer?.noiseKey ?: known[hex]?.noiseKey)?.let(isBlocked) == true) return true
         val file = FilePacket.decode(p.payload)?.takeIf { it.kind != null } ?: return true
-        listener.onFile(hex, peer?.nickname ?: known[hex]!!.nickname, file, isPrivate = forMe, timestamp = p.timestamp)
+        listener.onFile(hex, peer?.nickname ?: known[hex]!!.nickname, file, isPrivate = forMe, timestamp = p.timestamp, hops = hopsOf(p))
         return true
     }
 
@@ -1075,7 +1089,7 @@ class MeshEngine(
         if (replaced?.established == true) flushOutboxTo(peerHex)
         // Tell the peer, inside the session, that it may send us encrypted media (§18.2).
         sendNoise(peerHex, NoisePayload(NoisePayloadType.AUTHENTICATED_PEER_STATE, AuthPeerState.encode(myCapabilities, identity.signing.publicKey)).encode())
-        earlyCiphertexts.remove(peerHex)?.forEach { handleEncrypted(peerHex, it) }
+        earlyCiphertexts.remove(peerHex)?.forEach { (c, hops) -> handleEncrypted(peerHex, c, hops) }
         flushIfPossible(peerHex)
     }
 
@@ -1099,7 +1113,7 @@ class MeshEngine(
         sendDirected(peerHex, p)
     }
 
-    private fun handleEncrypted(peerHex: String, ciphertext: ByteArray) {
+    private fun handleEncrypted(peerHex: String, ciphertext: ByteArray, hops: Int? = null) {
         val s = sessions[peerHex]
         val plain = try { s?.recv?.decrypt(ciphertext) } catch (e: Exception) { null }
         if (plain == null) {
@@ -1111,7 +1125,7 @@ class MeshEngine(
             if (s.pending) {
                 // Handshake still running: keep it until the session exists.
                 val q = earlyCiphertexts.getOrPut(peerHex) { ArrayDeque() }
-                if (q.size < EARLY_CIPHERTEXT_CAP && q.sumOf { it.size } + ciphertext.size <= EARLY_CIPHERTEXT_BYTES) q.addLast(ciphertext)
+                if (q.size < EARLY_CIPHERTEXT_CAP && q.sumOf { it.first.size } + ciphertext.size <= EARLY_CIPHERTEXT_BYTES) q.addLast(ciphertext to hops)
                 return
             }
             // Undecryptable bytes on a working session: anyone can forge the sender field, so this
@@ -1133,7 +1147,7 @@ class MeshEngine(
                 val pm = PrivateMessage.decode(payload.body) ?: return
                 if (noiseKeyOf(peerHex)?.let(isBlocked) == true) return
                 // Resends and courier copies share an ID: deliver once, but always answer so the sender can settle.
-                if (markSeen(pm.messageId)) listener.onPrivateMessage(peerHex, nickname, pm.messageId, pm.content, scheduler.now())
+                if (markSeen(pm.messageId)) listener.onPrivateMessage(peerHex, nickname, pm.messageId, pm.content, scheduler.now(), hops)
                 sendNoise(peerHex, NoisePayload(NoisePayloadType.DELIVERED, pm.messageId.toByteArray(Charsets.UTF_8)).encode())
             }
             NoisePayloadType.DELIVERED -> { val id = String(payload.body, Charsets.UTF_8); if (settle(id, 1)) listener.onDelivered(peerHex, id) }
@@ -1145,7 +1159,7 @@ class MeshEngine(
             NoisePayloadType.PRIVATE_FILE, NoisePayloadType.PRIVATE_FILE_PRERELEASE -> {
                 if (noiseKeyOf(peerHex)?.let(isBlocked) == true) return
                 val file = FilePacket.decode(payload.body)?.takeIf { it.kind != null } ?: return
-                listener.onFile(peerHex, nickname, file, isPrivate = true, timestamp = scheduler.now())
+                listener.onFile(peerHex, nickname, file, isPrivate = true, timestamp = scheduler.now(), hops = hops)
             }
             NoisePayloadType.GROUP_INVITE, NoisePayloadType.GROUP_KEY_UPDATE -> {
                 val key = sessions[peerHex]?.remoteStatic ?: return
@@ -1368,7 +1382,9 @@ class MeshEngine(
     }
 
     private fun prune(now: Long) {
-        var changed = outbox.values.removeAll { now - it.createdAt > CourierEnvelope.LIFETIME_MS }
+        val expired = outbox.values.filter { now - it.createdAt > CourierEnvelope.LIFETIME_MS }
+        expired.forEach { outbox.remove(it.messageId); listener.onExpired(it.peerHex, it.messageId) }
+        var changed = expired.isNotEmpty()
         changed = carried.removeAll { it.envelope.isExpired(now) } || changed
         changed = history.values.removeAll { !isFresh(it, now) } || changed
         groupHistory.values.removeAll { !isFresh(it, now) }

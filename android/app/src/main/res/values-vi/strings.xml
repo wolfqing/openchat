@@ -20,11 +20,7 @@
     <string name="banner_need_permission">Cần quyền Bluetooth để tìm người ở gần</string>
     <string name="banner_bt_off">Bluetooth đang tắt. Chạm vào đây để bật</string>
     <string name="banner_starting">Đang khởi động…</string>
-    <string name="banner_searching">Đang tìm người ở gần…</string>
     <string name="banner_storage_locked">Hiện không thể mở khóa danh tính đã lưu. Nhấn để thử lại.</string>
-    <plurals name="banner_connected">
-        <item quantity="other">Đã kết nối với %d người ở gần</item>
-    </plurals>
     <string name="nearby_empty_alone">Chưa có ai ở gần.\nĐiện thoại chạy openchat tự kết nối trong phạm vi vài chục mét.\nNgười dùng bitchat trong cùng mạng lưới cũng nhận được tin nhắn của bạn.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="other">Có %d người ở gần. Nói gì đó, mọi người đều thấy.</item>
@@ -34,7 +30,6 @@
     <string name="state_sent">Đã gửi</string>
     <string name="state_delivered">Đã nhận</string>
     <string name="state_read">Đã xem</string>
-    <string name="state_failed">Chưa gửi được</string>
     <string name="state_queued">Đang chờ người nhận</string>
     <string name="state_carried">Người khác đang mang</string>
     <string name="send">Gửi</string>
@@ -263,4 +258,35 @@
     <string name="me_wipe_confirm">Không thể hoàn tác. Sau đó, những người bạn trò chuyện sẽ thấy bạn như người lạ.</string>
     <string name="me_wipe_do">Xóa</string>
     <string name="panic_logo">openchat. Chạm ba lần để xóa mọi thứ.</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">Mọi người trong vùng phủ sóng đều thấy</string>
+    <string name="band_direct">Trực tiếp</string>
+    <string name="band_reach">Tầm với</string>
+    <string name="band_scanning">Đang quét · 0 người</string>
+    <string name="band_for">đã %1$s</string>
+    <string name="hops_direct">trực tiếp</string>
+    <string name="dm_status_direct">Ở gần · ngay cạnh bạn</string>
+    <string name="dm_day_note">mã hóa đầu cuối, điện thoại chuyển tiếp không đọc được</string>
+    <string name="state_undelivered">Chưa đến nơi</string>
+    <string name="retry">Thử lại</string>
+    <string name="chip_public">Công khai</string>
+    <string name="chip_encrypted">Đã mã hóa</string>
+    <string name="radar_title">Chưa có ai ở gần</string>
+    <string name="radar_body">Điện thoại chạy openchat hoặc bitchat tự kết nối trong phạm vi vài chục mét.</string>
+    <string name="tip_open_title">Nhờ họ mở openchat</string>
+    <string name="tip_open_body">bitchat cũng được. Ứng dụng vẫn chạy khi khóa màn hình, nhưng đừng vuốt tắt nó.</string>
+    <string name="tip_window_title">Ra chỗ thoáng, gần cửa sổ</string>
+    <string name="tip_window_body">Tường và đám đông chặn Bluetooth. Trong nhà tầm phủ thường chỉ khoảng 10 m.</string>
+    <string name="tip_share_title">Máy họ chưa có ứng dụng? Gửi cho họ</string>
+    <string name="tip_share_body">Gửi tệp cài đặt qua Bluetooth hoặc Quick Share. Không cần internet.</string>
+    <plurals name="hops_count">
+        <item quantity="other">%d chặng</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="other">%1$d chặng tới %2$s</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="other">Ở gần · qua %d điện thoại</item>
+    </plurals>
 </resources>

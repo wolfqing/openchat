@@ -251,22 +251,22 @@ class MeshService : Service(), ChatController {
             vouching.attemptAll() // a capability-bearing announce can land after the session
         }
 
-        override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean) {
+        override fun onPublicMessage(senderHex: String, nickname: String, text: String, timestamp: Long, replayed: Boolean, hops: Int?) {
             // Synced history arrives in a burst by design; only live traffic is limited.
             bridge.onRadioMessage(senderHex, timestamp, text)
             if (!replayed && !publicLimiter.allow("mesh:$senderHex", text)) return
             val me = engine.identity
             val ambiguous = ChatRepository.peers.value.any { it.peerIdHex != me.peerIdHex && it.nickname.equals(me.nickname, ignoreCase = true) }
             val mentioned = Mentions.mentionsMe(text, me.nickname, me.peerIdHex.take(4), ambiguous)
-            ChatRepository.add(ChatMessage("$senderHex-$timestamp", Conversation.Mesh.key, nickname, senderHex, text, timestamp, mine = false, mentionsMe = mentioned))
+            ChatRepository.add(ChatMessage("$senderHex-$timestamp", Conversation.Mesh.key, nickname, senderHex, text, timestamp, mine = false, mentionsMe = mentioned, hops = hops))
             if (mentioned && ChatRepository.openConversation != Conversation.Mesh.key) notifyMention(PeerLabel.mesh(nickname, senderHex).toString(), text)
         }
 
-        override fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) {
+        override fun onPrivateMessage(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long, hops: Int?) {
             val key = engine.noiseKeyOf(senderHex)?.also { noiseKeys[senderHex] = it }
             val notice = NostrEmbedded.parseFavoriteNotice(text)
             if (notice != null) { key?.let { favoriteNoticeFrom(it, nickname, notice.first, notice.second) }; return }
-            deliverPrivate(senderHex, nickname, messageId, text, timestamp)
+            deliverPrivate(senderHex, nickname, messageId, text, timestamp, hops)
         }
 
         override fun onDelivered(peerHex: String, messageId: String) =
@@ -281,7 +281,10 @@ class MeshService : Service(), ChatController {
         override fun onCarried(peerHex: String, messageId: String) =
             ChatRepository.setState(Conversation.Private(peerHex).key, messageId, DeliveryState.CARRIED)
 
-        override fun onFile(senderHex: String, nickname: String, file: FilePacket, isPrivate: Boolean, timestamp: Long) {
+        override fun onExpired(peerHex: String, messageId: String) =
+            ChatRepository.setState(Conversation.Private(peerHex).key, messageId, DeliveryState.FAILED)
+
+        override fun onFile(senderHex: String, nickname: String, file: FilePacket, isPrivate: Boolean, timestamp: Long, hops: Int?) {
             val kind = file.kind ?: return
             val stored = Media.store(this@MeshService, file.content, FilePacket.extension(file.mimeType))
             // The finished note of a live burst we already show takes over that bubble (§29).
@@ -289,7 +292,7 @@ class MeshService : Service(), ChatController {
             val conv = if (isPrivate) Conversation.Private(senderHex).key else Conversation.Mesh.key
             ChatRepository.rememberName(senderHex, nickname)
             ChatRepository.add(ChatMessage("file-${stored.nameWithoutExtension}", conv, nickname, senderHex, "", minOf(timestamp, System.currentTimeMillis()), mine = false,
-                attachment = stored.absolutePath, audio = kind == FilePacket.Kind.AUDIO))
+                attachment = stored.absolutePath, audio = kind == FilePacket.Kind.AUDIO, hops = hops))
             if (isPrivate && ChatRepository.openConversation != conv) {
                 notifyPrivate(PeerLabel.mesh(nickname, senderHex).toString(), getString(if (kind == FilePacket.Kind.AUDIO) R.string.media_voice else R.string.media_photo))
             }
@@ -332,10 +335,10 @@ class MeshService : Service(), ChatController {
         override fun onStateChanged() { handler.removeCallbacks(saveState); handler.postDelayed(saveState, 500) }
     }
 
-    private fun deliverPrivate(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long) {
+    private fun deliverPrivate(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long, hops: Int? = null) {
         val conv = Conversation.Private(senderHex).key
         ChatRepository.rememberName(senderHex, nickname)
-        ChatRepository.add(ChatMessage(messageId, conv, nickname, senderHex, text, timestamp, mine = false))
+        ChatRepository.add(ChatMessage(messageId, conv, nickname, senderHex, text, timestamp, mine = false, hops = hops))
         if (ChatRepository.openConversation == conv) sendRead(senderHex, messageId)
         else notifyPrivate(PeerLabel.mesh(nickname, senderHex).toString(), text)
     }
@@ -438,6 +441,14 @@ class MeshService : Service(), ChatController {
                 ChatRepository.add(ChatMessage(mid, Conversation.Private(peerHex).key, id.nickname, id.peerIdHex, part, now + i, mine = true, state = state))
             }
         }
+    }
+
+    override fun retry(conversation: String, messageId: String) {
+        val peerHex = conversation.removePrefix("dm:").takeIf { conversation.startsWith("dm:") } ?: return
+        val m = ChatRepository.messages.value[conversation]?.firstOrNull { it.id == messageId && it.mine && it.state == DeliveryState.FAILED } ?: return
+        if (m.attachment != null) return // media is not kept for resending
+        ChatRepository.remove(conversation, messageId)
+        sendPrivate(peerHex, m.text)
     }
 
     override fun markRead(peerHex: String, messageIds: List<String>) {
