@@ -113,7 +113,16 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
 
     fun frame(hash: String) {
         val (lat, lon) = Geohash.center(hash) ?: return
-        flyTo(GlobeView(lat.coerceIn(-GlobeView.MAX_LAT, GlobeView.MAX_LAT), lon, GlobeView.zoomFor(hash.length)), 450)
+        flyTo(GlobeView(lat.coerceIn(-GlobeView.MAX_LAT, GlobeView.MAX_LAT), lon, GlobeView.zoomFor(hash.length, lat)), 450)
+    }
+
+    // After a pinch, settle on the current level's framing, as bitchat's stepped zoom does: the
+    // 3x3 grid is never a speck with its labels piled up, nor wider than the screen. The world
+    // level stays free so the globe can still be spun as a globe.
+    fun settle() {
+        val p = view.precision
+        if (p <= GlobeView.MIN_PRECISION) return
+        flyTo(view.copy(zoom = GlobeView.zoomFor(p, view.lat)), 280)
     }
 
     // Fly in to the starting channel, else stay on the world view.
@@ -121,7 +130,7 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
         val hash = start?.takeIf { Geohash.isValid(it) && it.length >= GlobeView.MIN_PRECISION }?.take(GlobeView.MAX_PRECISION) ?: return@LaunchedEffect
         val (lat, lon) = Geohash.center(hash) ?: return@LaunchedEffect
         val scale = android.provider.Settings.Global.getFloat(ctx.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
-        val target = GlobeView(lat, lon, GlobeView.zoomFor(hash.length))
+        val target = GlobeView(lat, lon, GlobeView.zoomFor(hash.length, lat))
         if (scale == 0f) view = target else flyTo(target, 1600)
     }
 
@@ -160,7 +169,7 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
                             }
                             event.changes.firstOrNull()?.let { tracker.addPosition(it.uptimeMillis, event.calculateCentroid()) }
                         } while (event.changes.any { it.pressed })
-                        if (multi) return@awaitEachGesture
+                        if (multi) { settle(); return@awaitEachGesture }
                         // Let a flick keep spinning, slowing to a stop.
                         val v = tracker.calculateVelocity()
                         if (abs(v.x) + abs(v.y) < 300f) return@awaitEachGesture
@@ -295,16 +304,28 @@ private fun DrawScope.drawGlobe(
         } else {
             drawPath(path, c.accent.copy(alpha = 0.45f), style = Stroke(1.2f))
         }
-        view.project((b.latLo + b.latHi) / 2, (b.lonLo + b.lonHi) / 2, p)
-        if (p[2] > 0.15) {
+        // A label is drawn only where it fits inside its cell; mid-pinch a cell can be a few dp wide.
+        val midLat = (b.latLo + b.latHi) / 2; val midLon = (b.lonLo + b.lonHi) / 2
+        fun screen(lat: Double, lon: Double): Offset? {
+            view.project(lat, lon, p)
+            return if (p[2] > 0.15) Offset(cx + (p[0] * r).toFloat(), cy - (p[1] * r).toFloat()) else null
+        }
+        val centre = screen(midLat, midLon)
+        val west = screen(midLat, b.lonLo); val east = screen(midLat, b.lonHi)
+        val south = screen(b.latLo, midLon); val north = screen(b.latHi, midLon)
+        if (centre != null && west != null && east != null && south != null && north != null) {
+            val cellW = abs(east.x - west.x); val cellH = abs(south.y - north.y)
             val style = TextStyle(
                 color = if (i == 0) c.accent else c.label.copy(alpha = 0.6f), fontSize = if (i == 0) 13.sp else 11.sp,
                 fontFamily = FontFamily.Monospace, fontWeight = if (i == 0) FontWeight.Bold else FontWeight.Normal,
             )
-            val text = measurer.measure("#$hash", style)
-            val x = cx + (p[0] * r).toFloat() - text.size.width / 2f
-            val y = cy - (p[1] * r).toFloat() - text.size.height / 2f + if (i == 0) 22.dp.toPx() else 0f
-            if (x > -text.size.width && x < w && y > -text.size.height && y < h) drawText(text, topLeft = Offset(x, y))
+            val text = measurer.measure(hash, style)
+            // The selected cell's label sits under the crosshair, so it needs that much more room.
+            val drop = if (i == 0) 22.dp.toPx() else 0f
+            val fits = text.size.width <= cellW * 0.85f && text.size.height + 2 * drop <= cellH * 0.9f
+            val x = centre.x - text.size.width / 2f
+            val y = centre.y - text.size.height / 2f + drop
+            if (fits && x > -text.size.width && x < w && y > -text.size.height && y < h) drawText(text, topLeft = Offset(x, y))
         }
     }
 
