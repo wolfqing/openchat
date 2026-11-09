@@ -20,13 +20,7 @@
     <string name="banner_need_permission">É preciso permitir o Bluetooth para encontrar pessoas por perto</string>
     <string name="banner_bt_off">O Bluetooth está desligado. Toque aqui para ligar</string>
     <string name="banner_starting">Iniciando…</string>
-    <string name="banner_searching">Procurando pessoas por perto…</string>
     <string name="banner_storage_locked">Não é possível desbloquear a identidade guardada agora. Toque para tentar de novo.</string>
-    <plurals name="banner_connected">
-        <item quantity="one">Conectado a %d pessoa por perto</item>
-        <item quantity="many">Conectado a %d pessoas por perto</item>
-        <item quantity="other">Conectado a %d pessoas por perto</item>
-    </plurals>
     <string name="nearby_empty_alone">Ainda não há ninguém por perto.\nCelulares com openchat se conectam automaticamente a algumas dezenas de metros.\nUsuários do bitchat na mesma rede mesh também podem receber suas mensagens.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">%d pessoa por perto. Escreva algo e todos verão.</item>
@@ -38,7 +32,6 @@
     <string name="state_sent">Enviada</string>
     <string name="state_delivered">Entregue</string>
     <string name="state_read">Lida</string>
-    <string name="state_failed">Não enviada</string>
     <string name="state_queued">Aguardando o destinatário</string>
     <string name="state_carried">Levado por outros</string>
     <string name="send">Enviar</string>
@@ -271,4 +264,41 @@
     <string name="me_wipe_confirm">Isso não pode ser desfeito. Depois, as pessoas com quem você conversa vão ver você como um desconhecido.</string>
     <string name="me_wipe_do">Apagar</string>
     <string name="panic_logo">openchat. Toque três vezes para apagar tudo.</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">Todos no alcance podem ver isto</string>
+    <string name="band_direct">Diretos</string>
+    <string name="band_reach">Alcance</string>
+    <string name="band_scanning">Procurando · 0 pessoas</string>
+    <string name="band_for">há %1$s</string>
+    <string name="hops_direct">direto</string>
+    <string name="dm_status_direct">Por perto · bem ao seu lado</string>
+    <string name="dm_day_note">criptografado de ponta a ponta, os celulares que retransmitem não conseguem ler</string>
+    <string name="state_undelivered">Não entregue</string>
+    <string name="retry">Tentar de novo</string>
+    <string name="chip_public">Público</string>
+    <string name="chip_encrypted">Criptografado</string>
+    <string name="radar_title">Ainda não há ninguém por perto</string>
+    <string name="radar_body">Celulares com openchat ou bitchat se conectam sozinhos a algumas dezenas de metros.</string>
+    <string name="tip_open_title">Peça que abram o openchat também</string>
+    <string name="tip_open_body">O bitchat também serve. Funciona com a tela bloqueada, mas não feche o app deslizando.</string>
+    <string name="tip_window_title">Vá para um lugar aberto, perto de uma janela</string>
+    <string name="tip_window_body">Paredes e multidões bloqueiam o Bluetooth. Em ambientes fechados o alcance costuma ser de uns 10 m.</string>
+    <string name="tip_share_title">Não têm o app? Passe para eles</string>
+    <string name="tip_share_body">Envie o instalador por Bluetooth ou Quick Share. Não precisa de internet.</string>
+    <plurals name="hops_count">
+        <item quantity="one">%d salto</item>
+        <item quantity="many">%d saltos</item>
+        <item quantity="other">%d saltos</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="one">%1$d salto até %2$s</item>
+        <item quantity="many">%1$d saltos até %2$s</item>
+        <item quantity="other">%1$d saltos até %2$s</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="one">Por perto · retransmitido por %d celular</item>
+        <item quantity="many">Por perto · retransmitido por %d celulares</item>
+        <item quantity="other">Por perto · retransmitido por %d celulares</item>
+    </plurals>
 </resources>

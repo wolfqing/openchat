@@ -20,11 +20,7 @@
     <string name="banner_need_permission">近くの人を見つけるにはBluetoothの許可が必要です</string>
     <string name="banner_bt_off">Bluetoothがオフです。タップしてオンにする</string>
     <string name="banner_starting">起動中…</string>
-    <string name="banner_searching">近くの人を探しています…</string>
     <string name="banner_storage_locked">保存された ID を今は復号できません。タップして再試行してください。</string>
-    <plurals name="banner_connected">
-        <item quantity="other">近くの%d人と接続中</item>
-    </plurals>
     <string name="nearby_empty_alone">まだ近くに誰もいません。\nopenchatを使っているスマホは、数十メートル以内なら自動でつながります。\n同じメッシュにいるbitchatユーザーもメッセージを受け取れます。</string>
     <plurals name="nearby_empty_peers">
         <item quantity="other">近くに%d人います。発言すると全員に見えます。</item>
@@ -34,7 +30,6 @@
     <string name="state_sent">送信済み</string>
     <string name="state_delivered">配信済み</string>
     <string name="state_read">既読</string>
-    <string name="state_failed">未送信</string>
     <string name="state_queued">相手を待機中</string>
     <string name="state_carried">他の人が運搬中</string>
     <string name="send">送信</string>
@@ -263,4 +258,35 @@
     <string name="me_wipe_confirm">この操作は取り消せません。その後、チャット相手にはあなたは知らない人として見えます。</string>
     <string name="me_wipe_do">消去</string>
     <string name="panic_logo">openchat。3回タップするとすべて消去します。</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">範囲内の全員に見えます</string>
+    <string name="band_direct">直接</string>
+    <string name="band_reach">到達</string>
+    <string name="band_scanning">スキャン中 · 0人</string>
+    <string name="band_for">%1$s 経過</string>
+    <string name="hops_direct">直接</string>
+    <string name="dm_status_direct">近く · すぐそばにいます</string>
+    <string name="dm_day_note">エンドツーエンド暗号化。中継するスマホには読めません</string>
+    <string name="state_undelivered">未配信</string>
+    <string name="retry">再送</string>
+    <string name="chip_public">公開</string>
+    <string name="chip_encrypted">暗号化</string>
+    <string name="radar_title">まだ近くに誰もいません</string>
+    <string name="radar_body">openchat か bitchat を使っているスマホは、数十メートル以内なら自動でつながります。</string>
+    <string name="tip_open_title">相手にも openchat を開いてもらう</string>
+    <string name="tip_open_body">bitchat でも大丈夫です。画面ロック中も動きますが、アプリをスワイプで閉じないでください。</string>
+    <string name="tip_window_title">開けた場所、窓の近くへ</string>
+    <string name="tip_window_body">壁や人混みは Bluetooth を遮ります。屋内では範囲が 10 m ほどになることがよくあります。</string>
+    <string name="tip_share_title">相手にアプリがない？渡しましょう</string>
+    <string name="tip_share_body">Bluetooth やクイック共有でインストーラーを送れます。ネット不要です。</string>
+    <plurals name="hops_count">
+        <item quantity="other">%dホップ</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="other">%2$s まで %1$d ホップ</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="other">近く · %d台のスマホが中継</item>
+    </plurals>
 </resources>

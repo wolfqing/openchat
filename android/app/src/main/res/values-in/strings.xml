@@ -20,11 +20,7 @@
     <string name="banner_need_permission">Izin Bluetooth diperlukan untuk menemukan orang di sekitar</string>
     <string name="banner_bt_off">Bluetooth mati. Ketuk di sini untuk menyalakan</string>
     <string name="banner_starting">Memulai…</string>
-    <string name="banner_searching">Mencari orang di sekitar…</string>
     <string name="banner_storage_locked">Identitas tersimpan tidak dapat dibuka saat ini. Ketuk untuk mencoba lagi.</string>
-    <plurals name="banner_connected">
-        <item quantity="other">Terhubung dengan %d orang di sekitar</item>
-    </plurals>
     <string name="nearby_empty_alone">Belum ada orang di sekitar.\nPonsel yang menjalankan openchat terhubung otomatis dalam jarak beberapa puluh meter.\nPengguna bitchat di jaringan yang sama juga bisa menerima pesanmu.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="other">Ada %d orang di sekitar. Tulis sesuatu, semua bisa melihatnya.</item>
@@ -34,7 +30,6 @@
     <string name="state_sent">Terkirim</string>
     <string name="state_delivered">Diterima</string>
     <string name="state_read">Dibaca</string>
-    <string name="state_failed">Gagal terkirim</string>
     <string name="state_queued">Menunggu penerima</string>
     <string name="state_carried">Dibawa orang lain</string>
     <string name="send">Kirim</string>
@@ -263,4 +258,35 @@
     <string name="me_wipe_confirm">Ini tidak bisa dibatalkan. Setelahnya, orang yang kamu ajak mengobrol akan melihatmu sebagai orang asing.</string>
     <string name="me_wipe_do">Hapus</string>
     <string name="panic_logo">openchat. Ketuk tiga kali untuk menghapus semuanya.</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">Semua orang dalam jangkauan bisa melihat ini</string>
+    <string name="band_direct">Langsung</string>
+    <string name="band_reach">Jangkauan</string>
+    <string name="band_scanning">Memindai · 0 orang</string>
+    <string name="band_for">selama %1$s</string>
+    <string name="hops_direct">langsung</string>
+    <string name="dm_status_direct">Di dekat · tepat di sebelahmu</string>
+    <string name="dm_day_note">terenkripsi end-to-end, ponsel perantara tidak bisa membacanya</string>
+    <string name="state_undelivered">Tidak terkirim</string>
+    <string name="retry">Coba lagi</string>
+    <string name="chip_public">Publik</string>
+    <string name="chip_encrypted">Terenkripsi</string>
+    <string name="radar_title">Belum ada orang di dekat</string>
+    <string name="radar_body">Ponsel yang menjalankan openchat atau bitchat terhubung otomatis dalam jarak beberapa puluh meter.</string>
+    <string name="tip_open_title">Minta mereka membuka openchat juga</string>
+    <string name="tip_open_body">bitchat juga bisa. Tetap berjalan saat layar terkunci, tapi jangan geser untuk menutup aplikasinya.</string>
+    <string name="tip_window_title">Pindah ke tempat terbuka, dekat jendela</string>
+    <string name="tip_window_body">Dinding dan keramaian menghalangi Bluetooth. Di dalam ruangan jangkauannya sering hanya sekitar 10 m.</string>
+    <string name="tip_share_title">Belum ada aplikasinya? Bagikan</string>
+    <string name="tip_share_body">Kirim penginstalnya lewat Bluetooth atau Quick Share. Tanpa internet.</string>
+    <plurals name="hops_count">
+        <item quantity="other">%d lompatan</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="other">%1$d lompatan ke %2$s</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="other">Di dekat · diteruskan %d ponsel</item>
+    </plurals>
 </resources>

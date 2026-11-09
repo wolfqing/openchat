@@ -20,13 +20,7 @@
     <string name="banner_need_permission">Se necesita permiso de Bluetooth para encontrar gente cerca</string>
     <string name="banner_bt_off">El Bluetooth está apagado. Toca aquí para activarlo</string>
     <string name="banner_starting">Iniciando…</string>
-    <string name="banner_searching">Buscando gente cerca…</string>
     <string name="banner_storage_locked">Ahora mismo no se puede desbloquear la identidad guardada. Toca para reintentar.</string>
-    <plurals name="banner_connected">
-        <item quantity="one">Conectado con %d persona cerca</item>
-        <item quantity="many">Conectado con %d personas cerca</item>
-        <item quantity="other">Conectado con %d personas cerca</item>
-    </plurals>
     <string name="nearby_empty_alone">Todavía no hay nadie cerca.\nLos teléfonos con openchat se conectan solos a unas decenas de metros.\nLos usuarios de bitchat en la misma red mesh también pueden recibir tus mensajes.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">%d persona cerca. Escribe algo y todos lo verán.</item>
@@ -38,7 +32,6 @@
     <string name="state_sent">Enviado</string>
     <string name="state_delivered">Entregado</string>
     <string name="state_read">Leído</string>
-    <string name="state_failed">No enviado</string>
     <string name="state_queued">Esperando al destinatario</string>
     <string name="state_carried">Lo llevan otros</string>
     <string name="send">Enviar</string>
@@ -271,4 +264,41 @@
     <string name="me_wipe_confirm">Esto no se puede deshacer. Después, las personas con las que chateas te verán como un desconocido.</string>
     <string name="me_wipe_do">Borrar</string>
     <string name="panic_logo">openchat. Toca tres veces para borrar todo.</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">Todos los que están en alcance pueden verlo</string>
+    <string name="band_direct">Directos</string>
+    <string name="band_reach">Alcance</string>
+    <string name="band_scanning">Buscando · 0 personas</string>
+    <string name="band_for">desde hace %1$s</string>
+    <string name="hops_direct">directo</string>
+    <string name="dm_status_direct">Cerca · justo a tu lado</string>
+    <string name="dm_day_note">cifrado de extremo a extremo, los teléfonos que lo retransmiten no pueden leerlo</string>
+    <string name="state_undelivered">No entregado</string>
+    <string name="retry">Reintentar</string>
+    <string name="chip_public">Público</string>
+    <string name="chip_encrypted">Cifrado</string>
+    <string name="radar_title">Todavía no hay nadie cerca</string>
+    <string name="radar_body">Los teléfonos con openchat o bitchat se conectan solos a unas decenas de metros.</string>
+    <string name="tip_open_title">Pídeles que abran openchat también</string>
+    <string name="tip_open_body">bitchat también sirve. Funciona con la pantalla bloqueada, pero no cierres la app deslizándola.</string>
+    <string name="tip_window_title">Sal a un lugar abierto, cerca de una ventana</string>
+    <string name="tip_window_body">Las paredes y las multitudes bloquean el Bluetooth. En interiores el alcance suele ser de unos 10 m.</string>
+    <string name="tip_share_title">¿No tienen la app? Pásasela</string>
+    <string name="tip_share_body">Envía el instalador por Bluetooth o Quick Share. No hace falta internet.</string>
+    <plurals name="hops_count">
+        <item quantity="one">%d salto</item>
+        <item quantity="many">%d saltos</item>
+        <item quantity="other">%d saltos</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="one">%1$d salto hasta %2$s</item>
+        <item quantity="many">%1$d saltos hasta %2$s</item>
+        <item quantity="other">%1$d saltos hasta %2$s</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="one">Cerca · retransmitido por %d teléfono</item>
+        <item quantity="many">Cerca · retransmitido por %d teléfonos</item>
+        <item quantity="other">Cerca · retransmitido por %d teléfonos</item>
+    </plurals>
 </resources>

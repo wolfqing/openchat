@@ -20,12 +20,7 @@
     <string name="banner_need_permission">आस-पास के लोगों को ढूँढने के लिए ब्लूटूथ की अनुमति चाहिए</string>
     <string name="banner_bt_off">ब्लूटूथ बंद है। चालू करने के लिए यहाँ टैप करें</string>
     <string name="banner_starting">शुरू हो रहा है…</string>
-    <string name="banner_searching">आस-पास के लोगों को ढूँढ रहा है…</string>
     <string name="banner_storage_locked">सहेजी गई पहचान अभी अनलॉक नहीं हो सकी। फिर कोशिश करने के लिए टैप करें।</string>
-    <plurals name="banner_connected">
-        <item quantity="one">आस-पास %d व्यक्ति से जुड़े</item>
-        <item quantity="other">आस-पास %d लोगों से जुड़े</item>
-    </plurals>
     <string name="nearby_empty_alone">आस-पास अभी कोई नहीं है।\nopenchat चला रहे फ़ोन कुछ दर्जन मीटर के भीतर अपने-आप जुड़ जाते हैं।\nउसी मेश पर bitchat इस्तेमाल करने वाले भी आपके संदेश पा सकते हैं।</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">आस-पास %d व्यक्ति है। कुछ लिखें, सब देख सकते हैं।</item>
@@ -36,7 +31,6 @@
     <string name="state_sent">भेजा गया</string>
     <string name="state_delivered">पहुँच गया</string>
     <string name="state_read">पढ़ लिया</string>
-    <string name="state_failed">नहीं भेजा जा सका</string>
     <string name="state_queued">प्राप्तकर्ता की प्रतीक्षा</string>
     <string name="state_carried">दूसरे ले जा रहे हैं</string>
     <string name="send">भेजें</string>
@@ -267,4 +261,38 @@
     <string name="me_wipe_confirm">इसे पूर्ववत नहीं किया जा सकता। बाद में आपके चैट साथी आपको अजनबी के रूप में देखेंगे।</string>
     <string name="me_wipe_do">मिटाएँ</string>
     <string name="panic_logo">openchat। सब कुछ मिटाने के लिए तीन बार टैप करें।</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">रेंज में मौजूद सभी लोग इसे देख सकते हैं</string>
+    <string name="band_direct">सीधे</string>
+    <string name="band_reach">पहुँच</string>
+    <string name="band_scanning">खोज रहे हैं · 0 लोग</string>
+    <string name="band_for">%1$s से</string>
+    <string name="hops_direct">सीधे</string>
+    <string name="dm_status_direct">आसपास · आपके बिल्कुल पास</string>
+    <string name="dm_day_note">एंड-टू-एंड एन्क्रिप्टेड, रिले करने वाले फ़ोन इसे नहीं पढ़ सकते</string>
+    <string name="state_undelivered">नहीं पहुँचा</string>
+    <string name="retry">फिर भेजें</string>
+    <string name="chip_public">सार्वजनिक</string>
+    <string name="chip_encrypted">एन्क्रिप्टेड</string>
+    <string name="radar_title">अभी आसपास कोई नहीं है</string>
+    <string name="radar_body">openchat या bitchat चलाने वाले फ़ोन कुछ दर्जन मीटर के भीतर अपने आप जुड़ जाते हैं।</string>
+    <string name="tip_open_title">उनसे भी openchat खोलने को कहें</string>
+    <string name="tip_open_body">bitchat भी चलेगा। स्क्रीन लॉक होने पर भी यह काम करता है, पर ऐप को स्वाइप करके बंद न करें।</string>
+    <string name="tip_window_title">खुली जगह पर, खिड़की के पास जाएँ</string>
+    <string name="tip_window_body">दीवारें और भीड़ ब्लूटूथ को रोकती हैं। घर के अंदर रेंज अक्सर लगभग 10 मीटर होती है।</string>
+    <string name="tip_share_title">उनके फ़ोन में ऐप नहीं है? उन्हें दें</string>
+    <string name="tip_share_body">ब्लूटूथ या Quick Share से इंस्टॉलर भेजें। इंटरनेट की ज़रूरत नहीं।</string>
+    <plurals name="hops_count">
+        <item quantity="one">%d हॉप</item>
+        <item quantity="other">%d हॉप</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="one">%2$s तक %1$d हॉप</item>
+        <item quantity="other">%2$s तक %1$d हॉप</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="one">आसपास · %d फ़ोन से रिले</item>
+        <item quantity="other">आसपास · %d फ़ोन से रिले</item>
+    </plurals>
 </resources>

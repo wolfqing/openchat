@@ -20,14 +20,7 @@
     <string name="banner_need_permission">Потрібен дозвіл Bluetooth, щоб знаходити людей поруч</string>
     <string name="banner_bt_off">Bluetooth вимкнено. Торкніться, щоб увімкнути</string>
     <string name="banner_starting">Запуск…</string>
-    <string name="banner_searching">Пошук людей поруч…</string>
     <string name="banner_storage_locked">Збережену особу зараз не вдається розблокувати. Торкніться, щоб повторити.</string>
-    <plurals name="banner_connected">
-        <item quantity="one">Підключено людей поруч: %d</item>
-        <item quantity="few">Підключено людей поруч: %d</item>
-        <item quantity="many">Підключено людей поруч: %d</item>
-        <item quantity="other">Підключено людей поруч: %d</item>
-    </plurals>
     <string name="nearby_empty_alone">Поруч поки нікого немає.\nТелефони з openchat підключаються автоматично в радіусі кількох десятків метрів.\nКористувачі bitchat у тій самій мережі теж отримають ваші повідомлення.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">Людей поруч: %d. Напишіть щось — побачать усі.</item>
@@ -40,7 +33,6 @@
     <string name="state_sent">Надіслано</string>
     <string name="state_delivered">Доставлено</string>
     <string name="state_read">Прочитано</string>
-    <string name="state_failed">Не надіслано</string>
     <string name="state_queued">Чекаємо адресата</string>
     <string name="state_carried">Передано з попутником</string>
     <string name="send">Надіслати</string>
@@ -275,4 +267,44 @@
     <string name="me_wipe_confirm">Це не можна скасувати. Співрозмовники потім бачитимуть вас як незнайомця.</string>
     <string name="me_wipe_do">Стерти</string>
     <string name="panic_logo">openchat. Торкніться тричі, щоб стерти все.</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">Це бачать усі в зоні дії</string>
+    <string name="band_direct">Напряму</string>
+    <string name="band_reach">Охоплення</string>
+    <string name="band_scanning">Пошук · 0 людей</string>
+    <string name="band_for">вже %1$s</string>
+    <string name="hops_direct">напряму</string>
+    <string name="dm_status_direct">Поруч · просто біля вас</string>
+    <string name="dm_day_note">наскрізне шифрування, телефони-ретранслятори не можуть це прочитати</string>
+    <string name="state_undelivered">Не доставлено</string>
+    <string name="retry">Повторити</string>
+    <string name="chip_public">Публічно</string>
+    <string name="chip_encrypted">Зашифровано</string>
+    <string name="radar_title">Поруч поки нікого немає</string>
+    <string name="radar_body">Телефони з openchat або bitchat підключаються самі на відстані кількох десятків метрів.</string>
+    <string name="tip_open_title">Попросіть їх теж відкрити openchat</string>
+    <string name="tip_open_body">Підійде й bitchat. Застосунок працює із заблокованим екраном, але не змахуйте його.</string>
+    <string name="tip_window_title">Вийдіть на відкрите місце, ближче до вікна</string>
+    <string name="tip_window_body">Стіни й натовп глушать Bluetooth. У приміщенні дальність часто близько 10 м.</string>
+    <string name="tip_share_title">У них немає застосунку? Передайте його</string>
+    <string name="tip_share_body">Надішліть інсталятор через Bluetooth або Quick Share. Інтернет не потрібен.</string>
+    <plurals name="hops_count">
+        <item quantity="one">Переходів: %d</item>
+        <item quantity="few">Переходів: %d</item>
+        <item quantity="many">Переходів: %d</item>
+        <item quantity="other">Переходів: %d</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="one">До %2$s переходів: %1$d</item>
+        <item quantity="few">До %2$s переходів: %1$d</item>
+        <item quantity="many">До %2$s переходів: %1$d</item>
+        <item quantity="other">До %2$s переходів: %1$d</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="one">Поруч · ретрансляторів: %d</item>
+        <item quantity="few">Поруч · ретрансляторів: %d</item>
+        <item quantity="many">Поруч · ретрансляторів: %d</item>
+        <item quantity="other">Поруч · ретрансляторів: %d</item>
+    </plurals>
 </resources>

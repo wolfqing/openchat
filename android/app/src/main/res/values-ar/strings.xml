@@ -20,16 +20,7 @@
     <string name="banner_need_permission">يلزم إذن البلوتوث للعثور على من حولك</string>
     <string name="banner_bt_off">البلوتوث مغلق. انقر هنا لتشغيله</string>
     <string name="banner_starting">جارٍ البدء…</string>
-    <string name="banner_searching">جارٍ البحث عن أشخاص قريبين…</string>
     <string name="banner_storage_locked">لا يمكن فتح الهوية المحفوظة الآن. انقر لإعادة المحاولة.</string>
-    <plurals name="banner_connected">
-        <item quantity="zero">متصل بأشخاص قريبين: %d</item>
-        <item quantity="one">متصل بأشخاص قريبين: %d</item>
-        <item quantity="two">متصل بأشخاص قريبين: %d</item>
-        <item quantity="few">متصل بأشخاص قريبين: %d</item>
-        <item quantity="many">متصل بأشخاص قريبين: %d</item>
-        <item quantity="other">متصل بأشخاص قريبين: %d</item>
-    </plurals>
     <string name="nearby_empty_alone">لا أحد بالقرب بعد.\nتتصل الهواتف التي تشغّل openchat تلقائيًا ضمن بضع عشرات من الأمتار.\nيمكن لمستخدمي bitchat على الشبكة نفسها استلام رسائلك أيضًا.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="zero">أشخاص بالقرب: %d. اكتب شيئًا وسيراه الجميع.</item>
@@ -44,7 +35,6 @@
     <string name="state_sent">أُرسلت</string>
     <string name="state_delivered">وصلت</string>
     <string name="state_read">قُرئت</string>
-    <string name="state_failed">لم تُرسل</string>
     <string name="state_queued">بانتظار المستلم</string>
     <string name="state_carried">يحمله آخرون</string>
     <string name="send">إرسال</string>
@@ -283,4 +273,50 @@
     <string name="me_wipe_confirm">لا يمكن التراجع عن هذا. بعد ذلك سيراك من تتحدث معهم كشخص غريب.</string>
     <string name="me_wipe_do">مسح</string>
     <string name="panic_logo">openchat. انقر ثلاث مرات لمسح كل شيء.</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">يراه كل من في النطاق</string>
+    <string name="band_direct">مباشر</string>
+    <string name="band_reach">المدى</string>
+    <string name="band_scanning">جارٍ البحث · 0 أشخاص</string>
+    <string name="band_for">منذ %1$s</string>
+    <string name="hops_direct">مباشر</string>
+    <string name="dm_status_direct">قريب · بجانبك تمامًا</string>
+    <string name="dm_day_note">مشفّر من طرف إلى طرف، ولا تستطيع الهواتف الناقلة قراءته</string>
+    <string name="state_undelivered">لم يُسلَّم</string>
+    <string name="retry">إعادة المحاولة</string>
+    <string name="chip_public">عام</string>
+    <string name="chip_encrypted">مشفّر</string>
+    <string name="radar_title">لا أحد بالقرب بعد</string>
+    <string name="radar_body">تتصل الهواتف التي تشغّل openchat أو bitchat تلقائيًا ضمن بضع عشرات من الأمتار.</string>
+    <string name="tip_open_title">اطلب منهم فتح openchat أيضًا</string>
+    <string name="tip_open_body">يعمل bitchat أيضًا. يستمر التطبيق مع قفل الشاشة، لكن لا تغلقه بالسحب.</string>
+    <string name="tip_window_title">انتقل إلى مكان مفتوح، قرب نافذة</string>
+    <string name="tip_window_body">الجدران والحشود تحجب البلوتوث. في الداخل يكون المدى غالبًا نحو 10 م.</string>
+    <string name="tip_share_title">ليس لديهم التطبيق؟ مرّره إليهم</string>
+    <string name="tip_share_body">أرسل ملف التثبيت عبر البلوتوث أو Quick Share. لا حاجة إلى الإنترنت.</string>
+    <plurals name="hops_count">
+        <item quantity="zero">عدد القفزات: %d</item>
+        <item quantity="one">عدد القفزات: %d</item>
+        <item quantity="two">عدد القفزات: %d</item>
+        <item quantity="few">عدد القفزات: %d</item>
+        <item quantity="many">عدد القفزات: %d</item>
+        <item quantity="other">عدد القفزات: %d</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="zero">إلى %2$s، عدد القفزات: %1$d</item>
+        <item quantity="one">إلى %2$s، عدد القفزات: %1$d</item>
+        <item quantity="two">إلى %2$s، عدد القفزات: %1$d</item>
+        <item quantity="few">إلى %2$s، عدد القفزات: %1$d</item>
+        <item quantity="many">إلى %2$s، عدد القفزات: %1$d</item>
+        <item quantity="other">إلى %2$s، عدد القفزات: %1$d</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="zero">قريب · عدد الهواتف الناقلة: %d</item>
+        <item quantity="one">قريب · عدد الهواتف الناقلة: %d</item>
+        <item quantity="two">قريب · عدد الهواتف الناقلة: %d</item>
+        <item quantity="few">قريب · عدد الهواتف الناقلة: %d</item>
+        <item quantity="many">قريب · عدد الهواتف الناقلة: %d</item>
+        <item quantity="other">قريب · عدد الهواتف الناقلة: %d</item>
+    </plurals>
 </resources>

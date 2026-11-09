@@ -20,11 +20,7 @@
     <string name="banner_need_permission">အနီးရှိလူများကို ရှာရန် ဘလူးတုသ် ခွင့်ပြုချက် လိုအပ်သည်</string>
     <string name="banner_bt_off">ဘလူးတုသ် ပိတ်ထားသည်။ ဖွင့်ရန် ဤနေရာကို နှိပ်ပါ</string>
     <string name="banner_starting">စတင်နေသည်…</string>
-    <string name="banner_searching">အနီးရှိလူများကို ရှာနေသည်…</string>
     <string name="banner_storage_locked">သိမ်းထားသော အမည်သတ်မှတ်ချက်ကို ယခု ဖွင့်မရပါ။ ထပ်စမ်းရန် တို့ပါ။</string>
-    <plurals name="banner_connected">
-        <item quantity="other">အနီးရှိ လူ %d ဦးနှင့် ချိတ်ဆက်ထားသည်</item>
-    </plurals>
     <string name="nearby_empty_alone">အနီးတွင် မည်သူမျှ မရှိသေးပါ။\nopenchat ဖွင့်ထားသော ဖုန်းများသည် မီတာ ဆယ်ဂဏန်းအတွင်း အလိုအလျောက် ချိတ်ဆက်သည်။\nတူညီသော ကွန်ရက်ရှိ bitchat အသုံးပြုသူများလည်း သင့်မက်ဆေ့ချ်ကို လက်ခံရရှိနိုင်သည်။</string>
     <plurals name="nearby_empty_peers">
         <item quantity="other">အနီးတွင် လူ %d ဦး ရှိသည်။ တစ်ခုခုရေးလိုက်ပါ၊ အားလုံး မြင်ရပါမည်။</item>
@@ -34,7 +30,6 @@
     <string name="state_sent">ပို့ပြီး</string>
     <string name="state_delivered">ရောက်ပြီ</string>
     <string name="state_read">ဖတ်ပြီး</string>
-    <string name="state_failed">မပို့ရသေး</string>
     <string name="state_queued">လက်ခံသူကို စောင့်နေသည်</string>
     <string name="state_carried">အခြားသူများ သယ်ဆောင်နေသည်</string>
     <string name="send">ပို့ရန်</string>
@@ -263,4 +258,35 @@
     <string name="me_wipe_confirm">ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍ မရပါ။ ထို့နောက် သင်စကားပြောသူများက သင့်ကို သူစိမ်းအဖြစ် မြင်ပါမည်။</string>
     <string name="me_wipe_do">ဖျက်ရန်</string>
     <string name="panic_logo">openchat။ အားလုံးကို ဖျက်ရန် သုံးကြိမ် တို့ပါ။</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">အကွာအဝေးအတွင်း လူတိုင်း မြင်နိုင်သည်</string>
+    <string name="band_direct">တိုက်ရိုက်</string>
+    <string name="band_reach">ရောက်နိုင်</string>
+    <string name="band_scanning">ရှာနေသည် · ၀ ယောက်</string>
+    <string name="band_for">%1$s ကြာပြီ</string>
+    <string name="hops_direct">တိုက်ရိုက်</string>
+    <string name="dm_status_direct">အနီး · သင့်ဘေးနားမှာ</string>
+    <string name="dm_day_note">အစမှအဆုံး ကုဒ်ဝှက်ထားသည်၊ ဆက်ပို့ပေးသော ဖုန်းများ မဖတ်နိုင်ပါ</string>
+    <string name="state_undelivered">မရောက်ပါ</string>
+    <string name="retry">ပြန်ပို့ရန်</string>
+    <string name="chip_public">အများသုံး</string>
+    <string name="chip_encrypted">ကုဒ်ဝှက်ထားသည်</string>
+    <string name="radar_title">အနီးတွင် မည်သူမျှ မရှိသေးပါ</string>
+    <string name="radar_body">openchat သို့မဟုတ် bitchat သုံးသော ဖုန်းများသည် မီတာ ဆယ်ဂဏန်းအတွင်း အလိုအလျောက် ချိတ်ဆက်သည်။</string>
+    <string name="tip_open_title">သူတို့ကိုလည်း openchat ဖွင့်ခိုင်းပါ</string>
+    <string name="tip_open_body">bitchat လည်း ရပါသည်။ မျက်နှာပြင် လော့ခ်ချထားလည်း အလုပ်လုပ်သော်လည်း အက်ပ်ကို ပွတ်ဆွဲ မပိတ်ပါနှင့်။</string>
+    <string name="tip_window_title">ဟင်းလင်းပြင်၊ ပြတင်းပေါက်အနီးသို့ ရွှေ့ပါ</string>
+    <string name="tip_window_body">နံရံများနှင့် လူအုပ်က Bluetooth ကို ပိတ်ဆို့သည်။ အိမ်တွင်း၌ အကွာအဝေးမှာ ၁၀ မီတာခန့်သာ ဖြစ်တတ်သည်။</string>
+    <string name="tip_share_title">သူတို့ဖုန်းတွင် အက်ပ်မရှိဘူးလား။ ပေးလိုက်ပါ</string>
+    <string name="tip_share_body">Bluetooth သို့မဟုတ် Quick Share ဖြင့် ထည့်သွင်းဖိုင်ကို ပို့ပါ။ အင်တာနက် မလိုပါ။</string>
+    <plurals name="hops_count">
+        <item quantity="other">%d ဆင့်</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="other">%2$s သို့ %1$d ဆင့်</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="other">အနီး · ဖုန်း %d လုံးက ဆက်ပို့</item>
+    </plurals>
 </resources>

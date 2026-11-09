@@ -39,6 +39,7 @@ data class ChatMessage(
     val attachment: String? = null, // path of an image or voice note in the media cache (§18)
     val audio: Boolean = false,
     val bridged: Boolean = false, // came across the mesh bridge from another island (§24); senderKey is a Nostr key
+    val hops: Int? = null, // links a received mesh message crossed, 1 = from a neighbour (§30)
 )
 
 /**
@@ -125,6 +126,8 @@ interface ChatController {
     fun postToBoard(text: String, urgent: Boolean, days: Int): Boolean
     fun deleteBoardPost(idHex: String)
     fun setBridge(on: Boolean)
+    /** Sends a failed private message again as a new message, replacing the failed one. */
+    fun retry(conversation: String, messageId: String)
     /** Pings a mesh peer; the answer, or its absence, appears later as a local line in [conversation]. */
     fun ping(peerHex: String, label: String, conversation: String)
     /** Labels of the peers between us and [peerHex] (empty for a neighbour), or null when no path is known. */

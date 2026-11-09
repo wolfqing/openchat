@@ -20,13 +20,7 @@
     <string name="banner_need_permission">L\'autorisation Bluetooth est nécessaire pour trouver les personnes à proximité</string>
     <string name="banner_bt_off">Le Bluetooth est désactivé. Touchez ici pour l\'activer</string>
     <string name="banner_starting">Démarrage…</string>
-    <string name="banner_searching">Recherche de personnes à proximité…</string>
     <string name="banner_storage_locked">Impossible de déverrouiller l\'identité enregistrée pour le moment. Appuyez pour réessayer.</string>
-    <plurals name="banner_connected">
-        <item quantity="one">Connecté à %d personne à proximité</item>
-        <item quantity="many">Connecté à %d personnes à proximité</item>
-        <item quantity="other">Connecté à %d personnes à proximité</item>
-    </plurals>
     <string name="nearby_empty_alone">Personne à proximité pour l\'instant.\nLes téléphones avec openchat se connectent automatiquement dans un rayon de quelques dizaines de mètres.\nLes utilisateurs de bitchat sur le même réseau maillé peuvent aussi recevoir vos messages.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">%d personne à proximité. Écrivez quelque chose, tout le monde le verra.</item>
@@ -38,7 +32,6 @@
     <string name="state_sent">Envoyé</string>
     <string name="state_delivered">Distribué</string>
     <string name="state_read">Lu</string>
-    <string name="state_failed">Non envoyé</string>
     <string name="state_queued">En attente du destinataire</string>
     <string name="state_carried">Transporté par d\'autres</string>
     <string name="send">Envoyer</string>
@@ -271,4 +264,41 @@
     <string name="me_wipe_confirm">Cette action est irréversible. Vos interlocuteurs vous verront ensuite comme un inconnu.</string>
     <string name="me_wipe_do">Effacer</string>
     <string name="panic_logo">openchat. Touchez trois fois pour tout effacer.</string>
+
+    <!-- mesh visuals (§30) -->
+    <string name="nearby_subtitle">Toutes les personnes à portée peuvent voir ceci</string>
+    <string name="band_direct">Directs</string>
+    <string name="band_reach">Portée</string>
+    <string name="band_scanning">Recherche · 0 personne</string>
+    <string name="band_for">depuis %1$s</string>
+    <string name="hops_direct">direct</string>
+    <string name="dm_status_direct">À proximité · juste à côté de vous</string>
+    <string name="dm_day_note">chiffré de bout en bout, les téléphones relais ne peuvent pas le lire</string>
+    <string name="state_undelivered">Non distribué</string>
+    <string name="retry">Réessayer</string>
+    <string name="chip_public">Public</string>
+    <string name="chip_encrypted">Chiffré</string>
+    <string name="radar_title">Personne à proximité pour l\'instant</string>
+    <string name="radar_body">Les téléphones avec openchat ou bitchat se connectent tout seuls à quelques dizaines de mètres.</string>
+    <string name="tip_open_title">Demandez-leur d\'ouvrir openchat aussi</string>
+    <string name="tip_open_body">bitchat fonctionne aussi. L\'app continue écran verrouillé, mais ne la fermez pas d\'un glissement.</string>
+    <string name="tip_window_title">Allez à découvert, près d\'une fenêtre</string>
+    <string name="tip_window_body">Les murs et la foule bloquent le Bluetooth. En intérieur, la portée tourne souvent autour de 10 m.</string>
+    <string name="tip_share_title">Pas d\'app sur leur téléphone ? Transmettez-la</string>
+    <string name="tip_share_body">Envoyez l\'installateur par Bluetooth ou Quick Share. Pas besoin d\'internet.</string>
+    <plurals name="hops_count">
+        <item quantity="one">%d saut</item>
+        <item quantity="many">%d sauts</item>
+        <item quantity="other">%d sauts</item>
+    </plurals>
+    <plurals name="route_hops">
+        <item quantity="one">%1$d saut jusqu\'à %2$s</item>
+        <item quantity="many">%1$d sauts jusqu\'à %2$s</item>
+        <item quantity="other">%1$d sauts jusqu\'à %2$s</item>
+    </plurals>
+    <plurals name="dm_status_relayed">
+        <item quantity="one">À proximité · relayé par %d téléphone</item>
+        <item quantity="many">À proximité · relayé par %d téléphones</item>
+        <item quantity="other">À proximité · relayé par %d téléphones</item>
+    </plurals>
 </resources>

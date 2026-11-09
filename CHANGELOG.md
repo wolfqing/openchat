@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **The mesh is visible**, as the README screenshots always showed
+  ([spec §30](docs/protocol-spec.md)):
+  - A signal band under the top bar: `Direct 3 | Reach 11`, and how long
+    ago anyone was last heard. With nobody in range it reads
+    `Scanning · 0 people` and counts how long it has been looking.
+  - Received messages in Nearby and private chats say how many links they
+    crossed, "direct" or "2 hops", read off the packet's TTL.
+  - Every sender in a room has an identity emblem, a small mirrored pixel
+    pattern and colour drawn from their key, and their name in that colour.
+  - Private messages you send show a four-dot path: sent, on its way
+    (a courier holds a copy), delivered, read.
+  - A private message that is still unconfirmed when it leaves the outbox
+    (after 24 hours, or when 200 newer ones push it out) turns red as
+    "Not delivered" with **Retry**. Before this the app had a failed state
+    but nothing ever set it.
+  - A private chat's header has the peer's emblem, "relayed by 1 phone" or
+    "right next to you", an Encrypted pill, and a band with the hops to them.
+  - Nobody nearby gets a real screen: a radar with 10 / 30 / 50 m rings and
+    three cards (ask them to open openchat or bitchat, move near a window,
+    pass the app on; the last opens the share sheet).
+  - Day separators ("Today", "Yesterday"); in private chats the first one
+    also says relaying phones cannot read the messages. The composer shows
+    a lock or broadcast icon for who will read what you type.
+- 2 new engine tests (hop counts, outbox expiry), 4 for the visual helpers;
+  173 in all.
+  Not yet tried on a phone.
+
 ## Android v0.6.2 (preview) — 2026-11-06
 
 Same release key as v0.6.0 and v0.6.1; installs over them. 167 unit tests.
