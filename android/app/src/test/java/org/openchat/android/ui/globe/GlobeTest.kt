@@ -35,6 +35,19 @@ class GlobeTest {
     }
 
     @Test
+    fun aSettledLevelFillsMostOfTheScreenAndStaysOnThatLevel() {
+        val screenSpan = 180.0 / Math.PI / 0.42 // degrees across the short side at zoom 1
+        for (p in GlobeView.MIN_PRECISION + 1..GlobeView.MAX_PRECISION) for (lat in listOf(0.0, 25.0, 50.0, 70.0, -60.0)) {
+            val z = GlobeView.zoomFor(p, lat)
+            assertEquals("p=$p lat=$lat", p, GlobeView.precisionFor(z))
+            val gridShare = 3 * org.openchat.android.nostr.Geohash.cellSize(p).first * Math.cos(Math.toRadians(lat)) * z / screenSpan
+            // Never the speck that piled the labels up (a sixth of the screen), never off the edges.
+            assertTrue("p=$p lat=$lat share=$gridShare", gridShare in 0.4..GlobeView.GRID_FILL + 1e-9)
+            if (kotlin.math.abs(lat) <= 50) assertEquals(GlobeView.GRID_FILL, gridShare, 1e-9)
+        }
+    }
+
+    @Test
     fun precisionFollowsZoomAndBackAgain() {
         var last = 0
         var z = GlobeView.MIN_ZOOM

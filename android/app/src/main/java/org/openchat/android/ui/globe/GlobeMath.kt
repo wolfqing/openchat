@@ -68,9 +68,23 @@ data class GlobeView(val lat: Double, val lon: Double, val zoom: Double) {
             return p
         }
 
-        /** A zoom that frames a [precision] cell with its neighbours: about four cells across. */
-        fun zoomFor(precision: Int): Double =
-            (180.0 / (Geohash.cellSize(precision).first * 4)).coerceIn(MIN_ZOOM, MAX_ZOOM)
+        /** Degrees of arc across the screen's short side at zoom 1, where the globe's radius is 0.42 of it. */
+        private const val SCREEN_SPAN = 180.0 / PI / 0.42
+        /** Share of the screen's width the 3x3 grid takes once a level settles. */
+        const val GRID_FILL = 0.7
+
+        /**
+         * The zoom a [precision] level settles at: its cell and neighbours fill about 70% of the
+         * screen's width at [lat], whatever zoom the level was reached at. Each level spans a
+         * 4-8x zoom range, so without settling its grid ranges from a sixth of the screen (labels
+         * pile up) to several screens wide. Kept inside the level's range, so -/+ step exactly one.
+         */
+        fun zoomFor(precision: Int, lat: Double = 0.0): Double {
+            val lonWidth = Geohash.cellSize(precision).first
+            val wanted = SCREEN_SPAN * GRID_FILL / (3 * lonWidth * max(cos(lat.rad), 0.2))
+            val nextLevel = 180.0 / (3 * lonWidth) // where precisionFor moves on to precision + 1
+            return kotlin.math.min(wanted, nextLevel * 0.95).coerceIn(MIN_ZOOM, MAX_ZOOM)
+        }
 
         /** Interpolates two views for a fly-to; zoom moves in log space so it feels even. */
         fun lerp(a: GlobeView, b: GlobeView, t: Double): GlobeView {

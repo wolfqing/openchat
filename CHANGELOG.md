@@ -29,6 +29,18 @@
     a lock or broadcast icon for who will read what you type.
 - 2 new engine tests (hop counts, outbox expiry), 4 for the visual helpers;
   173 in all.
+
+### Changed
+
+- **The globe picker settles on each level**, like bitchat's stepped zoom.
+  A level covers a 4-8x zoom range, and the picker switched to a finer level
+  as soon as three of its cells fit, so right after a switch the 3x3 grid
+  was a sixth of the screen and its nine labels piled into each other. Now
+  a pinch is free while the fingers are down and then glides to the level's
+  framing, the grid about 70% of the screen's width (a little less near the
+  poles); -/+, double tap and the fly-in land on the same framing. While a
+  cell is still too small mid-pinch its label is left out, and labels no
+  longer carry a `#`. 1 new test, 174 in all.
   Not yet tried on a phone.
 
 ## Android v0.6.2 (preview) — 2026-11-06
