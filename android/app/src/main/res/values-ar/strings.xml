@@ -289,6 +289,7 @@
     <string name="chip_encrypted">مشفّر</string>
     <string name="radar_title">لا أحد بالقرب بعد</string>
     <string name="radar_body">تتصل الهواتف التي تشغّل openchat أو bitchat تلقائيًا ضمن بضع عشرات من الأمتار.</string>
+    <string name="radar_history">عرض الرسائل السابقة</string>
     <string name="tip_open_title">اطلب منهم فتح openchat أيضًا</string>
     <string name="tip_open_body">يعمل bitchat أيضًا. يستمر التطبيق مع قفل الشاشة، لكن لا تغلقه بالسحب.</string>
     <string name="tip_window_title">انتقل إلى مكان مفتوح، قرب نافذة</string>

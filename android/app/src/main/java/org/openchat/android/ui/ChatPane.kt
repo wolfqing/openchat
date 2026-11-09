@@ -117,7 +117,12 @@ fun ChatPane(
     onSend: (String) -> Unit,
     onSenderClick: ((ChatMessage) -> Unit)? = null,
     onVisible: (List<ChatMessage>) -> Unit = {},
-    empty: (@Composable () -> Unit)? = null,
+    /**
+     * A screen that stands in for the timeline while [cover] holds, even over earlier messages
+     * (the radar while nobody is nearby). It gets a way to the timeline when there is one.
+     */
+    empty: (@Composable (onShowHistory: (() -> Unit)?) -> Unit)? = null,
+    cover: Boolean = false,
 ) {
     val all by ChatRepository.messages.collectAsState()
     val social by Social.state.collectAsState()
@@ -148,6 +153,17 @@ fun ChatPane(
         }
     }
     val newest = list.lastOrNull()
+    // Asked for the timeline, or just sent something: keep it in view until the cover is lifted.
+    var showHistory by remember(conversation) { mutableStateOf(false) }
+    LaunchedEffect(cover) { if (!cover) showHistory = false }
+    var seenNewest by remember(conversation) { mutableStateOf(newest?.id) }
+    LaunchedEffect(newest?.id) {
+        // Only a line that arrives now counts (what you sent, or a command's answer), not one already there.
+        if (newest?.id != seenNewest && newest?.mine == true) showHistory = true
+        seenNewest = newest?.id
+    }
+    val covered = empty != null && (list.isEmpty() || (cover && !showHistory))
+    LaunchedEffect(covered) { if (!covered && rows.isNotEmpty()) state.scrollToItem(rows.size - 1) }
     LaunchedEffect(newest?.id, newest?.senderKey) {
         if (newest != null && (newest.mine || atBottom)) state.animateScrollToItem(rows.size - 1)
         ChatRepository.clearUnread(conversation)
@@ -156,8 +172,8 @@ fun ChatPane(
 
     Column(Modifier.fillMaxSize().imePadding()) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            if (list.isEmpty() && empty != null) {
-                empty()
+            if (covered) {
+                empty!!(if (list.isEmpty()) null else ({ showHistory = true }))
             } else if (list.isEmpty()) {
                 Text(emptyText, Modifier.align(Alignment.Center).padding(32.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 22.sp)
             } else {

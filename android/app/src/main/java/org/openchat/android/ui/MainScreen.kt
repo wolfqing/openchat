@@ -203,7 +203,9 @@ fun MainScreen(
                     placeholder = stringResource(R.string.nearby_placeholder),
                     onSend = { ChatRepository.controller?.sendPublic(it) },
                     onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) person = PersonRef.Mesh(m.senderKey, m.senderName) },
-                    empty = if (peers.isEmpty() && mesh.running) ({ NobodyNearby(onShareApp) }) else null,
+                    // Nobody in range: the radar, whatever the timeline still holds from earlier.
+                    empty = if (peers.isEmpty() && mesh.running) ({ onShowHistory -> NobodyNearby(onShareApp, onShowHistory) }) else null,
+                    cover = peers.isEmpty() && mesh.running,
                 )
                 Tab.PRIVATE -> PrivateList(onOpen = { openChat = if (it.startsWith("gdm:") || it.startsWith("grp:")) it else Conversation.Private(it).key })
                 Tab.LOCATION -> LocationPane(onRequestLocation, onOpen = { openChat = Conversation.Geo(it).key })

@@ -41,6 +41,12 @@
   poles); -/+, double tap and the fly-in land on the same framing. While a
   cell is still too small mid-pinch its label is left out, and labels no
   longer carry a `#`. 1 new test, 174 in all.
+- **The radar shows whenever nobody is nearby**, not only while Nearby has
+  never had a message. Before, one message sent or received earlier (or a
+  bridged one) hid it until the app restarted, so on a real phone it was
+  rarely seen. Earlier messages stay one tap away ("Show earlier messages");
+  sending something, or a command's answer, opens the timeline too, and it
+  stays open until someone comes into range.
   Not yet tried on a phone.
 
 ## Android v0.6.2 (preview) — 2026-11-06

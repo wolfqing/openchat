@@ -274,6 +274,7 @@
     <string name="chip_encrypted">已加密</string>
     <string name="radar_title">附近還沒有人</string>
     <string name="radar_body">執行 openchat 或 bitchat 的手機在幾十公尺內會自動連線。</string>
+    <string name="radar_history">查看之前的訊息</string>
     <string name="tip_open_title">請對方也打開 openchat</string>
     <string name="tip_open_body">bitchat 也可以。鎖定螢幕後仍能運作，但不要把 App 滑掉。</string>
     <string name="tip_window_title">到開闊處，靠近窗戶</string>

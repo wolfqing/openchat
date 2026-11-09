@@ -35,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -294,7 +295,7 @@ fun DayHeader(timestamp: Long, note: String?) {
  * says the phone is looking; three cards say what actually helps.
  */
 @Composable
-fun NobodyNearby(onShareApp: (() -> Unit)?) {
+fun NobodyNearby(onShareApp: (() -> Unit)?, onShowHistory: (() -> Unit)? = null) {
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -306,6 +307,8 @@ fun NobodyNearby(onShareApp: (() -> Unit)?) {
             modifier = Modifier.semantics { heading() },
         )
         Text(stringResource(R.string.radar_body), color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, lineHeight = 22.sp)
+        // Earlier messages stay one tap away; the radar never hides them for good.
+        onShowHistory?.let { TextButton(onClick = it) { Text(stringResource(R.string.radar_history)) } }
         Spacer(Modifier.height(4.dp))
         TipCard(1, stringResource(R.string.tip_open_title), stringResource(R.string.tip_open_body), null)
         TipCard(2, stringResource(R.string.tip_window_title), stringResource(R.string.tip_window_body), null)

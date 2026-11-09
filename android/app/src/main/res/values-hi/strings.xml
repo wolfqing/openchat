@@ -277,6 +277,7 @@
     <string name="chip_encrypted">एन्क्रिप्टेड</string>
     <string name="radar_title">अभी आसपास कोई नहीं है</string>
     <string name="radar_body">openchat या bitchat चलाने वाले फ़ोन कुछ दर्जन मीटर के भीतर अपने आप जुड़ जाते हैं।</string>
+    <string name="radar_history">पिछले संदेश देखें</string>
     <string name="tip_open_title">उनसे भी openchat खोलने को कहें</string>
     <string name="tip_open_body">bitchat भी चलेगा। स्क्रीन लॉक होने पर भी यह काम करता है, पर ऐप को स्वाइप करके बंद न करें।</string>
     <string name="tip_window_title">खुली जगह पर, खिड़की के पास जाएँ</string>

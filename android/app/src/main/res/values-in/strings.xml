@@ -274,6 +274,7 @@
     <string name="chip_encrypted">Terenkripsi</string>
     <string name="radar_title">Belum ada orang di dekat</string>
     <string name="radar_body">Ponsel yang menjalankan openchat atau bitchat terhubung otomatis dalam jarak beberapa puluh meter.</string>
+    <string name="radar_history">Lihat pesan sebelumnya</string>
     <string name="tip_open_title">Minta mereka membuka openchat juga</string>
     <string name="tip_open_body">bitchat juga bisa. Tetap berjalan saat layar terkunci, tapi jangan geser untuk menutup aplikasinya.</string>
     <string name="tip_window_title">Pindah ke tempat terbuka, dekat jendela</string>
