@@ -17,10 +17,13 @@
     <string name="tab_me">Ben</string>
     <string name="ok">Tamam</string>
     <string name="wiped">Silindi. Yeni kimliğin: %1$s</string>
+    <string name="wiped_offline">Silindi. Ağ yeniden başladığında yeni bir kimlik oluşturulur.</string>
+    <string name="wipe_failed">Bazı veriler silinemedi. Sistem ayarlarından bu uygulamanın depolamasını temizleyin.</string>
     <string name="banner_need_permission">Yakındaki kişileri bulmak için Bluetooth izni gerekiyor</string>
     <string name="banner_bt_off">Bluetooth kapalı. Açmak için buraya dokun</string>
     <string name="banner_starting">Başlatılıyor…</string>
     <string name="banner_storage_locked">Kayıtlı kimlik şu anda açılamıyor. Yeniden denemek için dokunun.</string>
+    <string name="storage_locked_hint">Bu durum sürerse “%2$s” sekmesindeki “%1$s” yeni bir kimlikle baştan başlatır.</string>
     <string name="nearby_empty_alone">Henüz yakında kimse yok.\nopenchat çalıştıran telefonlar birkaç on metre içinde otomatik olarak bağlanır.\nAynı ağdaki bitchat kullanıcıları da mesajlarını alabilir.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">Yakında %d kişi var. Bir şey yaz, herkes görsün.</item>

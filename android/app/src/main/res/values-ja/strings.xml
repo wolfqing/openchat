@@ -17,10 +17,13 @@
     <string name="tab_me">自分</string>
     <string name="ok">OK</string>
     <string name="wiped">消去しました。新しいID: %1$s</string>
+    <string name="wiped_offline">消去しました。ネットワークが次に起動するとき、新しいIDが作られます。</string>
+    <string name="wipe_failed">一部のデータを消去できませんでした。システム設定でこのアプリのストレージを消去してください。</string>
     <string name="banner_need_permission">近くの人を見つけるにはBluetoothの許可が必要です</string>
     <string name="banner_bt_off">Bluetoothがオフです。タップしてオンにする</string>
     <string name="banner_starting">起動中…</string>
     <string name="banner_storage_locked">保存された ID を今は復号できません。タップして再試行してください。</string>
+    <string name="storage_locked_hint">この状態が続く場合は、「%2$s」タブの「%1$s」で新しいIDからやり直せます。</string>
     <string name="nearby_empty_alone">まだ近くに誰もいません。\nopenchatを使っているスマホは、数十メートル以内なら自動でつながります。\n同じメッシュにいるbitchatユーザーもメッセージを受け取れます。</string>
     <plurals name="nearby_empty_peers">
         <item quantity="other">近くに%d人います。発言すると全員に見えます。</item>

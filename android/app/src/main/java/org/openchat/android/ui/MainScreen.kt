@@ -67,6 +67,8 @@ import androidx.compose.ui.unit.sp
 import org.openchat.android.R
 import org.openchat.android.app.AppLanguage
 import org.openchat.android.app.ChatRepository
+import org.openchat.android.app.MeshService
+import org.openchat.android.app.Panic
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.PeerLabel
 
@@ -77,6 +79,9 @@ private enum class Tab(@StringRes val label: Int, val icon: ImageVector, val sel
     LOCATION(R.string.tab_location, Icons.Outlined.Place, Icons.Filled.Place),
     ME(R.string.tab_me, Icons.Outlined.Person, Icons.Filled.Person),
 }
+
+/** What a wipe actually did, for the dialog that follows it. */
+private enum class Wiped { NEW_IDENTITY, STORAGE_ONLY, INCOMPLETE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,25 +98,43 @@ fun MainScreen(
 ) {
     var tab by rememberSaveable { mutableStateOf(Tab.NEARBY) }
     var openChat by rememberSaveable { mutableStateOf<String?>(null) } // conversation key
-    var wiped by remember { mutableStateOf(false) }
+    var wiped by remember { mutableStateOf<Wiped?>(null) }
+    val context = LocalContext.current
     var person by remember { mutableStateOf<PersonRef?>(null) }
     val unread by ChatRepository.unread.collectAsState()
     val mesh by ChatRepository.mesh.collectAsState()
     val peers by ChatRepository.peers.collectAsState()
 
     val onPanic = {
-        ChatRepository.controller?.panic()
+        val controller = ChatRepository.controller
+        wiped = if (controller != null) {
+            controller.panic()
+            Wiped.NEW_IDENTITY
+        } else {
+            // No service to carry it out (permission revoked, identity locked, stopped by the system):
+            // what is on disk is erased here, and the dialog says only what actually happened.
+            val clean = Panic.wipeWithoutService(context.applicationContext)
+            if (clean && !missingPermissions) MeshService.start(context)
+            if (clean) Wiped.STORAGE_ONLY else Wiped.INCOMPLETE
+        }
         drafts.clear()
         openChat = null
         tab = Tab.NEARBY
-        wiped = true
     }
 
-    if (wiped) {
+    wiped?.let { result ->
         AlertDialog(
-            onDismissRequest = { wiped = false },
-            confirmButton = { TextButton(onClick = { wiped = false }) { Text(stringResource(R.string.ok)) } },
-            text = { Text(stringResource(R.string.wiped, PeerLabel.mesh(mesh.myNickname, mesh.myPeerHex).toString())) },
+            onDismissRequest = { wiped = null },
+            confirmButton = { TextButton(onClick = { wiped = null }) { Text(stringResource(R.string.ok)) } },
+            text = {
+                Text(
+                    when (result) {
+                        Wiped.NEW_IDENTITY -> stringResource(R.string.wiped, PeerLabel.mesh(mesh.myNickname, mesh.myPeerHex).toString())
+                        Wiped.STORAGE_ONLY -> stringResource(R.string.wiped_offline)
+                        Wiped.INCOMPLETE -> stringResource(R.string.wipe_failed)
+                    },
+                )
+            },
         )
     }
 
@@ -290,7 +313,7 @@ private fun StatusBanner(missing: Boolean, locked: Boolean, btOn: Boolean, runni
     val ctx = LocalContext.current
     // While nothing is wrong, the band shows the mesh itself: neighbours, reach, and freshness (§30).
     val problem = when {
-        locked -> stringResource(R.string.banner_storage_locked) to { org.openchat.android.app.MeshService.start(ctx) }
+        locked -> stringResource(R.string.banner_storage_locked) to { MeshService.start(ctx) }
         missing -> stringResource(R.string.banner_need_permission) to onGrant
         !btOn -> stringResource(R.string.banner_bt_off) to onEnable
         !running -> stringResource(R.string.banner_starting) to null
@@ -309,7 +332,14 @@ private fun StatusBanner(missing: Boolean, locked: Boolean, btOn: Boolean, runni
                         .let { if (action != null) it.clickable { action() } else it }
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
-                    Text(text, fontSize = 14.sp, color = if (warn) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column {
+                        Text(text, fontSize = 14.sp, color = if (warn) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                        // Retrying may never work (a damaged file). Say where the way out is.
+                        if (locked) Text(
+                            stringResource(R.string.storage_locked_hint, stringResource(R.string.me_wipe_title), stringResource(R.string.tab_me)),
+                            fontSize = 12.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                    }
                 }
             }
             alone -> ScanningBand(aloneSince)

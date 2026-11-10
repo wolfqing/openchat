@@ -17,10 +17,13 @@
     <string name="tab_me">Moi</string>
     <string name="ok">OK</string>
     <string name="wiped">Effacé. Votre nouvelle identité : %1$s</string>
+    <string name="wiped_offline">Effacé. Une nouvelle identité sera créée au prochain démarrage du réseau.</string>
+    <string name="wipe_failed">Certaines données n\'ont pas pu être effacées. Effacez le stockage de cette appli dans les réglages du système.</string>
     <string name="banner_need_permission">L\'autorisation Bluetooth est nécessaire pour trouver les personnes à proximité</string>
     <string name="banner_bt_off">Le Bluetooth est désactivé. Touchez ici pour l\'activer</string>
     <string name="banner_starting">Démarrage…</string>
     <string name="banner_storage_locked">Impossible de déverrouiller l\'identité enregistrée pour le moment. Appuyez pour réessayer.</string>
+    <string name="storage_locked_hint">Si cela persiste, « %1$s » dans l\'onglet « %2$s » repart de zéro avec une nouvelle identité.</string>
     <string name="nearby_empty_alone">Personne à proximité pour l\'instant.\nLes téléphones avec openchat se connectent automatiquement dans un rayon de quelques dizaines de mètres.\nLes utilisateurs de bitchat sur le même réseau maillé peuvent aussi recevoir vos messages.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">%d personne à proximité. Écrivez quelque chose, tout le monde le verra.</item>

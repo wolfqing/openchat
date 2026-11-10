@@ -17,10 +17,13 @@
     <string name="tab_me">من</string>
     <string name="ok">باشه</string>
     <string name="wiped">پاک شد. هویت جدید تو: %1$s</string>
+    <string name="wiped_offline">پاک شد. با راه‌اندازی دوبارهٔ شبکه هویت جدیدی ساخته می‌شود.</string>
+    <string name="wipe_failed">برخی داده‌ها پاک نشدند. حافظهٔ این برنامه را از تنظیمات سیستم پاک کنید.</string>
     <string name="banner_need_permission">برای پیدا کردن افراد نزدیک، اجازهٔ بلوتوث لازم است</string>
     <string name="banner_bt_off">بلوتوث خاموش است. برای روشن کردن اینجا بزن</string>
     <string name="banner_starting">در حال شروع…</string>
     <string name="banner_storage_locked">هویت ذخیره‌شده در حال حاضر باز نمی‌شود. برای تلاش دوباره ضربه بزنید.</string>
+    <string name="storage_locked_hint">اگر این وضعیت ادامه داشت، «%1$s» در زبانهٔ «%2$s» با هویتی جدید از نو شروع می‌کند.</string>
     <string name="nearby_empty_alone">هنوز کسی نزدیک نیست.\nگوشی‌هایی که openchat دارند در فاصلهٔ چند ده متری خودکار به هم وصل می‌شوند.\nکاربران bitchat در همان شبکه هم پیام‌های تو را دریافت می‌کنند.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">%d نفر نزدیک‌اند. چیزی بنویس تا همه ببینند.</item>

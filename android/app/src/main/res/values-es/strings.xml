@@ -17,10 +17,13 @@
     <string name="tab_me">Yo</string>
     <string name="ok">Aceptar</string>
     <string name="wiped">Borrado. Tu nueva identidad: %1$s</string>
+    <string name="wiped_offline">Borrado. Se creará una identidad nueva cuando la red vuelva a iniciarse.</string>
+    <string name="wipe_failed">No se pudieron borrar algunos datos. Borra el almacenamiento de esta app en los ajustes del sistema.</string>
     <string name="banner_need_permission">Se necesita permiso de Bluetooth para encontrar gente cerca</string>
     <string name="banner_bt_off">El Bluetooth está apagado. Toca aquí para activarlo</string>
     <string name="banner_starting">Iniciando…</string>
     <string name="banner_storage_locked">Ahora mismo no se puede desbloquear la identidad guardada. Toca para reintentar.</string>
+    <string name="storage_locked_hint">Si esto no cambia, «%1$s» en la pestaña «%2$s» empieza de nuevo con una identidad nueva.</string>
     <string name="nearby_empty_alone">Todavía no hay nadie cerca.\nLos teléfonos con openchat se conectan solos a unas decenas de metros.\nLos usuarios de bitchat en la misma red mesh también pueden recibir tus mensajes.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">%d persona cerca. Escribe algo y todos lo verán.</item>

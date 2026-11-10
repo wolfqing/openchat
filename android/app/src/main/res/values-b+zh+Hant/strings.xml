@@ -17,10 +17,13 @@
     <string name="tab_me">我</string>
     <string name="ok">好</string>
     <string name="wiped">已清除。你現在是一個新身分：%1$s</string>
+    <string name="wiped_offline">已清除。網路再次啟動時會產生新身分。</string>
+    <string name="wipe_failed">部分資料無法清除。請到系統設定中清除此 App 的儲存空間。</string>
     <string name="banner_need_permission">需要藍牙權限才能發現附近的人</string>
     <string name="banner_bt_off">藍牙已關閉，點這裡開啟</string>
     <string name="banner_starting">正在啟動…</string>
     <string name="banner_storage_locked">暫時無法解鎖已儲存的身分。點此重試。</string>
+    <string name="storage_locked_hint">如果一直如此，可以在「%2$s」頁用「%1$s」重新開始，換一個新身分。</string>
     <string name="nearby_empty_alone">附近還沒有人。\n開著 openchat 的手機靠近到幾十公尺內，就會自動連上。\n同一網路裡的 bitchat 使用者也能收到你的訊息。</string>
     <plurals name="nearby_empty_peers">
         <item quantity="other">附近有 %d 人。說一句話，大家都看得到。</item>

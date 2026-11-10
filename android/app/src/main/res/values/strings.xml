@@ -22,11 +22,14 @@
     <string name="tab_me">Me</string>
     <string name="ok">OK</string>
     <string name="wiped">Erased. You now have a new identity: %1$s</string>
+    <string name="wiped_offline">Erased. A new identity is made when the mesh starts again.</string>
+    <string name="wipe_failed">Some data could not be erased. Clear this app\'s storage in the system settings.</string>
     <string name="panic_logo">openchat. Tap three times to erase everything.</string>
     <string name="banner_need_permission">Bluetooth permission is needed to find people nearby</string>
     <string name="banner_bt_off">Bluetooth is off. Tap here to turn it on</string>
     <string name="banner_starting">Starting…</string>
     <string name="banner_storage_locked">Your saved identity can\'t be unlocked right now. Tap to try again.</string>
+    <string name="storage_locked_hint">If this does not go away, “%1$s” on the %2$s tab starts over with a new identity.</string>
 
     <!-- chat -->
     <string name="nearby_empty_alone">Nobody nearby yet.\nPhones running openchat connect automatically within a few dozen meters.\nbitchat users on the same mesh can also receive your messages.</string>

@@ -1,5 +1,41 @@
 # Changelog
 
+## Unreleased
+
+First round from the 2026-11-09 review (safety). No wire-format change.
+
+- **The panic wipe no longer depends on the mesh service.** The triple tap
+  and "Erase everything" only asked the running service to wipe. With no
+  service (Bluetooth permission revoked or reclaimed by the system, saved
+  identity locked, service stopped) nothing was erased: identity, contacts,
+  outbox and groups stayed on disk, and the dialog still said "Erased".
+  Now the app erases the sealed files, the Keystore key, the caches, Tor's
+  directory and the settings a wipe resets by itself, starts the service
+  again when it may, and the dialog says what happened: erased with a new
+  identity, erased with a new identity to come, or not everything could be
+  erased. The service's own wipe sweeps the whole sealed-file directory
+  instead of the files it knows by name, so a file a later feature adds is
+  covered.
+- **A locked identity has a way out.** The banner now says that "Erase
+  everything" on the Me tab starts over with a new identity, and in that
+  state it works (see above). Before, the only exit was clearing the app's
+  storage in the system settings.
+- **Sealed files are synced to disk before they are renamed into place.**
+  Without the sync a power cut could leave an empty file under the real
+  name: an identity that never unlocks again.
+- **A damaged groups file no longer crashes the app at every start.** It
+  was the one sealed file read without a guard, on the mesh thread; the
+  sticky restart ran into the same file again. It now counts as no groups.
+- **"Not delivered" is no longer final.** A message is marked so when it
+  leaves the outbox after 24 hours, but a courier can still hand it over,
+  and the receipt can come back later. That receipt was dropped, so a
+  delivered message stayed red with Retry, and Retry sent a duplicate. A
+  delivered or read receipt now replaces "Not delivered"; giving up never
+  replaces a receipt.
+- 6 new tests, 181 in all. Three new strings in all 18 languages.
+- Not tried on a phone. To check there: revoke the Bluetooth permission,
+  triple-tap, and look at the app's storage.
+
 ## Android v0.7.1 (preview) — 2026-11-09
 
 Globe picker labels that stay readable on the world view. Same release key as

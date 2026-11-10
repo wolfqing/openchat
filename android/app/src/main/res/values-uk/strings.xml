@@ -17,10 +17,13 @@
     <string name="tab_me">Я</string>
     <string name="ok">Гаразд</string>
     <string name="wiped">Усе стерто. Ваша нова особа: %1$s</string>
+    <string name="wiped_offline">Усе стерто. Нова особа з’явиться під час наступного запуску мережі.</string>
+    <string name="wipe_failed">Частину даних стерти не вдалося. Очистьте сховище застосунку в налаштуваннях системи.</string>
     <string name="banner_need_permission">Потрібен дозвіл Bluetooth, щоб знаходити людей поруч</string>
     <string name="banner_bt_off">Bluetooth вимкнено. Торкніться, щоб увімкнути</string>
     <string name="banner_starting">Запуск…</string>
     <string name="banner_storage_locked">Збережену особу зараз не вдається розблокувати. Торкніться, щоб повторити.</string>
+    <string name="storage_locked_hint">Якщо це не минає, «%1$s» на вкладці «%2$s» почне все заново з новою особою.</string>
     <string name="nearby_empty_alone">Поруч поки нікого немає.\nТелефони з openchat підключаються автоматично в радіусі кількох десятків метрів.\nКористувачі bitchat у тій самій мережі теж отримають ваші повідомлення.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="one">Людей поруч: %d. Напишіть щось — побачать усі.</item>
