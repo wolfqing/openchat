@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
@@ -152,6 +153,8 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
     Box(Modifier.fillMaxSize().background(Color(0xFF060808))) {
         Canvas(
             Modifier.fillMaxSize()
+                // Its own layer: what is recorded here is replayed, not redrawn, while only the crosshair above changes.
+                .graphicsLayer()
                 .semantics { contentDescription = readout }
                 .pointerInput(Unit) {
                     val baseR = min(size.width, size.height) * 0.42f
@@ -207,9 +210,10 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
         ) {
             drawGlobe(view, data, colors, measurer, stars)
         }
-        // The crosshair pulses for as long as the picker is open. On its own layer only these few
-        // strokes are redrawn each frame; drawn with the globe, every coastline was, 60 times a second.
-        Canvas(Modifier.fillMaxSize()) { drawCrosshair(colors.accent, pulse) }
+        // The crosshair pulses for as long as the picker is open. Drawing is invalidated a layer at a
+        // time, so it needs a layer of its own: then only these few strokes are redrawn each frame.
+        // Sharing a layer with the globe, every coastline was redrawn with it, 60 times a second.
+        Canvas(Modifier.fillMaxSize().graphicsLayer()) { drawCrosshair(colors.accent, pulse) }
 
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), tint = Color.White) }
