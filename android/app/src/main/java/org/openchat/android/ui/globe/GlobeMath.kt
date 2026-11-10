@@ -114,3 +114,26 @@ data class GlobeView(val lat: Double, val lon: Double, val zoom: Double) {
 
 private val Double.rad get() = this * PI / 180.0
 private val Double.deg get() = this * 180.0 / PI
+
+/**
+ * Screen space already taken by labels, so a later label that would cover one is left out.
+ * Labels claim space in priority order (crosshair, selected cell, neighbour cells, cities by
+ * rank), so the most useful ones win where they crowd together.
+ */
+class LabelSpace {
+    private val taken = ArrayList<FloatArray>()
+
+    /** True if the box (left, top, right, bottom) overlaps nothing taken so far. */
+    fun isFree(l: Float, t: Float, r: Float, b: Float): Boolean =
+        taken.none { l < it[2] && r > it[0] && t < it[3] && b > it[1] }
+
+    /** Takes the box if it is free; false (and nothing taken) otherwise. */
+    fun claim(l: Float, t: Float, r: Float, b: Float): Boolean {
+        if (!isFree(l, t, r, b)) return false
+        taken += floatArrayOf(l, t, r, b)
+        return true
+    }
+
+    /** Takes the box whatever it overlaps: for things that are always drawn. */
+    fun reserve(l: Float, t: Float, r: Float, b: Float) { taken += floatArrayOf(l, t, r, b) }
+}

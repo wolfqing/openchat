@@ -98,6 +98,19 @@ class GlobeTest {
         assertNull(GlobeData.parse(File("src/main/assets/globe.bin").readBytes().copyOf(1000)))
     }
 
+    @Test
+    fun crowdedLabelsGiveWayToOnesAlreadyDrawn() {
+        val space = LabelSpace()
+        space.reserve(40f, 40f, 60f, 60f) // the crosshair
+        assertTrue(space.claim(0f, 0f, 30f, 10f))
+        assertTrue(!space.claim(20f, 5f, 50f, 15f)) // covers the first label
+        assertTrue(!space.claim(45f, 45f, 80f, 55f)) // covers the crosshair
+        assertTrue(space.claim(30f, 0f, 50f, 10f)) // touching edges is fine
+        assertTrue(space.claim(0f, 70f, 30f, 80f))
+        // A refused claim takes no space.
+        assertTrue(space.isFree(61f, 41f, 70f, 50f))
+    }
+
     private fun abs(x: Double) = kotlin.math.abs(x)
     private fun abs(x: Float) = kotlin.math.abs(x)
 }

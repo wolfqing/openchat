@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **Globe picker, world view:** the selected cell's name was missing when the
+  globe first opens, because the cell is too small to hold it under the
+  crosshair. It now sits on a small plate just below the crosshair. At that
+  size the neighbouring cells are left unlabelled instead of half of them
+  squeezing in around the crosshair.
+- **Globe picker, labels no longer pile up:** city names (Chicago and
+  Toronto, Amsterdam, Berlin and Kyiv) and cell names (Dakar over `ef`)
+  overlapped. Labels now take screen space in order of importance: the
+  crosshair, the selected cell, its neighbours, then cities by size. A city
+  name that would cover another moves to the left of its dot, or is left
+  out while its dot stays. 175 unit tests.
+
 ## Android v0.7.0 (preview) — 2026-11-08
 
 The mesh made visible, as the README screenshots show it, and a globe picker
