@@ -11,6 +11,15 @@ import java.util.TimeZone
 
 class MeshVisualsTest {
     @Test
+    fun theSweepTurnsOnceEveryFourSeconds() {
+        assertEquals(0f, sweepAngle(0), 1e-6f)
+        assertEquals(90f, sweepAngle(1_000), 1e-4f)
+        assertEquals(270f, sweepAngle(7_000), 1e-4f)
+        assertEquals(sweepAngle(123), sweepAngle(123 + 4_000 * 1_000_000L), 1e-3f)
+        assertTrue(sweepAngle(3_999) < 360f)
+    }
+
+    @Test
     fun emblemsAreMirroredStableAndNeverBlank() {
         val keys = (0 until 200).map { "%016x".format(it * 0x9E3779B97F4A7C15uL.toLong()) }
         for (k in keys) {

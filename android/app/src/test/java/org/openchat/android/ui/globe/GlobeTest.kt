@@ -99,6 +99,59 @@ class GlobeTest {
     }
 
     @Test
+    fun storedUnitVectorsProjectLikeLatitudeAndLongitude() {
+        val d = GlobeData.parse(File("src/main/assets/globe.bin").readBytes())!!
+        val a = DoubleArray(3); val b = DoubleArray(3)
+        for (v in listOf(GlobeView(20.0, 10.0, 0.9), GlobeView(-41.3, 174.8, 40.0), GlobeView(64.1, -21.9, 3_000.0))) {
+            for (pl in d.coastCoarse.filterIndexed { i, _ -> i % 7 == 0 }) for (i in pl.x.indices) {
+                v.project(pl.lat[i].toDouble(), pl.lon[i].toDouble(), a)
+                v.projectUnit(pl.x[i], pl.y[i], pl.z[i], b)
+                for (k in 0..2) assertEquals(a[k], b[k], 1e-6)
+            }
+        }
+    }
+
+    @Test
+    fun linesAreCutIntoPiecesThatStillJoinUp() {
+        val d = GlobeData.parse(File("src/main/assets/globe.bin").readBytes())!!
+        val all = d.coastCoarse + d.coastFine + d.borders
+        assertTrue(all.all { it.lat.size in 1..GlobeData.PIECE })
+        // globe.bin holds 5127 + 60412 + 2994 points in 134 + 1429 + 333 lines; a cut repeats one point.
+        assertEquals(5127 + 60412 + 2994, all.sumOf { it.lat.size } - (all.size - (134 + 1429 + 333)))
+        // The longest coastline (10,297 points) is now many pieces, each starting where the last ended.
+        val joins = d.coastFine.zipWithNext().count { (p, q) -> p.lat.last() == q.lat.first() && p.lon.last() == q.lon.first() }
+        assertTrue(joins >= (10_297 - 1) / (GlobeData.PIECE - 1))
+        // Every point lies inside its piece's cap.
+        for (pl in all) for (i in pl.x.indices) {
+            val towards = (pl.x[i] * pl.capX + pl.y[i] * pl.capY + pl.z[i] * pl.capZ).toDouble().coerceIn(-1.0, 1.0)
+            assertTrue(Math.acos(towards) <= pl.capAngle + 1e-3)
+        }
+    }
+
+    @Test
+    fun aPieceWithAPointOnScreenIsNeverSkipped() {
+        val d = GlobeData.parse(File("src/main/assets/globe.bin").readBytes())!!
+        val p = DoubleArray(3)
+        val reachAtZoom1 = Math.hypot(0.5, 1.1) / 0.42 // a tall phone: half diagonal over the globe's radius
+        var kept = 0; var skipped = 0
+        for (v in listOf(GlobeView(20.0, 10.0, 0.9), GlobeView(35.7, 139.7, 12.0), GlobeView(51.5, -0.1, 800.0), GlobeView(-33.9, 151.2, 60_000.0), GlobeView(85.0, 0.0, 5.0))) {
+            val reach = reachAtZoom1 / v.zoom
+            val visible = GlobeView.visibleAngle(reach)
+            for (pl in d.coastFine) {
+                val inView = v.capInView(pl.capX, pl.capY, pl.capZ, pl.capAngle, visible)
+                if (inView) kept++ else skipped++
+                if (inView) continue
+                for (i in pl.x.indices) {
+                    v.projectUnit(pl.x[i], pl.y[i], pl.z[i], p)
+                    assertTrue("a skipped piece had a point on screen", p[2] < 0 || Math.hypot(p[0], p[1]) > reach)
+                }
+            }
+        }
+        // And it is worth it: zoomed in, nearly everything is skipped.
+        assertTrue("kept=$kept skipped=$skipped", skipped > kept)
+    }
+
+    @Test
     fun crowdedLabelsGiveWayToOnesAlreadyDrawn() {
         val space = LabelSpace()
         space.reserve(40f, 40f, 60f, 60f) // the crosshair

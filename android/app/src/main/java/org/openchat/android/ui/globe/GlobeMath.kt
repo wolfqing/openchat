@@ -2,6 +2,7 @@ package org.openchat.android.ui.globe
 
 import org.openchat.android.nostr.Geohash
 import kotlin.math.PI
+import kotlin.math.acos
 import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -18,6 +19,8 @@ import kotlin.math.sqrt
 data class GlobeView(val lat: Double, val lon: Double, val zoom: Double) {
     private val sinLat0 = sin(lat.rad)
     private val cosLat0 = cos(lat.rad)
+    private val sinLon0 = sin(lon.rad)
+    private val cosLon0 = cos(lon.rad)
 
     /** Unit-sphere coordinates of a point: x right, y up, z towards the viewer (z < 0 is hidden). */
     fun project(lat: Double, lon: Double, out: DoubleArray) {
@@ -27,6 +30,26 @@ data class GlobeView(val lat: Double, val lon: Double, val zoom: Double) {
         out[0] = cl * sin(dl)
         out[1] = cosLat0 * sin(la) - sinLat0 * cl * cos(dl)
         out[2] = sinLat0 * sin(la) + cosLat0 * cl * cos(dl)
+    }
+
+    /**
+     * [project] for a point already on the unit sphere (as [GlobeData.Polyline] stores them):
+     * three dot products with the view's east, north and outward axes, no trigonometry.
+     */
+    fun projectUnit(px: Float, py: Float, pz: Float, out: DoubleArray) {
+        val along = px * cosLon0 + py * sinLon0
+        out[0] = py * cosLon0 - px * sinLon0
+        out[1] = cosLat0 * pz - sinLat0 * along
+        out[2] = sinLat0 * pz + cosLat0 * along
+    }
+
+    /**
+     * Whether a cap on the sphere (axis and angle, as [GlobeData.Polyline] has) can touch the
+     * part of the globe within [visibleAngle] of the view's centre.
+     */
+    fun capInView(capX: Float, capY: Float, capZ: Float, capAngle: Float, visibleAngle: Double): Boolean {
+        val towards = sinLat0 * capZ + cosLat0 * (capX * cosLon0 + capY * sinLon0)
+        return acos(towards.coerceIn(-1.0, 1.0)) <= visibleAngle + capAngle
     }
 
     /** The (lat, lon) shown at unit-disc point (x, y), or null off the globe. */
@@ -56,6 +79,13 @@ data class GlobeView(val lat: Double, val lon: Double, val zoom: Double) {
         const val MAX_LAT = 85.0
         const val MIN_PRECISION = 2
         const val MAX_PRECISION = 7 // the block level, the finest channel (§9)
+
+        /**
+         * How far from the view's centre, in radians, the sphere can still be on screen, when
+         * the screen reaches [reach] globe radii from its centre (its half diagonal over the
+         * globe's radius in pixels). The whole near hemisphere once the globe fits the screen.
+         */
+        fun visibleAngle(reach: Double): Double = if (reach >= 1.0) PI / 2 else asin(reach)
 
         /** Degrees across the view at [zoom]: the whole hemisphere at 1, shrinking as it grows. */
         fun spanDegrees(zoom: Double) = 180.0 / zoom

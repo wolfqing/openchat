@@ -373,7 +373,7 @@ ID) and keeps running. This is local behaviour and needs no wire support.
 |---|---|
 | Default TTL | 7 |
 | Dense-graph broadcast TTL cap | 5 (at ≥ 6 links) |
-| Dedup set | 1000 entries, 300 s |
+| Dedup set | 1000 entries, 300 s (openchat keeps 4096: voice bursts, bundles, board and group packets share it) |
 | Relay delay | see §7 table |
 | Fragment chunk | 469 bytes |
 | Fragment assemblies | 128, 30 s each |

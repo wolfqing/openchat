@@ -163,7 +163,7 @@ class MeshEngine(
     // Ciphertexts that overtook the last handshake message on a relay path.
     private val earlyCiphertexts = HashMap<String, ArrayDeque<Pair<ByteArray, Int?>>>() // ciphertext, hops
     private val lastHandshakeStart = HashMap<String, Long>()
-    private val dedup = Deduplicator(clock = scheduler::now)
+    private val dedup = Deduplicator(maxEntries = DEDUP_ENTRIES, clock = scheduler::now)
     private var assembler = FragmentAssembler(clock = scheduler::now)
     private val pendingRelays = HashMap<String, Cancellable>()
     // Store-and-forward (§13).
@@ -194,6 +194,7 @@ class MeshEngine(
     private val syncReplies = HashMap<String, ArrayList<Long>>() // peer hex -> times we answered it
     private var lastSyncRound = 0L
     private var lastPrune = 0L
+    private var lastSeenUnsavedSince = 0L // when a remembered peer's lastSeen first moved without being saved
     private var lastAnnounce = 0L
     private var nextAnnounceDue = 0L
     private var running = false
@@ -212,10 +213,13 @@ class MeshEngine(
     val sessionCount get() = sessions.size + candidates.size
     val knownCount get() = known.size
 
-    fun exportState() = MeshState(
-        HashMap(known), outbox.values.toList(), carried.toList(), history.values.toList(), board.entries(),
-        localPrekeys.serialize(), prekeyCache.all().map { MeshState.StoredBundle(it.packet, it.used.toSet(), it.assigned.toMap()) },
-    )
+    fun exportState(): MeshState {
+        lastSeenUnsavedSince = 0 // whatever is exported carries the current times
+        return MeshState(
+            HashMap(known), outbox.values.toList(), carried.toList(), history.values.toList(), board.entries(),
+            localPrekeys.serialize(), prekeyCache.all().map { MeshState.StoredBundle(it.packet, it.used.toSet(), it.assigned.toMap()) },
+        )
+    }
 
     fun importState(s: MeshState) {
         known.putAll(s.known)
@@ -262,6 +266,7 @@ class MeshEngine(
         localPrekeys.clear(); prekeyCache.clear(); pendingBundles.clear(); myBundle = null; lastBundleSent = 0
         pendingRelays.values.forEach { it.cancel() }; pendingRelays.clear()
         dedup.clear()
+        lastSeenUnsavedSince = 0
         assembler = FragmentAssembler(clock = scheduler::now)
         links.values.forEach { it.peerHex = null; it.framer.reset() }
         // The old private keys stay in memory only as long as the garbage collector pleases; zero them now.
@@ -284,6 +289,7 @@ class MeshEngine(
         expireHandshakes(now)
         rekeyOldSessions(now)
         if (now - lastPrune > 30_000) { lastPrune = now; prune(now) }
+        if (lastSeenUnsavedSince != 0L && now - lastSeenUnsavedSince >= LAST_SEEN_SAVE_MS) { lastSeenUnsavedSince = 0; listener.onStateChanged() }
         if (now - lastSyncRound >= SYNC_INTERVAL_MS) { lastSyncRound = now; syncRound() }
         scheduler.schedule(1000) { tick() }
     }
@@ -1207,8 +1213,16 @@ class MeshEngine(
             }
             known[hex] = KnownPeer(noiseKey, signingKey, nickname, now)
         } else {
+            val changed = k.nickname != nickname || (k.signingKey == null && signingKey != null)
             k.nickname = nickname; k.lastSeen = now
             if (k.signingKey == null && signingKey != null) k.signingKey = signingKey
+            if (!changed) {
+                // Only the time moved, as it does with every announce of every peer. That alone is not
+                // worth sealing the whole state to disk: it goes out with the next real change, or
+                // from the tick once it has waited long enough.
+                if (lastSeenUnsavedSince == 0L) lastSeenUnsavedSince = now
+                return
+            }
         }
         listener.onStateChanged()
     }
@@ -1408,6 +1422,12 @@ class MeshEngine(
         private const val MAX_COURIERS = 3
         private const val OUTBOX_CAP = 200
         private const val KNOWN_CAP = 500
+        // How stale a remembered peer's saved lastSeen may get. It only orders evictions among 500 entries.
+        private const val LAST_SEEN_SAVE_MS = 5 * 60_000L
+        // bitchat keeps 1000 packet keys (§11). That was sized for messages and fragments; live voice
+        // bursts, prekey bundles, board posts and group messages now share the table, and a key
+        // pushed out early lets its packet be processed and relayed a second time.
+        private const val DEDUP_ENTRIES = 4096
         // Noise session liveness (§8.1).
         private const val HANDSHAKE_TIMEOUT_MS = 10_000L
         private const val PENDING_HANDSHAKE_CAP = 64

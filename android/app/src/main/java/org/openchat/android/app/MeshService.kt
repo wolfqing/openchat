@@ -57,6 +57,8 @@ class MeshService : Service(), ChatController {
         private const val NOTE_PRECISION = 8 // building level, as bitchat
         // A repeated Nostr message newer than this is the sender's own resend and gets its receipt again (§15.3).
         private const val RESEND_ACK_WINDOW_MS = 10 * 60_000L
+        // How long the UI thread waits for the mesh thread before giving up on an answer.
+        private const val MESH_ANSWER_MS = 2_000L
 
         fun start(context: Context) {
             val i = Intent(context, MeshService::class.java)
@@ -81,7 +83,8 @@ class MeshService : Service(), ChatController {
     private val nostrSeen = LinkedHashSet<String>() // message IDs already shown from Nostr, kept across restarts
     // Noise static keys by peer ID, readable from the UI thread (the engine's maps are not).
     private val noiseKeys = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
-    private val saveState = Runnable { stateStore.save(engine.exportState()) }
+    private val saveSchedule = SaveSchedule()
+    private val saveState = Runnable { saveSchedule.saved(); stateStore.save(engine.exportState()) }
     private lateinit var engine: MeshEngine
     private lateinit var ble: BleTransport
     private lateinit var geo: GeoChannels
@@ -331,8 +334,11 @@ class MeshService : Service(), ChatController {
 
         override fun onVouch(peerHex: String, sessionKey: ByteArray, signingKey: ByteArray, batch: ByteArray) = vouching.receive(sessionKey, signingKey, batch)
 
-        // Coalesce bursts of changes into one write.
-        override fun onStateChanged() { handler.removeCallbacks(saveState); handler.postDelayed(saveState, 500) }
+        // Coalesce bursts of changes into one write, but do not let a steady stream put it off for good.
+        override fun onStateChanged() {
+            handler.removeCallbacks(saveState)
+            handler.postDelayed(saveState, saveSchedule.delayAfterChange(SystemClock.uptimeMillis()))
+        }
     }
 
     private fun deliverPrivate(senderHex: String, nickname: String, messageId: String, text: String, timestamp: Long, hops: Int? = null) {
@@ -611,8 +617,11 @@ class MeshService : Service(), ChatController {
 
     override fun setBridge(on: Boolean) { handler.post { bridge.setEnabled(on) } }
 
+    /** The UI thread asks, the mesh thread answers; never an open-ended wait (see [askMesh]). */
+    private fun <T> ask(fallback: T, block: () -> T): T = askMesh({ handler.post(it) }, MESH_ANSWER_MS, fallback, block)
+
     override fun postToBoard(text: String, urgent: Boolean, days: Int): Boolean =
-        java.util.concurrent.FutureTask { engine.postToBoard(text, urgent, days) }.also { handler.post(it) }.get()
+        ask(false) { engine.postToBoard(text, urgent, days) }
     override fun deleteBoardPost(idHex: String) { handler.post { engine.deleteBoardPost(idHex) } }
 
     /** The board as the UI shows it: urgent first, then newest. Runs on the mesh thread. */
@@ -636,13 +645,12 @@ class MeshService : Service(), ChatController {
         }
     }
 
-    override fun estimatePath(peerHex: String): List<String>? = java.util.concurrent.FutureTask {
+    override fun estimatePath(peerHex: String): List<String>? = ask(null) {
         val names = engine.peersSnapshot().associate { it.peerIdHex to it.nickname }
         engine.estimatePath(peerHex)?.map { hex -> PeerLabel.mesh(names[hex], hex).toString() }
-    }.also { handler.post(it) }.get()
+    }
 
-    override fun createGroup(name: String): String? =
-        java.util.concurrent.FutureTask { groups.create(name) }.also { handler.post(it) }.get()
+    override fun createGroup(name: String): String? = ask(null) { groups.create(name) }
     override fun groupInvite(idHex: String, peerHex: String) { handler.post { groups.invite(idHex, peerHex) } }
     override fun groupRemove(idHex: String, fingerprint: String) { handler.post { groups.remove(idHex, fingerprint) } }
     override fun groupLeave(idHex: String) { handler.post { groups.leave(idHex) } }
@@ -687,6 +695,7 @@ class MeshService : Service(), ChatController {
         tor.wipeAndRestart(Handler(mainLooper), delayMs = 2_000L + (Math.random() * 6_000).toLong())
         handler.post {
             handler.removeCallbacks(saveState)
+            saveSchedule.saved()
             bridge.wipe()
             groups.wipe()
             liveVoice.wipe()

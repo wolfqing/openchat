@@ -1,12 +1,7 @@
 package org.openchat.android.ui
 
 import android.text.format.DateUtils
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import android.provider.Settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -40,8 +35,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,7 +47,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -337,35 +334,60 @@ private fun TipCard(n: Int, title: String, body: String, onClick: (() -> Unit)?)
     }
 }
 
-/** Rings at about 10, 30 and 50+ metres, typical Bluetooth range indoors and out, with a sweep. */
+/**
+ * Rings at about 10, 30 and 50+ metres, typical Bluetooth range indoors and out, with a sweep.
+ * Nobody nearby is the usual state, often for hours and on a battery that has to last, so this
+ * is drawn cheaply: rings and labels once, and the sweep as a layer that is only turned, about
+ * [SWEEP_FPS] times a second instead of at the display's rate. It stands still when the system's
+ * animations are switched off.
+ */
 @Composable
 private fun Radar(modifier: Modifier) {
-    val sweep by rememberInfiniteTransition(label = "radar").animateFloat(
-        0f, 360f, infiniteRepeatable(tween(4_000, easing = LinearEasing), RepeatMode.Restart), label = "sweep",
-    )
+    val ctx = LocalContext.current
+    val still = remember { Settings.Global.getFloat(ctx.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
+    var sweep by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(still) {
+        if (still) return@LaunchedEffect
+        var last = 0L
+        // Frame callbacks stop while the screen is not showing this, so nothing ticks in the background.
+        while (true) withFrameNanos { now ->
+            if (now - last >= 1_000_000_000L / SWEEP_FPS) { last = now; sweep = sweepAngle(now / 1_000_000) }
+        }
+    }
     val ring = MaterialTheme.colorScheme.outlineVariant
     val accent = MaterialTheme.colorScheme.primary
     val dot = MaterialTheme.colorScheme.onSurface
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     val measurer = rememberTextMeasurer()
     val labelStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = labelColor)
-    Canvas(modifier.clearAndSetSemantics { }) {
-        val c = center
-        val maxR = size.minDimension / 2 - 2
-        val radii = listOf(maxR * 0.36f, maxR * 0.68f, maxR)
-        radii.forEach { drawCircle(ring, it, c, style = Stroke(1.dp.toPx())) }
-        rotate(sweep, c) {
-            drawArc(
+    Box(modifier.clearAndSetSemantics { }) {
+        Canvas(Modifier.fillMaxSize()) {
+            val c = center
+            val maxR = size.minDimension / 2 - 2
+            val radii = listOf(maxR * 0.36f, maxR * 0.68f, maxR)
+            radii.forEach { drawCircle(ring, it, c, style = Stroke(1.dp.toPx())) }
+            // Each label sits just inside the top of its ring.
+            listOf("10 m", "30 m", "50 m+").forEachIndexed { i, label ->
+                val t = measurer.measure(label, labelStyle)
+                drawText(t, topLeft = Offset(c.x - t.size.width / 2f, c.y - radii[i] + 3.dp.toPx()))
+            }
+        }
+        // Read inside the layer block: a new angle moves the layer, it does not redraw the wedge.
+        Canvas(Modifier.fillMaxSize().graphicsLayer { rotationZ = sweep }) {
+            val c = center
+            val maxR = size.minDimension / 2 - 2
+            if (!still) drawArc(
                 Brush.sweepGradient(listOf(Color.Transparent, accent.copy(alpha = 0.05f), accent.copy(alpha = 0.45f)), c),
                 startAngle = -40f, sweepAngle = 40f, useCenter = true,
                 topLeft = Offset(c.x - maxR, c.y - maxR), size = Size(maxR * 2, maxR * 2),
             )
-        }
-        drawCircle(dot, 5.dp.toPx(), c)
-        // Each label sits just inside the top of its ring.
-        listOf("10 m", "30 m", "50 m+").forEachIndexed { i, label ->
-            val t = measurer.measure(label, labelStyle)
-            drawText(t, topLeft = Offset(c.x - t.size.width / 2f, c.y - radii[i] + 3.dp.toPx()))
+            drawCircle(dot, 5.dp.toPx(), c)
         }
     }
 }
+
+private const val SWEEP_FPS = 15
+private const val SWEEP_MS = 4_000L
+
+/** Where the sweep points at [timeMs]: one turn every four seconds. */
+internal fun sweepAngle(timeMs: Long): Float = Math.floorMod(timeMs, SWEEP_MS) * 360f / SWEEP_MS
