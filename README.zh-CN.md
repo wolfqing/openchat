@@ -47,7 +47,7 @@ openchat 是**同一张网络上的独立客户端，MIT 许可**。它说的是
 
 | | 状态 |
 |---|---|
-| Android 应用 | **v0.7.1 预览版。** 175 个单元测试，APK 9.1 MB，18 种语言。改动见 [CHANGELOG.md](CHANGELOG.md) |
+| Android 应用 | **v0.7.2 预览版。** 190 个单元测试，APK 9.2 MB，18 种语言。改动见 [CHANGELOG.md](CHANGELOG.md) |
 | 与原版 bitchat 互通 | **尚未验证。** 按[规范](docs/protocol-spec.md)、上游测试向量和从 bitchat 构建中录得的信封实现；与原版 bitchat 客户端的互通验证是下一个里程碑 |
 | 安全审计 | **没有。** 线路上的一切都是上游的；上游做过一次审计（Cure53，2025-11），仍有未关闭的发现 |
 | 发布签名 | v0.6.0 起使用专用发布密钥签名，证书指纹在 [SECURITY.md](SECURITY.md)。v0.5.0 及之前的预览版是调试密钥签名，须先卸载 |
@@ -168,7 +168,7 @@ echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
 
 ## 路线图一句话
 
-先做 Android，从零开始、对照规范：已做到 v0.7.1。接下来是与原版 bitchat 手机做互通验证，然后 iOS，然后在一次防灾演练或一个人群密集场所做一次真实试点。每个阶段的退出条件和终止条件在 [docs/roadmap.md](docs/roadmap.md)。
+先做 Android，从零开始、对照规范：已做到 v0.7.2。接下来是与原版 bitchat 手机做互通验证，然后 iOS，然后在一次防灾演练或一个人群密集场所做一次真实试点。每个阶段的退出条件和终止条件在 [docs/roadmap.md](docs/roadmap.md)。
 
 ## 名字
 

@@ -201,7 +201,8 @@ fun agoText(then: Long, now: Long, locale: Locale): String {
 
 /** "Today", "Yesterday", otherwise the date, in the app's language. */
 fun dayText(timestamp: Long, now: Long, locale: Locale, zone: TimeZone = TimeZone.getDefault()): String {
-    val f = RelativeDateTimeFormatter.getInstance(ULocale.forLocale(locale), null, RelativeDateTimeFormatter.Style.LONG, DisplayContext.CAPITALIZATION_FOR_STANDALONE)
+    // Beginning-of-sentence, not standalone: English has no standalone rule, and came out as "today".
+    val f = RelativeDateTimeFormatter.getInstance(ULocale.forLocale(locale), null, RelativeDateTimeFormatter.Style.LONG, DisplayContext.CAPITALIZATION_FOR_BEGINNING_OF_SENTENCE)
     return when (localDay(now, zone) - localDay(timestamp, zone)) {
         0L -> f.format(RelativeDateTimeFormatter.Direction.THIS, RelativeDateTimeFormatter.AbsoluteUnit.DAY)
         1L -> f.format(RelativeDateTimeFormatter.Direction.LAST, RelativeDateTimeFormatter.AbsoluteUnit.DAY)

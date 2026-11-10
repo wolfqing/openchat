@@ -1,81 +1,13 @@
 # Changelog
 
-## Unreleased
+## Android v0.7.2 (preview) — 2026-11-09
 
-Third round from the 2026-11-09 review (languages and gates). No wire-format
-change.
+Safety, battery and language fixes from the 2026-11-09 review. No wire-format
+change. Same release key as v0.6.0–v0.7.1; installs over them. 190 unit
+tests. 9.2 MB.
+APK SHA-256 `98c485b481def07351b5872da8ff27445b0b7d7f022e401fa499531fa75d1b2f`.
 
-- **One language on screen.** The in-app language is applied by wrapping the
-  activity's context; the system's default locale stays what the phone is
-  set to. The texts v0.7.0 added were formatted with APIs that follow the
-  system: "12 sec. ago" in the signal band, "Today" and "Yesterday" between
-  messages, the scanning timer, voice-note lengths, and message timestamps
-  since earlier. On a phone set to Chinese, the English app (the default)
-  showed Chinese fragments from its first screen. They now use the app's
-  language: relative times and day names come from ICU for that locale,
-  timestamps and counters are formatted with it.
-- **Plural forms declared for Russian, Ukrainian and Arabic** in the four
-  plurals that had only "one" and "other" (group members, board days, days
-  left, people across the bridge). Russian and Ukrainian put the number
-  after a colon, so the wording was already right for every count and is
-  unchanged. Arabic used one noun form for all counts, which was wrong for
-  most; it now reads correctly for 1, 2, 3–10 and 11 and up.
-- **Lint is clean of errors** (18 before: those twelve plurals, and six
-  places that read strings through the context instead of through Compose,
-  which does not follow a language change). Six compiler warnings are gone
-  too.
-- **CI now runs lint and builds the release APK**, and fails when R8 says it
-  cannot read Kotlin metadata. v0.6.0 passed CI and crashed on launch for
-  exactly that; until now only unit tests and the debug build were checked.
-- 1 new test, 190 in all.
-- Not done: `android:localeConfig`. Offering the app in the system's
-  per-app language list makes the system's choice and the in-app default
-  (English when nothing is chosen) compete, and which one wins is a product
-  decision. Not tried on a phone.
-
-Second round from the 2026-11-09 review (battery and speed). No wire-format
-change.
-
-- **The mesh state is no longer sealed to disk on every announce.** Every
-  verified announce refreshed a remembered peer's last-seen time, and that
-  alone asked for a save: the whole state (up to 500 remembered peers, 1000
-  history packets, the board, prekey bundles) serialised, encrypted inside
-  the Android Keystore and written, on the mesh thread. With two or three
-  phones that was every few seconds, around the clock. Now a last-seen time
-  on its own waits for the next real change, or at most five minutes.
-- **A busy mesh can no longer starve the save.** The 500 ms quiet-time
-  debounce had no ceiling, so changes arriving faster than that put the
-  write off indefinitely. It now runs at the latest five seconds after the
-  first unsaved change.
-- **Globe picker: the globe is redrawn when it moves, not 60 times a
-  second.** The pulsing crosshair shared a canvas with the globe, so every
-  frame re-projected all 60,412 coastline points with four trigonometric
-  calls each, through boxing lambdas, whether or not a finger was down. The
-  crosshair has its own layer now. Points are stored as unit vectors when
-  the map is parsed (three dot products per point, no trigonometry), lines
-  are cut into pieces of at most 128 points, and a piece that cannot be on
-  screen is skipped whole: at region level 7% of the points are projected,
-  at province level 1.5%, at block level 0.2%. The text measurer's cache
-  holds 64 labels instead of 8.
-- **The radar costs little while nobody is nearby.** Its sweep ran at the
-  display's rate, redrawing rings and labels each frame, in the state the
-  app is in most. Rings and labels are drawn once; the sweep is a layer
-  that is only turned, 15 times a second; it stands still when system
-  animations are off.
-- **The dedup table holds 4096 packet keys instead of 1000.** Live voice
-  bursts, prekey bundles, board posts and group messages now share it; a
-  key pushed out early let its packet be processed and relayed again.
-- **The UI no longer waits on the mesh thread without a limit.** Posting to
-  the board, creating a group and `/trace` blocked the UI thread until the
-  mesh thread answered, which is never once that thread has quit. They give
-  up after two seconds, or at once when the thread is gone.
-- 8 new tests, 189 in all.
-- Left for later: moving the sealing itself off the mesh thread, and
-  sealing bulk data with a key the Keystore only wraps. Both touch the
-  wipe and the identity file and want a phone to test on. Not tried on a
-  phone.
-
-First round from the 2026-11-09 review (safety). No wire-format change.
+### Safety
 
 - **The panic wipe no longer depends on the mesh service.** The triple tap
   and "Erase everything" only asked the running service to wipe. With no
@@ -105,9 +37,87 @@ First round from the 2026-11-09 review (safety). No wire-format change.
   delivered message stayed red with Retry, and Retry sent a duplicate. A
   delivered or read receipt now replaces "Not delivered"; giving up never
   replaces a receipt.
-- 6 new tests, 181 in all. Three new strings in all 18 languages.
-- Not tried on a phone. To check there: revoke the Bluetooth permission,
-  triple-tap, and look at the app's storage.
+
+### Battery and speed
+
+- **The mesh state is no longer sealed to disk on every announce.** Every
+  verified announce refreshed a remembered peer's last-seen time, and that
+  alone asked for a save: the whole state (up to 500 remembered peers, 1000
+  history packets, the board, prekey bundles) serialised, encrypted inside
+  the Android Keystore and written, on the mesh thread. With two or three
+  phones that was every few seconds, around the clock. Now a last-seen time
+  on its own waits for the next real change, or at most five minutes.
+- **A busy mesh can no longer starve the save.** The 500 ms quiet-time
+  debounce had no ceiling, so changes arriving faster than that put the
+  write off indefinitely. It now runs at the latest five seconds after the
+  first unsaved change.
+- **Globe picker: the globe is redrawn when it moves, not 60 times a
+  second.** The pulsing crosshair shared a canvas with the globe, so every
+  frame re-projected all 60,412 coastline points with four trigonometric
+  calls each, through boxing lambdas, whether or not a finger was down. The
+  crosshair and the globe each have a layer of their own now, so only the
+  crosshair's strokes are redrawn (on an emulator: 98 globe redraws in five
+  idle seconds before, none after). Points are stored as unit vectors when
+  the map is parsed (three dot products per point, no trigonometry), lines
+  are cut into pieces of at most 128 points, and a piece that cannot be on
+  screen is skipped whole: at region level 7% of the points are projected,
+  at province level 1.5%, at block level 0.2%. The text measurer's cache
+  holds 64 labels instead of 8.
+- **The radar costs little while nobody is nearby.** Its sweep ran at the
+  display's rate, redrawing rings and labels each frame, in the state the
+  app is in most. Rings and labels are drawn once; the sweep is a layer
+  that is only turned, 15 times a second; it stands still when system
+  animations are off.
+- **The dedup table holds 4096 packet keys instead of 1000.** Live voice
+  bursts, prekey bundles, board posts and group messages now share it; a
+  key pushed out early let its packet be processed and relayed again.
+- **The UI no longer waits on the mesh thread without a limit.** Posting to
+  the board, creating a group and `/trace` blocked the UI thread until the
+  mesh thread answered, which is never once that thread has quit. They give
+  up after two seconds, or at once when the thread is gone.
+
+### Languages and checks
+
+- **One language on screen.** The in-app language is applied by wrapping the
+  activity's context; the system's default locale stays what the phone is
+  set to. The texts v0.7.0 added were formatted with APIs that follow the
+  system: "12 sec. ago" in the signal band, "Today" and "Yesterday" between
+  messages, the scanning timer, voice-note lengths, and message timestamps
+  since earlier. On a phone set to Chinese, the English app (the default)
+  showed Chinese fragments from its first screen. They now use the app's
+  language: relative times and day names come from ICU for that locale,
+  timestamps and counters are formatted with it.
+- **Plural forms declared for Russian, Ukrainian and Arabic** in the four
+  plurals that had only "one" and "other" (group members, board days, days
+  left, people across the bridge). Russian and Ukrainian put the number
+  after a colon, so the wording was already right for every count and is
+  unchanged. Arabic used one noun form for all counts, which was wrong for
+  most; it now reads correctly for 1, 2, 3–10 and 11 and up.
+- **Lint is clean of errors** (18 before: those twelve plurals, and six
+  places that read strings through the context instead of through Compose,
+  which does not follow a language change). Six compiler warnings are gone
+  too.
+- **CI now runs lint and builds the release APK**, and fails when R8 says it
+  cannot read Kotlin metadata. v0.6.0 passed CI and crashed on launch for
+  exactly that; until now only unit tests and the debug build were checked.
+
+### Checked, and not
+
+- The release APK was run on an Android 15 emulator before publishing: it
+  starts; with the Bluetooth permissions revoked and no service running,
+  "Erase everything" emptied the sealed-file, cache and Tor directories and
+  said so, and a new identity appeared once the permissions were back; with
+  the app in Chinese on an English system the day separator read 今天; the
+  globe picker draws and is not redrawn while idle. That run caught two
+  mistakes that unit tests could not: "today" in lower case, and the
+  crosshair still sharing the globe's layer.
+- Not checked: anything over a real radio (multi-hop, bitchat interop), the
+  Keystore on real hardware, a power cut during a write.
+- Left for later, on purpose: moving the sealing of state off the mesh
+  thread and sealing bulk data with a key the Keystore only wraps (both
+  touch the wipe and the identity file); persisting receipts that wait for
+  their recipient; `android:localeConfig`, which needs a decision on whether
+  the system's per-app language or the in-app default wins.
 
 ## Android v0.7.1 (preview) — 2026-11-09
 
