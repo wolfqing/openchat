@@ -1,6 +1,6 @@
 # openchat for Android
 
-Status: **v0.6.0 preview.** Builds and passes its 161 unit tests. Not yet
+Status: **v0.7.0 preview.** Builds and passes its 174 unit tests. Not yet
 verified against a stock bitchat client. See [SECURITY.md](../SECURITY.md)
 before relying on it.
 
@@ -18,15 +18,29 @@ bitchat-android source was never read.
 | Signed public "nearby" channel, long messages fragmented | `core/Codec.kt`, `core/Fragments.kt` |
 | Noise XX encrypted private messages with delivered and read receipts | `crypto/Noise.kt`, `mesh/MeshEngine.kt` |
 | Geohash location channels over Nostr, one anonymous key per cell | `nostr/`, `app/GeoChannels.kt` |
-| Triple-tap the title: instant wipe, new identity, no confirmation | `ui/Screens.kt` `PanicTitle`, `app/MeshService.kt` `panic()` |
+| Triple-tap the logo (or title): instant wipe, new identity, no confirmation; "Erase everything" on the Me tab asks first | `ui/MainScreen.kt`, `ui/MeScreen.kt`, `app/MeshService.kt` `panic()` |
 | Share the APK offline by Bluetooth or Quick Share, no app store | `app/ApkShare.kt` |
 | Mesh keeps running with the screen off (foreground service) | `app/MeshService.kt` |
 | Store-and-forward: outbox plus courier envelopes carried by nearby phones (spec §13) | `core/Courier.kt`, `crypto/Noise.kt` `NoiseX`, `mesh/StoreAndForward.kt`, `mesh/MeshEngine.kt` |
 | History sync: late joiners get the last 15 min of public messages from a neighbour via GCS-filtered `requestSync` (spec §14) | `core/Sync.kt`, `mesh/MeshEngine.kt` |
 | Block people on the mesh and per location channel; tap a name for the person card | `app/Social.kt`, `ui/People.kt` |
+| Flood protection per sender and per text, synced history exempt (spec §21) | `core/RateLimiter.kt`, `mesh/MeshEngine.kt` |
+| Private groups of up to 16, signed roster, sealed messages (spec §22) | `core/Groups.kt`, `app/GroupManager.kt`, `ui/PrivateChats.kt` |
+| Notice board: 1/3/7-day posts, urgent flag, takedowns, spread by sync (spec §23) | `core/Board.kt`, `ui/BoardScreen.kt` |
+| Mesh bridge, courier drops and location-channel gateway over relays, off by default (spec §24) | `core/BridgeWire.kt`, `app/Bridge.kt` |
+| `/ping` and `/trace` with per-link pong budgets (spec §25) | `app/Commands.kt`, `mesh/MeshEngine.kt` |
+| Vouching: verified people share whom they verified, 30-day lapse (spec §26) | `core/Vouch.kt`, `app/Vouching.kt` |
+| One-time prekeys, forward-secret courier mail (spec §27) | `core/Prekeys.kt`, `core/Courier.kt` |
+| `/pay` and Cashu token cards, no mint contact (spec §28) | `core/Cashu.kt`, `app/Commands.kt` |
+| Live push-to-talk voice, signed public bursts (spec §29) | `core/VoiceBurst.kt`, `app/LiveVoice.kt` |
+| The mesh made visible: signal band, hop counts, emblems, delivery path, radar (spec §30) | `ui/MeshVisuals.kt`, `ui/ChatPane.kt` |
+| Globe picker for location channels, Natural Earth data packed to 275 KB | `ui/globe/`, `tools/pack_globe.py` |
+| Scan duty cycle: 5 s on, 10 s off (spec §11) | `mesh/ScanDutyCycle.kt` |
+| Proof of work on location-channel events (NIP-13, 8 bits) | `nostr/Pow.kt` |
+| Quiet notifications by default, previews opt-in | `app/NotificationPrivacy.kt` |
 | @mentions: highlighted, notified, autocompleted | `core/Mentions.kt` |
 | In-person verification with bitchat's `bitchat://verify` QR plus a Noise challenge (spec §16) | `core/Verification.kt`, `ui/People.kt` |
-| IRC-style commands: `/msg /who /clear /hug /slap /block /unblock /fav /unfav /drop /help` | `app/Commands.kt` |
+| IRC-style commands: `/msg /m /w /who /clear /hug /slap /block /unblock /fav /unfav /drop /group /pay /ping /trace /help` | `app/Commands.kt` |
 | Favorites, and private messages over Nostr between mutual favorites in bitchat's envelope (spec §15) | `nostr/PrivateEnvelope.kt`, `core/NostrEmbedded.kt`, `app/NostrDirect.kt` |
 | Location notes that fade after 24 h (spec §17) | `app/GeoChannels.kt` |
 | Private messages in location channels, between per-area personas (spec §15.5) | `app/NostrDirect.kt`, `app/MeshService.kt` |
@@ -34,7 +48,7 @@ bitchat-android source was never read.
 | Photos and voice notes, public or Noise-encrypted private (spec §18) | `core/FilePacket.kt`, `app/Media.kt` |
 | Relay traffic through Tor by default, fail-closed (spec §19) | `nostr/NetRoute.kt`, `app/Tor.kt` |
 
-Not yet: groups, boards, live push-to-talk, files other than images and
+Not yet: group media (groups are text only), files other than images and
 audio, private media over Nostr, Tor bridges. Peer ID rotation exists only
 as tested code, as upstream's draft does (spec §20). See spec §12.
 
@@ -67,6 +81,9 @@ published from `./gradlew :app:assembleRelease` (R8-shrunk, ARM only, about
 | `FilePacketTest`, `NostrEmbeddedTest`, `MentionsTest`, `CommandsTest`, `GeohashTest`, `NetRouteTest` | media TLV and type checks, `bitchat1:` embedding, mentions, commands, geohash neighbours and notes, fail-closed Tor routing |
 | `PeerIdRotationTest` | upstream's draft vectors for rotating IDs and recognition tags |
 | `SyncTest` | packet ID, GCS bitstream layout and false-positive rate, newest-first trimming, `requestSync` TLV and type flags |
+| `GroupsTest`, `BoardTest`, `BridgeWireTest`, `PrekeysTest`, `VouchTest`, `CashuTest`, `VoiceBurstTest` | the v0.6 formats: roster and key signing, post lifetimes and takedowns, bridge envelopes, prekey publish and consume, vouch attestations and batches, token parsing, voice burst framing against bitchat's layout |
+| `RateLimiterTest`, `ScanDutyCycleTest`, `PowTest`, `NostrSendersTest`, `PeerLabelTest`, `RelayUrlTest` | flood limits, scan timing, NIP-13 difficulty, Nostr sender binding, name and suffix labels, relay URL checks |
+| `MeshVisualsTest`, `GlobeTest` | emblem derivation and colours, delivery dots only move forward, day markers; globe projection and inverse, settled-level framing, precision from zoom, drag clamping at the poles, bundled map data parses |
 
 ## Known risks
 

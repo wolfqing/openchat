@@ -19,6 +19,12 @@ android/app/src/main/assets/relays.csv
   Public domain (Unlicense). Kept verbatim so geohash channels use the
   same relays as bitchat clients.
 
+android/app/src/main/assets/globe.bin
+  Coastlines (1:110m and 1:50m), land borders (1:110m) and 243 populated
+  places from Natural Earth, https://www.naturalearthdata.com/ via
+  github.com/nvkelso/natural-earth-vector, fetched 2026-11-03. Public
+  domain. Packed by android/tools/pack_globe.py; see globe.bin.SOURCE.
+
 --------------------------------------------------------------------------
 Third-party libraries bundled in the Android app
 --------------------------------------------------------------------------
@@ -52,7 +58,7 @@ jtorctl (info.guardianproject:jtorctl)
   Copyright 2005 Nick Mathewson, Roger Dingledine; The Guardian Project
   BSD 3-Clause License
 
-AndroidX, Jetpack Compose, Material 3 (androidx.*)
+AndroidX, Jetpack Compose, Material 3, Material Icons Extended (androidx.*)
   Copyright The Android Open Source Project
   Apache License 2.0
 
