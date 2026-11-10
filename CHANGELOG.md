@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## Android v0.7.1 (preview) — 2026-11-09
+
+Globe picker labels that stay readable on the world view. Same release key as
+v0.6.0–v0.7.0; installs over them. 175 unit tests. 9.1 MB.
+APK SHA-256 `b005188ed9174921724db68918a3fcd73ccace3d6390c7af4d77cabbe6c9f2aa`.
 
 ### Fixed
 
@@ -14,7 +18,7 @@
   overlapped. Labels now take screen space in order of importance: the
   crosshair, the selected cell, its neighbours, then cities by size. A city
   name that would cover another moves to the left of its dot, or is left
-  out while its dot stays. 175 unit tests.
+  out while its dot stays.
 
 ## Android v0.7.0 (preview) — 2026-11-08
 
