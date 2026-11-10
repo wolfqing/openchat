@@ -17,10 +17,13 @@
     <string name="tab_me">ကျွန်ုပ်</string>
     <string name="ok">အိုကေ</string>
     <string name="wiped">ဖျက်ပြီးပါပြီ။ သင်၏ အမှတ်အသားအသစ်: %1$s</string>
+    <string name="wiped_offline">ဖျက်ပြီးပါပြီ။ ကွန်ရက် ပြန်စသည့်အခါ အမှတ်အသားအသစ် ဖန်တီးပါမည်။</string>
+    <string name="wipe_failed">ဒေတာအချို့ကို ဖျက်မရပါ။ စနစ်ဆက်တင်တွင် ဤအက်ပ်၏ သိုလှောင်မှုကို ရှင်းလင်းပါ။</string>
     <string name="banner_need_permission">အနီးရှိလူများကို ရှာရန် ဘလူးတုသ် ခွင့်ပြုချက် လိုအပ်သည်</string>
     <string name="banner_bt_off">ဘလူးတုသ် ပိတ်ထားသည်။ ဖွင့်ရန် ဤနေရာကို နှိပ်ပါ</string>
     <string name="banner_starting">စတင်နေသည်…</string>
     <string name="banner_storage_locked">သိမ်းထားသော အမည်သတ်မှတ်ချက်ကို ယခု ဖွင့်မရပါ။ ထပ်စမ်းရန် တို့ပါ။</string>
+    <string name="storage_locked_hint">ဤအတိုင်း ဆက်ဖြစ်နေပါက “%2$s” တက်ဘ်ရှိ “%1$s” ဖြင့် အမှတ်အသားအသစ်နှင့် အစမှ ပြန်စနိုင်သည်။</string>
     <string name="nearby_empty_alone">အနီးတွင် မည်သူမျှ မရှိသေးပါ။\nopenchat ဖွင့်ထားသော ဖုန်းများသည် မီတာ ဆယ်ဂဏန်းအတွင်း အလိုအလျောက် ချိတ်ဆက်သည်။\nတူညီသော ကွန်ရက်ရှိ bitchat အသုံးပြုသူများလည်း သင့်မက်ဆေ့ချ်ကို လက်ခံရရှိနိုင်သည်။</string>
     <plurals name="nearby_empty_peers">
         <item quantity="other">အနီးတွင် လူ %d ဦး ရှိသည်။ တစ်ခုခုရေးလိုက်ပါ၊ အားလုံး မြင်ရပါမည်။</item>

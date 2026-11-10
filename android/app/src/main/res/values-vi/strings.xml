@@ -17,10 +17,13 @@
     <string name="tab_me">Tôi</string>
     <string name="ok">OK</string>
     <string name="wiped">Đã xóa. Danh tính mới của bạn: %1$s</string>
+    <string name="wiped_offline">Đã xóa. Danh tính mới sẽ được tạo khi mạng khởi động lại.</string>
+    <string name="wipe_failed">Không xóa được một số dữ liệu. Hãy xóa bộ nhớ của ứng dụng này trong cài đặt hệ thống.</string>
     <string name="banner_need_permission">Cần quyền Bluetooth để tìm người ở gần</string>
     <string name="banner_bt_off">Bluetooth đang tắt. Chạm vào đây để bật</string>
     <string name="banner_starting">Đang khởi động…</string>
     <string name="banner_storage_locked">Hiện không thể mở khóa danh tính đã lưu. Nhấn để thử lại.</string>
+    <string name="storage_locked_hint">Nếu tình trạng này không hết, “%1$s” ở thẻ “%2$s” sẽ bắt đầu lại với danh tính mới.</string>
     <string name="nearby_empty_alone">Chưa có ai ở gần.\nĐiện thoại chạy openchat tự kết nối trong phạm vi vài chục mét.\nNgười dùng bitchat trong cùng mạng lưới cũng nhận được tin nhắn của bạn.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="other">Có %d người ở gần. Nói gì đó, mọi người đều thấy.</item>

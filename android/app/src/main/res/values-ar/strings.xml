@@ -17,10 +17,13 @@
     <string name="tab_me">أنا</string>
     <string name="ok">حسنًا</string>
     <string name="wiped">تم المسح. هويتك الجديدة: %1$s</string>
+    <string name="wiped_offline">تم المسح. ستُنشأ هوية جديدة عند تشغيل الشبكة من جديد.</string>
+    <string name="wipe_failed">تعذّر مسح بعض البيانات. امسح تخزين هذا التطبيق من إعدادات النظام.</string>
     <string name="banner_need_permission">يلزم إذن البلوتوث للعثور على من حولك</string>
     <string name="banner_bt_off">البلوتوث مغلق. انقر هنا لتشغيله</string>
     <string name="banner_starting">جارٍ البدء…</string>
     <string name="banner_storage_locked">لا يمكن فتح الهوية المحفوظة الآن. انقر لإعادة المحاولة.</string>
+    <string name="storage_locked_hint">إذا استمر ذلك، فإن «%1$s» في تبويب «%2$s» يبدأ من جديد بهوية جديدة.</string>
     <string name="nearby_empty_alone">لا أحد بالقرب بعد.\nتتصل الهواتف التي تشغّل openchat تلقائيًا ضمن بضع عشرات من الأمتار.\nيمكن لمستخدمي bitchat على الشبكة نفسها استلام رسائلك أيضًا.</string>
     <plurals name="nearby_empty_peers">
         <item quantity="zero">أشخاص بالقرب: %d. اكتب شيئًا وسيراه الجميع.</item>

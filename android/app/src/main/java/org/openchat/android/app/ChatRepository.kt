@@ -21,8 +21,21 @@ sealed class Conversation(val key: String) {
     }
 }
 
-/** Order matters: a state only ever moves forward. QUEUED and CARRIED come from the outbox (§13). */
-enum class DeliveryState { SENDING, SENT, QUEUED, CARRIED, DELIVERED, READ, FAILED }
+/**
+ * Order matters: a state only ever moves forward. QUEUED and CARRIED come from the outbox (§13).
+ * FAILED means we stopped waiting, not that the message was lost: a courier may still hand it
+ * over, and the receipt can come back days later. So a receipt replaces FAILED, and FAILED never
+ * replaces a receipt.
+ */
+enum class DeliveryState {
+    SENDING, SENT, QUEUED, CARRIED, DELIVERED, READ, FAILED;
+
+    fun canBecome(next: DeliveryState): Boolean = when {
+        this == FAILED -> next == DELIVERED || next == READ
+        next == FAILED -> this < DELIVERED
+        else -> this < next
+    }
+}
 
 data class ChatMessage(
     val id: String,
@@ -191,7 +204,7 @@ object ChatRepository {
     fun setState(conversation: String, messageId: String, state: DeliveryState) {
         _messages.update { all ->
             val list = all[conversation] ?: return@update all
-            all + (conversation to list.map { if (it.id == messageId && it.mine && it.state.ordinal < state.ordinal) it.copy(state = state) else it })
+            all + (conversation to list.map { if (it.id == messageId && it.mine && it.state.canBecome(state)) it.copy(state = state) else it })
         }
     }
 
@@ -248,6 +261,8 @@ object ChatRepository {
     /** Panic wipe of everything held in memory. */
     fun wipe() {
         _board.value = emptyList(); _boardUnseen.value = 0
+        // A running service republishes these as it resets; without one, nobody else would clear them.
+        _groups.value = emptyMap(); _bridge.value = BridgeStatus(); _openRequest.value = null
         _messages.value = emptyMap()
         _peers.value = emptyList()
         _unread.value = emptyMap()

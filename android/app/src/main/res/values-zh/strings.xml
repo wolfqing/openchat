@@ -20,11 +20,14 @@
     <string name="tab_me">我</string>
     <string name="ok">好</string>
     <string name="wiped">已清空。你现在是一个新身份：%1$s</string>
+    <string name="wiped_offline">已清空。网络再次启动时会生成新身份。</string>
+    <string name="wipe_failed">有些数据没能清除。请到系统设置里清除本应用的存储。</string>
     <string name="panic_logo">openchat。连点三下清空所有数据。</string>
     <string name="banner_need_permission">需要蓝牙权限才能发现附近的人</string>
     <string name="banner_bt_off">蓝牙已关闭，点这里打开</string>
     <string name="banner_starting">正在启动…</string>
     <string name="banner_storage_locked">暂时无法解锁已保存的身份。点此重试。</string>
+    <string name="storage_locked_hint">如果一直这样，可以在“%2$s”页用“%1$s”重新开始，换一个新身份。</string>
 
     <!-- chat -->
     <string name="nearby_empty_alone">附近还没有人。\n打开 openchat 的手机靠近到几十米内，就会自动连上。\n同一网络里的 bitchat 用户也能收到你的消息。</string>

@@ -32,7 +32,10 @@ class GroupManager(
     private val seen = LinkedHashSet<String>()          // message IDs shown, so replays and sync copies show once
 
     fun load() {
-        store.read()?.let { decode(it) }?.forEach { groups[it.group.idHex] = it }
+        // An unreadable file counts as no groups. It is not a passing Keystore hiccup: the identity
+        // opened under the same key a moment ago, so the file itself is damaged. Throwing here would
+        // kill the mesh thread, and the sticky restart would run into the same file again.
+        store.readOrNull()?.let { decode(it) }?.forEach { groups[it.group.idHex] = it }
         publish()
     }
 

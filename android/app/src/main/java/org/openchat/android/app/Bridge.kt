@@ -374,7 +374,7 @@ class Bridge(
     /** Panic wipe: off, forgotten, back to the default. */
     fun wipe() {
         shutDown()
-        prefs.edit().remove(KEY).apply()
+        forget(context)
         enabled = false
         listOf(published, meshCarried, rebroadcast, received, radioSeen, dropsSeen).forEach { it.clear() }
         aliases.clear(); limiter.reset()
@@ -385,6 +385,9 @@ class Bridge(
 
     companion object {
         private const val KEY = "bridge"
+
+        /** Panic wipe: the bridge goes back to off, whether or not a bridge is running. */
+        fun forget(context: Context) = context.getSharedPreferences("net", Context.MODE_PRIVATE).edit().remove(KEY).apply()
         private const val SUB = "bridge"
         private const val DROP_SUB = "drops"
         const val CELL = 6

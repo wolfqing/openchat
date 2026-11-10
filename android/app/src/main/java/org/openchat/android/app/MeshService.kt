@@ -693,6 +693,8 @@ class MeshService : Service(), ChatController {
             stateStore.destroy()
             socialStore.delete()
             store.destroy()
+            // Whatever else is in there (a write caught half way, a file a later feature added).
+            Panic.eraseDirectory(noBackupFilesDir, overwrite = true)
             val fresh = Identity.generate()
             store.save(fresh)
             engine.resetIdentity(fresh)

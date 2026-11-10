@@ -6,6 +6,7 @@ import android.security.keystore.KeyProperties
 import org.openchat.android.mesh.Identity
 import org.openchat.android.mesh.MeshState
 import java.io.File
+import java.io.FileOutputStream
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -26,8 +27,9 @@ class SealedFile(context: Context, name: String) {
     val exists get() = file.exists()
 
     /**
-     * Seals and writes atomically: the new content goes to a sibling file and is renamed over the
-     * old one, so a crash or power loss mid-write leaves the previous version, never half a file.
+     * Seals and writes atomically: the new content goes to a sibling file, is synced to disk and
+     * is renamed over the old one, so a crash or power loss mid-write leaves the previous
+     * version, never half a file.
      * Returns false instead of throwing when the Keystore or the disk refuses; the caller keeps its
      * in-memory state and tries again on the next change.
      */
@@ -36,7 +38,11 @@ class SealedFile(context: Context, name: String) {
         cipher.init(Cipher.ENCRYPT_MODE, key())
         val sealed = cipher.doFinal(plain)
         val iv = cipher.iv
-        tmp.writeBytes(byteArrayOf(iv.size.toByte()) + iv + sealed)
+        FileOutputStream(tmp).use { out ->
+            out.write(byteArrayOf(iv.size.toByte())); out.write(iv); out.write(sealed)
+            // On disk before the rename: without this a power cut can leave an empty file under the real name.
+            out.fd.sync()
+        }
         if (!tmp.renameTo(file)) { tmp.delete(); false } else true
     } catch (e: Exception) {
         tmp.delete()
@@ -73,13 +79,12 @@ class SealedFile(context: Context, name: String) {
     companion object {
         private const val ALIAS = "openchat-identity"
 
-        /** Panic wipe: destroys the Keystore key, so every sealed file becomes unreadable. */
-        fun destroyKey() {
-            try {
-                val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-                if (ks.containsAlias(ALIAS)) ks.deleteEntry(ALIAS)
-            } catch (e: Exception) { }
-        }
+        /** Panic wipe: destroys the Keystore key, so every sealed file becomes unreadable. True when the key is gone. */
+        fun destroyKey(): Boolean = try {
+            val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+            if (ks.containsAlias(ALIAS)) ks.deleteEntry(ALIAS)
+            !ks.containsAlias(ALIAS)
+        } catch (e: Exception) { false }
 
         private fun key(): SecretKey {
             val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
