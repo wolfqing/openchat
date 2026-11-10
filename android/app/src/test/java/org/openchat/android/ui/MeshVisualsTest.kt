@@ -11,6 +11,22 @@ import java.util.TimeZone
 
 class MeshVisualsTest {
     @Test
+    fun agoPicksTheCoarsestWholeUnit() {
+        val now = 1_762_000_000_000L
+        assertEquals(0L to AgoUnit.SECONDS, agoParts(now, now))
+        assertEquals(0L to AgoUnit.SECONDS, agoParts(now - 999, now))
+        assertEquals(12L to AgoUnit.SECONDS, agoParts(now - 12_300, now))
+        assertEquals(59L to AgoUnit.SECONDS, agoParts(now - 59_999, now))
+        assertEquals(1L to AgoUnit.MINUTES, agoParts(now - 60_000, now))
+        assertEquals(59L to AgoUnit.MINUTES, agoParts(now - 3_599_000, now))
+        assertEquals(1L to AgoUnit.HOURS, agoParts(now - 3_600_000, now))
+        assertEquals(23L to AgoUnit.HOURS, agoParts(now - 86_399_000, now))
+        assertEquals(2L to AgoUnit.DAYS, agoParts(now - 2 * 86_400_000L - 5, now))
+        // A peer whose clock runs ahead was heard just now, not in the future.
+        assertEquals(0L to AgoUnit.SECONDS, agoParts(now + 90_000, now))
+    }
+
+    @Test
     fun theSweepTurnsOnceEveryFourSeconds() {
         assertEquals(0f, sweepAngle(0), 1e-6f)
         assertEquals(90f, sweepAngle(1_000), 1e-4f)

@@ -1,5 +1,7 @@
 package org.openchat.android.ui
 
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalResources
 import androidx.annotation.PluralsRes
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
@@ -31,4 +33,12 @@ fun OpenChatTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-internal fun plural(@PluralsRes id: Int, count: Int): String = LocalContext.current.resources.getQuantityString(id, count, count)
+internal fun plural(@PluralsRes id: Int, count: Int): String = LocalResources.current.getQuantityString(id, count, count)
+
+/**
+ * The language the app is showing. It is the in-app choice (AppLanguage wraps the activity's
+ * context), which need not be the system's, so dates, times and numbers must be formatted with
+ * this and never with Locale.getDefault(): that one still says what the system is set to.
+ */
+@Composable
+internal fun appLocale(): java.util.Locale = LocalConfiguration.current.locales[0]

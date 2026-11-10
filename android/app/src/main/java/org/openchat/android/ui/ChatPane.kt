@@ -1,5 +1,6 @@
 package org.openchat.android.ui
 
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -173,7 +174,7 @@ fun ChatPane(
     Column(Modifier.fillMaxSize().imePadding()) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (covered) {
-                empty!!(if (list.isEmpty()) null else ({ showHistory = true }))
+                empty(if (list.isEmpty()) null else ({ showHistory = true }))
             } else if (list.isEmpty()) {
                 Text(emptyText, Modifier.align(Alignment.Center).padding(32.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 22.sp)
             } else {
@@ -211,7 +212,8 @@ private fun Bubble(m: ChatMessage, onSenderClick: ((ChatMessage) -> Unit)?) {
         )
         return
     }
-    val time = remember(m.timestamp) { stampText(m.timestamp) }
+    val locale = appLocale()
+    val time = remember(m.timestamp, locale) { stampText(m.timestamp, locale) }
     // In rooms each sender gets an emblem; a private chat's title already says who it is.
     val roomSender = !m.mine && !m.conversation.startsWith("dm:") && !m.conversation.startsWith("gdm:")
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -311,12 +313,13 @@ private fun CashuCard(token: String) {
 @Composable
 private fun MediaButtons(conversation: String) {
     val ctx = LocalContext.current
+    val resources = LocalResources.current
     val recorder = remember { VoiceRecorder(ctx) } // fallback when the live encoder is unavailable
     var recording by remember { mutableStateOf(false) }
     var viaRecorder by remember { mutableStateOf(false) }
     fun send(bytes: ByteArray?, mime: String) {
         val reason = if (bytes == null) R.string.media_too_big else ChatRepository.controller?.sendMedia(conversation, bytes, mime) ?: 0
-        if (reason != 0) ChatRepository.addLocal(conversation, ctx.getString(reason))
+        if (reason != 0) ChatRepository.addLocal(conversation, resources.getString(reason))
     }
     // Recording streams live where it can (§29): people hear it while you talk.
     fun begin(): Boolean {
@@ -424,7 +427,7 @@ private fun VoiceNote(path: String) {
             },
             modifier = Modifier.semantics { contentDescription = label },
         ) { Icon(if (player != null) Icons.Outlined.Stop else Icons.Outlined.PlayArrow, contentDescription = null) } // the button itself says play or stop
-        Text(stringResource(R.string.media_voice) + " · " + "%d:%02d".format(duration / 60_000, (duration / 1000) % 60), fontSize = 14.sp, modifier = Modifier.padding(end = 12.dp))
+        Text(stringResource(R.string.media_voice) + " · " + String.format(appLocale(), "%d:%02d", duration / 60_000, (duration / 1000) % 60), fontSize = 14.sp, modifier = Modifier.padding(end = 12.dp))
     }
 }
 
@@ -529,9 +532,8 @@ internal fun withMentions(text: String): AnnotatedString {
     }
 }
 
-/** "HH:mm" today, otherwise the short local date as well. */
-internal fun stampText(ts: Long): String {
-    val locale = Locale.getDefault()
+/** "HH:mm" today, otherwise the short date as well, in the app's language ([locale] from [appLocale]). */
+internal fun stampText(ts: Long, locale: Locale): String {
     val clock = SimpleDateFormat("HH:mm", locale).format(Date(ts))
     val day = SimpleDateFormat("yyyyDDD", locale)
     return if (day.format(Date(ts)) == day.format(Date())) clock

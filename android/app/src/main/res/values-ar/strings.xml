@@ -187,8 +187,12 @@
     <string name="group_new_note">حتى 16 شخصًا تلتقيهم بالقرب منك. لا يقرؤها إلا الأعضاء، وأنت تقرر من ينضم.</string>
     <string name="group_create">إنشاء</string>
     <plurals name="group_members">
-        <item quantity="one">%d أعضاء</item>
-        <item quantity="other">%d أعضاء</item>
+        <item quantity="zero">عدد الأعضاء: %d</item>
+        <item quantity="one">عدد الأعضاء: %d</item>
+        <item quantity="two">عدد الأعضاء: %d</item>
+        <item quantity="few">عدد الأعضاء: %d</item>
+        <item quantity="many">عدد الأعضاء: %d</item>
+        <item quantity="other">عدد الأعضاء: %d</item>
     </plurals>
     <string name="group_status">%1$s · مشفّرة طرفيًا</string>
     <string name="group_members_title">الأعضاء</string>
@@ -220,14 +224,22 @@
     <string name="board_urgent">عاجل</string>
     <string name="board_urgent_check">عاجل</string>
     <plurals name="board_days_left">
-        <item quantity="one">متبقٍ %d يوم</item>
-        <item quantity="other">متبقٍ %d يوم</item>
+        <item quantity="zero">الأيام المتبقية: %d</item>
+        <item quantity="one">الأيام المتبقية: %d</item>
+        <item quantity="two">الأيام المتبقية: %d</item>
+        <item quantity="few">الأيام المتبقية: %d</item>
+        <item quantity="many">الأيام المتبقية: %d</item>
+        <item quantity="other">الأيام المتبقية: %d</item>
     </plurals>
     <string name="board_ends_today">ينتهي اليوم</string>
     <string name="board_delete">إزالة</string>
     <string name="board_placeholder">اكتب إعلانًا لكل من حولك…</string>
     <plurals name="board_days">
-        <item quantity="one">%d يوم</item>
+        <item quantity="zero">%d يوم</item>
+        <item quantity="one">يوم واحد</item>
+        <item quantity="two">يومان</item>
+        <item quantity="few">%d أيام</item>
+        <item quantity="many">%d يومًا</item>
         <item quantity="other">%d يوم</item>
     </plurals>
     <string name="board_post">ثبّت على اللوحة</string>
@@ -238,7 +250,11 @@
     <string name="bridge_online">#%1$s · متصل</string>
     <string name="bridge_offline">#%1$s · لا إنترنت: تمر رسائلك عبر هاتف قريب يقوم بالربط</string>
     <plurals name="bridge_across">
+        <item quantity="zero">%d عبر الجسر</item>
         <item quantity="one">%d عبر الجسر</item>
+        <item quantity="two">%d عبر الجسر</item>
+        <item quantity="few">%d عبر الجسر</item>
+        <item quantity="many">%d عبر الجسر</item>
         <item quantity="other">%d عبر الجسر</item>
     </plurals>
     <string name="bridge_via">عبر الجسر</string>

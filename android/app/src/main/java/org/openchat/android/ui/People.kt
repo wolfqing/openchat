@@ -110,7 +110,7 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                                 enabled = fp != null, modifier = Modifier.fillMaxWidth(),
                             ) { Text(stringResource(if (mine) R.string.peer_fav_remove else R.string.peer_fav_add)) }
                             val note = when {
-                                mine && fav?.theyFavorited == true -> R.string.fav_mutual_note
+                                mine && fav.theyFavorited -> R.string.fav_mutual_note
                                 mine -> R.string.fav_waiting_note
                                 fav?.theyFavorited == true -> R.string.fav_they_note
                                 else -> null
@@ -217,17 +217,15 @@ fun LiveVoiceSection() {
 @Composable
 fun BridgeSection() {
     val b by ChatRepository.bridge.collectAsState()
-    val ctx = LocalContext.current
     Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.bridge_title), fontWeight = FontWeight.SemiBold)
             Text(stringResource(R.string.bridge_body) + " " + stringResource(R.string.bridge_gateway), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (b.enabled) {
-                val line = when {
-                    b.cell == null -> ctx.getString(R.string.bridge_need_cell)
-                    b.online -> ctx.getString(R.string.bridge_online, b.cell) + " · " + ctx.resources.getQuantityString(R.plurals.bridge_across, b.across, b.across)
-                    else -> ctx.getString(R.string.bridge_offline, b.cell)
-                }
+                val cell = b.cell
+                val line = if (cell == null) stringResource(R.string.bridge_need_cell)
+                else if (b.online) stringResource(R.string.bridge_online, cell) + " · " + plural(R.plurals.bridge_across, b.across)
+                else stringResource(R.string.bridge_offline, cell)
                 Text(line, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
             }
         }

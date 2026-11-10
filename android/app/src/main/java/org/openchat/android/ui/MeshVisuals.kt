@@ -1,6 +1,9 @@
 package org.openchat.android.ui
 
-import android.text.format.DateUtils
+import androidx.compose.ui.platform.LocalResources
+import android.icu.text.DisplayContext
+import android.icu.text.RelativeDateTimeFormatter
+import android.icu.util.ULocale
 import android.provider.Settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -68,6 +71,7 @@ import org.openchat.android.R
 import org.openchat.android.app.ChatMessage
 import org.openchat.android.app.DeliveryState
 import org.openchat.android.core.sha256
+import java.util.Locale
 import java.util.TimeZone
 
 // The mesh made visible (docs/design/ui-direction.md, spec §30): who is in range, how far a
@@ -162,13 +166,54 @@ fun rememberNow(): Long {
     return now
 }
 
-fun agoText(then: Long, now: Long): String =
-    DateUtils.getRelativeTimeSpanString(minOf(then, now), now, DateUtils.SECOND_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE).toString()
+enum class AgoUnit { SECONDS, MINUTES, HOURS, DAYS }
+
+/** How long ago [then] was, in the coarsest whole unit. Never negative: a clock that ran ahead reads as now. */
+fun agoParts(then: Long, now: Long): Pair<Long, AgoUnit> {
+    val s = maxOf(0L, now - then) / 1000
+    return when {
+        s < 60 -> s to AgoUnit.SECONDS
+        s < 3_600 -> s / 60 to AgoUnit.MINUTES
+        s < 86_400 -> s / 3_600 to AgoUnit.HOURS
+        else -> s / 86_400 to AgoUnit.DAYS
+    }
+}
+
+private val agoFormatters = HashMap<Locale, RelativeDateTimeFormatter>()
+
+/** "12 sec. ago" in the app's language ([locale] from [appLocale]), not the system's as DateUtils would give. */
+fun agoText(then: Long, now: Long, locale: Locale): String {
+    val f = agoFormatters.getOrPut(locale) {
+        RelativeDateTimeFormatter.getInstance(ULocale.forLocale(locale), null, RelativeDateTimeFormatter.Style.SHORT, DisplayContext.CAPITALIZATION_NONE)
+    }
+    val (n, unit) = agoParts(then, now)
+    if (n == 0L) return f.format(RelativeDateTimeFormatter.Direction.PLAIN, RelativeDateTimeFormatter.AbsoluteUnit.NOW)
+    return f.format(
+        n.toDouble(), RelativeDateTimeFormatter.Direction.LAST,
+        when (unit) {
+            AgoUnit.SECONDS -> RelativeDateTimeFormatter.RelativeUnit.SECONDS
+            AgoUnit.MINUTES -> RelativeDateTimeFormatter.RelativeUnit.MINUTES
+            AgoUnit.HOURS -> RelativeDateTimeFormatter.RelativeUnit.HOURS
+            AgoUnit.DAYS -> RelativeDateTimeFormatter.RelativeUnit.DAYS
+        },
+    )
+}
+
+/** "Today", "Yesterday", otherwise the date, in the app's language. */
+fun dayText(timestamp: Long, now: Long, locale: Locale, zone: TimeZone = TimeZone.getDefault()): String {
+    val f = RelativeDateTimeFormatter.getInstance(ULocale.forLocale(locale), null, RelativeDateTimeFormatter.Style.LONG, DisplayContext.CAPITALIZATION_FOR_STANDALONE)
+    return when (localDay(now, zone) - localDay(timestamp, zone)) {
+        0L -> f.format(RelativeDateTimeFormatter.Direction.THIS, RelativeDateTimeFormatter.AbsoluteUnit.DAY)
+        1L -> f.format(RelativeDateTimeFormatter.Direction.LAST, RelativeDateTimeFormatter.AbsoluteUnit.DAY)
+        else -> java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM, locale).apply { timeZone = zone }.format(java.util.Date(timestamp))
+    }
+}
 
 /** The signal band under the top bar: neighbours, everyone reachable, and when we last heard anyone. */
 @Composable
 fun SignalBand(direct: Int, reach: Int, lastHeard: Long?) {
     val now = rememberNow()
+    val locale = appLocale()
     val accent = MaterialTheme.colorScheme.primary
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     Row(
@@ -181,7 +226,7 @@ fun SignalBand(direct: Int, reach: Int, lastHeard: Long?) {
         Text("|", color = MaterialTheme.colorScheme.outline, fontFamily = FontFamily.Monospace, fontSize = 14.sp)
         BandNumber(stringResource(R.string.band_reach), reach)
         Spacer(Modifier.weight(1f))
-        lastHeard?.let { Text(agoText(it, now), color = muted, fontFamily = FontFamily.Monospace, fontSize = 13.sp, maxLines = 1) }
+        lastHeard?.let { Text(agoText(it, now, locale), color = muted, fontFamily = FontFamily.Monospace, fontSize = 13.sp, maxLines = 1) }
     }
 }
 
@@ -206,7 +251,7 @@ fun ScanningBand(since: Long) {
         Box(Modifier.size(12.dp).border(2.dp, MaterialTheme.colorScheme.primary, CircleShape).padding(3.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
         Text(stringResource(R.string.band_scanning), fontFamily = FontFamily.Monospace, fontSize = 14.sp, modifier = Modifier.weight(1f))
         Text(
-            stringResource(R.string.band_for, "%d:%02d".format(secs / 60, secs % 60)),
+            stringResource(R.string.band_for, String.format(appLocale(), "%d:%02d", secs / 60, secs % 60)),
             fontFamily = FontFamily.Monospace, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -216,7 +261,8 @@ fun ScanningBand(since: Long) {
 @Composable
 fun RouteBand(name: String, hops: Int?, direct: Int, lastHeard: Long) {
     val now = rememberNow()
-    val ctx = LocalContext.current
+    val locale = appLocale()
+    val resources = LocalResources.current
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -224,12 +270,12 @@ fun RouteBand(name: String, hops: Int?, direct: Int, lastHeard: Long) {
     ) {
         Box(Modifier.size(10.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
         Text(
-            if (hops == null) stringResource(R.string.dm_relayed) else ctx.resources.getQuantityString(R.plurals.route_hops, hops, hops, name),
+            if (hops == null) stringResource(R.string.dm_relayed) else resources.getQuantityString(R.plurals.route_hops, hops, hops, name),
             fontFamily = FontFamily.Monospace, fontSize = 13.sp, modifier = Modifier.weight(1f),
         )
         Text("|", color = MaterialTheme.colorScheme.outline, fontFamily = FontFamily.Monospace, fontSize = 13.sp)
         BandNumber(stringResource(R.string.band_direct), direct)
-        Text(agoText(lastHeard, now), color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = FontFamily.Monospace, fontSize = 12.sp, maxLines = 1)
+        Text(agoText(lastHeard, now, locale), color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = FontFamily.Monospace, fontSize = 12.sp, maxLines = 1)
     }
 }
 
@@ -277,8 +323,7 @@ fun DeliveryPathDots(state: DeliveryState) {
 /** A day separator; in a private chat the first one also says who can read it. */
 @Composable
 fun DayHeader(timestamp: Long, note: String?) {
-    val now = System.currentTimeMillis()
-    val day = DateUtils.getRelativeTimeSpanString(timestamp, now, DateUtils.DAY_IN_MILLIS).toString()
+    val day = dayText(timestamp, System.currentTimeMillis(), appLocale())
     Text(
         if (note == null) day else "$day · $note",
         Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 24.dp).semantics { heading() },

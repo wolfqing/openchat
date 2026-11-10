@@ -182,6 +182,8 @@
     <string name="group_create">Создать</string>
     <plurals name="group_members">
         <item quantity="one">Участников: %d</item>
+        <item quantity="few">Участников: %d</item>
+        <item quantity="many">Участников: %d</item>
         <item quantity="other">Участников: %d</item>
     </plurals>
     <string name="group_status">%1$s · сквозное шифрование</string>
@@ -215,6 +217,8 @@
     <string name="board_urgent_check">Срочно</string>
     <plurals name="board_days_left">
         <item quantity="one">осталось дней: %d</item>
+        <item quantity="few">осталось дней: %d</item>
+        <item quantity="many">осталось дней: %d</item>
         <item quantity="other">осталось дней: %d</item>
     </plurals>
     <string name="board_ends_today">истекает сегодня</string>
@@ -222,6 +226,8 @@
     <string name="board_placeholder">Объявление для всех рядом…</string>
     <plurals name="board_days">
         <item quantity="one">%d дн.</item>
+        <item quantity="few">%d дн.</item>
+        <item quantity="many">%d дн.</item>
         <item quantity="other">%d дн.</item>
     </plurals>
     <string name="board_post">Повесить на доску</string>
@@ -233,6 +239,8 @@
     <string name="bridge_offline">#%1$s · нет интернета: сообщения уходят через телефон-мост рядом</string>
     <plurals name="bridge_across">
         <item quantity="one">по ту сторону: %d</item>
+        <item quantity="few">по ту сторону: %d</item>
+        <item quantity="many">по ту сторону: %d</item>
         <item quantity="other">по ту сторону: %d</item>
     </plurals>
     <string name="bridge_via">через мост</string>

@@ -182,6 +182,8 @@
     <string name="group_create">Створити</string>
     <plurals name="group_members">
         <item quantity="one">Учасників: %d</item>
+        <item quantity="few">Учасників: %d</item>
+        <item quantity="many">Учасників: %d</item>
         <item quantity="other">Учасників: %d</item>
     </plurals>
     <string name="group_status">%1$s · наскрізне шифрування</string>
@@ -215,6 +217,8 @@
     <string name="board_urgent_check">Терміново</string>
     <plurals name="board_days_left">
         <item quantity="one">залишилось днів: %d</item>
+        <item quantity="few">залишилось днів: %d</item>
+        <item quantity="many">залишилось днів: %d</item>
         <item quantity="other">залишилось днів: %d</item>
     </plurals>
     <string name="board_ends_today">спливає сьогодні</string>
@@ -222,6 +226,8 @@
     <string name="board_placeholder">Оголошення для всіх поруч…</string>
     <plurals name="board_days">
         <item quantity="one">%d дн.</item>
+        <item quantity="few">%d дн.</item>
+        <item quantity="many">%d дн.</item>
         <item quantity="other">%d дн.</item>
     </plurals>
     <string name="board_post">Повісити на дошку</string>
@@ -233,6 +239,8 @@
     <string name="bridge_offline">#%1$s · немає інтернету: повідомлення йдуть через телефон-міст поруч</string>
     <plurals name="bridge_across">
         <item quantity="one">по той бік: %d</item>
+        <item quantity="few">по той бік: %d</item>
+        <item quantity="many">по той бік: %d</item>
         <item quantity="other">по той бік: %d</item>
     </plurals>
     <string name="bridge_via">через міст</string>
