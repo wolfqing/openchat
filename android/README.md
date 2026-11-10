@@ -1,7 +1,9 @@
 # openchat for Android
 
-Status: **v0.7.0 preview.** Builds and passes its 174 unit tests. Not yet
-verified against a stock bitchat client. See [SECURITY.md](../SECURITY.md)
+Status: **v0.7.2 preview.** Builds and passes its 190 unit tests. The
+release APK is run on an Android 15 emulator before it is published; the
+mesh has not been tried between real phones, and it is not yet verified
+against a stock bitchat client. See [SECURITY.md](../SECURITY.md)
 before relying on it.
 
 Written from scratch in Kotlin. No bitchat source code is used. The wire
@@ -58,7 +60,7 @@ Requires JDK 17 and the Android SDK (platform 36).
 
 ```bash
 cd android
-echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
+echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties   # macOS; on Linux usually $HOME/Android/Sdk
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
@@ -83,6 +85,7 @@ published from `./gradlew :app:assembleRelease` (R8-shrunk, ARM only, about
 | `SyncTest` | packet ID, GCS bitstream layout and false-positive rate, newest-first trimming, `requestSync` TLV and type flags |
 | `GroupsTest`, `BoardTest`, `BridgeWireTest`, `PrekeysTest`, `VouchTest`, `CashuTest`, `VoiceBurstTest` | the v0.6 formats: roster and key signing, post lifetimes and takedowns, bridge envelopes, prekey publish and consume, vouch attestations and batches, token parsing, voice burst framing against bitchat's layout |
 | `RateLimiterTest`, `ScanDutyCycleTest`, `PowTest`, `NostrSendersTest`, `PeerLabelTest`, `RelayUrlTest` | flood limits, scan timing, NIP-13 difficulty, Nostr sender binding, name and suffix labels, relay URL checks |
+| `ChatRepositoryTest`, `PanicTest`, `SaveScheduleTest` | delivery states (a late receipt replaces "not delivered", giving up never hides a receipt), a wipe leaves nothing in memory, the sealed-file directory is emptied whatever is in it, the save debounce has a ceiling, questions to the mesh thread time out |
 | `MeshVisualsTest`, `GlobeTest` | emblem derivation and colours, delivery dots only move forward, day markers; globe projection and inverse, settled-level framing, precision from zoom, drag clamping at the poles, bundled map data parses |
 
 ## Known risks
@@ -102,7 +105,7 @@ published from `./gradlew :app:assembleRelease` (R8-shrunk, ARM only, about
   recipient tag that rotates daily, and the sender's own packet names
   the sender. The same trade-off bitchat makes for delivery rate. Nothing
   about carried mail for others is shown to the carrier beyond a count.
-- **Android lint**: no errors; warnings remain (dependency versions, obsolete SDK checks, monochrome icon).
+- **Android lint**: no errors, and CI keeps it that way; warnings remain (dependency versions, obsolete SDK checks, monochrome icon).
 - Signing. Release builds read `android/keystore.properties` (git-ignored):
   `storeFile`, `storePassword`, `keyAlias`, `keyPassword`. Keep the keystore
   and that file backed up outside the repository; losing them means every

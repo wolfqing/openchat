@@ -13,7 +13,7 @@ No accounts, no phone numbers, no servers.
 [![Android CI](https://github.com/wolfqing/openchat/actions/workflows/android.yml/badge.svg)](https://github.com/wolfqing/openchat/actions/workflows/android.yml)
 [![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)](android/README.md)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white)](android/)
-[![Protocol: bitchat-compatible](https://img.shields.io/badge/protocol-bitchat%20compatible-blue)](docs/protocol-spec.md)
+[![Protocol: bitchat wire format](https://img.shields.io/badge/protocol-bitchat%20wire%20format-blue)](docs/protocol-spec.md)
 [![Status: preview](https://img.shields.io/badge/status-preview-yellow)](#status)
 
 [**Download APK**](https://github.com/wolfqing/openchat/releases/latest) ·
@@ -26,7 +26,7 @@ No accounts, no phone numbers, no servers.
 
 <img src="docs/design/prototype-three-screens.png" alt="Three screens: the Nearby channel with a signal band and hop counts, an encrypted private chat with a four-dot delivery path, and the 'nobody nearby yet' radar" width="100%">
 
-<sub>The three screens that define the app: Nearby with its signal band, a private chat with a delivery path on every message, and the radar you see when nobody is in range. Rendered from the design prototype; v0.7.0 implements them.</sub>
+<sub>The three screens that define the app: Nearby with its signal band, a private chat with a delivery path on every message, and the radar you see when nobody is in range. Rendered from the design prototype; the app has had them since v0.7.0.</sub>
 
 </div>
 
@@ -42,8 +42,9 @@ until it reaches someone it was meant for. That is what the
 and its protocol, code and whitepaper are in the public domain.
 
 openchat is an **independent, MIT-licensed client for that same network**.
-It speaks exactly bitchat's wire protocol and adds nothing to it. What it
-changes is who the app is for and how it looks:
+It is built to speak exactly bitchat's wire protocol and adds nothing to
+it; that has not yet been checked against a stock bitchat phone (see
+[Status](#status)). What it changes is who the app is for and how it looks:
 
 - **Built for people who have never seen IRC.** The people who install a
   mesh messenger during an outage are not terminal people. Three taps from
@@ -56,15 +57,16 @@ changes is who the app is for and how it looks:
   typhoons, carrier outages, festival and stadium congestion, hiking and
   sailing. It is not a censorship-circumvention tool and is not marketed
   as one.
-- **Protocol compatible, always.** An openchat phone is a working relay for
-  every bitchat phone and vice versa. Interop with upstream is a release
-  gate, not a feature.
+- **Protocol compatible, by design.** An openchat phone is meant to be a
+  working relay for every bitchat phone and vice versa. Interop with
+  upstream is the gate for leaving preview, not a feature.
 
 ## Status
 
 | | State |
 |---|---|
 | Android app | **v0.7.2 preview.** 190 unit tests, 9.2 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
+| Tried on devices | The release APK is run on an Android 15 emulator before it is published, and earlier previews have run on one real phone. **The mesh itself has not been tried between real phones**: Bluetooth range, multi-hop relaying, connection limits and behaviour in the background are untested in the field. The emulator has no Bluetooth |
 | Interop with stock bitchat | **Not yet verified.** Implemented from the [spec](docs/protocol-spec.md), upstream test vectors and envelopes recorded from bitchat builds. Verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
 | Release signing | v0.6.0 and later are signed with a dedicated release key; its certificate fingerprint is in [SECURITY.md](SECURITY.md). Previews up to v0.5.0 were debug-signed and must be uninstalled first |
@@ -73,10 +75,63 @@ changes is who the app is for and how it looks:
 Do not rely on openchat where being identified has serious consequences.
 The app says so on first launch. See [SECURITY.md](SECURITY.md).
 
+## Install
+
+1. Download the APK from the
+   [latest release](https://github.com/wolfqing/openchat/releases/latest).
+   Android 8.0 or newer. If you still have a preview up to v0.5.0
+   installed, uninstall it first: those were signed with a debug key and
+   the release key will not install over them.
+2. Check the file before installing, especially if it reached you phone to
+   phone. The SHA-256 is in the release notes and in
+   [CHANGELOG.md](CHANGELOG.md); the signing certificate fingerprint is in
+   [SECURITY.md](SECURITY.md).
+
+   ```bash
+   shasum -a 256 openchat-*.apk
+   apksigner verify --print-certs openchat-*.apk
+   ```
+
+3. Allow **Nearby devices** when asked; that is Bluetooth. On Android 11
+   and older the same request appears as a location permission, because
+   Bluetooth scanning needed one then; the mesh does not read your
+   location. Notifications are optional. The microphone is asked for the
+   first time you record, the camera when you scan a verification code,
+   and location only if you tap "Use my approximate location" for location
+   channels.
+4. Open the **Me** tab and, under "Pass openchat to people near you", tap
+   **Share installer** to send the app to the phones around you. Do this
+   *before* the outage.
+
+## What to expect
+
+This is a preview. Before you count on it:
+
+- **It needs other phones.** A message goes only as far as there are
+  phones running openchat or bitchat to carry it. One Bluetooth hop is
+  roughly 10 m indoors and 30 to 50 m in the open, and a message crosses at
+  most seven. With nobody in range a public message reaches nobody; a
+  private one waits up to 24 hours for its recipient, or for a phone that
+  can carry it there.
+- **Chat history is not kept.** Conversations are held in memory only.
+  When the app is stopped or the phone restarts they are gone. Your
+  identity, the people you verified, favorited or blocked, your groups, the
+  notice board and private messages still waiting to be delivered are kept,
+  encrypted, on the phone.
+- **Keep it running.** The mesh works with the screen off for as long as
+  openchat's notification is there. A battery saver that stops background
+  apps stops the relaying too.
+- **Android only, for now.** iPhones run bitchat. openchat is built to talk
+  to them, and that is exactly the part not yet verified.
+- **It does not hide you.** People nearby can tell that you use the app and
+  can recognise the same phone over time. See [SECURITY.md](SECURITY.md).
+
 ## What it does
 
-Every feature below is bitchat's wire format. The only things openchat
-adds are local: how the mesh is drawn on screen.
+Every feature below is implemented to bitchat's wire format and covered
+by unit tests. That is not the same as tried in the field; [Status](#status)
+says what has been. The only things openchat adds are local: how the mesh
+is drawn on screen.
 
 ### With no network at all
 
@@ -93,9 +148,10 @@ adds are local: how the mesh is drawn on screen.
   someone who arrives two days later still reads them.
 - **Store-and-forward.** Mail for someone out of range is sealed and handed
   to up to three nearby phones that carry it until they meet the recipient.
-  Each phone publishes eight single-use prekeys, so carried mail is
-  forward-secret: stealing the phone later does not unlock mail captured on
-  the way.
+  Each phone publishes eight single-use prekeys. Mail sealed to one of them
+  is forward-secret: stealing the phone later does not unlock it. When the
+  sender holds none of the recipient's prekeys, the mail is sealed to their
+  long-term key instead, without that protection.
 - **History sync.** A late joiner receives the last 15 minutes of public
   messages, plus board posts and prekeys, from a neighbour.
 - **Photos and voice notes**, public or private. **Live voice**: hold the
@@ -142,15 +198,16 @@ adds are local: how the mesh is drawn on screen.
   has an "Erase everything" button with a confirmation for people who
   cannot tap three times quickly. The wipe zeroes the old keys, restarts
   Tor on fresh guards and discards anything still queued under the old
-  identity.
+  identity. It does not depend on the background service: what is stored
+  on the phone is erased even when the mesh is not running.
 - **Quiet by default.** Notifications say "New message" with no name,
   place or text unless you turn previews on; the lock screen stays quiet
   either way. Received photos appear as coarse blocks until tapped.
 - **Share the app offline.** Send the APK to the phone next to you over
   Bluetooth or Quick Share. No app store needed, which matters when the
   app store is unreachable.
-- Keeps relaying with the screen off. The radio follows a scan duty cycle
-  so it sleeps two thirds of the time. Block people on the mesh and per
+- Keeps relaying with the screen off. Scanning follows a duty cycle and
+  rests two thirds of the time. Block people on the mesh and per
   location channel. @mentions. Screen-reader support.
 - **18 languages**, including right-to-left Arabic and Persian. Machine
   drafted; native speakers welcome.
@@ -168,39 +225,18 @@ The full feature-to-file map and the test suites are in
 </tr>
 </table>
 
-<sub>Rendered from the clickable prototype in
+<p align="center"><img src="docs/design/screenshot-globe.png" alt="The globe picker: a dark globe with coastlines and city names, the selected geohash cell outlined in orange under a crosshair, and an 'Enter this channel' button" width="240"><br><sub><b>Choosing a location channel.</b> A real screenshot: v0.7.2 on an Android 15 emulator. Drag to spin, pinch to zoom; the cell under the crosshair is the channel.</sub></p>
+
+<sub>The three above are rendered from the clickable prototype in
 [docs/design/ui-prototype.html](docs/design/ui-prototype.html). The design
 rationale is in [docs/design/ui-direction.md](docs/design/ui-direction.md).
 Sample nicknames are historical figures.</sub>
-
-## Install
-
-1. Download the APK from the
-   [latest release](https://github.com/wolfqing/openchat/releases/latest).
-   Android 8.0 or newer. If you still have a preview up to v0.5.0
-   installed, uninstall it first: those were signed with a debug key and
-   the release key will not install over them.
-2. Check the file before installing, especially if it reached you phone to
-   phone. The SHA-256 is in the release notes and in
-   [CHANGELOG.md](CHANGELOG.md); the signing certificate fingerprint is in
-   [SECURITY.md](SECURITY.md).
-
-   ```bash
-   shasum -a 256 openchat-*.apk
-   apksigner verify --print-certs openchat-*.apk
-   ```
-
-3. Grant Bluetooth and nearby-devices permission. Android requires the
-   location permission for BLE scanning; the mesh does not read your
-   location. Location channels use it only when you join one.
-4. Open the **Me** tab and tap **Share the app** to pass the installer to
-   the phones around you. Do this *before* the outage.
 
 ## How it relates to bitchat
 
 | | bitchat | openchat |
 |---|---|---|
-| Wire protocol | bitchat's | **Identical.** Same packets, same Noise handshake, same group, board, bridge, prekey and Nostr formats |
+| Wire protocol | bitchat's | **Built to be identical**: same packets, same Noise handshake, same group, board, bridge, prekey and Nostr formats. Not yet checked against a stock client |
 | Code | iOS: public domain. Android: GPL-3.0 | Written from scratch in Kotlin. **No bitchat source is used.** The GPL Android code was never read |
 | Licence | Unlicense / GPL-3.0 | MIT |
 | Who it is for | "IRC vibes", by design | People who have never seen IRC |
@@ -235,15 +271,16 @@ Requires JDK 17 and the Android SDK with platform 36.
 
 ```bash
 cd android
-echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
+echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties   # macOS; on Linux usually $HOME/Android/Sdk
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
 The debug APK lands in `app/build/outputs/apk/debug/`. Release builds use
 `assembleRelease` (R8, ARM only, about 9 MB) and read the signing key from
 `android/keystore.properties`, which is not in the repository; without it
-the build falls back to the debug key. CI runs the same tests and build on
-every pull request.
+the build falls back to the debug key. On every pull request CI runs the
+unit tests, lint, and both the debug and the release build, and fails if
+the shrinker cannot read the Kotlin metadata.
 
 ## Contributing
 
