@@ -64,7 +64,7 @@ changes is who the app is for and how it looks:
 
 | | State |
 |---|---|
-| Android app | **v0.7.0 preview.** 174 unit tests, 9.1 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
+| Android app | **v0.7.1 preview.** 175 unit tests, 9.1 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
 | Interop with stock bitchat | **Not yet verified.** Implemented from the [spec](docs/protocol-spec.md), upstream test vectors and envelopes recorded from bitchat builds. Verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
 | Release signing | v0.6.0 and later are signed with a dedicated release key; its certificate fingerprint is in [SECURITY.md](SECURITY.md). Previews up to v0.5.0 were debug-signed and must be uninstalled first |
@@ -263,7 +263,7 @@ There is no CLA.
 
 ## Roadmap in one line
 
-Android first, from scratch, against the spec: done through v0.7.0. Next
+Android first, from scratch, against the spec: done through v0.7.1. Next
 is interop verification against stock bitchat phones, then iOS, then one
 real pilot in a disaster-preparedness drill or a crowded venue. Each phase
 has an exit criterion and a kill condition in
