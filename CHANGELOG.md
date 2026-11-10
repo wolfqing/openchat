@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+Third round from the 2026-11-09 review (languages and gates). No wire-format
+change.
+
+- **One language on screen.** The in-app language is applied by wrapping the
+  activity's context; the system's default locale stays what the phone is
+  set to. The texts v0.7.0 added were formatted with APIs that follow the
+  system: "12 sec. ago" in the signal band, "Today" and "Yesterday" between
+  messages, the scanning timer, voice-note lengths, and message timestamps
+  since earlier. On a phone set to Chinese, the English app (the default)
+  showed Chinese fragments from its first screen. They now use the app's
+  language: relative times and day names come from ICU for that locale,
+  timestamps and counters are formatted with it.
+- **Plural forms declared for Russian, Ukrainian and Arabic** in the four
+  plurals that had only "one" and "other" (group members, board days, days
+  left, people across the bridge). Russian and Ukrainian put the number
+  after a colon, so the wording was already right for every count and is
+  unchanged. Arabic used one noun form for all counts, which was wrong for
+  most; it now reads correctly for 1, 2, 3–10 and 11 and up.
+- **Lint is clean of errors** (18 before: those twelve plurals, and six
+  places that read strings through the context instead of through Compose,
+  which does not follow a language change). Six compiler warnings are gone
+  too.
+- **CI now runs lint and builds the release APK**, and fails when R8 says it
+  cannot read Kotlin metadata. v0.6.0 passed CI and crashed on launch for
+  exactly that; until now only unit tests and the debug build were checked.
+- 1 new test, 190 in all.
+- Not done: `android:localeConfig`. Offering the app in the system's
+  per-app language list makes the system's choice and the in-app default
+  (English when nothing is chosen) compete, and which one wins is a product
+  decision. Not tried on a phone.
+
 Second round from the 2026-11-09 review (battery and speed). No wire-format
 change.
 

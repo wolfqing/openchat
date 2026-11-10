@@ -348,11 +348,11 @@ private fun DrawScope.drawGlobe(
         // The selected cell's label sits under the crosshair, so it needs that much more room.
         val drop = if (i == 0) 22.dp.toPx() else 0f
         val seen = centre != null && west != null && east != null && south != null && north != null
-        val cellW = if (seen) abs(east!!.x - west!!.x) else 0f
-        val cellH = if (seen) abs(south!!.y - north!!.y) else 0f
+        val cellW = if (seen) abs(east.x - west.x) else 0f
+        val cellH = if (seen) abs(south.y - north.y) else 0f
         val fits = seen && tw <= cellW * 0.85f && th + 2 * drop <= cellH * 0.9f
         if (fits) {
-            val x = centre!!.x - tw / 2f; val y = centre.y - th / 2f + drop
+            val x = centre.x - tw / 2f; val y = centre.y - th / 2f + drop
             val onScreen = x > -tw && x < w && y > -th && y < h
             if (i == 0) {
                 space.reserve(x, y, x + tw, y + th)

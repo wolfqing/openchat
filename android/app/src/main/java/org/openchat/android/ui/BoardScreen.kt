@@ -99,7 +99,6 @@ private fun BoardCard(p: BoardItem) {
     val peers by ChatRepository.peers.collectAsState()
     val author = peers.firstOrNull { it.signingPublicKey.toHexString() == p.authorKeyHex }
     val label = if (author != null) PeerLabel.mesh(author.nickname, author.peerIdHex) else PeerLabel(p.nickname.ifBlank { "anon" }, "")
-    val ctx = LocalContext.current
     val daysLeft = ((p.expiresAt - System.currentTimeMillis()) / 86_400_000L).toInt()
     Surface(
         shape = RoundedCornerShape(12.dp),
@@ -116,7 +115,7 @@ private fun BoardCard(p: BoardItem) {
             Text(p.content, fontSize = 16.sp, lineHeight = 22.sp, modifier = Modifier.padding(vertical = 6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    stampText(p.createdAt) + " · " + if (daysLeft >= 1) ctx.resources.getQuantityString(R.plurals.board_days_left, daysLeft, daysLeft) else ctx.getString(R.string.board_ends_today),
+                    stampText(p.createdAt, appLocale()) + " · " + if (daysLeft >= 1) plural(R.plurals.board_days_left, daysLeft) else stringResource(R.string.board_ends_today),
                     fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f),
                 )
                 if (p.mine) TextButton(onClick = { ChatRepository.controller?.deleteBoardPost(p.idHex) }) { Text(stringResource(R.string.board_delete)) }
@@ -138,7 +137,7 @@ private fun BoardComposer() {
             Checkbox(checked = urgent, onCheckedChange = { urgent = it })
             Text(stringResource(R.string.board_urgent_check), fontSize = 13.sp, modifier = Modifier.weight(1f))
             listOf(1, 3, 7).forEach { d ->
-                FilterChip(selected = days == d, onClick = { days = d }, label = { Text(LocalContext.current.resources.getQuantityString(R.plurals.board_days, d, d)) })
+                FilterChip(selected = days == d, onClick = { days = d }, label = { Text(plural(R.plurals.board_days, d)) })
             }
         }
         Button(enabled = fits, onClick = { if (ChatRepository.controller?.postToBoard(text, urgent, days) == true) { text = ""; urgent = false } }, modifier = Modifier.fillMaxWidth()) {

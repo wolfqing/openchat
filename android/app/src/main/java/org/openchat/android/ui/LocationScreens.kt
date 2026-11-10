@@ -1,5 +1,6 @@
 package org.openchat.android.ui
 
+import androidx.compose.ui.platform.LocalResources
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
@@ -125,10 +126,11 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
 @Composable
 private fun ShareChannelButton(geohash: String) {
     val ctx = LocalContext.current
+    val resources = LocalResources.current
     var confirm by remember { mutableStateOf(false) }
     fun share() {
         val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
-            .putExtra(android.content.Intent.EXTRA_TEXT, ctx.getString(R.string.share_channel_text, geohash))
+            .putExtra(android.content.Intent.EXTRA_TEXT, resources.getString(R.string.share_channel_text, geohash))
         ctx.startActivity(android.content.Intent.createChooser(send, null))
     }
     if (confirm) {
@@ -164,12 +166,13 @@ private fun NotesSection(here: String) {
     if (geo.notes.isEmpty()) {
         Text(stringResource(R.string.notes_empty), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
     }
+    val locale = appLocale()
     geo.notes.take(50).forEach { n ->
         Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
             Text(
                 buildAnnotatedString {
                     append(labelText(PeerLabel.nostr(n.nickname, n.pubkey)))
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Normal)) { append("  " + stampText(n.createdAt)) }
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Normal)) { append("  " + stampText(n.createdAt, locale)) }
                 },
                 fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
             )
