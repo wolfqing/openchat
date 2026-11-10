@@ -13,7 +13,7 @@
 [![Android CI](https://github.com/wolfqing/openchat/actions/workflows/android.yml/badge.svg)](https://github.com/wolfqing/openchat/actions/workflows/android.yml)
 [![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)](android/README.md)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white)](android/)
-[![Protocol: bitchat-compatible](https://img.shields.io/badge/protocol-bitchat%20compatible-blue)](docs/protocol-spec.md)
+[![Protocol: bitchat wire format](https://img.shields.io/badge/protocol-bitchat%20wire%20format-blue)](docs/protocol-spec.md)
 [![Status: preview](https://img.shields.io/badge/status-preview-yellow)](#现状)
 
 [**下载 APK**](https://github.com/wolfqing/openchat/releases/latest) ·
@@ -26,7 +26,7 @@
 
 <img src="docs/design/prototype-three-screens.png" alt="三个界面：带信号带和跳数的附近频道、带四点送达路径的加密私信、以及「附近还没有人」的雷达页" width="100%">
 
-<sub>定义这个 App 的三个界面：带信号带的「附近」、每条消息都有送达路径的私信、以及附近没人时的雷达。由设计原型渲染，v0.7.0 已实现这些界面。</sub>
+<sub>定义这个 App 的三个界面：带信号带的「附近」、每条消息都有送达路径的私信、以及附近没人时的雷达。由设计原型渲染，App 从 v0.7.0 起已有这些界面。</sub>
 
 </div>
 
@@ -36,18 +36,19 @@
 
 网络断了之后，一栋楼、一个体育场、一个街区里的手机仍然可以通过蓝牙互相通信。每部手机都替其他手机转发，消息一跳一跳传到该收到的人那里。这就是 [bitchat](https://github.com/permissionlesstech/bitchat) 协议做的事，它的协议、代码和白皮书全部是公有领域。
 
-openchat 是**同一张网络上的独立客户端，MIT 许可**。它说的是和 bitchat 完全相同的线路协议，没有增加任何东西。它改变的是这个 App 给谁用、长什么样：
+openchat 是**同一张网络上的独立客户端，MIT 许可**。它按 bitchat 完全相同的线路协议实现，没有增加任何东西；这一点还没有和原版 bitchat 手机实际对过（见[现状](#现状)）。它改变的是这个 App 给谁用、长什么样：
 
 - **给没见过 IRC 的人用。** 断网时装 mesh 通讯软件的人不是终端用户。手机离线状态下，从安装到发出第一条消息三步完成，这是及格线。
 - **mesh 看得见。** 信号带告诉你能联系到多少部手机。每条消息都显示它经过了几跳。每条私信都有送达路径：已发出、在路上、已送达、已读。附近没人时你看到的是一个雷达和三件可做的事，不是一个空列表。
 - **定位于基础设施故障，不是政治。** 地震、台风、运营商故障、音乐节和体育场的基站过载、徒步和航海。它不是翻墙工具，也不会这样宣传。
-- **永远协议兼容。** 一部 openchat 手机就是每一部 bitchat 手机的中继，反之亦然。与上游的互操作是发布门槛，不是功能。
+- **以协议兼容为设计目标。** 一部 openchat 手机应当是每一部 bitchat 手机的中继，反之亦然。与上游的互操作是走出预览阶段的门槛，不是功能。
 
 ## 现状
 
 | | 状态 |
 |---|---|
 | Android 应用 | **v0.7.2 预览版。** 190 个单元测试，APK 9.2 MB，18 种语言。改动见 [CHANGELOG.md](CHANGELOG.md) |
+| 设备上试过什么 | 每次发布前，正式版安装包都在 Android 15 模拟器上跑一遍；更早的预览版在一部真机上运行过。**手机之间的 mesh 还没有实测过**：蓝牙距离、多跳转发、连接数上限、后台表现都没有实地验证。模拟器没有蓝牙 |
 | 与原版 bitchat 互通 | **尚未验证。** 按[规范](docs/protocol-spec.md)、上游测试向量和从 bitchat 构建中录得的信封实现；与原版 bitchat 客户端的互通验证是下一个里程碑 |
 | 安全审计 | **没有。** 线路上的一切都是上游的；上游做过一次审计（Cure53，2025-11），仍有未关闭的发现 |
 | 发布签名 | v0.6.0 起使用专用发布密钥签名，证书指纹在 [SECURITY.md](SECURITY.md)。v0.5.0 及之前的预览版是调试密钥签名，须先卸载 |
@@ -55,9 +56,32 @@ openchat 是**同一张网络上的独立客户端，MIT 许可**。它说的是
 
 不要在「被识别身份会有严重后果」的场合依赖 openchat。App 首次启动时会这样提示。详见 [SECURITY.md](SECURITY.md)。
 
+## 安装
+
+1. 从[最新发布](https://github.com/wolfqing/openchat/releases/latest)下载 APK。需要 Android 8.0 或更新。如果手机上还装着 v0.5.0 及之前的预览版，先卸载：它们是调试密钥签名的，发布密钥无法覆盖安装。
+2. 安装前核对文件，尤其是经手机对手机传来的时候。SHA-256 在发布说明和 [CHANGELOG.md](CHANGELOG.md) 里；签名证书指纹在 [SECURITY.md](SECURITY.md)。
+
+   ```bash
+   shasum -a 256 openchat-*.apk
+   apksigner verify --print-certs openchat-*.apk
+   ```
+
+3. 系统询问时允许**附近的设备**，这就是蓝牙权限。在 Android 11 及更早的系统上，同一个请求显示为位置权限，因为当时蓝牙扫描需要它；mesh 不读取你的位置。通知权限可选。麦克风在第一次录音时才申请，相机在扫描验证码时才申请，位置只在你为位置频道点「使用我的大致位置」时才申请。
+4. 打开**我**标签页，在「把 openchat 传给身边的人」下面点**分享安装包**，把 App 传给身边的手机。请在断网*之前*做这件事。
+
+## 用之前要知道
+
+这是预览版。指望它之前，先了解这几点：
+
+- **它需要别的手机。** 消息能传多远，取决于路上有多少部运行着 openchat 或 bitchat 的手机替它转发。蓝牙一跳在室内大约 10 米，开阔处 30 到 50 米，一条消息最多经过七跳。附近没人时，公开消息谁也收不到；私信会等收件人或能代为携带的手机，最长 24 小时。
+- **聊天记录不保存。** 对话只存在内存里。App 被停止或手机重启后就没有了。你的身份、你验证过、收藏过或屏蔽过的人、你的群组、公告板，以及还没送达的私信，会加密保存在手机上。
+- **让它一直运行。** 只要 openchat 的通知还在，熄屏后 mesh 照常工作。会停掉后台应用的省电模式也会停掉转发。
+- **目前只有 Android。** iPhone 上跑的是 bitchat。openchat 就是为了能和它们通信而做的，而这正是还没验证的部分。
+- **它不能隐藏你。** 附近的人看得出你在用这个 App，也能长期认出同一部手机。详见 [SECURITY.md](SECURITY.md)。
+
 ## 能做什么
 
-下面每一项都是 bitchat 的线路格式。openchat 唯一增加的是本机的东西：怎么把 mesh 画在屏幕上。
+下面每一项都按 bitchat 的线路格式实现，并有单元测试覆盖。这不等于实地试过，试过什么见[现状](#现状)。openchat 唯一增加的是本机的东西：怎么把 mesh 画在屏幕上。
 
 ### 完全没有网络时
 
@@ -65,7 +89,7 @@ openchat 是**同一张网络上的独立客户端，MIT 许可**。它说的是
 - **私信**，Noise XX 端到端加密，有送达和已读回执。转发的手机读不到内容。
 - **私密群组**，最多 16 人。创建者在每次变动时签署成员名单和新密钥；消息用群密钥封装、由作者签名，像公开消息一样洪泛转发，但只有成员能读。目前仅支持文字。
 - **公告板。** 发一条公告，保留 1、3 或 7 天，可标为紧急，可随时撤下。公告在手机之间传递，也通过历史同步传播，两天后才到的人也能看到。
-- **存储转发。** 发给不在范围内的人的消息被封装后交给最多三部附近的手机代为携带，直到遇见收件人。每部手机发布八把一次性预密钥，所以被携带的消息具有前向保密：事后偷到手机也解不开途中截获的消息。
+- **存储转发。** 发给不在范围内的人的消息被封装后交给最多三部附近的手机代为携带，直到遇见收件人。每部手机发布八把一次性预密钥。用其中一把封装的消息具有前向保密：事后偷到手机也解不开。发件人手里没有对方的预密钥时，消息改用对方的长期密钥封装，没有这层保护。
 - **历史同步。** 后加入的人从邻居那里拿到最近 15 分钟的公开消息，以及公告和预密钥。
 - **照片和语音**，公开或私发。**实时语音**：按住麦克风说话，别人在你说的同时就能听到。
 - **当面验证**，用二维码加 Noise 挑战；以及**担保**：你验证过的人会告诉你的手机他们验证过谁，这些人的名片上会出现一个灰色对勾。
@@ -83,10 +107,10 @@ openchat 是**同一张网络上的独立客户端，MIT 许可**。它说的是
 ### 安全与日常
 
 - **没有账号、手机号和邮箱。** 密钥在首次启动时生成。默认昵称是 `anon`；每个名字都带一个由密钥派生的 `#xxxx` 后缀，重名的人不会被混淆。
-- **连点三下左上角的 logo**，擦除一切并换一个新身份。没有确认对话框，这是刻意的。「我」标签页里还有一个带确认的「清空所有数据」按钮，给无法快速连点三下的人。擦除会把旧密钥清零、让 Tor 换上新的入口节点重启，并丢弃仍以旧身份排队的一切。
+- **连点三下左上角的 logo**，擦除一切并换一个新身份。没有确认对话框，这是刻意的。「我」标签页里还有一个带确认的「清空所有数据」按钮，给无法快速连点三下的人。擦除会把旧密钥清零、让 Tor 换上新的入口节点重启，并丢弃仍以旧身份排队的一切。它不依赖后台服务：即使 mesh 没在运行，手机上存的东西也会被清掉。
 - **默认安静。** 通知只显示「新消息」，没有名字、地点和正文，除非你打开预览；锁屏上无论如何都是安静的。收到的照片在点开前显示为粗糙色块。
 - **离线分享 App。** 通过蓝牙或快传把 APK 发给身边的手机。不需要应用商店，而应用商店打不开的时候这一点很重要。
-- 熄屏后继续转发。无线电按扫描占空比工作，三分之二的时间在休眠。可以在 mesh 上和每个位置频道里屏蔽人。支持 @提及。支持读屏软件。
+- 熄屏后继续转发。扫描按占空比进行，三分之二的时间在休息。可以在 mesh 上和每个位置频道里屏蔽人。支持 @提及。支持读屏软件。
 - **18 种语言**，包括从右到左的阿拉伯语和波斯语。机器初译，欢迎母语者校对。
 
 完整的功能与文件对照、测试套件说明见 [android/README.md](android/README.md)。
@@ -101,26 +125,15 @@ openchat 是**同一张网络上的独立客户端，MIT 许可**。它说的是
 </tr>
 </table>
 
-<sub>由可点击的原型 [docs/design/ui-prototype.html](docs/design/ui-prototype.html) 渲染；设计理由见 [docs/design/ui-direction.md](docs/design/ui-direction.md)。示例昵称都是历史人物。</sub>
+<p align="center"><img src="docs/design/screenshot-globe-zh.png" alt="地球仪选点：深色地球上有海岸线和城市名，准星下选中的 geohash 格子用橙色勾出，下方是「进入这个频道」按钮" width="240"><br><sub><b>选择位置频道。</b>真实截图：v0.7.2 运行在 Android 15 模拟器上。拖动旋转，捏合缩放，准星下的格子就是频道。</sub></p>
 
-## 安装
-
-1. 从[最新发布](https://github.com/wolfqing/openchat/releases/latest)下载 APK。需要 Android 8.0 或更新。如果手机上还装着 v0.5.0 及之前的预览版，先卸载：它们是调试密钥签名的，发布密钥无法覆盖安装。
-2. 安装前核对文件，尤其是经手机对手机传来的时候。SHA-256 在发布说明和 [CHANGELOG.md](CHANGELOG.md) 里；签名证书指纹在 [SECURITY.md](SECURITY.md)。
-
-   ```bash
-   shasum -a 256 openchat-*.apk
-   apksigner verify --print-certs openchat-*.apk
-   ```
-
-3. 授予蓝牙和附近设备权限。Android 要求 BLE 扫描带位置权限；mesh 不读取你的位置，只有加入位置频道时才会用到。
-4. 打开**我**标签页，点**分享 App**，把安装包传给身边的手机。请在断网*之前*做这件事。
+<sub>上面三张由可点击的原型 [docs/design/ui-prototype.html](docs/design/ui-prototype.html) 渲染；设计理由见 [docs/design/ui-direction.md](docs/design/ui-direction.md)。示例昵称都是历史人物。</sub>
 
 ## 与 bitchat 的关系
 
 | | bitchat | openchat |
 |---|---|---|
-| 线路协议 | bitchat 的 | **完全相同。** 同样的数据包、Noise 握手，以及群组、公告板、桥接、预密钥和 Nostr 格式 |
+| 线路协议 | bitchat 的 | **按完全相同来实现**：同样的数据包、Noise 握手，以及群组、公告板、桥接、预密钥和 Nostr 格式。尚未与原版客户端实际对过 |
 | 代码 | iOS：公有领域。Android：GPL-3.0 | 用 Kotlin 从零写成。**不含任何 bitchat 源码。** GPL 的 Android 代码从未读过 |
 | 许可 | Unlicense / GPL-3.0 | MIT |
 | 给谁用 | 刻意的「IRC 风格」 | 没见过 IRC 的人 |
@@ -150,11 +163,11 @@ openchat 是**同一张网络上的独立客户端，MIT 许可**。它说的是
 
 ```bash
 cd android
-echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
+echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties   # macOS；Linux 上通常是 $HOME/Android/Sdk
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
-调试版 APK 在 `app/build/outputs/apk/debug/`。发布版用 `assembleRelease` 构建（R8，仅 ARM，约 9 MB），签名密钥从不在仓库里的 `android/keystore.properties` 读取；没有这个文件时回退到调试密钥。CI 在每个 PR 上跑同样的测试和构建。
+调试版 APK 在 `app/build/outputs/apk/debug/`。发布版用 `assembleRelease` 构建（R8，仅 ARM，约 9 MB），签名密钥从不在仓库里的 `android/keystore.properties` 读取；没有这个文件时回退到调试密钥。每个 PR 上 CI 会跑单元测试、lint，以及调试版和发布版两种构建；精简工具读不懂 Kotlin 元数据时直接判失败。
 
 ## 参与贡献
 

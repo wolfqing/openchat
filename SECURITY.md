@@ -51,8 +51,8 @@ In scope, we want to hear about it:
 - Identity problems: a peer impersonating another, a fingerprint check
   that passes when it should fail, keys that leak or that are weaker than
   specified.
-- The panic wipe (triple tap on the title) leaving data behind, or data
-  surviving in logs, caches or backups.
+- The panic wipe (triple tap on the logo, or "Erase everything" on the Me
+  tab) leaving data behind, or data surviving in logs, caches or backups.
 - Anything that makes a phone crash or hang from a packet it received.
 - Tor fail-closed being bypassed: relay traffic reaching the network
   outside Tor when the setting says Tor only.
