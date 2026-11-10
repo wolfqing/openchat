@@ -44,7 +44,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -280,10 +282,18 @@ private fun DrawScope.drawGlobe(
         if (view.zoom > 1.4) polylines(d.borders, c.border, 0.8f)
     }
 
+    // Labels claim screen space in priority order, so crowded ones give way instead of piling up.
+    val space = LabelSpace()
+    val ring = 14.dp.toPx()
+    space.reserve(cx - ring, cy - ring, cx + ring, cy + ring)
+
     // The selected cell and its neighbours, edges drawn as curves on the sphere.
     val precision = view.precision
     val cell = Geohash.encode(view.lat, view.lon, precision)
     val cells = listOf(cell) + Geohash.neighbors(cell)
+    // Set when the cells are too small for a label at all: the neighbours then go unlabelled
+    // rather than half of them squeezing in around the crosshair.
+    var crowded = false
     cells.forEachIndexed { i, hash ->
         val b = Geohash.bounds(hash) ?: return@forEachIndexed
         val path = Path()
@@ -304,36 +314,58 @@ private fun DrawScope.drawGlobe(
         } else {
             drawPath(path, c.accent.copy(alpha = 0.45f), style = Stroke(1.2f))
         }
-        // A label is drawn only where it fits inside its cell; mid-pinch a cell can be a few dp wide.
         val midLat = (b.latLo + b.latHi) / 2; val midLon = (b.lonLo + b.lonHi) / 2
         fun screen(lat: Double, lon: Double): Offset? {
             view.project(lat, lon, p)
             return if (p[2] > 0.15) Offset(cx + (p[0] * r).toFloat(), cy - (p[1] * r).toFloat()) else null
         }
+        val style = TextStyle(
+            color = if (i == 0) c.accent else c.label.copy(alpha = 0.6f), fontSize = if (i == 0) 13.sp else 11.sp,
+            fontFamily = FontFamily.Monospace, fontWeight = if (i == 0) FontWeight.Bold else FontWeight.Normal,
+        )
+        val text = measurer.measure(hash, style)
+        val tw = text.size.width.toFloat(); val th = text.size.height.toFloat()
         val centre = screen(midLat, midLon)
         val west = screen(midLat, b.lonLo); val east = screen(midLat, b.lonHi)
         val south = screen(b.latLo, midLon); val north = screen(b.latHi, midLon)
-        if (centre != null && west != null && east != null && south != null && north != null) {
-            val cellW = abs(east.x - west.x); val cellH = abs(south.y - north.y)
-            val style = TextStyle(
-                color = if (i == 0) c.accent else c.label.copy(alpha = 0.6f), fontSize = if (i == 0) 13.sp else 11.sp,
-                fontFamily = FontFamily.Monospace, fontWeight = if (i == 0) FontWeight.Bold else FontWeight.Normal,
+        // The selected cell's label sits under the crosshair, so it needs that much more room.
+        val drop = if (i == 0) 22.dp.toPx() else 0f
+        val seen = centre != null && west != null && east != null && south != null && north != null
+        val cellW = if (seen) abs(east!!.x - west!!.x) else 0f
+        val cellH = if (seen) abs(south!!.y - north!!.y) else 0f
+        val fits = seen && tw <= cellW * 0.85f && th + 2 * drop <= cellH * 0.9f
+        if (fits) {
+            val x = centre!!.x - tw / 2f; val y = centre.y - th / 2f + drop
+            val onScreen = x > -tw && x < w && y > -th && y < h
+            if (i == 0) {
+                space.reserve(x, y, x + tw, y + th)
+                drawText(text, topLeft = Offset(x, y))
+            } else if (!crowded && onScreen && space.claim(x, y, x + tw, y + th)) {
+                drawText(text, topLeft = Offset(x, y))
+            }
+        } else if (i == 0) {
+            // Too small to hold its label (the world view): show it on a plate under the
+            // crosshair anyway, so the selection always has a name. Where even a bare label would
+            // not fit (the world view), the cells are too small to label the neighbours either.
+            crowded = !(tw <= cellW * 0.85f && th <= cellH * 0.9f)
+            val padX = 6.dp.toPx(); val padY = 2.dp.toPx()
+            val x = cx - tw / 2f; val y = cy + ring + 4.dp.toPx()
+            space.reserve(x - padX, y - padY, x + tw + padX, y + th + padY)
+            drawRoundRect(
+                c.ocean.copy(alpha = 0.85f), Offset(x - padX, y - padY), Size(tw + 2 * padX, th + 2 * padY),
+                CornerRadius(4.dp.toPx()),
             )
-            val text = measurer.measure(hash, style)
-            // The selected cell's label sits under the crosshair, so it needs that much more room.
-            val drop = if (i == 0) 22.dp.toPx() else 0f
-            val fits = text.size.width <= cellW * 0.85f && text.size.height + 2 * drop <= cellH * 0.9f
-            val x = centre.x - text.size.width / 2f
-            val y = centre.y - text.size.height / 2f + drop
-            if (fits && x > -text.size.width && x < w && y > -text.size.height && y < h) drawText(text, topLeft = Offset(x, y))
+            drawText(text, topLeft = Offset(x, y))
         }
     }
 
-    // Cities: the most prominent first, more as you zoom in, at most 40 labels.
+    // Cities: the most prominent first, more as you zoom in, at most 40 labels. A name goes to
+    // the right of its dot, else to the left, else is left out where it would cover another.
     data?.let { d ->
         val maxRank = when { view.zoom < 1.5 -> 1; view.zoom < 3 -> 3; view.zoom < 8 -> 6; else -> 10 }
         var labels = 0
         val style = TextStyle(color = c.label.copy(alpha = 0.75f), fontSize = 10.sp)
+        val gap = 4.dp.toPx()
         for (city in d.cities) {
             if (city.rank > maxRank) break
             view.project(city.lat.toDouble(), city.lon.toDouble(), p)
@@ -341,7 +373,13 @@ private fun DrawScope.drawGlobe(
             val x = cx + (p[0] * r).toFloat(); val y = cy - (p[1] * r).toFloat()
             if (x < 0 || x > w || y < 0 || y > h) continue
             drawCircle(c.label.copy(alpha = 0.8f), 2f, Offset(x, y))
-            if (labels++ < 40) drawText(measurer.measure(city.name, style), topLeft = Offset(x + 4f, y - 6f))
+            if (labels >= 40) continue
+            val text = measurer.measure(city.name, style)
+            val tw = text.size.width.toFloat(); val th = text.size.height.toFloat()
+            val top = y - th / 2f
+            val left = listOf(x + gap, x - gap - tw).firstOrNull { space.claim(it, top, it + tw, top + th) } ?: continue
+            drawText(text, topLeft = Offset(left, top))
+            labels++
         }
     }
 
