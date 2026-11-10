@@ -142,7 +142,8 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
         ocean = Color(0xFF0F1414), coast = MaterialTheme.colorScheme.onSurfaceVariant, border = MaterialTheme.colorScheme.outline,
         grid = MaterialTheme.colorScheme.outlineVariant, accent = MaterialTheme.colorScheme.primary, label = MaterialTheme.colorScheme.onSurface,
     )
-    val measurer = rememberTextMeasurer()
+    // Nine cell names and up to forty cities are measured per redraw; the default cache holds eight.
+    val measurer = rememberTextMeasurer(cacheSize = 64)
     val pulse by rememberInfiniteTransition(label = "crosshair").animateFloat(0.35f, 1f, infiniteRepeatable(tween(1100), RepeatMode.Reverse), label = "pulse")
     val stars = remember { List(140) { Offset(Random.nextFloat(), Random.nextFloat()) to (0.2f + Random.nextFloat() * 0.6f) } }
     val levelName = stringResource(levelLabel(precision))
@@ -204,8 +205,11 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
                     )
                 },
         ) {
-            drawGlobe(view, data, colors, measurer, stars, pulse)
+            drawGlobe(view, data, colors, measurer, stars)
         }
+        // The crosshair pulses for as long as the picker is open. On its own layer only these few
+        // strokes are redrawn each frame; drawn with the globe, every coastline was, 60 times a second.
+        Canvas(Modifier.fillMaxSize()) { drawCrosshair(colors.accent, pulse) }
 
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), tint = Color.White) }
@@ -239,7 +243,7 @@ private class GlobeColors(val ocean: Color, val coast: Color, val border: Color,
 
 private fun DrawScope.drawGlobe(
     view: GlobeView, data: GlobeData?, c: GlobeColors, measurer: TextMeasurer,
-    stars: List<Pair<Offset, Float>>, pulse: Float,
+    stars: List<Pair<Offset, Float>>,
 ) {
     val w = size.width; val h = size.height
     val cx = w / 2f; val cy = h / 2f
@@ -264,9 +268,22 @@ private fun DrawScope.drawGlobe(
             if (down) path.lineTo(x, y) else { path.moveTo(x, y); down = true }
         }
     }
+    // The part of the sphere the screen can show: everything near once the globe fits, a small
+    // patch around the centre when zoomed in. A piece whose cap lies outside it is not projected.
+    val visible = GlobeView.visibleAngle(Math.hypot(w / 2.0, h / 2.0) / r)
     fun polylines(list: List<GlobeData.Polyline>, color: Color, width: Float) {
         val path = Path()
-        list.forEach { pl -> line(path, { pl.lat[it].toDouble() }, { pl.lon[it].toDouble() }, pl.lat.size) }
+        for (pl in list) {
+            if (!view.capInView(pl.capX, pl.capY, pl.capZ, pl.capAngle, visible)) continue
+            var down = false
+            for (i in pl.x.indices) {
+                view.projectUnit(pl.x[i], pl.y[i], pl.z[i], p)
+                if (p[2] < 0) { down = false; continue }
+                val x = cx + (p[0] * r).toFloat(); val y = cy - (p[1] * r).toFloat()
+                if (abs(x - cx) > limit || abs(y - cy) > limit) { down = false; continue }
+                if (down) path.lineTo(x, y) else { path.moveTo(x, y); down = true }
+            }
+        }
         drawPath(path, color, style = Stroke(width))
     }
 
@@ -383,9 +400,13 @@ private fun DrawScope.drawGlobe(
         }
     }
 
-    // Pulsing crosshair at the centre: the point that picks the cell.
+}
+
+/** The pulsing crosshair at the centre: the point that picks the cell. */
+private fun DrawScope.drawCrosshair(accent: Color, pulse: Float) {
+    val cx = size.width / 2f; val cy = size.height / 2f
     val arm = 10.dp.toPx(); val gap = 4.dp.toPx()
-    val cross = c.accent.copy(alpha = pulse)
+    val cross = accent.copy(alpha = pulse)
     drawCircle(cross, 14.dp.toPx() * (0.8f + 0.2f * pulse), Offset(cx, cy), style = Stroke(1.5f))
     drawLine(cross, Offset(cx - arm - gap, cy), Offset(cx - gap, cy), 2f)
     drawLine(cross, Offset(cx + gap, cy), Offset(cx + arm + gap, cy), 2f)

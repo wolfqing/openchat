@@ -78,6 +78,8 @@ class Recorder : MeshListener {
     override fun onRead(peerHex: String, messageId: String) { reads += messageId }
     override fun onQueued(peerHex: String, messageId: String) { queued += messageId }
     override fun onCarried(peerHex: String, messageId: String) { carried += messageId }
+    var stateChanges = 0
+    override fun onStateChanged() { stateChanges++ }
 }
 
 /** Wires engines together with in-memory links; each write is delivered after a small delay. */
@@ -789,6 +791,25 @@ class MeshEngineTest {
         assertEquals(listOf<Int?>(2, 2), net.recorders["carol"]!!.hops)
         val carolSees = net.recorders["carol"]!!.peers.associate { it.nickname to it.hops }
         assertEquals(mapOf<String, Int?>("alice" to 2, "bob" to 1), carolSees)
+    }
+
+    @Test
+    fun presenceAloneDoesNotAskForASave() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "bob").forEach { net.node(it).start() }
+        net.connect("alice", "bob"); net.scheduler.advance(30_000)
+        val alice = net.engines["alice"]!!; val rec = net.recorders["alice"]!!
+        assertEquals(1, alice.knownCount)
+        val settled = rec.stateChanges
+        // Four minutes of bob's announces and nothing else: each one used to seal the whole state to disk.
+        net.scheduler.advance(4 * 60_000)
+        assertEquals(settled, rec.stateChanges)
+        // The remembered times are still written once they have waited five minutes.
+        net.scheduler.advance(2 * 60_000)
+        assertEquals(settled + 1, rec.stateChanges)
+        // And a real change is reported at once.
+        alice.sendPublic("something to keep")
+        assertEquals(settled + 2, rec.stateChanges)
     }
 
     @Test

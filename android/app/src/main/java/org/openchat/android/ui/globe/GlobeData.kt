@@ -16,8 +16,40 @@ class GlobeData(
     val borders: List<Polyline>,
     val cities: List<City>,
 ) {
-    /** Points as parallel arrays of degrees. */
-    class Polyline(val lat: FloatArray, val lon: FloatArray)
+    /**
+     * A piece of a line: points as parallel arrays of degrees, and the same points on the unit
+     * sphere ([x] through 0°N 0°E, [y] through 0°N 90°E, [z] through the north pole), worked out
+     * once so drawing a frame needs no trigonometry per point. The cap ([capX], [capY], [capZ]
+     * its axis, [capAngle] the angle in radians to its farthest point) holds every point, so a
+     * piece that cannot be on screen is skipped whole.
+     */
+    class Polyline(val lat: FloatArray, val lon: FloatArray) {
+        val x = FloatArray(lat.size)
+        val y = FloatArray(lat.size)
+        val z = FloatArray(lat.size)
+        val capX: Float
+        val capY: Float
+        val capZ: Float
+        val capAngle: Float
+
+        init {
+            var sx = 0.0; var sy = 0.0; var sz = 0.0
+            for (i in lat.indices) {
+                val la = Math.toRadians(lat[i].toDouble()); val lo = Math.toRadians(lon[i].toDouble())
+                val c = Math.cos(la)
+                x[i] = (c * Math.cos(lo)).toFloat(); y[i] = (c * Math.sin(lo)).toFloat(); z[i] = Math.sin(la).toFloat()
+                sx += x[i]; sy += y[i]; sz += z[i]
+            }
+            val n = Math.sqrt(sx * sx + sy * sy + sz * sz)
+            // The mean direction, or the first point if the piece somehow averages out to nothing.
+            if (n > 1e-9) { capX = (sx / n).toFloat(); capY = (sy / n).toFloat(); capZ = (sz / n).toFloat() }
+            else if (lat.isNotEmpty()) { capX = x[0]; capY = y[0]; capZ = z[0] }
+            else { capX = 1f; capY = 0f; capZ = 0f }
+            var far = 1.0
+            for (i in lat.indices) far = minOf(far, (x[i] * capX + y[i] * capY + z[i] * capZ).toDouble())
+            capAngle = Math.acos(far.coerceIn(-1.0, 1.0)).toFloat()
+        }
+    }
     class City(val lat: Float, val lon: Float, val rank: Int, val name: String)
 
     companion object {
@@ -42,12 +74,26 @@ class GlobeData(
             null
         }
 
-        private fun readLayer(b: ByteBuffer): List<Polyline> = List(b.int) {
-            val n = b.short.toInt() and 0xFFFF
-            val lat = FloatArray(n)
-            val lon = FloatArray(n)
-            for (i in 0 until n) { lon[i] = b.short * SCALE; lat[i] = b.short * SCALE }
-            Polyline(lat, lon)
+        /** Longest piece a line is cut into. The longest coastline has over 10,000 points; whole, it could never be skipped. */
+        const val PIECE = 128
+
+        private fun readLayer(b: ByteBuffer): List<Polyline> {
+            val out = ArrayList<Polyline>()
+            repeat(b.int) {
+                val n = b.short.toInt() and 0xFFFF
+                val lat = FloatArray(n)
+                val lon = FloatArray(n)
+                for (i in 0 until n) { lon[i] = b.short * SCALE; lat[i] = b.short * SCALE }
+                // Neighbouring pieces share their end point, so the line stays unbroken.
+                var from = 0
+                while (from < n - 1 || (from == 0 && n > 0)) {
+                    val to = minOf(n, from + PIECE)
+                    out += Polyline(lat.copyOfRange(from, to), lon.copyOfRange(from, to))
+                    if (to >= n) break
+                    from = to - 1
+                }
+            }
+            return out
         }
     }
 }

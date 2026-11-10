@@ -2,6 +2,48 @@
 
 ## Unreleased
 
+Second round from the 2026-11-09 review (battery and speed). No wire-format
+change.
+
+- **The mesh state is no longer sealed to disk on every announce.** Every
+  verified announce refreshed a remembered peer's last-seen time, and that
+  alone asked for a save: the whole state (up to 500 remembered peers, 1000
+  history packets, the board, prekey bundles) serialised, encrypted inside
+  the Android Keystore and written, on the mesh thread. With two or three
+  phones that was every few seconds, around the clock. Now a last-seen time
+  on its own waits for the next real change, or at most five minutes.
+- **A busy mesh can no longer starve the save.** The 500 ms quiet-time
+  debounce had no ceiling, so changes arriving faster than that put the
+  write off indefinitely. It now runs at the latest five seconds after the
+  first unsaved change.
+- **Globe picker: the globe is redrawn when it moves, not 60 times a
+  second.** The pulsing crosshair shared a canvas with the globe, so every
+  frame re-projected all 60,412 coastline points with four trigonometric
+  calls each, through boxing lambdas, whether or not a finger was down. The
+  crosshair has its own layer now. Points are stored as unit vectors when
+  the map is parsed (three dot products per point, no trigonometry), lines
+  are cut into pieces of at most 128 points, and a piece that cannot be on
+  screen is skipped whole: at region level 7% of the points are projected,
+  at province level 1.5%, at block level 0.2%. The text measurer's cache
+  holds 64 labels instead of 8.
+- **The radar costs little while nobody is nearby.** Its sweep ran at the
+  display's rate, redrawing rings and labels each frame, in the state the
+  app is in most. Rings and labels are drawn once; the sweep is a layer
+  that is only turned, 15 times a second; it stands still when system
+  animations are off.
+- **The dedup table holds 4096 packet keys instead of 1000.** Live voice
+  bursts, prekey bundles, board posts and group messages now share it; a
+  key pushed out early let its packet be processed and relayed again.
+- **The UI no longer waits on the mesh thread without a limit.** Posting to
+  the board, creating a group and `/trace` blocked the UI thread until the
+  mesh thread answered, which is never once that thread has quit. They give
+  up after two seconds, or at once when the thread is gone.
+- 8 new tests, 189 in all.
+- Left for later: moving the sealing itself off the mesh thread, and
+  sealing bulk data with a key the Keystore only wraps. Both touch the
+  wipe and the identity file and want a phone to test on. Not tried on a
+  phone.
+
 First round from the 2026-11-09 review (safety). No wire-format change.
 
 - **The panic wipe no longer depends on the mesh service.** The triple tap
