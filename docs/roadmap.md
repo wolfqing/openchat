@@ -108,6 +108,9 @@ no accounts, public nearby channel, Noise private messages, Nostr geohash
 channels, triple-tap panic wipe, offline APK sharing. Unit tests pass,
 including the Noise and BIP-340 official vectors.
 
+Features bitchat has and openchat does not yet are tracked in
+[bitchat-gaps.md](bitchat-gaps.md).
+
 **Next gate**: field test with two Android phones and one iPhone running
 stock bitchat, airplane mode on. Pass = public and private messages both
 ways, and a relay through the iPhone. This is the first real evidence of
