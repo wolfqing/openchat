@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,8 +48,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Android 15 draws edge to edge whether asked or not; asking makes every version lay out the same way.
-        enableEdgeToEdge()
+        // Android 15 draws edge to edge whether asked or not; dark bars match the always-dark UI even when the system theme is light.
+        val barStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
         val prefs = getSharedPreferences("ui", Context.MODE_PRIVATE)
         onboarded.value = prefs.getBoolean("onboarded", false)
         refreshPermissionState()

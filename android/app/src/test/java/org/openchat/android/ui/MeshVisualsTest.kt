@@ -86,4 +86,25 @@ class MeshVisualsTest {
         assertNotEquals(localDay(late, utc), localDay(late, TimeZone.getTimeZone("Asia/Shanghai")))
         assertTrue(withDayBreaks(emptyList(), utc).isEmpty())
     }
+
+    @Test
+    fun consecutiveMessagesFromSameSenderWithinTwoMinutesGroupTogether() {
+        val utc = TimeZone.getTimeZone("UTC")
+        val t0 = 10 * 86_400_000L + 60_000L
+        fun msg(id: String, sender: String, ts: Long, mine: Boolean = false, sys: Boolean = false) =
+            ChatMessage(id, "dm:e887", sender, sender, id, ts, mine = mine, system = sys)
+        val rows = withDayBreaks(
+            listOf(
+                msg("1", "e887", t0),
+                msg("2", "e887", t0 + 30_000),
+                msg("3", "e887", t0 + 200_000), // > 2 min gap starts a new burst
+                msg("4", "me", t0 + 210_000, mine = true),
+                msg("sys", "sys", t0 + 215_000, sys = true),
+                msg("5", "me", t0 + 220_000, mine = true), // system line breaks the burst
+            ),
+            utc,
+        ).filterIsInstance<TimelineRow.Message>()
+        assertEquals(listOf(true, false, true, true, true, true), rows.map { it.groupStart })
+        assertEquals(listOf(false, true, true, true, true, true), rows.map { it.groupEnd })
+    }
 }

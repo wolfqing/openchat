@@ -65,8 +65,8 @@ it; that has not yet been checked against a stock bitchat phone (see
 
 | | State |
 |---|---|
-| Android app | **v0.7.2 preview.** 190 unit tests, 9.2 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
-| Tried on devices | The release APK is run on an Android 15 emulator before it is published, and earlier previews have run on one real phone. **The mesh itself has not been tried between real phones**: Bluetooth range, multi-hop relaying, connection limits and behaviour in the background are untested in the field. The emulator has no Bluetooth |
+| Android app | **v0.7.3 preview.** 191 unit tests, 9.3 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
+| Tried on devices | Previews up to v0.7.2 ran on an Android 15 emulator before publishing, and earlier previews ran on one real phone; see [CHANGELOG.md](CHANGELOG.md) per release. **The mesh itself has not been tried between real phones**: Bluetooth range, multi-hop relaying, connection limits and behaviour in the background are untested in the field. The emulator has no Bluetooth |
 | Interop with stock bitchat | **Not yet verified.** Implemented from the [spec](docs/protocol-spec.md), upstream test vectors and envelopes recorded from bitchat builds. Verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
 | Release signing | v0.6.0 and later are signed with a dedicated release key; its certificate fingerprint is in [SECURITY.md](SECURITY.md). Previews up to v0.5.0 were debug-signed and must be uninstalled first |
@@ -300,7 +300,7 @@ There is no CLA.
 
 ## Roadmap in one line
 
-Android first, from scratch, against the spec: done through v0.7.2. Next
+Android first, from scratch, against the spec: done through v0.7.3. Next
 is interop verification against stock bitchat phones, then iOS, then one
 real pilot in a disaster-preparedness drill or a crowded venue. Each phase
 has an exit criterion and a kill condition in

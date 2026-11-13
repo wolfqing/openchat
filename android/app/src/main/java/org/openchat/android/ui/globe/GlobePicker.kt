@@ -30,6 +30,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -77,6 +78,7 @@ import kotlinx.coroutines.withContext
 import androidx.compose.runtime.withFrameNanos
 import org.openchat.android.R
 import org.openchat.android.nostr.Geohash
+import org.openchat.android.ui.OpenChatPalette
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.min
@@ -141,7 +143,7 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
     val cell = Geohash.encode(view.lat, view.lon, precision)
     val colors = GlobeColors(
         ocean = Color(0xFF0F1414), coast = MaterialTheme.colorScheme.onSurfaceVariant, border = MaterialTheme.colorScheme.outline,
-        grid = MaterialTheme.colorScheme.outlineVariant, accent = MaterialTheme.colorScheme.primary, label = MaterialTheme.colorScheme.onSurface,
+        grid = MaterialTheme.colorScheme.outlineVariant, accent = OpenChatPalette.Signal, label = MaterialTheme.colorScheme.onSurface,
     )
     // Nine cell names and up to forty cities are measured per redraw; the default cache holds eight.
     val measurer = rememberTextMeasurer(cacheSize = 64)
@@ -237,7 +239,10 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
                     Icon(Icons.Filled.Add, stringResource(R.string.globe_zoom_in), tint = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
-                Button(onClick = { onSelect(cell) }) { Text(stringResource(R.string.globe_select)) }
+                Button(
+                    onClick = { onSelect(cell) },
+                    colors = ButtonDefaults.buttonColors(containerColor = OpenChatPalette.Signal, contentColor = OpenChatPalette.OnSignal),
+                ) { Text(stringResource(R.string.globe_select), fontWeight = FontWeight.SemiBold) }
             }
         }
     }

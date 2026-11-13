@@ -1,5 +1,54 @@
 # Changelog
 
+## Android v0.7.3 (preview) — 2026-11-13
+
+UI and UX overhaul across every screen to match the design prototype
+([ui-direction.md](docs/design/ui-direction.md),
+[ui-prototype.html](docs/design/ui-prototype.html)). No wire-format change.
+Same release key as v0.6.0–v0.7.2; installs over them. 191 unit tests. 9.3 MB.
+APK SHA-256 `c234e62b8c43d8abcebbc2715818685b6545021158bb8aa2ea2c0767cf348069`.
+
+### Changed
+
+- **Palette and semantic colour discipline.** Pure-black screen canvas
+  (`#000000`) for OLED battery life, four cool-dark surface steps (`#101414` /
+  `#151B1B` / `#1C2424` / `#222929`), signal orange (`#FF7840`) reserved for
+  the mesh and radio layer, and lock blue (`#93BCE8` on `#13263A`) for
+  encrypted chats. Window background and system bars are pinned dark so there
+  is no light flash on launch or illegible status-bar icons under a light
+  system theme.
+- **Public feeds vs encrypted chats.** Nearby and location channels now render
+  as full-width bulletin rows with emblems, hop badges and hairline rules
+  instead of chat bubbles; private DMs and groups use asymmetric grouped
+  bubbles with `LockSoft` outgoing fills. Consecutive messages from the same
+  sender within two minutes collapse into a single visual burst.
+- **Capsule composer and voice notes.** Replaced the tall outlined text field
+  with a compact 22 dp capsule composer, floating `/command` and `@mention`
+  autocomplete chips, an animated Mic / Send toggle, a dedicated voice
+  recording bar with live timer and cancel button, and a 20-bar deterministic
+  waveform with playback progress on voice notes.
+- **Navigation and sheets.** Directional slide-and-fade transitions when
+  opening and closing chats (respecting system reduced-motion settings),
+  compact top-bar pill actions (`Board` on Nearby, `New group` on Private),
+  and bottom sheets (`ModalBottomSheet`) replacing alert dialogs for person
+  cards, QR codes, group members and notice-board composition.
+- **Private list, Channels, Board, Me and Onboarding.** Smart private-chat
+  sorting (unread, recent, nearby) with corner reachability dots and delivery
+  prefixes; quick-switch pills and approximate geohash cell spans on Channels;
+  FAB composer on the notice board; structured identity card (emblem, inline
+  nickname edit, QR button, copyable 4×4 fingerprint grid) and grouped
+  settings cards on Me; language switcher on the first-launch onboarding header.
+
+### Checked, and not
+
+- Checked locally from this tree with the release key: 191 unit tests pass,
+  `lintDebug` 0 errors, debug and R8 release APKs build cleanly with no
+  Kotlin-metadata warnings, signing certificate matches
+  [SECURITY.md](SECURITY.md).
+- Not checked on this build: the Android 15 emulator (`openchat35`) refused to
+  boot on the build machine due to low free disk space (`2.7 GB` available),
+  and nothing has been checked over a real radio yet.
+
 ## Android v0.7.2 (preview) — 2026-11-09
 
 Safety, battery and language fixes from the 2026-11-09 review. No wire-format

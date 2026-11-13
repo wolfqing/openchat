@@ -1,7 +1,8 @@
 # openchat for Android
 
-Status: **v0.7.2 preview.** Builds and passes its 190 unit tests. The
-release APK is run on an Android 15 emulator before it is published; the
+Status: **v0.7.3 preview.** Builds and passes its 191 unit tests. Previews up
+to v0.7.2 ran on an Android 15 emulator before publishing (see
+[CHANGELOG.md](../CHANGELOG.md) per release); the
 mesh has not been tried between real phones, and it is not yet verified
 against a stock bitchat client. See [SECURITY.md](../SECURITY.md)
 before relying on it.
@@ -86,7 +87,7 @@ published from `./gradlew :app:assembleRelease` (R8-shrunk, ARM only, about
 | `GroupsTest`, `BoardTest`, `BridgeWireTest`, `PrekeysTest`, `VouchTest`, `CashuTest`, `VoiceBurstTest` | the v0.6 formats: roster and key signing, post lifetimes and takedowns, bridge envelopes, prekey publish and consume, vouch attestations and batches, token parsing, voice burst framing against bitchat's layout |
 | `RateLimiterTest`, `ScanDutyCycleTest`, `PowTest`, `NostrSendersTest`, `PeerLabelTest`, `RelayUrlTest` | flood limits, scan timing, NIP-13 difficulty, Nostr sender binding, name and suffix labels, relay URL checks |
 | `ChatRepositoryTest`, `PanicTest`, `SaveScheduleTest` | delivery states (a late receipt replaces "not delivered", giving up never hides a receipt), a wipe leaves nothing in memory, the sealed-file directory is emptied whatever is in it, the save debounce has a ceiling, questions to the mesh thread time out |
-| `MeshVisualsTest`, `GlobeTest` | emblem derivation and colours, delivery dots only move forward, day markers; globe projection and inverse, settled-level framing, precision from zoom, drag clamping at the poles, bundled map data parses |
+| `MeshVisualsTest`, `GlobeTest` | emblem derivation and colours, delivery dots only move forward, day markers and speaker grouping; globe projection and inverse, settled-level framing, precision from zoom, drag clamping at the poles, bundled map data parses |
 
 ## Known risks
 
