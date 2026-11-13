@@ -312,4 +312,21 @@
         <item quantity="one">Nearby · relayed by %d phone</item>
         <item quantity="other">Nearby · relayed by %d phones</item>
     </plurals>
+    <string name="update_title">App updates</string>
+    <string name="update_body">Checks GitHub Releases over your current network route (Tor when enabled) and verifies SHA-256 and signing certificate before installing.</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_up_to_date">Up to date (%1$s)</string>
+    <string name="update_available_title">New version %1$s · %2$s</string>
+    <string name="update_download">Download update</string>
+    <string name="update_downloading">Downloading %1$s / %2$s (%3$d%%)</string>
+    <string name="update_verifying">Verifying SHA-256 and signature…</string>
+    <string name="update_verified">SHA-256 and signing certificate verified</string>
+    <string name="update_install">Install %1$s</string>
+    <string name="update_auto_title">Check automatically on launch</string>
+    <string name="update_err_tor">Waiting for Tor to connect. Try again once Tor is online.</string>
+    <string name="update_err_network">Could not reach GitHub Releases. Check your connection and try again.</string>
+    <string name="update_err_hash">SHA-256 checksum did not match. The file was discarded.</string>
+    <string name="update_err_sig">Signing certificate did not match this app. The file was discarded.</string>
+    <string name="update_err_install">Could not start the system installer.</string>
 </resources>

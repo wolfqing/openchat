@@ -293,4 +293,21 @@
     <plurals name="dm_status_relayed">
         <item quantity="other">附近 · 經 %d 支手機轉發</item>
     </plurals>
+    <string name="update_title">應用程式更新</string>
+    <string name="update_body">依目前網路路由（啟用 Tor 時經由 Tor）檢查 GitHub Releases，並在安裝前驗證 SHA-256 與簽章憑證。</string>
+    <string name="update_check">檢查更新</string>
+    <string name="update_checking">正在檢查更新…</string>
+    <string name="update_up_to_date">已是最新版本（%1$s）</string>
+    <string name="update_available_title">發現新版本 %1$s · %2$s</string>
+    <string name="update_download">下載更新</string>
+    <string name="update_downloading">正在下載 %1$s / %2$s（%3$d%%）</string>
+    <string name="update_verifying">正在驗證 SHA-256 與簽章憑證…</string>
+    <string name="update_verified">SHA-256 與簽章憑證驗證通過</string>
+    <string name="update_install">安裝 %1$s</string>
+    <string name="update_auto_title">啟動時自動檢查更新</string>
+    <string name="update_err_tor">正在等待 Tor 連線，請待 Tor 就緒後再試。</string>
+    <string name="update_err_network">無法連線至 GitHub Releases，請檢查網路後重試。</string>
+    <string name="update_err_hash">SHA-256 雜湊驗證不符，已捨棄該檔案。</string>
+    <string name="update_err_sig">簽章憑證與目前應用程式不一致，已捨棄該檔案。</string>
+    <string name="update_err_install">無法啟動系統安裝程式。</string>
 </resources>

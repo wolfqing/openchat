@@ -37,6 +37,7 @@ object Panic {
         NotificationPrivacy.reset(context)
         LiveVoicePrefs.wipe(context)
         Bridge.forget(context)
+        AppUpdater.reset(context)
         return clean
     }
 

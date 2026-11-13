@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import org.openchat.android.R
 import org.openchat.android.app.AppLanguage
+import org.openchat.android.app.AppUpdater
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.MeshService
@@ -169,6 +170,7 @@ fun MainScreen(
 
     val openRequest by ChatRepository.openRequest.collectAsState()
     LaunchedEffect(openRequest) { openRequest?.let { openChat = it; ChatRepository.requestOpen(null) } }
+    LaunchedEffect(Unit) { AppUpdater.maybeAutoCheck(context) }
     person?.let { p -> PersonSheet(p, onDismiss = { person = null }, onMessage = { openChat = Conversation.Private(it).key }) }
 
     AnimatedContent(
@@ -300,6 +302,8 @@ private fun ShellScaffold(
             }
         },
         bottomBar = {
+            val updateState by AppUpdater.state.collectAsState()
+            val hasUpdateDot = updateState is AppUpdater.UpdateState.Available || updateState is AppUpdater.UpdateState.ReadyToInstall
             Column {
                 Hairline()
                 NavigationBar(
@@ -325,7 +329,15 @@ private fun ShellScaffold(
                             ),
                             label = { Text(stringResource(t.label), fontWeight = if (tab == t) FontWeight.SemiBold else FontWeight.Normal, fontSize = 11.5.sp) },
                             icon = {
-                                BadgedBox(badge = { UnreadBadge(count) }) {
+                                BadgedBox(
+                                    badge = {
+                                        if (t == Tab.ME && hasUpdateDot) {
+                                            Box(Modifier.size(8.dp).clip(CircleShape).background(OpenChatPalette.Signal))
+                                        } else {
+                                            UnreadBadge(count)
+                                        }
+                                    },
+                                ) {
                                     Icon(
                                         if (tab == t) t.selectedIcon else t.icon,
                                         contentDescription = null,

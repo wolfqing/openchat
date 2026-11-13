@@ -293,4 +293,21 @@
     <plurals name="dm_status_relayed">
         <item quantity="other">Ở gần · qua %d điện thoại</item>
     </plurals>
+    <string name="update_title">Cập nhật ứng dụng</string>
+    <string name="update_body">Kiểm tra GitHub Releases qua tuyến mạng hiện tại (qua Tor khi bật) và xác minh SHA-256 cùng chứng chỉ chữ ký trước khi cài đặt.</string>
+    <string name="update_check">Kiểm tra cập nhật</string>
+    <string name="update_checking">Đang kiểm tra cập nhật…</string>
+    <string name="update_up_to_date">Đã là bản mới nhất (%1$s)</string>
+    <string name="update_available_title">Phiên bản mới %1$s · %2$s</string>
+    <string name="update_download">Tải bản cập nhật</string>
+    <string name="update_downloading">Đang tải %1$s / %2$s (%3$d%%)</string>
+    <string name="update_verifying">Đang xác minh SHA-256 và chữ ký…</string>
+    <string name="update_verified">Đã xác minh SHA-256 và chứng chỉ chữ ký</string>
+    <string name="update_install">Cài đặt %1$s</string>
+    <string name="update_auto_title">Tự động kiểm tra khi mở ứng dụng</string>
+    <string name="update_err_tor">Đang chờ Tor kết nối. Hãy thử lại khi Tor đã trực tuyến.</string>
+    <string name="update_err_network">Không thể kết nối GitHub Releases. Kiểm tra mạng và thử lại.</string>
+    <string name="update_err_hash">Mã băm SHA-256 không khớp. Đã hủy tệp.</string>
+    <string name="update_err_sig">Chứng chỉ chữ ký không khớp với ứng dụng này. Đã hủy tệp.</string>
+    <string name="update_err_install">Không thể mở trình cài đặt hệ thống.</string>
 </resources>

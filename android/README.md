@@ -1,6 +1,6 @@
 # openchat for Android
 
-Status: **v0.7.3 preview.** Builds and passes its 191 unit tests. Previews up
+Status: **v0.7.4 preview.** Builds and passes its 195 unit tests. Previews up
 to v0.7.2 ran on an Android 15 emulator before publishing (see
 [CHANGELOG.md](../CHANGELOG.md) per release); the
 mesh has not been tried between real phones, and it is not yet verified
@@ -23,6 +23,7 @@ bitchat-android source was never read.
 | Geohash location channels over Nostr, one anonymous key per cell | `nostr/`, `app/GeoChannels.kt` |
 | Triple-tap the logo (or title): instant wipe, new identity, no confirmation; "Erase everything" on the Me tab asks first | `ui/MainScreen.kt`, `ui/MeScreen.kt`, `app/MeshService.kt` `panic()` |
 | Share the APK offline by Bluetooth or Quick Share, no app store | `app/ApkShare.kt` |
+| In-app update check and download over the active route (Tor when on), SHA-256 and signing-certificate verified before install | `app/AppUpdater.kt`, `ui/MeScreen.kt` |
 | Mesh keeps running with the screen off (foreground service) | `app/MeshService.kt` |
 | Store-and-forward: outbox plus courier envelopes carried by nearby phones (spec §13) | `core/Courier.kt`, `crypto/Noise.kt` `NoiseX`, `mesh/StoreAndForward.kt`, `mesh/MeshEngine.kt` |
 | History sync: late joiners get the last 15 min of public messages from a neighbour via GCS-filtered `requestSync` (spec §14) | `core/Sync.kt`, `mesh/MeshEngine.kt` |
@@ -86,7 +87,7 @@ published from `./gradlew :app:assembleRelease` (R8-shrunk, ARM only, about
 | `SyncTest` | packet ID, GCS bitstream layout and false-positive rate, newest-first trimming, `requestSync` TLV and type flags |
 | `GroupsTest`, `BoardTest`, `BridgeWireTest`, `PrekeysTest`, `VouchTest`, `CashuTest`, `VoiceBurstTest` | the v0.6 formats: roster and key signing, post lifetimes and takedowns, bridge envelopes, prekey publish and consume, vouch attestations and batches, token parsing, voice burst framing against bitchat's layout |
 | `RateLimiterTest`, `ScanDutyCycleTest`, `PowTest`, `NostrSendersTest`, `PeerLabelTest`, `RelayUrlTest` | flood limits, scan timing, NIP-13 difficulty, Nostr sender binding, name and suffix labels, relay URL checks |
-| `ChatRepositoryTest`, `PanicTest`, `SaveScheduleTest` | delivery states (a late receipt replaces "not delivered", giving up never hides a receipt), a wipe leaves nothing in memory, the sealed-file directory is emptied whatever is in it, the save debounce has a ceiling, questions to the mesh thread time out |
+| `ChatRepositoryTest`, `PanicTest`, `SaveScheduleTest`, `AppUpdaterTest` | delivery states (a late receipt replaces "not delivered", giving up never hides a receipt), a wipe leaves nothing in memory, the sealed-file directory is emptied whatever is in it, the save debounce has a ceiling, questions to the mesh thread time out, release parsing, SHA-256 sums and URL host checks |
 | `MeshVisualsTest`, `GlobeTest` | emblem derivation and colours, delivery dots only move forward, day markers and speaker grouping; globe projection and inverse, settled-level framing, precision from zoom, drag clamping at the poles, bundled map data parses |
 
 ## Known risks

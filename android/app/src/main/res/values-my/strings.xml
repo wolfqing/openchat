@@ -293,4 +293,21 @@
     <plurals name="dm_status_relayed">
         <item quantity="other">အနီး · ဖုန်း %d လုံးက ဆက်ပို့</item>
     </plurals>
+    <string name="update_title">အက်ပ် အပ်ဒိတ်များ</string>
+    <string name="update_body">လက်ရှိ ကွန်ရက်လမ်းကြောင်း (Tor ဖွင့်ထားပါက Tor မှတစ်ဆင့်) ဖြင့် GitHub Releases ကို စစ်ဆေးပြီး မသွင်းမီ SHA-256 နှင့် လက်မှတ်သက်သေခံလက်မှတ်ကို အတည်ပြုပါသည်။</string>
+    <string name="update_check">အပ်ဒိတ် စစ်ဆေးရန်</string>
+    <string name="update_checking">အပ်ဒိတ် စစ်ဆေးနေသည်…</string>
+    <string name="update_up_to_date">နောက်ဆုံးဗားရှင်း ဖြစ်သည် (%1$s)</string>
+    <string name="update_available_title">ဗားရှင်းအသစ် %1$s · %2$s</string>
+    <string name="update_download">အပ်ဒိတ် ဒေါင်းလုဒ်လုပ်ရန်</string>
+    <string name="update_downloading">ဒေါင်းလုဒ်လုပ်နေသည် %1$s / %2$s (%3$d%%)</string>
+    <string name="update_verifying">SHA-256 နှင့် လက်မှတ်ကို စစ်ဆေးနေသည်…</string>
+    <string name="update_verified">SHA-256 နှင့် လက်မှတ်သက်သေခံလက်မှတ် အတည်ပြုပြီး</string>
+    <string name="update_install">%1$s ကို သွင်းရန်</string>
+    <string name="update_auto_title">ဖွင့်ချိန်တွင် အလိုအလျောက် စစ်ဆေးရန်</string>
+    <string name="update_err_tor">Tor ချိတ်ဆက်မှုကို စောင့်နေသည်။ Tor ချိတ်ဆက်ပြီးမှ ပြန်စမ်းပါ။</string>
+    <string name="update_err_network">GitHub Releases သို့ ချိတ်ဆက်၍ မရပါ။ ကွန်ရက်ကို စစ်ဆေးပြီး ပြန်စမ်းပါ။</string>
+    <string name="update_err_hash">SHA-256 တန်ဖိုး မကိုက်ညီပါ။ ဖိုင်ကို ပယ်ဖျက်လိုက်ပြီ။</string>
+    <string name="update_err_sig">လက်မှတ်သက်သေခံလက်မှတ်သည် ဤအက်ပ်နှင့် မကိုက်ညီပါ။ ဖိုင်ကို ပယ်ဖျက်လိုက်ပြီ။</string>
+    <string name="update_err_install">စနစ် အင်စတောလာကို မဖွင့်နိုင်ပါ။</string>
 </resources>

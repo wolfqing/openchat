@@ -299,4 +299,21 @@
         <item quantity="one">In der Nähe · über %d Handy</item>
         <item quantity="other">In der Nähe · über %d Handys</item>
     </plurals>
+    <string name="update_title">App-Updates</string>
+    <string name="update_body">Prüft GitHub Releases über deine aktuelle Netzwerkroute (über Tor, wenn aktiviert) und prüft vor der Installation SHA-256 sowie das Signaturzertifikat.</string>
+    <string name="update_check">Nach Updates suchen</string>
+    <string name="update_checking">Suche nach Updates…</string>
+    <string name="update_up_to_date">Aktuell (%1$s)</string>
+    <string name="update_available_title">Neue Version %1$s · %2$s</string>
+    <string name="update_download">Update herunterladen</string>
+    <string name="update_downloading">Lade herunter %1$s / %2$s (%3$d%%)</string>
+    <string name="update_verifying">Prüfe SHA-256 und Signatur…</string>
+    <string name="update_verified">SHA-256 und Signaturzertifikat geprüft</string>
+    <string name="update_install">%1$s installieren</string>
+    <string name="update_auto_title">Beim Start automatisch prüfen</string>
+    <string name="update_err_tor">Warte auf Tor-Verbindung. Bitte erneut versuchen, sobald Tor verbunden ist.</string>
+    <string name="update_err_network">GitHub Releases nicht erreichbar. Verbindung prüfen und erneut versuchen.</string>
+    <string name="update_err_hash">SHA-256-Prüfsumme stimmt nicht überein. Die Datei wurde verworfen.</string>
+    <string name="update_err_sig">Signaturzertifikat stimmt nicht mit dieser App überein. Die Datei wurde verworfen.</string>
+    <string name="update_err_install">System-Installer konnte nicht gestartet werden.</string>
 </resources>

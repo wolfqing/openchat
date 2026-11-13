@@ -293,4 +293,21 @@
     <plurals name="dm_status_relayed">
         <item quantity="other">Di dekat · diteruskan %d ponsel</item>
     </plurals>
+    <string name="update_title">Pembaruan aplikasi</string>
+    <string name="update_body">Memeriksa GitHub Releases lewat rute jaringan saat ini (Tor bila aktif) dan memverifikasi SHA-256 serta sertifikat tanda tangan sebelum memasang.</string>
+    <string name="update_check">Periksa pembaruan</string>
+    <string name="update_checking">Memeriksa pembaruan…</string>
+    <string name="update_up_to_date">Sudah versi terbaru (%1$s)</string>
+    <string name="update_available_title">Versi baru %1$s · %2$s</string>
+    <string name="update_download">Unduh pembaruan</string>
+    <string name="update_downloading">Mengunduh %1$s / %2$s (%3$d%%)</string>
+    <string name="update_verifying">Memverifikasi SHA-256 dan tanda tangan…</string>
+    <string name="update_verified">SHA-256 dan sertifikat tanda tangan terverifikasi</string>
+    <string name="update_install">Pasang %1$s</string>
+    <string name="update_auto_title">Periksa otomatis saat dibuka</string>
+    <string name="update_err_tor">Menunggu Tor tersambung. Coba lagi setelah Tor aktif.</string>
+    <string name="update_err_network">Tidak dapat menjangkau GitHub Releases. Periksa koneksi lalu coba lagi.</string>
+    <string name="update_err_hash">Checksum SHA-256 tidak cocok. Berkas dibuang.</string>
+    <string name="update_err_sig">Sertifikat tanda tangan tidak cocok dengan aplikasi ini. Berkas dibuang.</string>
+    <string name="update_err_install">Tidak dapat membuka pemasang sistem.</string>
 </resources>

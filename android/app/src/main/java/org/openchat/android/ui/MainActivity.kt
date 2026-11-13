@@ -104,6 +104,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         org.openchat.android.app.ChatRepository.foreground = true
         refreshPermissionState()
+        org.openchat.android.app.AppUpdater.onHostResume(this)
     }
 
     override fun onPause() {

@@ -339,4 +339,21 @@
         <item quantity="many">قريب · عدد الهواتف الناقلة: %d</item>
         <item quantity="other">قريب · عدد الهواتف الناقلة: %d</item>
     </plurals>
+    <string name="update_title">تحديثات التطبيق</string>
+    <string name="update_body">يتحقق من GitHub Releases عبر مسار الشبكة الحالي (عبر Tor عند تفعيله) ويتحقق من SHA-256 وشهادة التوقيع قبل التثبيت.</string>
+    <string name="update_check">التحقق من التحديثات</string>
+    <string name="update_checking">جارٍ التحقق من التحديثات…</string>
+    <string name="update_up_to_date">محدّث إلى آخر إصدار (%1$s)</string>
+    <string name="update_available_title">إصدار جديد %1$s · %2$s</string>
+    <string name="update_download">تنزيل التحديث</string>
+    <string name="update_downloading">جارٍ التنزيل %1$s / %2$s (%3$d%%)</string>
+    <string name="update_verifying">جارٍ التحقق من SHA-256 والتوقيع…</string>
+    <string name="update_verified">تم التحقق من SHA-256 وشهادة التوقيع</string>
+    <string name="update_install">تثبيت %1$s</string>
+    <string name="update_auto_title">التحقق تلقائياً عند التشغيل</string>
+    <string name="update_err_tor">بانتظار اتصال Tor. حاول مرة أخرى بعد اتصال Tor.</string>
+    <string name="update_err_network">تعذر الوصول إلى GitHub Releases. تحقق من الاتصال وحاول مجدداً.</string>
+    <string name="update_err_hash">قيمة SHA-256 غير متطابقة. تم تجاهل الملف.</string>
+    <string name="update_err_sig">شهادة التوقيع لا تطابق هذا التطبيق. تم تجاهل الملف.</string>
+    <string name="update_err_install">تعذر تشغيل مثبّت النظام.</string>
 </resources>

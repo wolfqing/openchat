@@ -299,4 +299,21 @@
         <item quantity="one">نزدیک · با رله %d گوشی</item>
         <item quantity="other">نزدیک · با رله %d گوشی</item>
     </plurals>
+    <string name="update_title">به‌روزرسانی برنامه</string>
+    <string name="update_body">انتشارهای GitHub را از مسیر شبکه فعلی شما (در صورت فعال بودن از طریق Tor) بررسی می‌کند و پیش از نصب، SHA-256 و گواهی امضا را تأیید می‌کند.</string>
+    <string name="update_check">بررسی به‌روزرسانی</string>
+    <string name="update_checking">در حال بررسی به‌روزرسانی…</string>
+    <string name="update_up_to_date">به‌روز است (%1$s)</string>
+    <string name="update_available_title">نسخه جدید %1$s · %2$s</string>
+    <string name="update_download">دانلود به‌روزرسانی</string>
+    <string name="update_downloading">در حال دانلود %1$s / %2$s (%3$d%%)</string>
+    <string name="update_verifying">در حال بررسی SHA-256 و امضا…</string>
+    <string name="update_verified">SHA-256 و گواهی امضا تأیید شد</string>
+    <string name="update_install">نصب %1$s</string>
+    <string name="update_auto_title">بررسی خودکار هنگام اجرا</string>
+    <string name="update_err_tor">در انتظار اتصال Tor. پس از برقراری اتصال دوباره تلاش کنید.</string>
+    <string name="update_err_network">ارتباط با GitHub Releases برقرار نشد. اتصال خود را بررسی و دوباره تلاش کنید.</string>
+    <string name="update_err_hash">مقدار SHA-256 مطابقت نداشت. فایل حذف شد.</string>
+    <string name="update_err_sig">گواهی امضا با این برنامه مطابقت نداشت. فایل حذف شد.</string>
+    <string name="update_err_install">اجرای نصب‌کننده سیستم ممکن نشد.</string>
 </resources>

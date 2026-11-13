@@ -305,4 +305,21 @@
         <item quantity="many">À proximité · relayé par %d téléphones</item>
         <item quantity="other">À proximité · relayé par %d téléphones</item>
     </plurals>
+    <string name="update_title">Mises à jour de l\'application</string>
+    <string name="update_body">Vérifie GitHub Releases via votre route réseau actuelle (Tor si activé) et contrôle le SHA-256 ainsi que le certificat de signature avant l\'installation.</string>
+    <string name="update_check">Rechercher des mises à jour</string>
+    <string name="update_checking">Recherche de mises à jour…</string>
+    <string name="update_up_to_date">À jour (%1$s)</string>
+    <string name="update_available_title">Nouvelle version %1$s · %2$s</string>
+    <string name="update_download">Télécharger la mise à jour</string>
+    <string name="update_downloading">Téléchargement %1$s / %2$s (%3$d%%)</string>
+    <string name="update_verifying">Vérification du SHA-256 et de la signature…</string>
+    <string name="update_verified">SHA-256 et certificat de signature vérifiés</string>
+    <string name="update_install">Installer %1$s</string>
+    <string name="update_auto_title">Vérifier automatiquement au démarrage</string>
+    <string name="update_err_tor">En attente de la connexion Tor. Réessayez dès que Tor est en ligne.</string>
+    <string name="update_err_network">Impossible de joindre GitHub Releases. Vérifiez votre connexion et réessayez.</string>
+    <string name="update_err_hash">La somme SHA-256 ne correspond pas. Le fichier a été supprimé.</string>
+    <string name="update_err_sig">Le certificat de signature ne correspond pas à cette application. Le fichier a été supprimé.</string>
+    <string name="update_err_install">Impossible de lancer l\'installateur système.</string>
 </resources>

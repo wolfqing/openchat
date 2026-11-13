@@ -299,4 +299,21 @@
         <item quantity="one">आसपास · %d फ़ोन से रिले</item>
         <item quantity="other">आसपास · %d फ़ोन से रिले</item>
     </plurals>
+    <string name="update_title">ऐप अपडेट</string>
+    <string name="update_body">आपके वर्तमान नेटवर्क रूट (Tor चालू होने पर Tor द्वारा) से GitHub Releases की जाँच करता है और इंस्टॉल करने से पहले SHA-256 व हस्ताक्षर प्रमाणपत्र सत्यापित करता है।</string>
+    <string name="update_check">अपडेट जाँचें</string>
+    <string name="update_checking">अपडेट की जाँच हो रही है…</string>
+    <string name="update_up_to_date">नवीनतम संस्करण है (%1$s)</string>
+    <string name="update_available_title">नया संस्करण %1$s · %2$s</string>
+    <string name="update_download">अपडेट डाउनलोड करें</string>
+    <string name="update_downloading">डाउनलोड हो रहा है %1$s / %2$s (%3$d%%)</string>
+    <string name="update_verifying">SHA-256 और हस्ताक्षर सत्यापित हो रहे हैं…</string>
+    <string name="update_verified">SHA-256 और हस्ताक्षर प्रमाणपत्र सत्यापित</string>
+    <string name="update_install">%1$s इंस्टॉल करें</string>
+    <string name="update_auto_title">ऐप खुलने पर अपने-आप जाँचें</string>
+    <string name="update_err_tor">Tor के जुड़ने की प्रतीक्षा है। Tor ऑनलाइन होने पर फिर प्रयास करें।</string>
+    <string name="update_err_network">GitHub Releases से संपर्क नहीं हो सका। अपना कनेक्शन जाँचें और पुनः प्रयास करें।</string>
+    <string name="update_err_hash">SHA-256 चेकसम मेल नहीं खाया। फ़ाइल हटा दी गई।</string>
+    <string name="update_err_sig">हस्ताक्षर प्रमाणपत्र इस ऐप से मेल नहीं खाया। फ़ाइल हटा दी गई।</string>
+    <string name="update_err_install">सिस्टम इंस्टॉलर शुरू नहीं हो सका।</string>
 </resources>

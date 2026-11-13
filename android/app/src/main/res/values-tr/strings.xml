@@ -299,4 +299,21 @@
         <item quantity="one">Yakında · %d telefon aktarıyor</item>
         <item quantity="other">Yakında · %d telefon aktarıyor</item>
     </plurals>
+    <string name="update_title">Uygulama güncellemeleri</string>
+    <string name="update_body">Mevcut ağ rotanız üzerinden (etkinse Tor ile) GitHub Releases\'ı kontrol eder ve yüklemeden önce SHA-256 ile imza sertifikasını doğrular.</string>
+    <string name="update_check">Güncellemeleri kontrol et</string>
+    <string name="update_checking">Güncellemeler kontrol ediliyor…</string>
+    <string name="update_up_to_date">Güncel (%1$s)</string>
+    <string name="update_available_title">Yeni sürüm %1$s · %2$s</string>
+    <string name="update_download">Güncellemeyi indir</string>
+    <string name="update_downloading">İndiriliyor %1$s / %2$s (%%%3$d)</string>
+    <string name="update_verifying">SHA-256 ve imza doğrulanıyor…</string>
+    <string name="update_verified">SHA-256 ve imza sertifikası doğrulandı</string>
+    <string name="update_install">%1$s sürümünü yükle</string>
+    <string name="update_auto_title">Açılışta otomatik kontrol et</string>
+    <string name="update_err_tor">Tor bağlantısı bekleniyor. Tor bağlandığında tekrar deneyin.</string>
+    <string name="update_err_network">GitHub Releases\'a ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin.</string>
+    <string name="update_err_hash">SHA-256 sağlaması eşleşmedi. Dosya silindi.</string>
+    <string name="update_err_sig">İmza sertifikası bu uygulamayla eşleşmedi. Dosya silindi.</string>
+    <string name="update_err_install">Sistem yükleyicisi başlatılamadı.</string>
 </resources>

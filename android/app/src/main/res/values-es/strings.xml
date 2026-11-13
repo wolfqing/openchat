@@ -305,4 +305,21 @@
         <item quantity="many">Cerca · retransmitido por %d teléfonos</item>
         <item quantity="other">Cerca · retransmitido por %d teléfonos</item>
     </plurals>
+    <string name="update_title">Actualizaciones de la app</string>
+    <string name="update_body">Comprueba GitHub Releases usando tu ruta de red actual (Tor cuando está activo) y verifica el SHA-256 y el certificado de firma antes de instalar.</string>
+    <string name="update_check">Buscar actualizaciones</string>
+    <string name="update_checking">Buscando actualizaciones…</string>
+    <string name="update_up_to_date">Al día (%1$s)</string>
+    <string name="update_available_title">Nueva versión %1$s · %2$s</string>
+    <string name="update_download">Descargar actualización</string>
+    <string name="update_downloading">Descargando %1$s / %2$s (%3$d%%)</string>
+    <string name="update_verifying">Verificando SHA-256 y firma…</string>
+    <string name="update_verified">SHA-256 y certificado de firma verificados</string>
+    <string name="update_install">Instalar %1$s</string>
+    <string name="update_auto_title">Buscar automáticamente al iniciar</string>
+    <string name="update_err_tor">Esperando conexión de Tor. Vuelve a intentarlo cuando Tor esté en línea.</string>
+    <string name="update_err_network">No se pudo conectar con GitHub Releases. Comprueba tu conexión e inténtalo de nuevo.</string>
+    <string name="update_err_hash">La suma SHA-256 no coincide. Se descartó el archivo.</string>
+    <string name="update_err_sig">El certificado de firma no coincide con esta app. Se descartó el archivo.</string>
+    <string name="update_err_install">No se pudo abrir el instalador del sistema.</string>
 </resources>

@@ -319,4 +319,21 @@
         <item quantity="many">Рядом · ретрансляторов: %d</item>
         <item quantity="other">Рядом · ретрансляторов: %d</item>
     </plurals>
+    <string name="update_title">Обновления приложения</string>
+    <string name="update_body">Проверяет GitHub Releases через текущий сетевой маршрут (через Tor, если он включён) и сверяет SHA-256 и сертификат подписи перед установкой.</string>
+    <string name="update_check">Проверить обновления</string>
+    <string name="update_checking">Проверка обновлений…</string>
+    <string name="update_up_to_date">Установлена последняя версия (%1$s)</string>
+    <string name="update_available_title">Новая версия %1$s · %2$s</string>
+    <string name="update_download">Скачать обновление</string>
+    <string name="update_downloading">Загрузка %1$s / %2$s (%3$d%%)</string>
+    <string name="update_verifying">Проверка SHA-256 и подписи…</string>
+    <string name="update_verified">SHA-256 и сертификат подписи проверены</string>
+    <string name="update_install">Установить %1$s</string>
+    <string name="update_auto_title">Проверять автоматически при запуске</string>
+    <string name="update_err_tor">Ожидание подключения Tor. Повторите попытку, когда Tor подключится.</string>
+    <string name="update_err_network">Не удалось подключиться к GitHub Releases. Проверьте сеть и повторите попытку.</string>
+    <string name="update_err_hash">Контрольная сумма SHA-256 не совпала. Файл удалён.</string>
+    <string name="update_err_sig">Сертификат подписи не совпадает с этим приложением. Файл удалён.</string>
+    <string name="update_err_install">Не удалось запустить системный установщик.</string>
 </resources>

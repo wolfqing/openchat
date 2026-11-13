@@ -305,4 +305,21 @@
         <item quantity="many">Por perto · retransmitido por %d celulares</item>
         <item quantity="other">Por perto · retransmitido por %d celulares</item>
     </plurals>
+    <string name="update_title">Atualizações do app</string>
+    <string name="update_body">Verifica o GitHub Releases pela rota de rede atual (Tor quando ativado) e confere o SHA-256 e o certificado de assinatura antes de instalar.</string>
+    <string name="update_check">Verificar atualizações</string>
+    <string name="update_checking">Verificando atualizações…</string>
+    <string name="update_up_to_date">Atualizado (%1$s)</string>
+    <string name="update_available_title">Nova versão %1$s · %2$s</string>
+    <string name="update_download">Baixar atualização</string>
+    <string name="update_downloading">Baixando %1$s / %2$s (%3$d%%)</string>
+    <string name="update_verifying">Verificando SHA-256 e assinatura…</string>
+    <string name="update_verified">SHA-256 e certificado de assinatura verificados</string>
+    <string name="update_install">Instalar %1$s</string>
+    <string name="update_auto_title">Verificar automaticamente ao abrir</string>
+    <string name="update_err_tor">Aguardando conexão do Tor. Tente novamente quando o Tor estiver online.</string>
+    <string name="update_err_network">Não foi possível acessar o GitHub Releases. Verifique sua conexão e tente novamente.</string>
+    <string name="update_err_hash">O hash SHA-256 não corresponde. O arquivo foi descartado.</string>
+    <string name="update_err_sig">O certificado de assinatura não corresponde a este app. O arquivo foi descartado.</string>
+    <string name="update_err_install">Não foi possível abrir o instalador do sistema.</string>
 </resources>

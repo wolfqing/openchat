@@ -65,7 +65,7 @@ it; that has not yet been checked against a stock bitchat phone (see
 
 | | State |
 |---|---|
-| Android app | **v0.7.3 preview.** 191 unit tests, 9.3 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
+| Android app | **v0.7.4 preview.** 195 unit tests, 9.3 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
 | Tried on devices | Previews up to v0.7.2 ran on an Android 15 emulator before publishing, and earlier previews ran on one real phone; see [CHANGELOG.md](CHANGELOG.md) per release. **The mesh itself has not been tried between real phones**: Bluetooth range, multi-hop relaying, connection limits and behaviour in the background are untested in the field. The emulator has no Bluetooth |
 | Interop with stock bitchat | **Not yet verified.** Implemented from the [spec](docs/protocol-spec.md), upstream test vectors and envelopes recorded from bitchat builds. Verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
@@ -97,8 +97,9 @@ The app says so on first launch. See [SECURITY.md](SECURITY.md).
    Bluetooth scanning needed one then; the mesh does not read your
    location. Notifications are optional. The microphone is asked for the
    first time you record, the camera when you scan a verification code,
-   and location only if you tap "Use my approximate location" for location
-   channels.
+   location only if you tap "Use my approximate location" for location
+   channels, and unknown-app installation only if you install an update inside
+   the app.
 4. Open the **Me** tab and, under "Pass openchat to people near you", tap
    **Share installer** to send the app to the phones around you. Do this
    *before* the outage.
@@ -300,7 +301,7 @@ There is no CLA.
 
 ## Roadmap in one line
 
-Android first, from scratch, against the spec: done through v0.7.3. Next
+Android first, from scratch, against the spec: done through v0.7.4. Next
 is interop verification against stock bitchat phones, then iOS, then one
 real pilot in a disaster-preparedness drill or a crowded venue. Each phase
 has an exit criterion and a kill condition in

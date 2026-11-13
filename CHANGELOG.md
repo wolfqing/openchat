@@ -1,5 +1,38 @@
 # Changelog
 
+## Android v0.7.4 (preview) — 2026-11-13
+
+In-app update discovery, Tor-routed download and dual SHA-256 + signing-certificate
+verification. Adds `REQUEST_INSTALL_PACKAGES` for handing verified update APKs
+to the system package installer. No wire-format change. Same release key as
+v0.6.0–v0.7.3; installs over them. 195 unit tests. 9.3 MB.
+APK SHA-256 `0d479681aaa1a888172f459f3e98c67ecbfa027b935cdf2933d906a70d9deb52`.
+
+### Added
+
+- **In-app updates on the Me tab (`AppUpdater`).** Manual "Check for updates"
+  plus an opt-in "Check automatically on launch" toggle (off by default, with a
+  signal-orange dot on the Me tab when a newer release is available).
+- **Tor fail-closed routing.** Update checks and downloads go through
+  `NetRoute.client()`: when Tor is enabled, nothing reaches GitHub until Tor's
+  SOCKS port is up, and any route change mid-transfer aborts the active stream.
+- **Dual verification before install.** Fetches `SHA256SUMS` from the same
+  release, hashes the streamed APK incrementally, and verifies package name,
+  non-downgrade `versionCode`, and exact signing-certificate match against the
+  running app before opening the system package installer.
+- **Panic wipe coverage.** Wiping cancels any active check or download, deletes
+  cached update APKs, and resets the launch auto-check toggle to off.
+- **18 languages.** Update UI strings localised across all 18 resource locales.
+
+### Checked, and not
+
+- Checked locally from this tree with the release key: 195 unit tests pass
+  (including `AppUpdaterTest`), `lintDebug` and `lintVitalRelease` 0 errors,
+  0 Kotlin compiler warnings, debug and R8 release APKs build cleanly, signing
+  certificate matches [SECURITY.md](SECURITY.md).
+- Not checked on this build: Android 15 emulator (`openchat35`, host disk 2.7 GB
+  free) and real-device radio / bitchat interop.
+
 ## Android v0.7.3 (preview) — 2026-11-13
 
 UI and UX overhaul across every screen to match the design prototype
