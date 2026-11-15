@@ -1,5 +1,45 @@
 # Changelog
 
+## Android v0.7.6 (preview) — 2026-11-15
+
+Hotfix for an immediate launch crash in v0.7.5 when entering `MainScreen`.
+No wire-format change. 199 unit tests. ~9.4 MB.
+
+### Fixed
+
+- **Launch crash on `RenderThread` (`FluidGlass`, `MainActivity`, all tab panes).**
+  In v0.7.5, empty-state and inline `FluidGlassSurface` pills (`AudiencePill`,
+  the Nobody-Nearby share pill, the Private empty-state pill, Location geohash
+  chips, and Me's language picker) were composed inside `.fluidGlassSource()`
+  backdrop containers. Recording the container into `GraphicsLayer` while child
+  glass surfaces called `drawLayer` on that same ancestor layer created a cyclic
+  `RenderNode` display-list graph (`RenderNode A -> RenderNode B -> RenderNode A`),
+  causing `android::uirenderer::RenderNode::prepareTreeImpl` in `libhwui.so` to
+  overflow `RenderThread`'s stack (`SIGSEGV` / `SEGV_ACCERR`) on Frame 1 of
+  `MainScreen`. `FluidGlassSource` now enforces scope isolation at compile time
+  via `LocalInsideFluidGlassSource` so nested glass surfaces render standalone
+  glass without sampling their ancestor backdrop, gives each tab pane its own
+  `RecordedBackdropSource` graphics layer, skips backdrop shader layers for
+  top-bar pills outside `sourceSize`, and moves `enableEdgeToEdge` updates from
+  per-recomposition `SideEffect` to `LaunchedEffect(isDark)`.
+
+### Checked, and not
+
+- Checked on GitHub Actions CI (`ubuntu-latest`, Temurin JDK 17): 199 unit
+  tests pass, `lintDebug` and `lintVitalRelease` 0 errors, debug and R8 release
+  APKs build cleanly (`app-release.apk`). Verified the R8-shrunk release APK on
+  an Android 14 (`API 34`) emulator across fresh onboarding, tapping Start into
+  `MainScreen`, subsequent cold launches (both before and after runtime
+  permissions + `MeshService` foreground startup), all four tabs (`Nearby`,
+  `Private`, `Location`, `Me`), and `Board` with 0 crashes. Because
+  `android/keystore.properties` stays offline ([SECURITY.md](SECURITY.md)), the
+  CI-built APK attached to the GitHub pre-release
+  (`openchat-0.7.6-ci-debug-signed.apk`, SHA-256 in the release notes) uses the
+  CI debug key; uninstalling an earlier build signed with a different key may
+  be required before installing.
+- Not checked on this build: real-device BLE mesh radio and stock bitchat
+  interop.
+
 ## Android v0.7.5 (preview) — 2026-11-15
 
 In-tree AGSL Liquid Glass floating chrome, Radiant Light + OLED Dark dual

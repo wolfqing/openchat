@@ -22,8 +22,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,54 +69,106 @@ object FluidGlassDefaults {
     val MeniscusBevel: Dp = 16.dp
 }
 
+internal class RecordedBackdropSource(val layer: GraphicsLayer) {
+    var hasRecorded: Boolean = false
+}
+
 @Stable
-class FluidGlassHostState internal constructor(val layer: GraphicsLayer) {
+class FluidGlassHostState internal constructor() {
+    internal var activeSource by mutableStateOf<RecordedBackdropSource?>(null)
     var sourceOffset by mutableStateOf(Offset.Zero)
     var sourceSize by mutableStateOf(Size.Zero)
     var hasSource by mutableStateOf(false)
+    internal var recordingDepth: Int = 0
 }
 
 val LocalFluidGlassHost = compositionLocalOf<FluidGlassHostState?> { null }
+
+/** True inside a [FluidGlassSource] subtree so nested glass pills never sample their own ancestor layer. */
+val LocalInsideFluidGlassSource = compositionLocalOf { false }
 
 /** Extra bottom padding reserved when the floating [CapsuleNavigationBar] sits over screen content. */
 val LocalBottomBarClearance = compositionLocalOf { 0.dp }
 
 /**
- * Provides a shared [GraphicsLayer] backdrop so floating chrome (top signal/live-PTT pills,
+ * Provides a shared backdrop coordinate & layer host so floating chrome (top signal/live-PTT pills,
  * floating 3-piece composer, and floating bottom tab capsule) can optically refract live
- * scrolling content underneath without external dependencies or recursive layer loops.
+ * scrolling content underneath without external dependencies or cyclic RenderNode graphs.
  */
 @Composable
 fun FluidGlassHost(content: @Composable () -> Unit) {
     val existing = LocalFluidGlassHost.current
-    if (existing != null) {
+    if (existing != null && !LocalInsideFluidGlassSource.current) {
         content()
         return
     }
-    val layer = rememberGraphicsLayer()
-    val state = remember(layer) { FluidGlassHostState(layer) }
-    CompositionLocalProvider(LocalFluidGlassHost provides state, content = content)
+    val state = remember { FluidGlassHostState() }
+    CompositionLocalProvider(
+        LocalFluidGlassHost provides state,
+        LocalInsideFluidGlassSource provides false,
+        content = content,
+    )
 }
 
 /**
- * Marks the scrollable content container whose pixels are sampled by floating [FluidGlassSurface]s.
- * Never wrap a [FluidGlassSurface] inside [fluidGlassSource]; keep floating glass chrome as siblings
- * above the source container.
+ * Scope required to attach [fluidGlassSource]. Making [fluidGlassSource] a member of this scope
+ * guarantees at compile time that every descendant inside the recorded backdrop container has
+ * [LocalInsideFluidGlassSource] == `true` and can never create a cyclic `RenderNode` reference on
+ * Android's `RenderThread`.
  */
-fun Modifier.fluidGlassSource(): Modifier = composed {
-    val host = LocalFluidGlassHost.current ?: return@composed this
-    this
-        .onGloballyPositioned { coords ->
-            host.sourceOffset = coords.positionInRoot()
-            host.sourceSize = Size(coords.size.width.toFloat(), coords.size.height.toFloat())
-            host.hasSource = coords.size.width > 0 && coords.size.height > 0
-        }
-        .drawWithContent {
-            host.layer.record {
-                this@drawWithContent.drawContent()
+class FluidGlassSourceScope internal constructor(internal val host: FluidGlassHostState?) {
+    fun Modifier.fluidGlassSource(): Modifier = composed {
+        val h = host ?: return@composed this
+        val sourceLayer = rememberGraphicsLayer()
+        val recorded = remember(sourceLayer) { RecordedBackdropSource(sourceLayer) }
+        SideEffect {
+            if (h.activeSource !== recorded) {
+                h.activeSource = recorded
             }
-            drawLayer(host.layer)
         }
+        DisposableEffect(h, recorded) {
+            onDispose {
+                recorded.hasRecorded = false
+                if (h.activeSource === recorded) {
+                    h.activeSource = null
+                    h.hasSource = false
+                }
+            }
+        }
+        this
+            .onGloballyPositioned { coords ->
+                h.sourceOffset = coords.positionInRoot()
+                h.sourceSize = Size(coords.size.width.toFloat(), coords.size.height.toFloat())
+                h.hasSource = coords.size.width > 0 && coords.size.height > 0
+            }
+            .drawWithContent {
+                h.recordingDepth++
+                try {
+                    sourceLayer.record {
+                        this@drawWithContent.drawContent()
+                    }
+                    recorded.hasRecorded = true
+                } finally {
+                    h.recordingDepth--
+                }
+                drawLayer(sourceLayer)
+            }
+    }
+}
+
+/**
+ * Wraps the scrollable backdrop container whose pixels are sampled by floating [FluidGlassSurface]
+ * siblings outside this block. Any [FluidGlassSurface] nested inside [content] renders crisp
+ * standalone glass without sampling the ancestor backdrop layer.
+ */
+@Composable
+fun FluidGlassSource(content: @Composable FluidGlassSourceScope.() -> Unit) {
+    val inside = LocalInsideFluidGlassSource.current
+    val host = if (inside) null else LocalFluidGlassHost.current
+    val scope = remember(host) { FluidGlassSourceScope(host) }
+    CompositionLocalProvider(LocalInsideFluidGlassSource provides true) {
+        scope.content()
+    }
 }
 
 private const val FLUID_GLASS_AGSL = """
@@ -240,7 +295,8 @@ fun FluidGlassSurface(
     contentAlignment: Alignment = Alignment.Center,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val host = LocalFluidGlassHost.current
+    val insideSource = LocalInsideFluidGlassSource.current
+    val host = if (insideSource) null else LocalFluidGlassHost.current
     val isLight = OpenChatPalette.isLight
     val screenBg = OpenChatPalette.Screen
     val density = LocalDensity.current
@@ -248,14 +304,30 @@ fun FluidGlassSurface(
     var elemOffset by remember { mutableStateOf(Offset.Zero) }
     var elemSize by remember { mutableStateOf(Size.Zero) }
 
+    val overlapsSource by remember(host) {
+        derivedStateOf {
+            val h = host
+            val src = h?.activeSource
+            h != null &&
+                h.hasSource &&
+                src != null &&
+                elemSize.width > 2f &&
+                elemSize.height > 2f &&
+                elemOffset.x + elemSize.width > h.sourceOffset.x + 1f &&
+                elemOffset.y + elemSize.height > h.sourceOffset.y + 1f &&
+                elemOffset.x < h.sourceOffset.x + h.sourceSize.width - 1f &&
+                elemOffset.y < h.sourceOffset.y + h.sourceSize.height - 1f
+        }
+    }
+
     val refractPx = with(density) { refraction.toPx() }
     val dispersePx = with(density) { dispersion.toPx() }
     val blurPx = with(density) { clarityBlur.toPx() }
     val bevelPx = with(density) { bevel.toPx() }
     val fixedCornerPx = with(density) { cornerRadius.toPx() }
 
-    val runtimeShader = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    val runtimeShader = remember(insideSource) {
+        if (!insideSource && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             runCatching { RuntimeShader(FLUID_GLASS_AGSL) }.getOrNull()
         } else null
     }
@@ -266,8 +338,8 @@ fun FluidGlassSurface(
         fixedCornerPx
     }
 
-    val composeEffect = remember(runtimeShader, elemSize, cornerPx, bevelPx, refractPx, dispersePx, blurPx, isLight) {
-        if (elemSize.width <= 2f || elemSize.height <= 2f) {
+    val composeEffect = remember(overlapsSource, runtimeShader, elemSize, cornerPx, bevelPx, refractPx, dispersePx, blurPx, isLight) {
+        if (!overlapsSource || elemSize.width <= 2f || elemSize.height <= 2f) {
             null
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && runtimeShader != null) {
             buildAgslRenderEffect(runtimeShader, elemSize.width, elemSize.height, cornerPx, bevelPx, refractPx, dispersePx, blurPx, isLight)
@@ -280,10 +352,10 @@ fun FluidGlassSurface(
 
     // Ultra-clear interior tint (zero milky fog)
     val fillTint = tintColor ?: if (isLight) {
-        if (host?.hasSource == true && composeEffect != null) Color.White.copy(alpha = 0.22f)
+        if (overlapsSource && composeEffect != null) Color.White.copy(alpha = 0.22f)
         else Color.White.copy(alpha = 0.84f)
     } else {
-        if (host?.hasSource == true && composeEffect != null) Color(0xFF141B1D).copy(alpha = 0.34f)
+        if (overlapsSource && composeEffect != null) Color(0xFF141B1D).copy(alpha = 0.34f)
         else Color(0xFF151C1E).copy(alpha = 0.86f)
     }
 
@@ -320,9 +392,13 @@ fun FluidGlassSurface(
 
     Box(
         modifier = modifier
-            .onGloballyPositioned { coords ->
-                elemOffset = coords.positionInRoot()
-                elemSize = Size(coords.size.width.toFloat(), coords.size.height.toFloat())
+            .let {
+                if (host != null) {
+                    it.onGloballyPositioned { coords ->
+                        elemOffset = coords.positionInRoot()
+                        elemSize = Size(coords.size.width.toFloat(), coords.size.height.toFloat())
+                    }
+                } else it
             }
             .let {
                 if (shadowElevation > 0.dp) {
@@ -337,8 +413,8 @@ fun FluidGlassSurface(
             .clip(shape),
         contentAlignment = contentAlignment,
     ) {
-        // Layer 1: Refracted & clarity-blurred live backdrop slice
-        if (host != null && host.hasSource && composeEffect != null) {
+        // Layer 1: Refracted & clarity-blurred live backdrop slice (strictly outside FluidGlassSource)
+        if (host != null && overlapsSource && composeEffect != null) {
             Box(
                 Modifier
                     .matchParentSize()
@@ -349,10 +425,13 @@ fun FluidGlassSurface(
                     }
                     .drawBehind {
                         drawRect(screenBg)
-                        val relX = elemOffset.x - host.sourceOffset.x
-                        val relY = elemOffset.y - host.sourceOffset.y
-                        translate(left = -relX, top = -relY) {
-                            drawLayer(host.layer)
+                        val src = host.activeSource
+                        if (host.recordingDepth == 0 && src != null && src.hasRecorded) {
+                            val relX = elemOffset.x - host.sourceOffset.x
+                            val relY = elemOffset.y - host.sourceOffset.y
+                            translate(left = -relX, top = -relY) {
+                                drawLayer(src.layer)
+                            }
                         }
                     },
             )

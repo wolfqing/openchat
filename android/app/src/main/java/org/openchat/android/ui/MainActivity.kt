@@ -13,7 +13,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,10 +52,23 @@ class MainActivity : ComponentActivity() {
         recreate()
     }
 
+    private fun applySystemBars(isDark: Boolean) {
+        val barStyle = if (isDark) {
+            SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        } else {
+            SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+        }
+        enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
+        window.decorView.setBackgroundColor(if (isDark) android.graphics.Color.BLACK else 0xFFF4F7FC.toInt())
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppTheme.load(this)
         LiveVoicePrefs.sync(this)
+        val systemDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        applySystemBars(AppTheme.resolveIsDark(AppTheme.choiceFlow.value, systemDark))
         val prefs = getSharedPreferences("ui", Context.MODE_PRIVATE)
         onboarded.value = prefs.getBoolean("onboarded", false)
         refreshPermissionState()
@@ -65,14 +78,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeChoice by AppTheme.choiceFlow.collectAsState()
             val isDark = AppTheme.resolveIsDark(themeChoice, isSystemInDarkTheme())
-            SideEffect {
-                val barStyle = if (isDark) {
-                    SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-                } else {
-                    SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
-                }
-                enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
-                window.decorView.setBackgroundColor(if (isDark) android.graphics.Color.BLACK else 0xFFF4F7FC.toInt())
+            LaunchedEffect(isDark) {
+                applySystemBars(isDark)
             }
             OpenChatTheme {
                 if (!onboarded.value) {

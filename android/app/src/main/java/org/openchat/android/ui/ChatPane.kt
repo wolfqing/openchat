@@ -210,50 +210,52 @@ fun ChatPane(
     FluidGlassHost {
         Box(Modifier.fillMaxSize().background(OpenChatPalette.Screen)) {
             // Backdrop timeline layer: messages scroll underneath both the floating composer and bottom tab capsule
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(OpenChatPalette.Screen)
-                    .fluidGlassSource(),
-            ) {
-                if (covered) {
-                    Box(Modifier.fillMaxSize().padding(top = topClearance)) {
-                        empty(if (list.isEmpty()) null else ({ showHistory = true }))
-                    }
-                } else if (list.isEmpty()) {
-                    Column(
-                        Modifier
-                            .align(Alignment.Center)
-                            .padding(start = 32.dp, end = 32.dp, top = topClearance, bottom = timelineBottomPadding * 0.5f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        AudiencePill(encrypted = !isPublicFeed)
-                        Text(
-                            emptyText,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 14.sp,
-                            lineHeight = 21.sp,
-                        )
-                    }
-                } else {
-                    LazyColumn(
-                        state = state,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(top = 8.dp + topClearance, bottom = timelineBottomPadding),
-                        verticalArrangement = Arrangement.spacedBy(if (isPublicFeed) 0.dp else 2.dp),
-                    ) {
-                        items(rows, key = { it.key }) { r ->
-                            when (r) {
-                                is TimelineRow.Day -> DayHeader(r.timestamp, note?.takeIf { r.first })
-                                is TimelineRow.Message -> {
-                                    if (r.m.system) {
-                                        SystemNoticeRow(r.m.text)
-                                    } else if (isPublicFeed) {
-                                        PublicPostRow(r, myNickname = mesh.myNickname, myPeerHex = mesh.myPeerHex, onSenderClick = onSenderClick)
-                                    } else {
-                                        EncryptedBubbleRow(r, onSenderClick = onSenderClick)
+            FluidGlassSource {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(OpenChatPalette.Screen)
+                        .fluidGlassSource(),
+                ) {
+                    if (covered) {
+                        Box(Modifier.fillMaxSize().padding(top = topClearance)) {
+                            empty(if (list.isEmpty()) null else ({ showHistory = true }))
+                        }
+                    } else if (list.isEmpty()) {
+                        Column(
+                            Modifier
+                                .align(Alignment.Center)
+                                .padding(start = 32.dp, end = 32.dp, top = topClearance, bottom = timelineBottomPadding * 0.5f),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            AudiencePill(encrypted = !isPublicFeed)
+                            Text(
+                                emptyText,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 14.sp,
+                                lineHeight = 21.sp,
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            state = state,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(top = 8.dp + topClearance, bottom = timelineBottomPadding),
+                            verticalArrangement = Arrangement.spacedBy(if (isPublicFeed) 0.dp else 2.dp),
+                        ) {
+                            items(rows, key = { it.key }) { r ->
+                                when (r) {
+                                    is TimelineRow.Day -> DayHeader(r.timestamp, note?.takeIf { r.first })
+                                    is TimelineRow.Message -> {
+                                        if (r.m.system) {
+                                            SystemNoticeRow(r.m.text)
+                                        } else if (isPublicFeed) {
+                                            PublicPostRow(r, myNickname = mesh.myNickname, myPeerHex = mesh.myPeerHex, onSenderClick = onSenderClick)
+                                        } else {
+                                            EncryptedBubbleRow(r, onSenderClick = onSenderClick)
+                                        }
                                     }
                                 }
                             }

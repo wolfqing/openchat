@@ -86,15 +86,16 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
         })
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(OpenChatPalette.Screen)
-            .fluidGlassSource()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 18.dp + bottomClearance),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
+    FluidGlassSource {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(OpenChatPalette.Screen)
+                .fluidGlassSource()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 18.dp + bottomClearance),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
         Text(
             stringResource(R.string.geo_intro),
             fontSize = 13.5.sp,
@@ -252,6 +253,7 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
         // 5. Local 24h Notes Card (only when location is active)
         if (here != null) {
             NotesSection(here)
+        }
         }
     }
 }

@@ -83,15 +83,16 @@ internal fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> 
 
     if (showQr) MyQrDialog { showQr = false }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(OpenChatPalette.Screen)
-            .fluidGlassSource()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 18.dp + bottomClearance),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
+    FluidGlassSource {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(OpenChatPalette.Screen)
+                .fluidGlassSource()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 18.dp + bottomClearance),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
         // 1. Identity Card (Emblem, Nickname#xxxx, QR shortcut, Fingerprint & Verification)
         SettingsGroupCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -261,6 +262,7 @@ internal fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> 
             Text(stringResource(R.string.me_about), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
             Text(appVersion(), fontSize = 11.5.sp, style = TabularMonoStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        }
     }
 }
 
@@ -338,7 +340,7 @@ private fun ThemeSection() {
     }
 }
 
-/** "openchat 0.7.5 (16)": the installed versionName and versionCode, so a report names its build. */
+/** "openchat 0.7.6 (17)": the installed versionName and versionCode, so a report names its build. */
 @Composable
 private fun appVersion(): String {
     val context = LocalContext.current

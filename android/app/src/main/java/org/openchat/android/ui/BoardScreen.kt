@@ -150,15 +150,17 @@ fun BoardScreen(onBack: () -> Unit, onPanic: () -> Unit) {
                         }
                     }
                 } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(OpenChatPalette.Screen)
-                            .fluidGlassSource(),
-                        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 88.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        items(posts, key = { it.idHex }) { BoardCard(it) }
+                    FluidGlassSource {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(OpenChatPalette.Screen)
+                                .fluidGlassSource(),
+                            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 88.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            items(posts, key = { it.idHex }) { BoardCard(it) }
+                        }
                     }
                 }
             }

@@ -557,182 +557,186 @@ internal fun PrivateList(onOpen: (String) -> Unit, onNewGroup: () -> Unit = {}) 
     }
 
     if (ids.isEmpty() && geoChats.isEmpty() && groupList.isEmpty()) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .background(OpenChatPalette.Screen)
-                .fluidGlassSource()
-                .padding(start = 32.dp, end = 32.dp, top = 24.dp, bottom = 24.dp + bottomClearance),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = OpenChatPalette.LockSoft,
-                border = BorderStroke(1.dp, OpenChatPalette.Lock.copy(alpha = 0.35f)),
-                modifier = Modifier.size(52.dp),
+        FluidGlassSource {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .background(OpenChatPalette.Screen)
+                    .fluidGlassSource()
+                    .padding(start = 32.dp, end = 32.dp, top = 24.dp, bottom = 24.dp + bottomClearance),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.Lock, contentDescription = null, tint = OpenChatPalette.Lock, modifier = Modifier.size(24.dp))
+                Surface(
+                    shape = CircleShape,
+                    color = OpenChatPalette.LockSoft,
+                    border = BorderStroke(1.dp, OpenChatPalette.Lock.copy(alpha = 0.35f)),
+                    modifier = Modifier.size(52.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.Lock, contentDescription = null, tint = OpenChatPalette.Lock, modifier = Modifier.size(24.dp))
+                    }
                 }
-            }
-            Spacer(Modifier.height(14.dp))
-            Text(
-                stringResource(R.string.dm_list_empty),
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 14.5.sp,
-                lineHeight = 22.sp,
-            )
-            Spacer(Modifier.height(16.dp))
-            FluidGlassPillButton(
-                onClick = onNewGroup,
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 9.dp),
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(stringResource(R.string.group_new), fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    stringResource(R.string.dm_list_empty),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.5.sp,
+                    lineHeight = 22.sp,
+                )
+                Spacer(Modifier.height(16.dp))
+                FluidGlassPillButton(
+                    onClick = onNewGroup,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 9.dp),
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Text(stringResource(R.string.group_new), fontWeight = FontWeight.Medium)
+                }
             }
         }
         return
     }
 
-    LazyColumn(
-        Modifier
-            .fillMaxSize()
-            .background(OpenChatPalette.Screen)
-            .fluidGlassSource(),
-        contentPadding = PaddingValues(bottom = bottomClearance + 14.dp),
-    ) {
-        items(groupList, key = { "grp:" + it.idHex }) { g ->
-            val key = Conversation.Group(g.idHex).key
-            val last = all[key]?.lastOrNull { !it.system }
-            val n = unread[key] ?: 0
-            Row(
-                Modifier.fillMaxWidth().clickable { onOpen(key) }.padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                GroupAvatar(size = 42)
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("#" + g.name, fontWeight = FontWeight.SemiBold, fontSize = 15.5.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        last?.let {
-                            Text(stampText(it.timestamp, locale), fontSize = 11.5.sp, style = TabularMonoStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    FluidGlassSource {
+        LazyColumn(
+            Modifier
+                .fillMaxSize()
+                .background(OpenChatPalette.Screen)
+                .fluidGlassSource(),
+            contentPadding = PaddingValues(bottom = bottomClearance + 14.dp),
+        ) {
+            items(groupList, key = { "grp:" + it.idHex }) { g ->
+                val key = Conversation.Group(g.idHex).key
+                val last = all[key]?.lastOrNull { !it.system }
+                val n = unread[key] ?: 0
+                Row(
+                    Modifier.fillMaxWidth().clickable { onOpen(key) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    GroupAvatar(size = 42)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("#" + g.name, fontWeight = FontWeight.SemiBold, fontSize = 15.5.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            last?.let {
+                                Text(stampText(it.timestamp, locale), fontSize = 11.5.sp, style = TabularMonoStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.weight(1f)) {
-                            MessagePreviewText(last, plural(R.plurals.group_members, g.members.size))
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.weight(1f)) {
+                                MessagePreviewText(last, plural(R.plurals.group_members, g.members.size))
+                            }
+                            UnreadBadge(n)
                         }
-                        UnreadBadge(n)
                     }
                 }
+                Hairline(Modifier.padding(start = 70.dp))
             }
-            Hairline(Modifier.padding(start = 70.dp))
-        }
 
-        items(geoChats, key = { it }) { key ->
-            val c = Conversation.GeoPrivate.parse(key)!!
-            val last = all[key]?.lastOrNull { !it.system }
-            val n = unread[key] ?: 0
-            Row(
-                Modifier.fillMaxWidth().clickable { onOpen(key) }.padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                EmblemView(c.pubkey, 42.dp)
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            buildAnnotatedString {
-                                append(labelText(PeerLabel.nostr(names[c.pubkey], c.pubkey)))
-                                withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.Normal, color = OpenChatPalette.Lock)) {
-                                    append("  #" + c.geohash)
-                                }
-                            },
-                            inlineContent = inlineIcons,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        last?.let {
-                            Text(stampText(it.timestamp, locale), fontSize = 11.5.sp, style = TabularMonoStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.weight(1f)) {
-                            MessagePreviewText(last, stringResource(R.string.geo_dm_status, c.geohash))
-                        }
-                        UnreadBadge(n)
-                    }
-                }
-            }
-            Hairline(Modifier.padding(start = 70.dp))
-        }
-
-        items(ids, key = { it }) { hex ->
-            val peer = peers.firstOrNull { it.peerIdHex == hex }
-            val last = all["dm:$hex"]?.lastOrNull { !it.system }
-            val n = unread["dm:$hex"] ?: 0
-            Row(
-                Modifier.fillMaxWidth().clickable { onOpen(hex) }.padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Box(Modifier.size(44.dp)) {
-                    EmblemView(hex, 42.dp)
-                    if (peer != null) {
-                        Box(
-                            Modifier
-                                .align(Alignment.BottomEnd)
-                                .size(12.dp)
-                                .background(
-                                    if (peer.direct) OpenChatPalette.Online else OpenChatPalette.Signal,
-                                    CircleShape,
-                                )
-                                .border(2.dp, OpenChatPalette.Screen, CircleShape),
-                        )
-                    }
-                }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    val fav = social.favoriteOf(hex)
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            labelText(
-                                PeerLabel.mesh(peer?.nickname ?: names[hex], hex),
-                                verified = social.isVerifiedPeer(hex),
-                                vouched = social.isVouchedPeer(hex),
-                                starred = fav?.mine == true,
-                            ),
-                            inlineContent = inlineIcons,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.5.sp,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        last?.let {
-                            Text(stampText(it.timestamp, locale), fontSize = 11.5.sp, style = TabularMonoStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.weight(1f)) {
-                            val fallback = stringResource(
-                                when {
-                                    peer?.direct == true -> R.string.dm_direct
-                                    peer != null -> R.string.dm_relayed
-                                    else -> R.string.dm_away
+            items(geoChats, key = { it }) { key ->
+                val c = Conversation.GeoPrivate.parse(key)!!
+                val last = all[key]?.lastOrNull { !it.system }
+                val n = unread[key] ?: 0
+                Row(
+                    Modifier.fillMaxWidth().clickable { onOpen(key) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    EmblemView(c.pubkey, 42.dp)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                buildAnnotatedString {
+                                    append(labelText(PeerLabel.nostr(names[c.pubkey], c.pubkey)))
+                                    withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.Normal, color = OpenChatPalette.Lock)) {
+                                        append("  #" + c.geohash)
+                                    }
                                 },
+                                inlineContent = inlineIcons,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
-                            MessagePreviewText(last, fallback)
+                            last?.let {
+                                Text(stampText(it.timestamp, locale), fontSize = 11.5.sp, style = TabularMonoStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
-                        UnreadBadge(n)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.weight(1f)) {
+                                MessagePreviewText(last, stringResource(R.string.geo_dm_status, c.geohash))
+                            }
+                            UnreadBadge(n)
+                        }
                     }
                 }
+                Hairline(Modifier.padding(start = 70.dp))
             }
-            Hairline(Modifier.padding(start = 72.dp))
+
+            items(ids, key = { it }) { hex ->
+                val peer = peers.firstOrNull { it.peerIdHex == hex }
+                val last = all["dm:$hex"]?.lastOrNull { !it.system }
+                val n = unread["dm:$hex"] ?: 0
+                Row(
+                    Modifier.fillMaxWidth().clickable { onOpen(hex) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(Modifier.size(44.dp)) {
+                        EmblemView(hex, 42.dp)
+                        if (peer != null) {
+                            Box(
+                                Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .size(12.dp)
+                                    .background(
+                                        if (peer.direct) OpenChatPalette.Online else OpenChatPalette.Signal,
+                                        CircleShape,
+                                    )
+                                    .border(2.dp, OpenChatPalette.Screen, CircleShape),
+                            )
+                        }
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        val fav = social.favoriteOf(hex)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                labelText(
+                                    PeerLabel.mesh(peer?.nickname ?: names[hex], hex),
+                                    verified = social.isVerifiedPeer(hex),
+                                    vouched = social.isVouchedPeer(hex),
+                                    starred = fav?.mine == true,
+                                ),
+                                inlineContent = inlineIcons,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.5.sp,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            last?.let {
+                                Text(stampText(it.timestamp, locale), fontSize = 11.5.sp, style = TabularMonoStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.weight(1f)) {
+                                val fallback = stringResource(
+                                    when {
+                                        peer?.direct == true -> R.string.dm_direct
+                                        peer != null -> R.string.dm_relayed
+                                        else -> R.string.dm_away
+                                    },
+                                )
+                                MessagePreviewText(last, fallback)
+                            }
+                            UnreadBadge(n)
+                        }
+                    }
+                }
+                Hairline(Modifier.padding(start = 72.dp))
+            }
         }
     }
 }
