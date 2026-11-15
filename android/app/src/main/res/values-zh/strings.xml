@@ -321,4 +321,12 @@
     <string name="update_err_hash">SHA-256 哈希校验不匹配，已丢弃该文件。</string>
     <string name="update_err_sig">签名证书与当前应用不一致，已丢弃该文件。</string>
     <string name="update_err_install">无法启动系统安装程序。</string>
+    <string name="theme_title">外观模式</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_light">亮色</string>
+    <string name="theme_dark">OLED 纯黑</string>
+    <string name="live_ptt_speaking">实时对讲 · %1$s</string>
+    <string name="live_ptt_sending">实时对讲中… 讲完点发送</string>
+    <string name="live_ptt_mute">静音实时对讲</string>
+    <string name="live_ptt_unmute">开启实时对讲</string>
 </resources>

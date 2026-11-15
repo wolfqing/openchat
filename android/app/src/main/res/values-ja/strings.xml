@@ -310,4 +310,12 @@
     <string name="update_err_hash">SHA-256 チェックサムが一致しませんでした。ファイルを破棄しました。</string>
     <string name="update_err_sig">署名証明書がこのアプリと一致しませんでした。ファイルを破棄しました。</string>
     <string name="update_err_install">システムインストーラーを起動できませんでした。</string>
+    <string name="theme_title">外観</string>
+    <string name="theme_system">システム</string>
+    <string name="theme_light">ライト</string>
+    <string name="theme_dark">OLED ダーク</string>
+    <string name="live_ptt_speaking">ライブトランシーバー · %1$s</string>
+    <string name="live_ptt_sending">ライブ通話中… 送信で終了</string>
+    <string name="live_ptt_mute">ライブ音声をミュート</string>
+    <string name="live_ptt_unmute">ライブ音声のミュート解除</string>
 </resources>

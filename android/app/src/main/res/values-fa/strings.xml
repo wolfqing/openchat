@@ -316,4 +316,12 @@
     <string name="update_err_hash">مقدار SHA-256 مطابقت نداشت. فایل حذف شد.</string>
     <string name="update_err_sig">گواهی امضا با این برنامه مطابقت نداشت. فایل حذف شد.</string>
     <string name="update_err_install">اجرای نصب‌کننده سیستم ممکن نشد.</string>
+    <string name="theme_title">ظاهر برنامه</string>
+    <string name="theme_system">سیستم</string>
+    <string name="theme_light">روشن</string>
+    <string name="theme_dark">تیره OLED</string>
+    <string name="live_ptt_speaking">بی‌سیم زنده · %1$s</string>
+    <string name="live_ptt_sending">پخش زنده… پس از پایان ارسال را بزنید</string>
+    <string name="live_ptt_mute">بی‌صدا کردن صدای زنده</string>
+    <string name="live_ptt_unmute">فعال کردن صدای زنده</string>
 </resources>

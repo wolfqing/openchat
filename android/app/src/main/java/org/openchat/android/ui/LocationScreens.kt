@@ -3,6 +3,7 @@ package org.openchat.android.ui
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -10,13 +11,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,12 +54,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.openchat.android.R
@@ -77,6 +72,7 @@ import kotlin.math.roundToInt
 internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Unit) {
     val geo by ChatRepository.geo.collectAsState()
     val unread by ChatRepository.unread.collectAsState()
+    val bottomClearance = LocalBottomBarClearance.current
     var manual by rememberSaveable { mutableStateOf("") }
     var globe by rememberSaveable { mutableStateOf(false) }
     val here = geo.locationGeohash
@@ -93,8 +89,10 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
     Column(
         Modifier
             .fillMaxSize()
+            .background(OpenChatPalette.Screen)
+            .fluidGlassSource()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 18.dp + bottomClearance),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text(
@@ -109,7 +107,7 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
             shape = RoundedCornerShape(16.dp),
             color = OpenChatPalette.Card,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { globe = true },
+            modifier = Modifier.fillMaxWidth().pressScale(0.98f).clip(RoundedCornerShape(16.dp)).clickable { globe = true },
         ) {
             Row(
                 Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
@@ -145,23 +143,16 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
                     geo.joined.sorted().forEach { g ->
                         val count = unread[Conversation.Geo(g).key] ?: 0
                         val online = geo.participants[g] ?: 0
-                        Surface(
-                            shape = CircleShape,
-                            color = OpenChatPalette.Card,
-                            border = BorderStroke(1.dp, if (count > 0) OpenChatPalette.Signal else MaterialTheme.colorScheme.outline),
-                            modifier = Modifier.clip(CircleShape).clickable { onOpen(g) },
+                        FluidGlassPillButton(
+                            onClick = { onOpen(g) },
+                            borderAccent = if (count > 0) OpenChatPalette.Signal else null,
+                            contentPadding = PaddingValues(horizontal = 13.dp, vertical = 7.dp),
                         ) {
-                            Row(
-                                Modifier.padding(horizontal = 13.dp, vertical = 7.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                Text("#$g", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, color = OpenChatPalette.Ink)
-                                if (online > 0) {
-                                    Text("· $online", fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = OpenChatPalette.Online)
-                                }
-                                UnreadBadge(count)
+                            Text("#$g", style = TabularMonoStyle, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, color = OpenChatPalette.Ink)
+                            if (online > 0) {
+                                Text("· $online", style = TabularMonoStyle, fontSize = 12.sp, color = OpenChatPalette.Online)
                             }
+                            UnreadBadge(count)
                         }
                     }
                 }
@@ -198,7 +189,7 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
                     ) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(stringResource(levelLabel(level)), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                            Text("#$cell · $span", fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("#$cell · $span", style = TabularMonoStyle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if (n > 0) {
                             Surface(
@@ -248,7 +239,13 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
                         onClick = { ChatRepository.controller?.joinGeo(manual, teleported = true); onOpen(manual) },
                     ) { Text(stringResource(R.string.geo_enter)) }
                 }
-                Text(stringResource(R.string.geo_teleport_note), fontSize = 12.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    withInlineVectorBadges(stringResource(R.string.geo_teleport_note)),
+                    inlineContent = rememberLabelInlineIcons(),
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
 
@@ -295,6 +292,7 @@ private fun ShareChannelButton(geohash: String) {
 @Composable
 private fun NotesSection(here: String) {
     val geo by ChatRepository.geo.collectAsState()
+    val inlineIcons = rememberLabelInlineIcons()
     var draft by rememberSaveable { mutableStateOf("") }
     DisposableEffect(here) {
         ChatRepository.controller?.watchNotes(here)
@@ -336,11 +334,12 @@ private fun NotesSection(here: String) {
                                 buildAnnotatedString {
                                     append(labelText(PeerLabel.nostr(n.nickname, n.pubkey)))
                                 },
+                                inlineContent = inlineIcons,
                                 fontSize = 12.5.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.weight(1f),
                             )
-                            Text(stampText(n.createdAt, locale), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stampText(n.createdAt, locale), fontSize = 11.sp, style = TabularMonoStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Text(withMentions(n.text), fontSize = 14.5.sp, lineHeight = 21.sp)
                     }
@@ -366,45 +365,47 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
     var person by remember { mutableStateOf<PersonRef?>(null) }
     BackHandler(onBack = onBack)
     person?.let { PersonSheet(it, onDismiss = { person = null }, onMessage = { key -> ChatRepository.requestOpen(key) }) }
-    Scaffold(
-        containerColor = OpenChatPalette.Screen,
-        topBar = {
-            Column {
-                TopAppBar(
-                    colors = chromeTopBarColors(),
-                    navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
-                    title = {
-                        Column {
-                            PanicTitle("#$geohash", onPanic)
-                            val n = geo.participants[geohash] ?: 0
-                            Text(
-                                if (geo.relaysConnected == 0) stringResource(R.string.geo_connecting) else plural(R.plurals.geo_recent, n),
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    },
-                    actions = {
-                        ShareChannelButton(geohash)
-                        TextButton(onClick = { ChatRepository.controller?.leaveGeo(geohash); onBack() }) {
-                            Text(stringResource(R.string.geo_leave), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    },
+    FluidGlassHost {
+        Scaffold(
+            containerColor = OpenChatPalette.Screen,
+            topBar = {
+                Column {
+                    TopAppBar(
+                        colors = chromeTopBarColors(),
+                        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
+                        title = {
+                            Column {
+                                PanicTitle("#$geohash", onPanic)
+                                val n = geo.participants[geohash] ?: 0
+                                Text(
+                                    if (geo.relaysConnected == 0) stringResource(R.string.geo_connecting) else plural(R.plurals.geo_recent, n),
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        },
+                        actions = {
+                            ShareChannelButton(geohash)
+                            TextButton(onClick = { ChatRepository.controller?.leaveGeo(geohash); onBack() }) {
+                                Text(stringResource(R.string.geo_leave), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        },
+                    )
+                    Hairline()
+                }
+            },
+        ) { padding ->
+            Box(Modifier.padding(padding).fillMaxSize()) {
+                ChatPane(
+                    conversation = Conversation.Geo(geohash).key,
+                    emptyText = stringResource(R.string.geo_empty, geohash),
+                    placeholder = stringResource(R.string.geo_placeholder, geohash),
+                    onSend = { ChatRepository.controller?.sendGeo(geohash, it) },
+                    onSenderClick = { m -> person = PersonRef.Geo(m.senderKey, m.senderName, geohash) },
                 )
-                Hairline()
             }
-        },
-    ) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize()) {
-            ChatPane(
-                conversation = Conversation.Geo(geohash).key,
-                emptyText = stringResource(R.string.geo_empty, geohash),
-                placeholder = stringResource(R.string.geo_placeholder, geohash),
-                onSend = { ChatRepository.controller?.sendGeo(geohash, it) },
-                onSenderClick = { m -> person = PersonRef.Geo(m.senderKey, m.senderName, geohash) },
-            )
         }
     }
 }

@@ -316,4 +316,12 @@
     <string name="update_err_hash">SHA-256 sağlaması eşleşmedi. Dosya silindi.</string>
     <string name="update_err_sig">İmza sertifikası bu uygulamayla eşleşmedi. Dosya silindi.</string>
     <string name="update_err_install">Sistem yükleyicisi başlatılamadı.</string>
+    <string name="theme_title">Görünüm</string>
+    <string name="theme_system">Sistem</string>
+    <string name="theme_light">Açık</string>
+    <string name="theme_dark">OLED koyu</string>
+    <string name="live_ptt_speaking">Canlı telsiz · %1$s</string>
+    <string name="live_ptt_sending">Canlı telsiz… bitince göndere dokunun</string>
+    <string name="live_ptt_mute">Canlı sesi sustur</string>
+    <string name="live_ptt_unmute">Canlı sesi aç</string>
 </resources>

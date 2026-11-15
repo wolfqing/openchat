@@ -12,12 +12,18 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import org.openchat.android.app.ApkShare
 import org.openchat.android.app.AppLanguage
+import org.openchat.android.app.AppTheme
+import org.openchat.android.app.LiveVoicePrefs
 import org.openchat.android.app.MeshService
 
 class MainActivity : ComponentActivity() {
@@ -48,9 +54,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Android 15 draws edge to edge whether asked or not; dark bars match the always-dark UI even when the system theme is light.
-        val barStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-        enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
+        AppTheme.load(this)
+        LiveVoicePrefs.sync(this)
         val prefs = getSharedPreferences("ui", Context.MODE_PRIVATE)
         onboarded.value = prefs.getBoolean("onboarded", false)
         refreshPermissionState()
@@ -58,6 +63,17 @@ class MainActivity : ComponentActivity() {
         if (onboarded.value) openLink(intent)
 
         setContent {
+            val themeChoice by AppTheme.choiceFlow.collectAsState()
+            val isDark = AppTheme.resolveIsDark(themeChoice, isSystemInDarkTheme())
+            SideEffect {
+                val barStyle = if (isDark) {
+                    SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                } else {
+                    SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                }
+                enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
+                window.decorView.setBackgroundColor(if (isDark) android.graphics.Color.BLACK else 0xFFF4F7FC.toInt())
+            }
             OpenChatTheme {
                 if (!onboarded.value) {
                     OnboardingScreen(onStart = {

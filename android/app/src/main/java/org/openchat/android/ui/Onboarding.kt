@@ -1,7 +1,6 @@
 package org.openchat.android.ui
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,16 +20,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.outlined.BrightnessAuto
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.openchat.android.R
 import org.openchat.android.app.AppLanguage
+import org.openchat.android.app.AppTheme
 
 /** One button naming the current language; a menu lists the rest. Choosing one restarts the screen in that language. */
 @Composable
@@ -56,15 +59,13 @@ fun LanguagePicker(onLanguage: (AppLanguage.Choice) -> Unit) {
     var open by remember { mutableStateOf(false) }
     val system = stringResource(R.string.lang_system)
     Box {
-        OutlinedButton(
+        FluidGlassPillButton(
             onClick = { open = true },
-            shape = CircleShape,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
         ) {
             Icon(Icons.Outlined.Translate, contentDescription = null, modifier = Modifier.size(15.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.size(6.dp))
-            Text(current.label ?: system, fontSize = 13.sp)
-            Icon(Icons.Filled.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(current.label ?: system, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = OpenChatPalette.Ink)
+            Icon(Icons.Filled.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         DropdownMenu(
             expanded = open,
@@ -88,94 +89,127 @@ fun LanguagePicker(onLanguage: (AppLanguage.Choice) -> Unit) {
 }
 
 @Composable
+private fun ThemeCycleButton() {
+    val ctx = LocalContext.current
+    val current by AppTheme.choiceFlow.collectAsState()
+    val next = when (current) {
+        AppTheme.Choice.SYSTEM -> AppTheme.Choice.LIGHT
+        AppTheme.Choice.LIGHT -> AppTheme.Choice.DARK
+        AppTheme.Choice.DARK -> AppTheme.Choice.SYSTEM
+    }
+    val icon = when (current) {
+        AppTheme.Choice.SYSTEM -> Icons.Outlined.BrightnessAuto
+        AppTheme.Choice.LIGHT -> Icons.Outlined.LightMode
+        AppTheme.Choice.DARK -> Icons.Outlined.DarkMode
+    }
+    FluidGlassCircleButton(
+        icon = icon,
+        contentDescription = stringResource(R.string.theme_title),
+        onClick = { AppTheme.set(ctx, next) },
+        size = 38.dp,
+        iconSize = 18.dp,
+        shadowElevation = 4.dp,
+    )
+}
+
+@Composable
 fun OnboardingScreen(onStart: () -> Unit, onLanguage: (AppLanguage.Choice) -> Unit) {
-    Surface(Modifier.fillMaxSize(), color = OpenChatPalette.Screen) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(horizontal = 24.dp, vertical = 18.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = OpenChatPalette.Card,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    modifier = Modifier.size(44.dp).clipToBounds(),
-                ) {
-                    Image(
-                        painterResource(R.drawable.ic_launcher_foreground),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize().scale(1.35f),
-                    )
-                }
-                LanguagePicker(onLanguage)
-            }
-
-            Column(Modifier.padding(vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SignalPulseDot(live = true)
-                    Text(
-                        stringResource(R.string.app_name),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = OpenChatPalette.Signal,
-                    )
-                }
-                Text(
-                    stringResource(R.string.onboard_title),
-                    fontSize = 32.sp,
-                    lineHeight = 38.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    stringResource(R.string.onboard_body),
-                    fontSize = 16.sp,
-                    lineHeight = 24.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Surface(
-                    shape = CircleShape,
-                    color = OpenChatPalette.Surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                ) {
-                    Text(
-                        stringResource(R.string.onboard_no_account),
-                        fontSize = 13.5.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
-                    )
-                }
-                Spacer(Modifier.height(4.dp))
-                SafetyNote()
-            }
-
+    FluidGlassHost {
+        Surface(Modifier.fillMaxSize(), color = OpenChatPalette.Screen) {
             Column(
-                Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                Modifier
+                    .fillMaxSize()
+                    .safeDrawingPadding()
+                    .padding(horizontal = 24.dp, vertical = 18.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
-                Button(
-                    onClick = onStart,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(stringResource(R.string.onboard_start), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = OpenChatPalette.Card,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.size(44.dp).clipToBounds(),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_launcher_foreground),
+                            contentDescription = null,
+                            tint = OpenChatPalette.Signal,
+                            modifier = Modifier.fillMaxSize().scale(1.35f),
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        ThemeCycleButton()
+                        LanguagePicker(onLanguage)
+                    }
                 }
-                Text(
-                    stringResource(R.string.onboard_next),
-                    fontSize = 12.5.sp,
-                    lineHeight = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
+
+                Column(Modifier.padding(vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SignalPulseDot(live = true)
+                        Text(
+                            stringResource(R.string.app_name),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OpenChatPalette.Signal,
+                        )
+                    }
+                    Text(
+                        stringResource(R.string.onboard_title),
+                        fontSize = 32.sp,
+                        lineHeight = 38.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        stringResource(R.string.onboard_body),
+                        fontSize = 16.sp,
+                        lineHeight = 24.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Surface(
+                        shape = CircleShape,
+                        color = OpenChatPalette.Surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    ) {
+                        Text(
+                            stringResource(R.string.onboard_no_account),
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    SafetyNote()
+                }
+
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Button(
+                        onClick = onStart,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().height(52.dp).pressScale(0.97f),
+                    ) {
+                        Text(stringResource(R.string.onboard_start), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    Text(
+                        stringResource(R.string.onboard_next),
+                        fontSize = 12.5.sp,
+                        lineHeight = 18.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
     }

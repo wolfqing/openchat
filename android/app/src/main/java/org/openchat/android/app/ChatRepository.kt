@@ -102,6 +102,14 @@ data class BoardItem(
 /** A note left at a place (§17), visible to anyone nearby for 24 hours. */
 data class LocationNote(val id: String, val pubkey: String, val nickname: String, val text: String, val createdAt: Long, val geohash: String, val mine: Boolean)
 
+/** Someone actively streaming a live walkie-talkie voice burst (§29) in [conversation]. */
+data class LiveSpeaker(
+    val conversation: String,
+    val senderKey: String,
+    val senderName: String,
+    val startedAt: Long,
+)
+
 data class GeoStatus(
     val locationGeohash: String? = null, // full-precision cell of the device, if known
     val relaysConnected: Int = 0,
@@ -248,6 +256,19 @@ object ChatRepository {
     val openRequest: StateFlow<String?> = _openRequest.asStateFlow()
     fun requestOpen(conversation: String?) { _openRequest.value = conversation }
 
+    private val _liveSpeakers = MutableStateFlow<Map<String, LiveSpeaker>>(emptyMap())
+    val liveSpeakers: StateFlow<Map<String, LiveSpeaker>> = _liveSpeakers.asStateFlow()
+    fun setLiveSpeaker(burstKey: String, speaker: LiveSpeaker?) {
+        _liveSpeakers.update { if (speaker == null) it - burstKey else it + (burstKey to speaker) }
+    }
+    fun clearLiveSpeakers() { _liveSpeakers.value = emptyMap() }
+
+    private val _liveMicLevel = MutableStateFlow(0f)
+    val liveMicLevel: StateFlow<Float> = _liveMicLevel.asStateFlow()
+    fun setLiveMicLevel(level: Float) { _liveMicLevel.value = level.coerceIn(0f, 1f) }
+
+    @Volatile var onLiveVoiceEnabledChanged: ((Boolean) -> Unit)? = null
+
     fun rememberName(peerHex: String, name: String) = _names.update { it + (peerHex to name) }
 
     fun setPeers(p: List<MeshPeer>) {
@@ -263,6 +284,7 @@ object ChatRepository {
         _board.value = emptyList(); _boardUnseen.value = 0
         // A running service republishes these as it resets; without one, nobody else would clear them.
         _groups.value = emptyMap(); _bridge.value = BridgeStatus(); _openRequest.value = null
+        _liveSpeakers.value = emptyMap(); _liveMicLevel.value = 0f
         _messages.value = emptyMap()
         _peers.value = emptyList()
         _unread.value = emptyMap()

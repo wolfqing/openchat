@@ -336,4 +336,12 @@
     <string name="update_err_hash">Контрольная сумма SHA-256 не совпала. Файл удалён.</string>
     <string name="update_err_sig">Сертификат подписи не совпадает с этим приложением. Файл удалён.</string>
     <string name="update_err_install">Не удалось запустить системный установщик.</string>
+    <string name="theme_title">Оформление</string>
+    <string name="theme_system">Системное</string>
+    <string name="theme_light">Светлое</string>
+    <string name="theme_dark">OLED тёмное</string>
+    <string name="live_ptt_speaking">Рация в эфире · %1$s</string>
+    <string name="live_ptt_sending">В эфире… нажмите отправить для завершения</string>
+    <string name="live_ptt_mute">Выключить звук рации</string>
+    <string name="live_ptt_unmute">Включить звук рации</string>
 </resources>

@@ -336,4 +336,12 @@
     <string name="update_err_hash">Контрольна сума SHA-256 не збігається. Файл відхилено.</string>
     <string name="update_err_sig">Сертифікат підпису не збігається з цим застосунком. Файл відхилено.</string>
     <string name="update_err_install">Не вдалося запустити системний інсталятор.</string>
+    <string name="theme_title">Оформлення</string>
+    <string name="theme_system">Системне</string>
+    <string name="theme_light">Світле</string>
+    <string name="theme_dark">OLED темне</string>
+    <string name="live_ptt_speaking">Рація в ефірі · %1$s</string>
+    <string name="live_ptt_sending">В ефірі… натисніть надіслати для завершення</string>
+    <string name="live_ptt_mute">Вимкнути звук рації</string>
+    <string name="live_ptt_unmute">Увімкнути звук рації</string>
 </resources>

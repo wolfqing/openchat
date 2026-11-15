@@ -104,7 +104,7 @@ jobs:
       # No keystore here, so this is signed with the debug key: it checks the build, it is not a release.
       - name: Assemble release APK (R8)
         shell: bash
-        run: ./gradlew --no-daemon :app:assembleRelease 2>&1 | tee release-build.log
+        run: ./gradlew --no-daemon :app:lintVitalRelease :app:assembleRelease 2>&1 | tee release-build.log
 
       - name: R8 must understand the Kotlin metadata
         shell: bash
@@ -113,3 +113,10 @@ jobs:
             echo "::error::R8 could not read Kotlin metadata; the shrunk APK may crash on launch. Raise the pinned R8 in android/build.gradle.kts."
             exit 1
           fi
+
+      - name: Upload release APK (CI debug-signed check artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: openchat-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 14

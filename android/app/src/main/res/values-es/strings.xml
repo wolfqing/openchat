@@ -322,4 +322,12 @@
     <string name="update_err_hash">La suma SHA-256 no coincide. Se descartó el archivo.</string>
     <string name="update_err_sig">El certificado de firma no coincide con esta app. Se descartó el archivo.</string>
     <string name="update_err_install">No se pudo abrir el instalador del sistema.</string>
+    <string name="theme_title">Apariencia</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">OLED oscuro</string>
+    <string name="live_ptt_speaking">Radio en vivo · %1$s</string>
+    <string name="live_ptt_sending">Transmitiendo… toca enviar al terminar</string>
+    <string name="live_ptt_mute">Silenciar voz en vivo</string>
+    <string name="live_ptt_unmute">Activar voz en vivo</string>
 </resources>

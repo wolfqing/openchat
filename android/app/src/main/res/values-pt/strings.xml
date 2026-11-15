@@ -322,4 +322,12 @@
     <string name="update_err_hash">O hash SHA-256 não corresponde. O arquivo foi descartado.</string>
     <string name="update_err_sig">O certificado de assinatura não corresponde a este app. O arquivo foi descartado.</string>
     <string name="update_err_install">Não foi possível abrir o instalador do sistema.</string>
+    <string name="theme_title">Aparência</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">OLED escuro</string>
+    <string name="live_ptt_speaking">Rádio ao vivo · %1$s</string>
+    <string name="live_ptt_sending">Transmitindo… toque em enviar ao terminar</string>
+    <string name="live_ptt_mute">Silenciar voz ao vivo</string>
+    <string name="live_ptt_unmute">Ativar voz ao vivo</string>
 </resources>

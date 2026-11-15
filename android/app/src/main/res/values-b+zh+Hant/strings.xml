@@ -310,4 +310,12 @@
     <string name="update_err_hash">SHA-256 雜湊驗證不符，已捨棄該檔案。</string>
     <string name="update_err_sig">簽章憑證與目前應用程式不一致，已捨棄該檔案。</string>
     <string name="update_err_install">無法啟動系統安裝程式。</string>
+    <string name="theme_title">外觀模式</string>
+    <string name="theme_system">跟隨系統</string>
+    <string name="theme_light">淺色</string>
+    <string name="theme_dark">OLED 純黑</string>
+    <string name="live_ptt_speaking">即時對講 · %1$s</string>
+    <string name="live_ptt_sending">即時對講中… 講完點傳送</string>
+    <string name="live_ptt_mute">靜音即時對講</string>
+    <string name="live_ptt_unmute">開啟即時對講</string>
 </resources>

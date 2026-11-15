@@ -310,4 +310,12 @@
     <string name="update_err_hash">SHA-256 체크섬이 일치하지 않아 파일을 삭제했습니다.</string>
     <string name="update_err_sig">서명 인증서가 현재 앱과 일치하지 않아 파일을 삭제했습니다.</string>
     <string name="update_err_install">시스템 설치 프로그램을 시작할 수 없습니다.</string>
+    <string name="theme_title">화면 테마</string>
+    <string name="theme_system">시스템 설정</string>
+    <string name="theme_light">라이트</string>
+    <string name="theme_dark">OLED 다크</string>
+    <string name="live_ptt_speaking">실시간 무전 · %1$s</string>
+    <string name="live_ptt_sending">실시간 무전 중… 완료 시 전송</string>
+    <string name="live_ptt_mute">실시간 음성 음소거</string>
+    <string name="live_ptt_unmute">실시간 음성 켜기</string>
 </resources>

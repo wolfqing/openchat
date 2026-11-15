@@ -24,11 +24,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -56,7 +57,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -67,6 +68,7 @@ import com.google.zxing.qrcode.QRCodeWriter
 import org.openchat.android.R
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
+import org.openchat.android.app.LiveVoicePrefs
 import org.openchat.android.app.NostrDirect
 import org.openchat.android.app.NotificationPrivacy
 import org.openchat.android.app.PeerLabel
@@ -107,7 +109,7 @@ internal fun FingerprintGrid(hex: String, modifier: Modifier = Modifier) {
                     rowChunks.forEach { block ->
                         Text(
                             block,
-                            fontFamily = FontFamily.Monospace,
+                            style = TabularMonoStyle,
                             fontSize = 13.5.sp,
                             letterSpacing = 0.5.sp,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -124,6 +126,7 @@ internal fun FingerprintGrid(hex: String, modifier: Modifier = Modifier) {
 @Composable
 fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) -> Unit) {
     val social by Social.state.collectAsState()
+    val inlineIcons = rememberLabelInlineIcons()
     val emblemKey = when (person) {
         is PersonRef.Mesh -> person.peerHex
         is PersonRef.Geo -> person.pubkey
@@ -154,6 +157,7 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                     verified = person is PersonRef.Mesh && social.isVerifiedPeer(person.peerHex),
                     vouched = person is PersonRef.Mesh && social.isVouchedPeer(person.peerHex),
                 ),
+                inlineContent = inlineIcons,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -229,13 +233,19 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                                 color = OpenChatPalette.SignalSoft,
                                 border = BorderStroke(1.dp, OpenChatPalette.Signal.copy(alpha = 0.6f)),
                             ) {
-                                Text(
-                                    stringResource(R.string.verify_badge_on),
-                                    fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = OpenChatPalette.Signal,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                )
+                                Row(
+                                    Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                ) {
+                                    Icon(Icons.Filled.Check, contentDescription = null, tint = OpenChatPalette.Signal, modifier = Modifier.size(14.dp))
+                                    Text(
+                                        stringResource(R.string.verify_badge_on).removePrefix("\u2713").trim(),
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = OpenChatPalette.Signal,
+                                    )
+                                }
                             }
                         } else {
                             Text(
@@ -367,6 +377,8 @@ internal fun SettingsGroupCard(
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = OpenChatPalette.Card,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
         border = BorderStroke(1.dp, borderColor),
         modifier = modifier.fillMaxWidth(),
     ) {
@@ -380,7 +392,12 @@ fun VerifySection(onShowQr: () -> Unit, onScan: () -> Unit) {
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.verify_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
         Text(
-            stringResource(R.string.verify_body) + " " + stringResource(R.string.vouch_note),
+            buildAnnotatedString {
+                append(withInlineVectorBadges(stringResource(R.string.verify_body), INLINE_VERIFIED))
+                append(" ")
+                append(withInlineVectorBadges(stringResource(R.string.vouch_note), INLINE_VOUCHED))
+            },
+            inlineContent = rememberLabelInlineIcons(),
             fontSize = 13.sp,
             lineHeight = 19.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -423,11 +440,11 @@ fun NotificationSection() {
     }
 }
 
-/** Live voice (§29): one switch for streaming your voice notes and playing others' as they come. */
+/** Live voice (§29): reactive switch synced with chat header walkie-talkie quick-mute controls. */
 @Composable
 fun LiveVoiceSection() {
     val ctx = LocalContext.current
-    var on by remember { mutableStateOf(org.openchat.android.app.LiveVoicePrefs.enabled(ctx)) }
+    val on by LiveVoicePrefs.enabledFlow.collectAsState()
     Row(
         Modifier.fillMaxWidth().padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -442,7 +459,7 @@ fun LiveVoiceSection() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Switch(checked = on, onCheckedChange = { on = it; org.openchat.android.app.LiveVoicePrefs.setEnabled(ctx, it) })
+        Switch(checked = on, onCheckedChange = { LiveVoicePrefs.setEnabled(ctx, it) })
     }
 }
 
@@ -468,7 +485,7 @@ fun BridgeSection() {
                 val line = if (cell == null) stringResource(R.string.bridge_need_cell)
                 else if (b.online) stringResource(R.string.bridge_online, cell) + " · " + plural(R.plurals.bridge_across, b.across)
                 else stringResource(R.string.bridge_offline, cell)
-                Text(line, fontSize = 12.5.sp, fontFamily = FontFamily.Monospace, color = OpenChatPalette.Signal, modifier = Modifier.padding(top = 2.dp))
+                Text(line, fontSize = 12.5.sp, style = TabularMonoStyle, color = OpenChatPalette.Signal, modifier = Modifier.padding(top = 2.dp))
             }
         }
         Switch(checked = b.enabled, onCheckedChange = { ChatRepository.controller?.setBridge(it) })
@@ -519,7 +536,7 @@ fun RelaySection() {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(Modifier.padding(start = 12.dp, end = 4.dp, top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(r, Modifier.weight(1f), fontFamily = FontFamily.Monospace, fontSize = 12.5.sp)
+                    Text(r, Modifier.weight(1f), style = TabularMonoStyle, fontSize = 12.5.sp)
                     TextButton(
                         onClick = { Social.removeRelay(r) },
                         contentPadding = PaddingValues(horizontal = 8.dp),
@@ -556,6 +573,7 @@ fun RelaySection() {
 fun BlockedList() {
     val social by Social.state.collectAsState()
     if (social.blocked.isEmpty() && social.geoBlocked.isEmpty()) return
+    val inlineIcons = rememberLabelInlineIcons()
     SettingsGroupCard {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(R.string.me_blocked_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(bottom = 4.dp))
@@ -563,7 +581,7 @@ fun BlockedList() {
                 if (idx > 0) Hairline()
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     EmblemView(fp.take(16), 28.dp)
-                    Text(labelText(PeerLabel.mesh(name, fp.take(16))), Modifier.weight(1f), fontSize = 14.sp)
+                    Text(labelText(PeerLabel.mesh(name, fp.take(16))), Modifier.weight(1f), inlineContent = inlineIcons, fontSize = 14.sp)
                     TextButton(onClick = { Social.unblock(fp) }) { Text(stringResource(R.string.peer_unblock)) }
                 }
             }
@@ -571,7 +589,7 @@ fun BlockedList() {
                 if (idx > 0 || social.blocked.isNotEmpty()) Hairline()
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     EmblemView(pk, 28.dp)
-                    Text(labelText(PeerLabel.nostr(name, pk)), Modifier.weight(1f), fontSize = 14.sp)
+                    Text(labelText(PeerLabel.nostr(name, pk)), Modifier.weight(1f), inlineContent = inlineIcons, fontSize = 14.sp)
                     TextButton(onClick = { Social.unblockGeo(pk) }) { Text(stringResource(R.string.peer_unblock)) }
                 }
             }

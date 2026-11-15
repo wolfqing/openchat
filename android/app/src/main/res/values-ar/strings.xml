@@ -356,4 +356,12 @@
     <string name="update_err_hash">قيمة SHA-256 غير متطابقة. تم تجاهل الملف.</string>
     <string name="update_err_sig">شهادة التوقيع لا تطابق هذا التطبيق. تم تجاهل الملف.</string>
     <string name="update_err_install">تعذر تشغيل مثبّت النظام.</string>
+    <string name="theme_title">المظهر</string>
+    <string name="theme_system">النظام</string>
+    <string name="theme_light">فاتح</string>
+    <string name="theme_dark">OLED داكن</string>
+    <string name="live_ptt_speaking">تحدث مباشر · %1$s</string>
+    <string name="live_ptt_sending">تحدث مباشر… اضغط إرسال عند الانتهاء</string>
+    <string name="live_ptt_mute">كتم الصوت المباشر</string>
+    <string name="live_ptt_unmute">تفعيل الصوت المباشر</string>
 </resources>

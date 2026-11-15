@@ -24,9 +24,9 @@ No accounts, no phone numbers, no servers.
 [Security](SECURITY.md) ·
 [中文说明](README.zh-CN.md)
 
-<img src="docs/design/prototype-three-screens.png" alt="Three screens: the Nearby channel with a signal band and hop counts, an encrypted private chat with a four-dot delivery path, and the 'nobody nearby yet' radar" width="100%">
+<img src="docs/design/prototype-three-screens.png" alt="Three screens: Nearby in Radiant Light with floating Liquid Glass chrome, an encrypted private chat in OLED Dark with flat matte bubbles and a four-dot delivery path, and the 'nobody nearby yet' azimuth radar" width="100%">
 
-<sub>The three screens that define the app: Nearby with its signal band, a private chat with a delivery path on every message, and the radar you see when nobody is in range. Rendered from the design prototype; the app has had them since v0.7.0.</sub>
+<sub>The three screens that define the app: Nearby in Radiant Light with its signal band and floating Liquid Glass chrome, a private chat in OLED Dark with flat matte bubbles and a delivery path on every message, and the radar you see when nobody is in range. Rendered from the v0.7.5 design prototype.</sub>
 
 </div>
 
@@ -65,7 +65,7 @@ it; that has not yet been checked against a stock bitchat phone (see
 
 | | State |
 |---|---|
-| Android app | **v0.7.4 preview.** 195 unit tests, 9.3 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
+| Android app | **v0.7.5 preview.** 199 unit tests, 9.4 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
 | Tried on devices | Previews up to v0.7.2 ran on an Android 15 emulator before publishing, and earlier previews ran on one real phone; see [CHANGELOG.md](CHANGELOG.md) per release. **The mesh itself has not been tried between real phones**: Bluetooth range, multi-hop relaying, connection limits and behaviour in the background are untested in the field. The emulator has no Bluetooth |
 | Interop with stock bitchat | **Not yet verified.** Implemented from the [spec](docs/protocol-spec.md), upstream test vectors and envelopes recorded from bitchat builds. Verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
@@ -155,8 +155,9 @@ is drawn on screen.
   long-term key instead, without that protection.
 - **History sync.** A late joiner receives the last 15 minutes of public
   messages, plus board posts and prekeys, from a neighbour.
-- **Photos and voice notes**, public or private. **Live voice**: hold the
-  mic and people hear you while you are still talking.
+- **Photos and voice notes**, public or private. **Live voice (push-to-talk)**:
+  hold the mic and people hear you while you are still talking, with a live
+  signal-band equalizer, active speaker label and one-tap mute.
 - **In-person verification** with a QR code and a Noise challenge, and
   **vouching**: people you verified tell your phone whom they verified, so
   their contacts get a grey tick on their card.
@@ -210,8 +211,12 @@ is drawn on screen.
 - Keeps relaying with the screen off. Scanning follows a duty cycle and
   rests two thirds of the time. Block people on the mesh and per
   location channel. @mentions. Screen-reader support.
-- **18 languages**, including right-to-left Arabic and Persian. Machine
-  drafted; native speakers welcome.
+- **Radiant Light and OLED Dark themes** (plus System default), floating
+  Liquid Glass capsule chrome (real-time AGSL Snell optical refraction on
+  Android 13+, graceful blur and Fresnel-rim fallbacks on Android 8–12), flat
+  matte encrypted bubbles, and crisp vector icons throughout.
+- **18 languages**, including right-to-left Arabic and Persian. English by
+  default; machine drafted, native speakers welcome.
 
 The full feature-to-file map and the test suites are in
 [android/README.md](android/README.md).
@@ -220,9 +225,9 @@ The full feature-to-file map and the test suites are in
 
 <table>
 <tr>
-<td align="center"><img src="docs/design/prototype-nearby.png" alt="Nearby channel: a signal band with direct and reachable counts, messages with hop counts and identity emblems" width="240"><br><sub><b>Nearby.</b> Direct 3, reach 11. Every sender has an emblem drawn from their key; every message says how far it travelled.</sub></td>
-<td align="center"><img src="docs/design/prototype-private.png" alt="Encrypted private chat with a four-dot delivery path: sent, on its way, delivered, read" width="240"><br><sub><b>Private.</b> Four dots per message: sent, on its way, delivered, read. A message that never arrives turns red with Retry.</sub></td>
-<td align="center"><img src="docs/design/prototype-empty.png" alt="Nobody nearby yet: a radar with 10, 30 and 50 metre rings and three concrete things to do" width="240"><br><sub><b>Nobody nearby.</b> The most common state during an outage, so it gets a real screen: a radar and three things that help.</sub></td>
+<td align="center"><img src="docs/design/prototype-nearby.png" alt="Nearby channel in Radiant Light: floating Liquid Glass chrome, signal band with direct and reachable counts, messages with hop counts and identity emblems" width="240"><br><sub><b>Nearby (Radiant Light).</b> Direct 3, reach 11, with floating Liquid Glass navigation and composer chrome. Every sender has an emblem drawn from their key; every message says how far it travelled.</sub></td>
+<td align="center"><img src="docs/design/prototype-private.png" alt="Encrypted private chat in OLED Dark with flat matte bubbles and a four-dot delivery path: sent, on its way, delivered, read" width="240"><br><sub><b>Private (OLED Dark).</b> Flat matte bubbles with four dots per message: sent, on its way, delivered, read. Clean circular action buttons and floating optical-glass chrome.</sub></td>
+<td align="center"><img src="docs/design/prototype-empty.png" alt="Nobody nearby yet: an azimuth radar with 10, 30 and 50 metre rings and three concrete things to do" width="240"><br><sub><b>Nobody nearby.</b> The most common state during an outage, so it gets a real screen: an azimuth radar with 10, 30 and 50 m rings and three things that help.</sub></td>
 </tr>
 </table>
 
@@ -301,7 +306,7 @@ There is no CLA.
 
 ## Roadmap in one line
 
-Android first, from scratch, against the spec: done through v0.7.4. Next
+Android first, from scratch, against the spec: done through v0.7.5. Next
 is interop verification against stock bitchat phones, then iOS, then one
 real pilot in a disaster-preparedness drill or a crowded venue. Each phase
 has an exit criterion and a kill condition in
@@ -327,5 +332,5 @@ affiliated with or endorsed by them. Coastlines, borders and city positions
 in the globe picker are from Natural Earth, also public domain.
 
 <div align="center">
-<sub>If a mesh messenger that ordinary people can use during an outage sounds worth having, a ⭐ helps others find it.</sub>
+<sub>If a mesh messenger that ordinary people can use during an outage sounds worth having, a star on GitHub helps others find it.</sub>
 </div>

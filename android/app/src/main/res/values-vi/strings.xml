@@ -310,4 +310,12 @@
     <string name="update_err_hash">Mã băm SHA-256 không khớp. Đã hủy tệp.</string>
     <string name="update_err_sig">Chứng chỉ chữ ký không khớp với ứng dụng này. Đã hủy tệp.</string>
     <string name="update_err_install">Không thể mở trình cài đặt hệ thống.</string>
+    <string name="theme_title">Giao diện</string>
+    <string name="theme_system">Hệ thống</string>
+    <string name="theme_light">Sáng</string>
+    <string name="theme_dark">OLED tối</string>
+    <string name="live_ptt_speaking">Bộ đàm trực tiếp · %1$s</string>
+    <string name="live_ptt_sending">Đang nói trực tiếp… nhấn gửi khi xong</string>
+    <string name="live_ptt_mute">Tắt tiếng trực tiếp</string>
+    <string name="live_ptt_unmute">Bật tiếng trực tiếp</string>
 </resources>

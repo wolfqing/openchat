@@ -322,4 +322,12 @@
     <string name="update_err_hash">La somme SHA-256 ne correspond pas. Le fichier a été supprimé.</string>
     <string name="update_err_sig">Le certificat de signature ne correspond pas à cette application. Le fichier a été supprimé.</string>
     <string name="update_err_install">Impossible de lancer l\'installateur système.</string>
+    <string name="theme_title">Apparence</string>
+    <string name="theme_system">Système</string>
+    <string name="theme_light">Clair</string>
+    <string name="theme_dark">OLED sombre</string>
+    <string name="live_ptt_speaking">Talkie en direct · %1$s</string>
+    <string name="live_ptt_sending">En direct… appuyez sur envoyer pour finir</string>
+    <string name="live_ptt_mute">Couper la voix en direct</string>
+    <string name="live_ptt_unmute">Activer la voix en direct</string>
 </resources>

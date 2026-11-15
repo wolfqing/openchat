@@ -12,6 +12,9 @@ import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.media.MediaRecorder
 import android.os.Handler
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.openchat.android.core.Adts
 import org.openchat.android.core.BurstAssembly
 import org.openchat.android.core.VoiceBurst
@@ -22,13 +25,41 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
+import kotlin.math.sqrt
 
 /** One switch for live voice in both directions, on by default as in bitchat (§29). */
 object LiveVoicePrefs {
+    private val _enabledFlow = MutableStateFlow(true)
+    val enabledFlow: StateFlow<Boolean> = _enabledFlow.asStateFlow()
+
     private fun prefs(c: Context) = c.getSharedPreferences("voice", Context.MODE_PRIVATE)
-    fun enabled(c: Context) = prefs(c).getBoolean("live", true)
-    fun setEnabled(c: Context, on: Boolean) = prefs(c).edit().putBoolean("live", on).apply()
-    fun wipe(c: Context) = prefs(c).edit().clear().apply()
+    fun enabled(c: Context): Boolean = prefs(c).getBoolean("live", true)
+    fun sync(c: Context): Boolean = enabled(c).also { _enabledFlow.value = it }
+    fun setEnabled(c: Context, on: Boolean) {
+        prefs(c).edit().putBoolean("live", on).apply()
+        _enabledFlow.value = on
+        ChatRepository.onLiveVoiceEnabledChanged?.invoke(on)
+    }
+    fun wipe(c: Context) {
+        prefs(c).edit().clear().apply()
+        _enabledFlow.value = true
+    }
+}
+
+/** Normalized 0..1 voice level from 16-bit little-endian mono PCM samples, driving PTT equalizer bars. */
+internal fun pcmLevel(pcm: ByteArray, bytesRead: Int): Float {
+    val samples = bytesRead / 2
+    if (samples <= 0) return 0f
+    var sumSq = 0.0
+    var i = 0
+    while (i + 1 < bytesRead) {
+        val sample = ((pcm[i + 1].toInt() shl 8) or (pcm[i].toInt() and 0xFF)).toShort()
+        val v = sample / 32768.0
+        sumSq += v * v
+        i += 2
+    }
+    val rms = sqrt(sumSq / samples).toFloat()
+    return (rms * 4.5f).coerceIn(0f, 1f)
 }
 
 private const val SAMPLE_RATE = 16_000
@@ -93,6 +124,7 @@ class LiveCapture(context: Context, private val live: Boolean, private val send:
                             eosQueued = true
                         } else {
                             val n = record.read(pcm, 0, pcm.size).coerceAtLeast(0)
+                            if (n > 0) ChatRepository.setLiveMicLevel(pcmLevel(pcm, n))
                             encoder.getInputBuffer(i)!!.apply { clear(); put(pcm, 0, n) }
                             encoder.queueInputBuffer(i, 0, n, samples * 1_000_000 / SAMPLE_RATE, 0)
                             samples += n / 2
@@ -120,6 +152,7 @@ class LiveCapture(context: Context, private val live: Boolean, private val send:
         } catch (e: Exception) {
             frames = 0
         } finally {
+            ChatRepository.setLiveMicLevel(0f)
             try { record.stop() } catch (e: Exception) { }
             record.release()
             try { encoder.stop() } catch (e: Exception) { }
@@ -234,6 +267,17 @@ class LiveVoice(private val context: Context, private val handler: Handler) {
     private val finished = LinkedHashMap<String, Burst>() // waiting for the finished note, 10 minutes
     private var ticking = false
 
+    init {
+        ChatRepository.onLiveVoiceEnabledChanged = { on ->
+            handler.post {
+                if (!on) {
+                    (bursts.values + finished.values).forEach { it.player?.stop(); it.player = null }
+                    ChatRepository.clearLiveSpeakers()
+                }
+            }
+        }
+    }
+
     private fun key(sender: String, isPrivate: Boolean, burstHex: String) = "$sender/${if (isPrivate) "dm" else "mesh"}/$burstHex"
 
     fun onFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean) {
@@ -259,6 +303,7 @@ class LiveVoice(private val context: Context, private val handler: Handler) {
         bursts[k] = b
         ChatRepository.rememberName(senderHex, nickname)
         ChatRepository.add(ChatMessage(b.messageId, conv, nickname, senderHex, "", now, mine = false, attachment = file.absolutePath, audio = true))
+        ChatRepository.setLiveSpeaker(k, LiveSpeaker(conv, senderHex, nickname, now))
         if (ChatRepository.foreground && ChatRepository.openConversation == conv) b.player = LivePlayer()
         return b
     }
@@ -273,6 +318,7 @@ class LiveVoice(private val context: Context, private val handler: Handler) {
     private fun settle(b: Burst) {
         if (b.assembly.state == BurstAssembly.State.OPEN) return
         bursts.remove(b.key)
+        ChatRepository.setLiveSpeaker(b.key, null)
         try { b.out?.close() } catch (e: Exception) { }
         b.out = null
         if (b.assembly.state == BurstAssembly.State.CANCELED || b.assembly.delivered == 0) {
@@ -316,6 +362,7 @@ class LiveVoice(private val context: Context, private val handler: Handler) {
     fun wipe() {
         (bursts.values + finished.values).forEach { it.player?.stop(); try { it.out?.close() } catch (e: Exception) { }; it.file.delete() }
         bursts.clear(); finished.clear()
+        ChatRepository.clearLiveSpeakers()
         LiveVoicePrefs.wipe(context)
     }
 

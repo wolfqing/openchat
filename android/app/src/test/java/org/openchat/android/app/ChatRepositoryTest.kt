@@ -24,6 +24,8 @@ class ChatRepositoryTest {
         ChatRepository.setBridge(BridgeStatus(enabled = true, cell = "wtw3sj", online = true, across = 4))
         ChatRepository.requestOpen(conv)
         ChatRepository.rememberName("0011223344556677", "alice")
+        ChatRepository.setLiveSpeaker(conv, LiveSpeaker(conv, "0011223344556677", "alice", 1_000L))
+        ChatRepository.setLiveMicLevel(0.8f)
 
         ChatRepository.wipe()
 
@@ -32,6 +34,23 @@ class ChatRepositoryTest {
         assertEquals(BridgeStatus(), ChatRepository.bridge.value)
         assertEquals(null, ChatRepository.openRequest.value)
         assertTrue(ChatRepository.names.value.isEmpty())
+        assertTrue(ChatRepository.liveSpeakers.value.isEmpty())
+        assertEquals(0f, ChatRepository.liveMicLevel.value, 0.0001f)
+    }
+
+    @Test
+    fun liveSpeakerAndMicLevelStateTrackWalkieTalkieBursts() {
+        val speaker = LiveSpeaker(conv, "0011223344556677", "alice", 2_000L)
+        ChatRepository.setLiveSpeaker(conv, speaker)
+        assertEquals(speaker, ChatRepository.liveSpeakers.value[conv])
+
+        ChatRepository.setLiveMicLevel(1.8f)
+        assertEquals(1f, ChatRepository.liveMicLevel.value, 0.0001f)
+        ChatRepository.setLiveMicLevel(-0.5f)
+        assertEquals(0f, ChatRepository.liveMicLevel.value, 0.0001f)
+
+        ChatRepository.setLiveSpeaker(conv, null)
+        assertFalse(ChatRepository.liveSpeakers.value.containsKey(conv))
     }
 
     @Test

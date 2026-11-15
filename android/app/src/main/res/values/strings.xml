@@ -329,4 +329,12 @@
     <string name="update_err_hash">SHA-256 checksum did not match. The file was discarded.</string>
     <string name="update_err_sig">Signing certificate did not match this app. The file was discarded.</string>
     <string name="update_err_install">Could not start the system installer.</string>
+    <string name="theme_title">Appearance</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">OLED dark</string>
+    <string name="live_ptt_speaking">Live PTT · %1$s</string>
+    <string name="live_ptt_sending">Live PTT… tap send when done</string>
+    <string name="live_ptt_mute">Mute live voice</string>
+    <string name="live_ptt_unmute">Unmute live voice</string>
 </resources>

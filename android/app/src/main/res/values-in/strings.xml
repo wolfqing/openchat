@@ -310,4 +310,12 @@
     <string name="update_err_hash">Checksum SHA-256 tidak cocok. Berkas dibuang.</string>
     <string name="update_err_sig">Sertifikat tanda tangan tidak cocok dengan aplikasi ini. Berkas dibuang.</string>
     <string name="update_err_install">Tidak dapat membuka pemasang sistem.</string>
+    <string name="theme_title">Tampilan</string>
+    <string name="theme_system">Sistem</string>
+    <string name="theme_light">Terang</string>
+    <string name="theme_dark">OLED gelap</string>
+    <string name="live_ptt_speaking">PTT langsung · %1$s</string>
+    <string name="live_ptt_sending">PTT langsung… ketuk kirim saat selesai</string>
+    <string name="live_ptt_mute">Bisukan suara langsung</string>
+    <string name="live_ptt_unmute">Aktifkan suara langsung</string>
 </resources>

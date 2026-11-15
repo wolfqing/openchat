@@ -7,6 +7,7 @@ import android.text.format.Formatter
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,7 +25,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BrightnessAuto
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.SystemUpdateAlt
@@ -52,15 +56,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.openchat.android.R
 import org.openchat.android.app.AppLanguage
+import org.openchat.android.app.AppTheme
 import org.openchat.android.app.AppUpdater
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.PeerLabel
@@ -72,14 +79,17 @@ internal fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> 
     var editingName by rememberSaveable { mutableStateOf(false) }
     var showQr by remember { mutableStateOf(false) }
     var showFingerprint by rememberSaveable { mutableStateOf(false) }
+    val bottomClearance = LocalBottomBarClearance.current
 
     if (showQr) MyQrDialog { showQr = false }
 
     Column(
         Modifier
             .fillMaxSize()
+            .background(OpenChatPalette.Screen)
+            .fluidGlassSource()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 18.dp + bottomClearance),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         // 1. Identity Card (Emblem, Nickname#xxxx, QR shortcut, Fingerprint & Verification)
@@ -143,7 +153,7 @@ internal fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> 
                         Text(
                             stringResource(R.string.me_carrying, mesh.carriedCount),
                             fontSize = 12.sp,
-                            fontFamily = FontFamily.Monospace,
+                            style = TabularMonoStyle,
                             color = OpenChatPalette.Signal,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
                         )
@@ -168,7 +178,7 @@ internal fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> 
                             )
                             Text(
                                 stringResource(R.string.me_device_id, mesh.myPeerHex),
-                                fontFamily = FontFamily.Monospace,
+                                style = TabularMonoStyle,
                                 fontSize = 11.5.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -209,8 +219,10 @@ internal fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> 
         // 2b. App Updates Card
         UpdateSection()
 
-        // 3. Language, Notifications & Voice Card
+        // 3. Appearance, Language, Notifications & Live Voice Card
         SettingsGroupCard {
+            ThemeSection()
+            Hairline()
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -247,12 +259,86 @@ internal fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> 
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(stringResource(R.string.me_about), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-            Text(appVersion(), fontSize = 11.5.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(appVersion(), fontSize = 11.5.sp, style = TabularMonoStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
-/** "openchat 0.7.3 (14)": the installed versionName and versionCode, so a report names its build. */
+@Composable
+private fun ThemeSection() {
+    val context = LocalContext.current
+    val current by AppTheme.choiceFlow.collectAsState()
+    val isLight = OpenChatPalette.isLight
+    Column(
+        Modifier.fillMaxWidth().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(stringResource(R.string.theme_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+        Surface(
+            shape = CircleShape,
+            color = OpenChatPalette.Screen,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                val options = listOf(
+                    Triple(AppTheme.Choice.SYSTEM, Icons.Outlined.BrightnessAuto, R.string.theme_system),
+                    Triple(AppTheme.Choice.LIGHT, Icons.Outlined.LightMode, R.string.theme_light),
+                    Triple(AppTheme.Choice.DARK, Icons.Outlined.DarkMode, R.string.theme_dark),
+                )
+                options.forEach { (choice, icon, labelRes) ->
+                    val selected = current == choice
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(CircleShape)
+                            .background(
+                                when {
+                                    !selected -> Color.Transparent
+                                    isLight -> Color.White
+                                    else -> OpenChatPalette.CardRaised
+                                },
+                            )
+                            .let {
+                                if (selected) {
+                                    it.border(
+                                        1.dp,
+                                        if (isLight) MaterialTheme.colorScheme.outline else Color.White.copy(alpha = 0.20f),
+                                        CircleShape,
+                                    )
+                                } else it
+                            }
+                            .clickable(role = Role.RadioButton) { AppTheme.set(context, choice) }
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            icon,
+                            contentDescription = null,
+                            tint = if (selected) OpenChatPalette.Ink else OpenChatPalette.Muted,
+                            modifier = Modifier.size(15.dp),
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            stringResource(labelRes),
+                            fontSize = 12.5.sp,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (selected) OpenChatPalette.Ink else OpenChatPalette.Muted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** "openchat 0.7.5 (16)": the installed versionName and versionCode, so a report names its build. */
 @Composable
 private fun appVersion(): String {
     val context = LocalContext.current
@@ -284,7 +370,7 @@ private fun UpdateSection() {
                 Text(
                     installedVer,
                     fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace,
+                    style = TabularMonoStyle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -369,7 +455,7 @@ private fun UpdateSection() {
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = OpenChatPalette.Signal,
-                                    contentColor = OpenChatPalette.Screen,
+                                    contentColor = OpenChatPalette.OnSignal,
                                 ),
                             ) {
                                 Icon(Icons.Outlined.SystemUpdateAlt, contentDescription = null, modifier = Modifier.size(17.dp))
@@ -380,7 +466,6 @@ private fun UpdateSection() {
                     }
                 }
                 is AppUpdater.UpdateState.Downloading -> {
-                    val rel = s.release
                     val total = s.totalBytes.coerceAtLeast(1L)
                     val fraction = (s.bytesRead.toFloat() / total.toFloat()).coerceIn(0f, 1f)
                     val pct = (fraction * 100f).toInt()
@@ -398,7 +483,7 @@ private fun UpdateSection() {
                                     pct,
                                 ),
                                 fontSize = 12.5.sp,
-                                fontFamily = FontFamily.Monospace,
+                                style = TabularMonoStyle,
                             )
                             LinearProgressIndicator(
                                 progress = { fraction },

@@ -1,6 +1,13 @@
 package org.openchat.android.ui
 
 import androidx.annotation.PluralsRes
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
@@ -13,9 +20,22 @@ import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.TextStyle
@@ -23,35 +43,100 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.openchat.android.app.AppTheme
+
+@Immutable
+data class OpenChatColors(
+    val isLight: Boolean,
+    val screen: Color,
+    val surface: Color,
+    val card: Color,
+    val cardRaised: Color,
+    val ink: Color,
+    val muted: Color,
+    val line: Color,
+    val outline: Color,
+    val signal: Color,
+    val signalSoft: Color,
+    val onSignal: Color,
+    val lock: Color,
+    val lockSoft: Color,
+    val online: Color,
+)
+
+internal val DarkOpenChatColors = OpenChatColors(
+    isLight = false,
+    screen = Color(0xFF000000),
+    surface = Color(0xFF101414),
+    card = Color(0xFF151B1B),
+    cardRaised = Color(0xFF1C2424),
+    ink = Color(0xFFEDF1EF),
+    muted = Color(0xFF9AA4A3),
+    line = Color(0xFF222929),
+    outline = Color(0xFF384343),
+    signal = Color(0xFFFF7840),
+    signalSoft = Color(0xFF2E150A),
+    onSignal = Color(0xFF1A0A03),
+    lock = Color(0xFF93BCE8),
+    lockSoft = Color(0xFF13263A),
+    online = Color(0xFF2EB872),
+)
+
+internal val LightOpenChatColors = OpenChatColors(
+    isLight = true,
+    screen = Color(0xFFF4F7FC),
+    surface = Color(0xFFFFFFFF),
+    card = Color(0xFFEEF2F7),
+    cardRaised = Color(0xFFE3EAF3),
+    ink = Color(0xFF0E1621),
+    muted = Color(0xFF5B6776),
+    line = Color(0xFFDCE3EC),
+    outline = Color(0xFFBCC7D6),
+    signal = Color(0xFFFF5A1F),
+    signalSoft = Color(0xFFFFEBE2),
+    onSignal = Color(0xFFFFFFFF),
+    lock = Color(0xFF1A6BFF),
+    lockSoft = Color(0xFFDCEBFF),
+    online = Color(0xFF129A5A),
+)
+
+internal val LocalOpenChatColors = staticCompositionLocalOf { DarkOpenChatColors }
 
 /**
- * Semantic tokens from docs/design/ui-direction.md and docs/design/ui-prototype.html.
+ * Semantic tokens from docs/design/ui-direction.md and docs/design/ui-prototype.html,
+ * supporting both Radiant Light (daylight legibility) and OLED Dark (blackout battery saving).
  *
  * Two strict layers:
- * - Content & chrome stay quiet: pure OLED black ground, dark slate chrome, crisp off-white ink.
+ * - Content & chrome stay quiet: clean alabaster or pure OLED black ground, crisp high-contrast ink.
  * - Signal orange ([Signal]) belongs strictly to the mesh/network layer (signal band, hops,
- *   delivery path, radar, globe crosshair, unread badges, @mentions).
+ *   delivery path, live PTT, radar, globe crosshair, unread badges, @mentions).
  * - Lock blue ([Lock] / [LockSoft]) marks end-to-end encrypted conversations.
  */
 object OpenChatPalette {
-    val Screen = Color(0xFF000000)
-    val Surface = Color(0xFF101414)
-    val Card = Color(0xFF151B1B)
-    val CardRaised = Color(0xFF1C2424)
-    val Ink = Color(0xFFEDF1EF)
-    val Muted = Color(0xFF9AA4A3)
-    val Line = Color(0xFF222929)
-    val Outline = Color(0xFF384343)
+    val isLight: Boolean @Composable get() = LocalOpenChatColors.current.isLight
+    val Screen: Color @Composable get() = LocalOpenChatColors.current.screen
+    val Surface: Color @Composable get() = LocalOpenChatColors.current.surface
+    val Card: Color @Composable get() = LocalOpenChatColors.current.card
+    val CardRaised: Color @Composable get() = LocalOpenChatColors.current.cardRaised
+    val Ink: Color @Composable get() = LocalOpenChatColors.current.ink
+    val Muted: Color @Composable get() = LocalOpenChatColors.current.muted
+    val Line: Color @Composable get() = LocalOpenChatColors.current.line
+    val Outline: Color @Composable get() = LocalOpenChatColors.current.outline
 
-    val Signal = Color(0xFFFF7840)
-    val SignalSoft = Color(0xFF2E150A)
-    val OnSignal = Color(0xFF1A0A03)
+    val Signal: Color @Composable get() = LocalOpenChatColors.current.signal
+    val SignalSoft: Color @Composable get() = LocalOpenChatColors.current.signalSoft
+    val OnSignal: Color @Composable get() = LocalOpenChatColors.current.onSignal
 
-    val Lock = Color(0xFF93BCE8)
-    val LockSoft = Color(0xFF13263A)
+    val Lock: Color @Composable get() = LocalOpenChatColors.current.lock
+    val LockSoft: Color @Composable get() = LocalOpenChatColors.current.lockSoft
 
-    val Online = Color(0xFF2EB872)
+    val Online: Color @Composable get() = LocalOpenChatColors.current.online
 }
+
+internal val TabularMonoStyle = TextStyle(
+    fontFamily = FontFamily.Monospace,
+    fontFeatureSettings = "tnum",
+)
 
 private val OpenChatTypography = Typography(
     titleLarge = TextStyle(fontSize = 19.sp, lineHeight = 25.sp, fontWeight = FontWeight.Bold),
@@ -61,44 +146,105 @@ private val OpenChatTypography = Typography(
     bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 17.sp),
     labelLarge = TextStyle(fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Medium),
     labelMedium = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium),
-    labelSmall = TextStyle(fontSize = 11.sp, lineHeight = 15.sp, fontFamily = FontFamily.Monospace),
+    labelSmall = TextStyle(fontSize = 11.sp, lineHeight = 15.sp, fontFamily = FontFamily.Monospace, fontFeatureSettings = "tnum"),
 )
 
-/** Dark by default, whatever the system setting: pure black saves OLED battery during blackouts. */
+private val OpenChatDarkScheme = darkColorScheme(
+    primary = DarkOpenChatColors.ink,
+    onPrimary = Color(0xFF0B0E0E),
+    primaryContainer = DarkOpenChatColors.lockSoft,
+    onPrimaryContainer = DarkOpenChatColors.ink,
+    secondary = DarkOpenChatColors.ink,
+    onSecondary = Color(0xFF0B0E0E),
+    secondaryContainer = DarkOpenChatColors.cardRaised,
+    onSecondaryContainer = DarkOpenChatColors.ink,
+    tertiary = DarkOpenChatColors.signal,
+    onTertiary = DarkOpenChatColors.onSignal,
+    tertiaryContainer = DarkOpenChatColors.signalSoft,
+    onTertiaryContainer = DarkOpenChatColors.ink,
+    background = DarkOpenChatColors.screen,
+    onBackground = DarkOpenChatColors.ink,
+    surface = DarkOpenChatColors.screen,
+    onSurface = DarkOpenChatColors.ink,
+    surfaceVariant = DarkOpenChatColors.card,
+    onSurfaceVariant = DarkOpenChatColors.muted,
+    surfaceContainerLowest = DarkOpenChatColors.screen,
+    surfaceContainerLow = DarkOpenChatColors.surface,
+    surfaceContainer = DarkOpenChatColors.surface,
+    surfaceContainerHigh = DarkOpenChatColors.card,
+    surfaceContainerHighest = DarkOpenChatColors.cardRaised,
+    outline = DarkOpenChatColors.outline,
+    outlineVariant = DarkOpenChatColors.line,
+    error = Color(0xFFFF8970),
+    onError = Color(0xFF2B0600),
+    errorContainer = Color(0xFF3B120B),
+    onErrorContainer = Color(0xFFFFDAD2),
+)
+
+private val OpenChatLightScheme = lightColorScheme(
+    primary = LightOpenChatColors.ink,
+    onPrimary = Color.White,
+    primaryContainer = LightOpenChatColors.lockSoft,
+    onPrimaryContainer = LightOpenChatColors.ink,
+    secondary = LightOpenChatColors.ink,
+    onSecondary = Color.White,
+    secondaryContainer = LightOpenChatColors.cardRaised,
+    onSecondaryContainer = LightOpenChatColors.ink,
+    tertiary = LightOpenChatColors.signal,
+    onTertiary = LightOpenChatColors.onSignal,
+    tertiaryContainer = LightOpenChatColors.signalSoft,
+    onTertiaryContainer = LightOpenChatColors.ink,
+    background = LightOpenChatColors.screen,
+    onBackground = LightOpenChatColors.ink,
+    surface = LightOpenChatColors.surface,
+    onSurface = LightOpenChatColors.ink,
+    surfaceVariant = LightOpenChatColors.card,
+    onSurfaceVariant = LightOpenChatColors.muted,
+    surfaceContainerLowest = LightOpenChatColors.surface,
+    surfaceContainerLow = LightOpenChatColors.screen,
+    surfaceContainer = LightOpenChatColors.card,
+    surfaceContainerHigh = LightOpenChatColors.card,
+    surfaceContainerHighest = LightOpenChatColors.cardRaised,
+    outline = LightOpenChatColors.outline,
+    outlineVariant = LightOpenChatColors.line,
+    error = Color(0xFFD92D20),
+    onError = Color.White,
+    errorContainer = Color(0xFFFEE4E2),
+    onErrorContainer = Color(0xFF7A271A),
+)
+
 @Composable
 fun OpenChatTheme(content: @Composable () -> Unit) {
-    val scheme = darkColorScheme(
-        primary = OpenChatPalette.Ink,
-        onPrimary = Color(0xFF0B0E0E),
-        primaryContainer = OpenChatPalette.LockSoft,
-        onPrimaryContainer = OpenChatPalette.Ink,
-        secondary = OpenChatPalette.Ink,
-        onSecondary = Color(0xFF0B0E0E),
-        secondaryContainer = OpenChatPalette.CardRaised,
-        onSecondaryContainer = OpenChatPalette.Ink,
-        tertiary = OpenChatPalette.Signal,
-        onTertiary = OpenChatPalette.OnSignal,
-        tertiaryContainer = OpenChatPalette.SignalSoft,
-        onTertiaryContainer = OpenChatPalette.Ink,
-        background = OpenChatPalette.Screen,
-        onBackground = OpenChatPalette.Ink,
-        surface = OpenChatPalette.Screen,
-        onSurface = OpenChatPalette.Ink,
-        surfaceVariant = OpenChatPalette.Card,
-        onSurfaceVariant = OpenChatPalette.Muted,
-        surfaceContainerLowest = OpenChatPalette.Screen,
-        surfaceContainerLow = OpenChatPalette.Surface,
-        surfaceContainer = OpenChatPalette.Surface,
-        surfaceContainerHigh = OpenChatPalette.Card,
-        surfaceContainerHighest = OpenChatPalette.CardRaised,
-        outline = OpenChatPalette.Outline,
-        outlineVariant = OpenChatPalette.Line,
-        error = Color(0xFFFF8970),
-        onError = Color(0xFF2B0600),
-        errorContainer = Color(0xFF3B120B),
-        onErrorContainer = Color(0xFFFFDAD2),
+    val choice by AppTheme.choiceFlow.collectAsState()
+    val dark = AppTheme.resolveIsDark(choice, isSystemInDarkTheme())
+    val palette = if (dark) DarkOpenChatColors else LightOpenChatColors
+    val scheme = if (dark) OpenChatDarkScheme else OpenChatLightScheme
+    CompositionLocalProvider(LocalOpenChatColors provides palette) {
+        MaterialTheme(colorScheme = scheme, typography = OpenChatTypography, content = content)
+    }
+}
+
+/** Subtle spring press-scale feedback for interactive Liquid Glass pills and buttons. */
+internal fun Modifier.pressScale(pressedScale: Float = 0.94f): Modifier = composed {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) pressedScale else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+        label = "press-scale",
     )
-    MaterialTheme(colorScheme = scheme, typography = OpenChatTypography, content = content)
+    this
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
+        .pointerInput(Unit) {
+            awaitEachGesture {
+                awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                pressed = true
+                waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                pressed = false
+            }
+        }
 }
 
 /** 1dp low-contrast separator matching `--line` in the UI prototype. */
@@ -118,7 +264,7 @@ internal fun UnreadBadge(count: Int, modifier: Modifier = Modifier) {
     ) {
         Text(
             if (count > 99) "99+" else "$count",
-            fontFamily = FontFamily.Monospace,
+            style = TabularMonoStyle,
             fontWeight = FontWeight.Bold,
             fontSize = 10.sp,
             modifier = Modifier.padding(horizontal = 2.dp),
@@ -129,14 +275,14 @@ internal fun UnreadBadge(count: Int, modifier: Modifier = Modifier) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun chromeTopBarColors(): TopAppBarColors = TopAppBarDefaults.topAppBarColors(
-    containerColor = OpenChatPalette.Surface,
+    containerColor = OpenChatPalette.Surface.copy(alpha = if (OpenChatPalette.isLight) 0.90f else 0.92f),
     scrolledContainerColor = OpenChatPalette.Surface,
     navigationIconContentColor = OpenChatPalette.Ink,
     titleContentColor = OpenChatPalette.Ink,
     actionIconContentColor = OpenChatPalette.Ink,
 )
 
-internal val NavContainerColor = OpenChatPalette.Surface
+internal val NavContainerColor: Color @Composable get() = OpenChatPalette.Surface
 internal val NavTonalElevation get() = NavigationBarDefaults.Elevation * 0
 
 @Composable

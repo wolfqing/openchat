@@ -1,5 +1,71 @@
 # Changelog
 
+## Android v0.7.5 (preview) — 2026-11-15
+
+In-tree AGSL Liquid Glass floating chrome, Radiant Light + OLED Dark dual
+appearance, Live PTT walkie-talkie header feedback, flat matte chat bubbles,
+and pure vector icons across the app and prototype
+([ui-direction.md](docs/design/ui-direction.md),
+[ui-prototype.html](docs/design/ui-prototype.html)). No wire-format change.
+199 unit tests. 9.4 MB (`9,372,068` bytes).
+
+### Added
+
+- **Radiant Light and OLED Dark themes (`AppTheme`).** System-following default
+  (`SYSTEM`) plus manual `Radiant Light` (`#F4F7FC` daylight canvas, `#FFFFFF`
+  cards) and `OLED Dark` (`#000000` canvas) selector on the Me tab and quick
+  switcher on Onboarding, backed by `values-night` window themes and dynamic
+  status/navigation bar icon contrast. English (`en`) remains the default UI
+  language when unset.
+- **In-tree AGSL Liquid Glass chrome (`FluidGlass`).** Floating top status
+  capsule, floating bottom `CapsuleNavigationBar` (preserving the v0.7.4
+  semantic tab icons and labels), and floating three-piece `Composer`
+  (`[ + ] [ Capsule Input ] [ Mic/Send ]`) capture the live scrolling canvas
+  via Compose `GraphicsLayer`. On Android 13+ (`API 33+`), an in-tree AGSL
+  rounded-capsule SDF shader renders Snell edge refraction (`15 dp`), RGB
+  chromatic dispersion (`6 dp`) and clarity micro-blur (`2 dp`) with zero
+  interior surface fog and crisp directional Fresnel rims (without decorative
+  crescent arcs on `+` or `Mic`); Android 12 (`API 31–32`) uses hardware
+  RenderEffect blur and Android 8–11 (`API 26–30`) falls back to translucent
+  Fresnel-rimmed glass.
+- **Live PTT walkie-talkie feedback (`LiveVoice`, `ChatRepository`, `MeshVisuals`).**
+  Incoming live voice bursts morph the header signal/route capsule into an
+  animated four-bar equalizer (`Live PTT · Name#xxxx`) paired with a one-tap
+  Live Voice mute/unmute toggle; holding the mic button renders real-time PCM
+  microphone amplitude bars (`pcmLevel()`).
+- **18 languages.** Theme and Live PTT UI strings localised across all 18
+  resource locales (281 translatable keys per locale).
+
+### Changed
+
+- **Flat matte encrypted bubbles and pure vector icons.** Private DM and group
+  message bubbles render flat (`0 dp` tonal and shadow elevation, solid `Card`
+  / `LockSoft` fills, `1 dp` hairline borders) so the four-dot delivery path
+  stays primary. Remaining inline Unicode badge glyphs (star, check, zap) and
+  prototype emojis are replaced with Compose `ImageVector` / `InlineTextContent`
+  badges and inline SVG paths.
+- **Updated design prototype and screenshots.** Refreshed
+  [ui-prototype.html](docs/design/ui-prototype.html) and rendered screenshots
+  (`prototype-three-screens.png`, `prototype-nearby.png`,
+  `prototype-private.png`, `prototype-empty.png`) with Radiant Light + OLED
+  Dark themes, SVG `<feDisplacementMap>` optical refraction (`15 / 6 / 2.0`),
+  flat matte bubbles, and Live PTT preview.
+
+### Checked, and not
+
+- Checked on GitHub Actions CI (`ubuntu-latest`, Temurin JDK 17): 199 unit
+  tests pass (including `AppThemeTest` and live-PTT `ChatRepositoryTest`
+  cases), `lintDebug` and `lintVitalRelease` 0 errors, debug and R8 release
+  APKs build cleanly with 0 R8 Kotlin-metadata complaints (`app-release.apk`,
+  9.4 MB). Because `android/keystore.properties` stays offline
+  ([SECURITY.md](SECURITY.md)), the CI-built APK attached to the GitHub
+  pre-release (`openchat-0.7.5-ci-debug-signed.apk`, SHA-256 in the release
+  notes) uses the CI debug key; installing over a release-signed v0.6.0–v0.7.4
+  build requires re-signing from tag `v0.7.5` with the dedicated release key
+  (or uninstalling first on a test device).
+- Not checked on this build: Android emulator UI run and real-device BLE mesh
+  radio / stock bitchat interop.
+
 ## Android v0.7.4 (preview) — 2026-11-13
 
 In-app update discovery, Tor-routed download and dual SHA-256 + signing-certificate

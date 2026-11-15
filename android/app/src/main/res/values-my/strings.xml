@@ -310,4 +310,12 @@
     <string name="update_err_hash">SHA-256 တန်ဖိုး မကိုက်ညီပါ။ ဖိုင်ကို ပယ်ဖျက်လိုက်ပြီ။</string>
     <string name="update_err_sig">လက်မှတ်သက်သေခံလက်မှတ်သည် ဤအက်ပ်နှင့် မကိုက်ညီပါ။ ဖိုင်ကို ပယ်ဖျက်လိုက်ပြီ။</string>
     <string name="update_err_install">စနစ် အင်စတောလာကို မဖွင့်နိုင်ပါ။</string>
+    <string name="theme_title">အသွင်အပြင်</string>
+    <string name="theme_system">စနစ်အတိုင်း</string>
+    <string name="theme_light">အလင်း</string>
+    <string name="theme_dark">OLED အမှောင်</string>
+    <string name="live_ptt_speaking">တိုက်ရိုက်စကားပြော · %1$s</string>
+    <string name="live_ptt_sending">တိုက်ရိုက်ပြောနေသည်… ပြီးလျှင် ပို့မည်ကိုနှိပ်ပါ</string>
+    <string name="live_ptt_mute">တိုက်ရိုက်အသံပိတ်ရန်</string>
+    <string name="live_ptt_unmute">တိုက်ရိုက်အသံဖွင့်ရန်</string>
 </resources>

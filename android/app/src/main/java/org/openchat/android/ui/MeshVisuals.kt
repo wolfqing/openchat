@@ -4,6 +4,11 @@ import android.icu.text.DisplayContext
 import android.icu.text.RelativeDateTimeFormatter
 import android.icu.util.ULocale
 import android.provider.Settings
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -18,6 +23,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -33,13 +39,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.VolumeOff
+import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Sensors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,6 +58,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -80,7 +88,10 @@ import org.openchat.android.app.DeliveryState
 import org.openchat.android.core.sha256
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
 // The mesh made visible (docs/design/ui-direction.md, spec §30): who is in range, how far a
 // message came, how far one of yours got, and a real screen for the common case of nobody.
@@ -93,6 +104,11 @@ object Emblem {
     val PALETTE = listOf(
         Color(0xFFE4846B), Color(0xFF6FD6B5), Color(0xFF8B7CF0), Color(0xFFF2C14E),
         Color(0xFF5CB8F0), Color(0xFFE07AB8), Color(0xFF9BCB5A), Color(0xFFD9A47A),
+    )
+
+    private val LIGHT_PALETTE = listOf(
+        Color(0xFFC85032), Color(0xFF148562), Color(0xFF5B47D6), Color(0xFFA87608),
+        Color(0xFF166EB8), Color(0xFFB33882), Color(0xFF4D8214), Color(0xFF9E5D2B),
     )
 
     /** 25 cells, row by row; column 4 mirrors 0 and column 3 mirrors 1. Never empty. */
@@ -112,23 +128,52 @@ object Emblem {
     fun colorIndex(key: String): Int = (sha256(key.lowercase().toByteArray(Charsets.UTF_8))[0].toInt() and 0xFF) % PALETTE.size
 
     fun color(key: String) = PALETTE[colorIndex(key)]
+
+    @Composable
+    fun uiColor(key: String): Color {
+        val idx = remember(key) { colorIndex(key) }
+        return if (OpenChatPalette.isLight) LIGHT_PALETTE[idx] else PALETTE[idx]
+    }
 }
 
 @Composable
 fun EmblemView(key: String, size: Dp = 36.dp) {
     val cells = remember(key) { Emblem.cells(key) }
-    val color = remember(key) { Emblem.color(key) }
-    val corner = (size.value * 0.22f).coerceIn(6f, 16f).dp
+    val color = Emblem.uiColor(key)
+    val isLight = OpenChatPalette.isLight
+    val baseBg = OpenChatPalette.Surface
+    val corner = (size.value * 0.24f).coerceIn(7f, 18f).dp
     Box(
-        Modifier.size(size).clip(RoundedCornerShape(corner))
-            .background(OpenChatPalette.Surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(corner))
-            .padding(size / 5.5f),
+        Modifier
+            .size(size)
+            .clip(RoundedCornerShape(corner))
+            .background(baseBg)
+            .border(
+                1.dp,
+                color.copy(alpha = if (isLight) 0.24f else 0.28f),
+                RoundedCornerShape(corner),
+            )
+            .padding(size / 5.4f),
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            val cell = this.size.width / 5f
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(color.copy(alpha = if (isLight) 0.14f else 0.18f), Color.Transparent),
+                    center = center,
+                    radius = this.size.minDimension * 0.72f,
+                ),
+            )
+            val step = this.size.width / 5f
+            val gap = step * 0.12f
+            val dotSize = (step - gap).coerceAtLeast(1.5f)
+            val dotRadius = CornerRadius(dotSize * 0.28f, dotSize * 0.28f)
             for (i in 0 until 25) if (cells[i]) {
-                drawRect(color, Offset((i % 5) * cell, (i / 5) * cell), Size(cell + 0.5f, cell + 0.5f))
+                drawRoundRect(
+                    color = color,
+                    topLeft = Offset((i % 5) * step + gap * 0.5f, (i / 5) * step + gap * 0.5f),
+                    size = Size(dotSize, dotSize),
+                    cornerRadius = dotRadius,
+                )
             }
         }
     }
@@ -276,7 +321,163 @@ internal fun SignalPulseDot(live: Boolean) {
     }
 }
 
-private val TabularMonoStyle = TextStyle(fontFamily = FontFamily.Monospace, fontFeatureSettings = "tnum")
+/** Vector equalizer bars for Live PTT walkie-talkie playback and recording capsules. */
+@Composable
+internal fun LiveEqualizerBars(
+    active: Boolean = true,
+    level: Float? = null,
+    barCount: Int = 4,
+    color: Color = OpenChatPalette.Signal,
+    modifier: Modifier = Modifier.size(width = 16.dp, height = 14.dp),
+) {
+    val still = rememberReducedMotion()
+    val phase = if (!active || still) {
+        0f
+    } else {
+        val transition = rememberInfiniteTransition(label = "ptt-eq")
+        val p by transition.animateFloat(
+            initialValue = 0f,
+            targetValue = (2f * PI).toFloat(),
+            animationSpec = infiniteRepeatable(tween(760, easing = LinearEasing), RepeatMode.Restart),
+            label = "phase",
+        )
+        p
+    }
+    Canvas(modifier.clearAndSetSemantics { }) {
+        val step = size.width / barCount
+        val barW = (step * 0.58f).coerceAtLeast(2.dp.toPx())
+        for (i in 0 until barCount) {
+            val wave = if (!active || still) {
+                0.45f + (i % 2) * 0.25f
+            } else {
+                0.35f + 0.65f * abs(sin(phase + i * 0.92f))
+            }
+            val amp = if (level != null) {
+                (0.22f + level.coerceIn(0.06f, 1f) * 0.78f * wave).coerceIn(0.20f, 1f)
+            } else {
+                wave
+            }
+            val h = (size.height * amp).coerceAtLeast(3.dp.toPx())
+            drawRoundRect(
+                color = color,
+                topLeft = Offset(i * step + (step - barW) * 0.5f, (size.height - h) * 0.5f),
+                size = Size(barW, h),
+                cornerRadius = CornerRadius(barW * 0.5f, barW * 0.5f),
+            )
+        }
+    }
+}
+
+/**
+ * Floating refractive signal & Live PTT capsule row on the Nearby tab:
+ * shows Direct / Reach / Last-heard in a compact Liquid Glass capsule, morphs into an animated
+ * walkie-talkie speaker banner when a peer streams live PTT, and pairs with a one-tap Live PTT
+ * speaker mute/unmute circular glass button.
+ */
+@Composable
+internal fun NearbyStatusCapsuleRow(
+    direct: Int,
+    reach: Int,
+    lastHeard: Long?,
+    scanningSince: Long?,
+    liveSpeakerLabel: String?,
+    liveVoiceEnabled: Boolean,
+    onToggleLiveVoice: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val now = rememberNow()
+    val locale = appLocale()
+    val signal = OpenChatPalette.Signal
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        FluidGlassCapsule(
+            modifier = Modifier.weight(1f),
+            tintColor = if (liveSpeakerLabel != null) signal.copy(alpha = if (OpenChatPalette.isLight) 0.14f else 0.20f) else null,
+            borderAccent = if (liveSpeakerLabel != null) signal else null,
+            shadowElevation = 6.dp,
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            AnimatedContent(
+                targetState = liveSpeakerLabel,
+                transitionSpec = { fadeIn(tween(150)) togetherWith fadeOut(tween(120)) },
+                label = "nearby-signal-or-ptt",
+            ) { speaker ->
+                if (speaker != null) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        LiveEqualizerBars(active = true, color = signal)
+                        Text(
+                            stringResource(R.string.live_ptt_speaking, speaker),
+                            style = TabularMonoStyle,
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = signal,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                } else if (scanningSince != null) {
+                    val secs = ((now - scanningSince) / 1000).coerceAtLeast(0)
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        SignalPulseDot(live = false)
+                        Text(
+                            stringResource(R.string.band_scanning),
+                            style = TabularMonoStyle,
+                            fontSize = 12.5.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            stringResource(R.string.band_for, String.format(locale, "%d:%02d", secs / 60, secs % 60)),
+                            style = TabularMonoStyle,
+                            fontSize = 11.5.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        SignalPulseDot(live = true)
+                        BandNumber(stringResource(R.string.band_direct), direct)
+                        Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 12.5.sp)
+                        BandNumber(stringResource(R.string.band_reach), reach)
+                        Spacer(Modifier.weight(1f))
+                        lastHeard?.let {
+                            Text(agoText(it, now, locale), color = MaterialTheme.colorScheme.onSurfaceVariant, style = TabularMonoStyle, fontSize = 11.5.sp, maxLines = 1)
+                        }
+                    }
+                }
+            }
+        }
+        FluidGlassCircleButton(
+            icon = if (liveVoiceEnabled) Icons.AutoMirrored.Outlined.VolumeUp else Icons.AutoMirrored.Outlined.VolumeOff,
+            contentDescription = stringResource(if (liveVoiceEnabled) R.string.live_ptt_mute else R.string.live_ptt_unmute),
+            onClick = onToggleLiveVoice,
+            size = 36.dp,
+            iconSize = 18.dp,
+            iconTint = if (liveVoiceEnabled) OpenChatPalette.Ink else MaterialTheme.colorScheme.onSurfaceVariant,
+            shadowElevation = 6.dp,
+        )
+    }
+}
 
 /** The signal band under the top bar: neighbours, everyone reachable, and when we last heard anyone. */
 @Composable
@@ -303,8 +504,8 @@ fun SignalBand(direct: Int, reach: Int, lastHeard: Long?) {
 @Composable
 private fun BandNumber(label: String, n: Int) {
     Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = TabularMonoStyle, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
-        Text("$n", style = TabularMonoStyle, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = OpenChatPalette.Signal)
+        Text(label, style = TabularMonoStyle, fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text("$n", style = TabularMonoStyle, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = OpenChatPalette.Signal)
     }
 }
 
@@ -339,44 +540,74 @@ fun ScanningBand(since: Long) {
 
 /** Under a private chat's title: how many links away the peer is, our neighbours, and when we last heard them. */
 @Composable
-fun RouteBand(name: String, hops: Int?, direct: Int, lastHeard: Long) {
+fun RouteBand(name: String, hops: Int?, direct: Int, lastHeard: Long, liveSpeakerLabel: String? = null) {
     val now = rememberNow()
     val locale = appLocale()
     val resources = LocalResources.current
-    Row(
-        Modifier.fillMaxWidth().background(OpenChatPalette.Surface).padding(horizontal = 16.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(9.dp),
-    ) {
-        SignalPulseDot(live = true)
-        Text(
-            if (hops == null) stringResource(R.string.dm_relayed) else resources.getQuantityString(R.plurals.route_hops, hops, hops, name),
-            style = TabularMonoStyle,
-            fontSize = 12.5.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 13.sp)
-        BandNumber(stringResource(R.string.band_direct), direct)
-        Text(agoText(lastHeard, now, locale), color = MaterialTheme.colorScheme.onSurfaceVariant, style = TabularMonoStyle, fontSize = 12.sp, maxLines = 1)
+    val signal = OpenChatPalette.Signal
+    Box(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp)) {
+        FluidGlassCapsule(
+            modifier = Modifier.fillMaxWidth(),
+            tintColor = if (liveSpeakerLabel != null) signal.copy(alpha = if (OpenChatPalette.isLight) 0.14f else 0.20f) else null,
+            borderAccent = if (liveSpeakerLabel != null) signal else null,
+            shadowElevation = 4.dp,
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            if (liveSpeakerLabel != null) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    LiveEqualizerBars(active = true, color = signal)
+                    Text(
+                        stringResource(R.string.live_ptt_speaking, liveSpeakerLabel),
+                        style = TabularMonoStyle,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = signal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            } else {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    SignalPulseDot(live = true)
+                    Text(
+                        if (hops == null) stringResource(R.string.dm_relayed) else resources.getQuantityString(R.plurals.route_hops, hops, hops, name),
+                        style = TabularMonoStyle,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 12.5.sp)
+                    BandNumber(stringResource(R.string.band_direct), direct)
+                    Text(agoText(lastHeard, now, locale), color = MaterialTheme.colorScheme.onSurfaceVariant, style = TabularMonoStyle, fontSize = 11.5.sp, maxLines = 1)
+                }
+            }
+        }
     }
 }
 
-/** An outlined pill naming who can read a conversation. */
+/** Liquid Glass pill naming who can read a conversation (Public vs End-to-End Encrypted). */
 @Composable
 fun AudiencePill(encrypted: Boolean, modifier: Modifier = Modifier) {
     val fg = if (encrypted) OpenChatPalette.Lock else MaterialTheme.colorScheme.onSurfaceVariant
-    val border = if (encrypted) OpenChatPalette.Lock.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline
-    val bg = if (encrypted) OpenChatPalette.LockSoft.copy(alpha = 0.5f) else Color.Transparent
-    Surface(
-        shape = CircleShape,
-        color = bg,
-        border = BorderStroke(1.dp, border),
+    FluidGlassSurface(
         modifier = modifier,
+        shape = CircleShape,
+        isCapsule = true,
+        tintColor = if (encrypted) OpenChatPalette.LockSoft.copy(alpha = if (OpenChatPalette.isLight) 0.72f else 0.55f) else null,
+        borderAccent = if (encrypted) OpenChatPalette.Lock else null,
+        shadowElevation = 2.dp,
     ) {
         Row(
-            Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
+            Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -424,7 +655,7 @@ fun DayHeader(timestamp: Long, note: String?) {
                 .padding(horizontal = 12.dp, vertical = 4.dp)
                 .semantics { heading() },
             textAlign = TextAlign.Center,
-            fontFamily = FontFamily.Monospace,
+            style = TabularMonoStyle,
             fontSize = 11.5.sp,
             lineHeight = 16.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -433,17 +664,24 @@ fun DayHeader(timestamp: Long, note: String?) {
 }
 
 /**
- * Nobody in range: the most common state, so it gets a real screen. A slow radar sweep
+ * Nobody in range: the most common state, so it gets a real screen. A smooth VSync radar sweep
  * says the phone is looking; three cards say what actually helps.
  */
 @Composable
-fun NobodyNearby(onShareApp: (() -> Unit)?, onShowHistory: (() -> Unit)? = null) {
+fun NobodyNearby(
+    onShareApp: (() -> Unit)?,
+    onShowHistory: (() -> Unit)? = null,
+    bottomClearance: Dp = 0.dp,
+) {
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 14.dp),
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 16.dp + bottomClearance),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Radar(Modifier.widthIn(max = 236.dp).fillMaxWidth().aspectRatio(1f))
+        Radar(Modifier.widthIn(max = 232.dp).fillMaxWidth().aspectRatio(1f))
         Text(
             stringResource(R.string.radar_title),
             fontSize = 20.sp,
@@ -460,18 +698,15 @@ fun NobodyNearby(onShareApp: (() -> Unit)?, onShowHistory: (() -> Unit)? = null)
             modifier = Modifier.padding(horizontal = 8.dp),
         )
         onShowHistory?.let {
-            Surface(
-                shape = CircleShape,
-                color = OpenChatPalette.Surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                modifier = Modifier.clickable(onClick = it),
+            FluidGlassPillButton(
+                onClick = it,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             ) {
                 Text(
                     stringResource(R.string.radar_history),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
         }
@@ -488,7 +723,7 @@ private fun TipCard(n: Int, title: String, body: String, onClick: (() -> Unit)?)
         shape = RoundedCornerShape(14.dp),
         color = OpenChatPalette.Surface,
         border = BorderStroke(1.dp, if (onClick != null) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth().let { if (onClick != null) it.clickable(onClick = onClick) else it },
+        modifier = Modifier.fillMaxWidth().let { if (onClick != null) it.pressScale(0.98f).clickable(onClick = onClick) else it },
     ) {
         Row(
             Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -499,7 +734,7 @@ private fun TipCard(n: Int, title: String, body: String, onClick: (() -> Unit)?)
                 Modifier.padding(top = 1.dp).size(24.dp).border(1.5.dp, OpenChatPalette.Signal, CircleShape).clearAndSetSemantics { },
                 contentAlignment = Alignment.Center,
             ) {
-                Text("$n", color = OpenChatPalette.Signal, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                Text("$n", color = OpenChatPalette.Signal, style = TabularMonoStyle, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
@@ -518,7 +753,8 @@ private fun TipCard(n: Int, title: String, body: String, onClick: (() -> Unit)?)
 }
 
 /**
- * Rings at about 10, 30 and 50+ metres, typical Bluetooth range indoors and out, with a sweep.
+ * Rings at about 10, 30 and 50+ metres, typical Bluetooth range indoors and out, with a smooth
+ * VSync sweep and 360-degree azimuth dial ticks.
  */
 @Composable
 private fun Radar(modifier: Modifier) {
@@ -526,43 +762,63 @@ private fun Radar(modifier: Modifier) {
     var sweep by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(still) {
         if (still) return@LaunchedEffect
-        var last = 0L
         while (true) withFrameNanos { now ->
-            if (now - last >= 1_000_000_000L / SWEEP_FPS) { last = now; sweep = sweepAngle(now / 1_000_000) }
+            sweep = sweepAngle(now / 1_000_000)
         }
     }
     val ring = MaterialTheme.colorScheme.outlineVariant
+    val tickColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)
     val accent = OpenChatPalette.Signal
+    val screenBg = OpenChatPalette.Screen
     val dot = MaterialTheme.colorScheme.onSurface
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     val measurer = rememberTextMeasurer()
-    val labelStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 10.5.sp, color = labelColor)
+    val labelStyle = TextStyle(fontFamily = FontFamily.Monospace, fontFeatureSettings = "tnum", fontSize = 10.5.sp, color = labelColor)
     Box(modifier.clearAndSetSemantics { }) {
         Canvas(Modifier.fillMaxSize()) {
             val c = center
-            val maxR = size.minDimension / 2 - 2
+            val maxR = size.minDimension / 2 - 4.dp.toPx()
             val radii = listOf(maxR * 0.36f, maxR * 0.68f, maxR)
             radii.forEach { drawCircle(ring, it, c, style = Stroke(1.dp.toPx())) }
+            for (deg in 0 until 360 step 15) {
+                val rad = deg * (PI / 180.0)
+                val major = deg % 45 == 0
+                val inner = maxR - (if (major) 5.dp.toPx() else 2.5.dp.toPx())
+                drawLine(
+                    color = if (major) tickColor else ring,
+                    start = Offset(c.x + inner * cos(rad).toFloat(), c.y + inner * sin(rad).toFloat()),
+                    end = Offset(c.x + maxR * cos(rad).toFloat(), c.y + maxR * sin(rad).toFloat()),
+                    strokeWidth = if (major) 1.2.dp.toPx() else 0.8.dp.toPx(),
+                )
+            }
             listOf("10 m", "30 m", "50 m+").forEachIndexed { i, label ->
                 val t = measurer.measure(label, labelStyle)
-                drawText(t, topLeft = Offset(c.x - t.size.width / 2f, c.y - radii[i] + 3.dp.toPx()))
+                drawText(t, topLeft = Offset(c.x - t.size.width / 2f, c.y - radii[i] + 4.dp.toPx()))
             }
         }
         Canvas(Modifier.fillMaxSize().graphicsLayer { rotationZ = sweep }) {
             val c = center
-            val maxR = size.minDimension / 2 - 2
-            if (!still) drawArc(
-                Brush.sweepGradient(listOf(Color.Transparent, accent.copy(alpha = 0.04f), accent.copy(alpha = 0.42f)), c),
-                startAngle = -42f, sweepAngle = 42f, useCenter = true,
-                topLeft = Offset(c.x - maxR, c.y - maxR), size = Size(maxR * 2, maxR * 2),
-            )
-            drawCircle(OpenChatPalette.Screen, 7.dp.toPx(), c)
-            drawCircle(dot, 4.5.dp.toPx(), c)
+            val maxR = size.minDimension / 2 - 4.dp.toPx()
+            if (!still) {
+                drawArc(
+                    Brush.sweepGradient(listOf(Color.Transparent, accent.copy(alpha = 0.04f), accent.copy(alpha = 0.38f)), c),
+                    startAngle = -48f, sweepAngle = 48f, useCenter = true,
+                    topLeft = Offset(c.x - maxR, c.y - maxR), size = Size(maxR * 2, maxR * 2),
+                )
+                drawLine(
+                    color = accent.copy(alpha = 0.72f),
+                    start = c,
+                    end = Offset(c.x + maxR, c.y),
+                    strokeWidth = 1.4.dp.toPx(),
+                )
+            }
+            drawCircle(screenBg, 7.dp.toPx(), c)
+            drawCircle(accent, 4.8.dp.toPx(), c)
+            drawCircle(dot, 2.2.dp.toPx(), c)
         }
     }
 }
 
-private const val SWEEP_FPS = 15
 private const val SWEEP_MS = 4_000L
 
 /** Where the sweep points at [timeMs]: one turn every four seconds. */

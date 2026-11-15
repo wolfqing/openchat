@@ -316,4 +316,12 @@
     <string name="update_err_hash">SHA-256-Prüfsumme stimmt nicht überein. Die Datei wurde verworfen.</string>
     <string name="update_err_sig">Signaturzertifikat stimmt nicht mit dieser App überein. Die Datei wurde verworfen.</string>
     <string name="update_err_install">System-Installer konnte nicht gestartet werden.</string>
+    <string name="theme_title">Darstellung</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Hell</string>
+    <string name="theme_dark">OLED Dunkel</string>
+    <string name="live_ptt_speaking">Live-Funk · %1$s</string>
+    <string name="live_ptt_sending">Live-Funk… zum Beenden senden tippen</string>
+    <string name="live_ptt_mute">Live-Sprache stummschalten</string>
+    <string name="live_ptt_unmute">Live-Sprache aktivieren</string>
 </resources>

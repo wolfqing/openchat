@@ -316,4 +316,12 @@
     <string name="update_err_hash">SHA-256 चेकसम मेल नहीं खाया। फ़ाइल हटा दी गई।</string>
     <string name="update_err_sig">हस्ताक्षर प्रमाणपत्र इस ऐप से मेल नहीं खाया। फ़ाइल हटा दी गई।</string>
     <string name="update_err_install">सिस्टम इंस्टॉलर शुरू नहीं हो सका।</string>
+    <string name="theme_title">दिखावट</string>
+    <string name="theme_system">सिस्टम</string>
+    <string name="theme_light">लाइट</string>
+    <string name="theme_dark">OLED डार्क</string>
+    <string name="live_ptt_speaking">लाइव वॉकी · %1$s</string>
+    <string name="live_ptt_sending">लाइव बोल रहे हैं… पूरा होने पर भेजें दबाएँ</string>
+    <string name="live_ptt_mute">लाइव आवाज़ म्यूट करें</string>
+    <string name="live_ptt_unmute">लाइव आवाज़ चालू करें</string>
 </resources>
