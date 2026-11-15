@@ -1,5 +1,71 @@
 # Changelog
 
+## Android v0.7.8 (preview) — 2026-11-15
+
+Focused real-device polish: bottom-only frosted Liquid Glass navigation bar
+with flat chrome & composer everywhere else, system-wide Dark-theme text color
+fix, top-left OpenChat vector logo, portrait QR scanner, voice recording stop &
+preview, right-aligned own public messages, 3D globe city dots & smooth pinch
+zoom, larger radar dial, one-tap random nicknames, and an in-app Usage Guide
+across all 18 languages. No wire-format change. 201 unit tests. ~9.4 MB.
+
+### Added
+
+- **In-app Usage Guide (`GuideScreen`, `MainScreen`, `MeScreen`, `MeshVisuals`, all 18 `strings.xml`).**
+  Added a structured, vector-illustrated **User Guide (`使用说明`)** reachable
+  from the `Me` tab top-right header pill, a dedicated card in `Me`, and the
+  `NobodyNearby` radar screen—explaining Offline Bluetooth Mesh, Noise XX
+  encrypted chats & courier envelopes, Live PTT & voice notes, 3D Globe
+  location channels over Tor, Nearby Notice Board & Place Notes, local
+  identity, QR verification, triple-tap panic wipe, and slash commands.
+- **One-tap random nickname generator (`MeScreen`, `RandomNicknamesTest`).**
+  Editing your name in `Me` now includes a **Random (`随机`)** button and
+  in-field shuffle button backed by 48+ curated historical & callsign pools per
+  locale (`zh-Hans`, `zh-Hant`, Latin) guaranteed compatible with `#xxxx` peer
+  suffixes.
+
+### Fixed & Improved
+
+- **Bottom-only frosted Liquid Glass (`FluidGlass`, `MainScreen`, `ChatPane`, `MeshVisuals`).**
+  Reserved optical Liquid Glass exclusively for the bottom navigation bar
+  (`CapsuleNavigationBar`) with richer `7.5dp` frosted clarity blur, while
+  converting the chat composer (`+`, input capsule with crisp pale-white /
+  ultra-light-grey backing, `Mic`/`Send`), header pills, status capsules, and
+  action buttons to clean zero-shadow flat surfaces.
+- **Top-left OpenChat vector logo (`PanicLogo`).**
+  Restored the flat rounded `OPEN / CHAT` pixel-matrix vector logo in the
+  top-left `48dp` triple-tap header target instead of a single dot.
+- **Dark-theme black-text bug fixed system-wide (`Theme`, `Scaffold`s, `BoardScreen`, `FluidGlass`).**
+  Provided `LocalContentColor = palette.ink` inside `OpenChatTheme` and every
+  `Scaffold(containerColor = Color.Transparent)`, updated `DarkOpenChatColors`
+  (`onSignal = Color.White`) and `OpenChatDarkScheme` (`primary = signal`,
+  `onPrimary = Color.White`), eliminating unreadable black text on dark screens
+  and buttons.
+- **QR code scanner locked to portrait (`AndroidManifest.xml`, `MainActivity`).**
+  Overrode `CaptureActivity`'s default `sensorLandscape` manifest orientation
+  to `portrait` so scanning a verification QR no longer rotates sideways.
+- **Voice recording stop, preview & discard (`ChatPane`, `ChatRepository`, `MeshService`).**
+  Tapping `Mic` now shows a dedicated **Stop (`■`)** button alongside Cancel
+  and Send; stopping enters a playback preview capsule (`▶` waveform + Delete +
+  Send) instead of forcing immediate transmission.
+- **Own messages right-aligned in public channels (`PublicPostRow`).**
+  Local messages (`mine == true`) in `Nearby` and `Location` channels now align
+  to the right with a flat matte bubble and the local user's `EmblemView`
+  avatar on the right.
+- **3D Globe city dots & smooth pinch zoom-out (`GlobePicker`).**
+  Fixed Light-mode theme leakage that turned city dots and labels black-on-dark
+  ocean, added glowing `dp`-scaled city markers with shadowed labels, and
+  removed post-pinch snap-back (`settle()`) and single-finger lift pan jumps.
+- **Larger radar dial (`MeshVisuals`).**
+  Expanded the `NobodyNearby` radar disc up to `296dp` (`80%` width) with
+  crisper range rings and center hub contrast.
+
+### Checked, and not
+
+- Checked on GitHub Actions CI (`ubuntu-latest`, Temurin JDK 17): 201 unit
+  tests pass, `lintDebug` and `lintVitalRelease` 0 errors, debug and R8 release
+  APKs build cleanly (`app-release.apk`).
+
 ## Android v0.7.7 (preview) — 2026-11-15
 
 Anisotropic physical Liquid Glass rim for Radiant Light and full visual

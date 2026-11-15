@@ -601,6 +601,12 @@ class MeshService : Service(), ChatController {
         return true
     }
 
+    override fun stopVoice(): java.io.File? {
+        val (c, _) = capture ?: return null
+        capture = null
+        return c.finish()
+    }
+
     override fun finishVoice(): Boolean {
         val (c, conversation) = capture ?: return false
         capture = null

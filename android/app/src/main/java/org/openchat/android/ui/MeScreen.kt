@@ -7,11 +7,13 @@ import android.text.format.Formatter
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -28,12 +30,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.BrightnessAuto
+import androidx.compose.material.icons.outlined.Casino
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material.icons.outlined.SystemUpdateAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -60,7 +66,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -75,6 +83,54 @@ import org.openchat.android.app.AppTheme
 import org.openchat.android.app.AppUpdater
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.PeerLabel
+import java.util.Locale
+import kotlin.random.Random
+
+/**
+ * Curated random callsigns without trailing digits or `#`, guaranteeing 100% compatibility
+ * with [PeerLabel]'s `#xxxx` suffix formatting.
+ */
+internal object RandomNicknames {
+    val ZH_HANS = listOf(
+        "张衡", "李白", "苏轼", "沈括", "祖冲之", "徐霞客", "墨子", "鲁班",
+        "王维", "清照", "辛弃疾", "庄周", "陶潜", "山风", "星河", "远帆",
+        "极光", "灯塔", "青松", "信风", "晨光", "云雀", "北辰", "海鸥",
+        "林溪", "微光", "晴空", "雪松", "破晓", "流萤", "观澜", "飞鸟",
+        "白桦", "苍穹", "海风", "听雨", "追风", "银杏", "青岚", "惊蛰",
+        "星野", "归鸿", "松风", "浮光", "长风", "暮雪", "新月", "清泉",
+    )
+
+    val ZH_HANT = listOf(
+        "張衡", "李白", "蘇軾", "沈括", "祖沖之", "徐霞客", "墨子", "魯班",
+        "王維", "清照", "辛棄疾", "莊周", "陶潛", "山風", "星河", "遠帆",
+        "極光", "燈塔", "青松", "信風", "晨光", "雲雀", "北辰", "海鷗",
+        "林溪", "微光", "晴空", "雪松", "破曉", "流螢", "觀瀾", "飛鳥",
+        "白樺", "蒼穹", "海風", "聽雨", "追風", "銀杏", "青嵐", "驚蟄",
+        "星野", "歸鴻", "松風", "浮光", "長風", "暮雪", "新月", "清泉",
+    )
+
+    val LATIN = listOf(
+        "Lovelace", "Darwin", "Curie", "Faraday", "Hypatia", "Turing", "Noether", "Kepler",
+        "Tesla", "Maxwell", "Halley", "Euler", "Gauss", "Hopper", "Shannon", "Galileo",
+        "Newton", "Archimedes", "Feynman", "Hawking", "Falcon", "Beacon", "Aurora", "Zephyr",
+        "Solstice", "Horizon", "Orion", "Cedar", "Summit", "Harbor", "Kestrel", "Mariner",
+        "Nimbus", "Quartz", "Raven", "Spruce", "Swift", "Zenith", "Compass", "Vesper",
+        "Canyon", "Glacier", "Sierra", "Juniper", "Cobalt", "Ember", "Lumen", "Voyager",
+    )
+
+    fun next(current: String, locale: Locale = Locale.getDefault(), random: Random = Random.Default): String {
+        val pool = when {
+            locale.language.equals("zh", ignoreCase = true) &&
+                (locale.script.equals("Hant", ignoreCase = true) || locale.country.uppercase(Locale.ROOT) in setOf("TW", "HK", "MO")) -> ZH_HANT
+            locale.language.equals("zh", ignoreCase = true) -> ZH_HANS
+            else -> LATIN
+        }
+        val trimmed = current.trim()
+        val candidates = pool.filter { !it.equals(trimmed, ignoreCase = true) }
+        val source = candidates.ifEmpty { pool }
+        return source[random.nextInt(source.size)]
+    }
+}
 
 @Composable
 internal fun MePane(
@@ -82,6 +138,7 @@ internal fun MePane(
     onLanguage: (AppLanguage.Choice) -> Unit,
     onScan: () -> Unit,
     onPanic: () -> Unit,
+    onOpenGuide: (() -> Unit)? = null,
     topClearance: Dp = 0.dp,
 ) {
     val mesh by ChatRepository.mesh.collectAsState()
@@ -91,6 +148,8 @@ internal fun MePane(
     var showFingerprint by rememberSaveable { mutableStateOf(false) }
     val bottomClearance = LocalBottomBarClearance.current
     val imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
+    val haptic = LocalHapticFeedback.current
+    val currentLocale = appLocale()
 
     if (showQr) MyQrDialog { showQr = false }
 
@@ -140,14 +199,56 @@ internal fun MePane(
                 }
 
                 AnimatedVisibility(visible = editingName) {
+                    val rollRandom = {
+                        nick = RandomNicknames.next(nick, currentLocale)
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    }
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.me_name), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                stringResource(R.string.me_name),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            FluidGlassPillButton(
+                                onClick = rollRandom,
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 5.dp),
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Casino,
+                                    contentDescription = null,
+                                    tint = OpenChatPalette.Signal,
+                                    modifier = Modifier.size(15.dp),
+                                )
+                                Text(
+                                    stringResource(R.string.me_name_random),
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = OpenChatPalette.Ink,
+                                )
+                            }
+                        }
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
                                 value = nick,
                                 onValueChange = { nick = it.take(32) },
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
+                                trailingIcon = {
+                                    IconButton(onClick = rollRandom) {
+                                        Icon(
+                                            Icons.Outlined.Shuffle,
+                                            contentDescription = stringResource(R.string.me_name_random),
+                                            tint = OpenChatPalette.Signal,
+                                            modifier = Modifier.size(19.dp),
+                                        )
+                                    }
+                                },
                                 modifier = Modifier.weight(1f),
                             )
                             Button(
@@ -217,6 +318,57 @@ internal fun MePane(
             }
             Hairline()
             VerifySection(onShowQr = { showQr = true }, onScan = onScan)
+        }
+
+        // 1b. Usage Guide Card ("How OpenChat Works")
+        if (onOpenGuide != null) {
+            SettingsGroupCard {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button, onClick = onOpenGuide)
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = OpenChatPalette.SignalSoft,
+                        border = BorderStroke(1.dp, OpenChatPalette.Signal.copy(alpha = 0.35f)),
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp,
+                        modifier = Modifier.size(38.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.AutoMirrored.Outlined.HelpOutline,
+                                contentDescription = null,
+                                tint = OpenChatPalette.Signal,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            stringResource(R.string.guide_title),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OpenChatPalette.Ink,
+                        )
+                        Text(
+                            stringResource(R.string.guide_entry_sub),
+                            fontSize = 12.5.sp,
+                            lineHeight = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
 
         // 2. Offline App Sharing Card
@@ -317,7 +469,20 @@ private fun ThemeSection() {
                                 .weight(1f)
                                 .clip(CircleShape)
                                 .let {
-                                    if (selected) it.fluidGlassDroplet(isLight) else it
+                                    if (selected) {
+                                        it
+                                            .background(
+                                                if (isLight) Color.White else OpenChatPalette.CardRaised,
+                                                CircleShape,
+                                            )
+                                            .border(
+                                                1.dp,
+                                                MaterialTheme.colorScheme.outlineVariant,
+                                                CircleShape,
+                                            )
+                                    } else {
+                                        it
+                                    }
                                 }
                                 .clickable(role = Role.RadioButton) { AppTheme.set(context, choice) }
                                 .padding(horizontal = if (hideIcon) 6.dp else 8.dp, vertical = 8.dp),
@@ -349,7 +514,7 @@ private fun ThemeSection() {
     }
 }
 
-/** "openchat 0.7.7 (18)": the installed versionName and versionCode, so a report names its build. */
+/** "openchat 0.7.8 (19)": the installed versionName and versionCode, so a report names its build. */
 @Composable
 private fun appVersion(): String {
     val context = LocalContext.current

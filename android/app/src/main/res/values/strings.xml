@@ -156,7 +156,7 @@
     <string name="note_no_location">leaving a note needs your location — use it on the Location tab first</string>
     <string name="media_photo">Photo</string>
     <string name="media_voice">Voice note</string>
-    <string name="media_recording">Recording… tap ■ to send</string>
+    <string name="media_recording">Recording…</string>
     <string name="media_too_big">That is too big to send over Bluetooth.</string>
     <string name="media_geo_unsupported">Photos and voice notes work in Nearby and private chats.</string>
     <string name="media_private_unsupported">Not sent: this person is not connected yet, or their app can\'t receive encrypted photos and voice notes.</string>
@@ -267,7 +267,7 @@
     <string name="pay_no_wallet">No Cashu wallet app is installed. Copy the token and paste it into one.</string>
     <string name="pay_copy">Copy</string>
     <string name="pay_copied">Token copied</string>
-    <string name="media_mic_hint">Voice: hold to talk, or tap to start and tap again to send</string>
+    <string name="media_mic_hint">Voice: hold to talk, or tap to record (stop to preview or send)</string>
     <string name="live_voice_title">Live voice</string>
     <string name="live_voice_body">Voice notes in Nearby and private chats play for others while you are still talking, and theirs play for you when that chat is open. Off: only finished notes, both ways.</string>
     <string name="media_play">Play</string>
@@ -334,7 +334,38 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">OLED dark</string>
     <string name="live_ptt_speaking">Live PTT · %1$s</string>
-    <string name="live_ptt_sending">Live PTT… tap send when done</string>
+    <string name="live_ptt_sending">Live PTT…</string>
     <string name="live_ptt_mute">Mute live voice</string>
     <string name="live_ptt_unmute">Unmute live voice</string>
+
+    <string name="me_name_random">Random</string>
+    <string name="guide_button">Guide</string>
+    <string name="guide_title">User Guide</string>
+    <string name="guide_entry_sub">Offline mesh, encrypted chats, live PTT, 3D globe &amp; commands</string>
+    <string name="guide_subtitle">No account, phone number, or central server — offline Bluetooth mesh &amp; private location channels.</string>
+    <string name="guide_sec_features">Core Features</string>
+    <string name="guide_mesh_title">Offline Bluetooth Multi-Hop Mesh</string>
+    <string name="guide_mesh_body">Messages hop phone-to-phone over Bluetooth LE up to 7 hops without cellular or Wi-Fi. Hop badges show exact relay distance.</string>
+    <string name="guide_e2e_title">End-to-End Encrypted Chats &amp; Groups</string>
+    <string name="guide_e2e_body">Private chats use Noise XX encryption with a 4-step delivery path. When a peer is out of range, sealed courier envelopes relay automatically.</string>
+    <string name="guide_voice_title">Live Walkie-Talkie &amp; Voice Notes</string>
+    <string name="guide_voice_body">Hold the mic button to stream real-time voice over nearby Bluetooth, or tap once to record, stop to preview, and send.</string>
+    <string name="guide_globe_title">Location Channels &amp; 3D Globe</string>
+    <string name="guide_globe_body">Spin and pinch the 3D globe to join neighborhood, city, or regional #geohash channels routed privately over Tor.</string>
+    <string name="guide_board_title">Nearby Notice Board &amp; Place Notes</string>
+    <string name="guide_board_body">Pin multi-day notices or urgent alerts for anyone entering Bluetooth range, or leave 24-hour notes at your current building.</string>
+    <string name="guide_sec_privacy">Identity &amp; Safety</string>
+    <string name="guide_id_title">Zero-Account Local Identity</string>
+    <string name="guide_id_body">Your name#xxxx tag and geometric emblem come from on-device keys. Tap Edit or Random in Me anytime to pick a new callsign.</string>
+    <string name="guide_verify_title">In-Person QR Verification</string>
+    <string name="guide_verify_body">Scan a friend\'s QR code in person from the Me tab to verify their cryptographic fingerprint and mark them trusted.</string>
+    <string name="guide_panic_title">Instant Triple-Tap Panic Wipe</string>
+    <string name="guide_panic_body">Triple-tap the top-left OpenChat logo or screen title anywhere to immediately erase all keys, chats, and caches.</string>
+    <string name="guide_sec_commands">Slash Commands</string>
+    <string name="guide_cmd_intro">Type / or @ in any chat input bar for one-tap command and mention suggestions:</string>
+    <string name="guide_cmd_who">List reachable people in the current channel</string>
+    <string name="guide_cmd_msg">Open or send an encrypted private message</string>
+    <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
+    <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
+    <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
 </resources>

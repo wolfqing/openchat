@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Bluetooth LE mesh. Android 12+ uses the runtime BLUETOOTH_* permissions; older versions need location for scanning. -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
@@ -53,6 +54,13 @@
                 <data android:scheme="bitchat" android:host="geohash" />
             </intent-filter>
         </activity>
+
+        <!-- Override zxing-android-embedded's default sensorLandscape so QR scanning opens upright in portrait -->
+        <activity
+            android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:screenOrientation="portrait"
+            android:stateNotNeeded="true"
+            tools:replace="android:screenOrientation" />
 
         <service
             android:name=".app.MeshService"

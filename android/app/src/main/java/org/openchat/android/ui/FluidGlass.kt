@@ -5,6 +5,7 @@ import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -65,12 +68,12 @@ import org.openchat.android.R
 /**
  * Optical parameters for OpenChat's in-tree Liquid Glass engine:
  * crisp curved-meniscus Snell refraction, subtle RGB chromatic dispersion,
- * micro clarity blur, and ultra-clear zero-fog interiors.
+ * silky frosted optical blur, and luminous refractive interiors.
  */
 object FluidGlassDefaults {
     val Refraction: Dp = 15.dp
     val Dispersion: Dp = 6.dp
-    val ClarityBlur: Dp = 2.dp
+    val ClarityBlur: Dp = 7.5.dp
     val MeniscusBevel: Dp = 16.dp
 }
 
@@ -360,7 +363,7 @@ fun FluidGlassSurface(
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && runtimeShader != null) {
             buildAgslRenderEffect(runtimeShader, elemSize.width, elemSize.height, cornerPx, bevelPx, refractPx, dispersePx, blurPx, isLight)
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            buildBlurFallbackEffect(blurPx * 2f)
+            buildBlurFallbackEffect(blurPx * 1.35f)
         } else {
             null
         }
@@ -432,8 +435,10 @@ fun FluidGlassSurface(
                 ),
         )
 
-        // Layer 3: Razor-sharp foreground content
-        content()
+        // Layer 3: Razor-sharp foreground content with theme-aware default ink
+        CompositionLocalProvider(LocalContentColor provides OpenChatPalette.Ink) {
+            content()
+        }
     }
 }
 
@@ -474,23 +479,23 @@ private fun Modifier.drawFluidGlassOpticalBody(
         }
         isLight && refractingLive -> {
             Brush.verticalGradient(
-                0.00f to Color.White.copy(alpha = 0.12f),
-                0.65f to Color.White.copy(alpha = 0.07f),
-                1.00f to Color(0xFF2878FF).copy(alpha = 0.08f),
+                0.00f to Color.White.copy(alpha = 0.24f),
+                0.65f to Color.White.copy(alpha = 0.16f),
+                1.00f to Color(0xFF2878FF).copy(alpha = 0.10f),
             )
         }
         isLight -> {
             Brush.verticalGradient(
-                0.00f to Color.White.copy(alpha = 0.72f),
-                0.55f to Color(0xFFF3F8FE).copy(alpha = 0.52f),
-                1.00f to Color(0xFFDCE9F8).copy(alpha = 0.62f),
+                0.00f to Color.White.copy(alpha = 0.76f),
+                0.55f to Color(0xFFF3F8FE).copy(alpha = 0.58f),
+                1.00f to Color(0xFFDCE9F8).copy(alpha = 0.66f),
             )
         }
         refractingLive -> {
             Brush.verticalGradient(
-                0.00f to Color(0xFF141C20).copy(alpha = 0.24f),
-                0.70f to Color(0xFF0E1418).copy(alpha = 0.18f),
-                1.00f to Color(0xFF68B2FF).copy(alpha = 0.10f),
+                0.00f to Color(0xFF182227).copy(alpha = 0.36f),
+                0.70f to Color(0xFF10171B).copy(alpha = 0.28f),
+                1.00f to Color(0xFF68B2FF).copy(alpha = 0.12f),
             )
         }
         else -> {
@@ -704,7 +709,7 @@ internal fun Modifier.fluidGlassDroplet(isLight: Boolean): Modifier = drawWithCa
     }
 }
 
-/** 36dp circular Liquid Glass back button inside a comfortable 48dp header touch target. */
+/** 36dp flat circular back button inside a comfortable 48dp header touch target. */
 @Composable
 internal fun GlassBackButton(onClick: () -> Unit) {
     Box(
@@ -717,17 +722,20 @@ internal fun GlassBackButton(onClick: () -> Unit) {
             onClick = onClick,
             size = 36.dp,
             iconSize = 18.dp,
-            shadowElevation = 5.dp,
         )
     }
 }
 
-/** Stadium-shaped Liquid Glass capsule used for floating bars, inputs, and status pills. */
+/**
+ * Stadium-shaped Liquid Glass capsule reserved exclusively for the bottom navigation bar
+ * ([CapsuleNavigationBar]).
+ */
 @Composable
 fun FluidGlassCapsule(
     modifier: Modifier = Modifier,
     tintColor: Color? = null,
     borderAccent: Color? = null,
+    clarityBlur: Dp = FluidGlassDefaults.ClarityBlur,
     shadowElevation: Dp = 10.dp,
     contentAlignment: Alignment = Alignment.Center,
     content: @Composable BoxScope.() -> Unit,
@@ -738,6 +746,7 @@ fun FluidGlassCapsule(
         isCapsule = true,
         tintColor = tintColor,
         borderAccent = borderAccent,
+        clarityBlur = clarityBlur,
         shadowElevation = shadowElevation,
         contentAlignment = contentAlignment,
         content = content,
@@ -745,8 +754,36 @@ fun FluidGlassCapsule(
 }
 
 /**
- * Clean circular Liquid Glass button with pure Fresnel perimeter rim (zero drawn crescent arcs
- * inside the button face, per design specification) and tactile spring press bounce.
+ * Crisp, zero-shadow flat stadium capsule used for status bands, composer inputs, and voice bars
+ * (Liquid Glass is reserved exclusively for the bottom navigation bar).
+ */
+@Composable
+fun FlatCapsule(
+    modifier: Modifier = Modifier,
+    containerColor: Color? = null,
+    borderColor: Color? = null,
+    contentAlignment: Alignment = Alignment.Center,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val isLight = OpenChatPalette.isLight
+    val fill = containerColor ?: if (isLight) Color.White else OpenChatPalette.Card
+    val stroke = borderColor ?: OpenChatPalette.Line
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = fill,
+        contentColor = OpenChatPalette.Ink,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        border = BorderStroke(1.dp, stroke),
+    ) {
+        Box(contentAlignment = contentAlignment, content = content)
+    }
+}
+
+/**
+ * Clean flat circular button (zero drop-shadow, zero glass refraction) with crisp 1dp border
+ * and tactile spring press bounce.
  */
 @Composable
 fun FluidGlassCircleButton(
@@ -760,33 +797,38 @@ fun FluidGlassCircleButton(
     tintColor: Color? = null,
     borderAccent: Color? = null,
     enabled: Boolean = true,
-    shadowElevation: Dp = 8.dp,
+    @Suppress("UNUSED_PARAMETER") shadowElevation: Dp = 0.dp,
 ) {
-    FluidGlassSurface(
+    val isLight = OpenChatPalette.isLight
+    val fill = tintColor ?: if (isLight) Color.White else OpenChatPalette.Card
+    val stroke = borderAccent?.copy(alpha = if (isLight) 0.45f else 0.55f) ?: OpenChatPalette.Line
+    Surface(
         modifier = modifier
             .size(size)
             .let {
                 if (enabled && onClick != null) {
-                    it.pressScale(0.92f).clickable(role = Role.Button, onClick = onClick)
+                    it.pressScale(0.93f).clip(CircleShape).clickable(role = Role.Button, onClick = onClick)
                 } else it
             },
         shape = CircleShape,
-        isCapsule = true,
-        tintColor = tintColor,
-        borderAccent = borderAccent,
-        shadowElevation = shadowElevation,
-        contentAlignment = Alignment.Center,
+        color = fill,
+        contentColor = OpenChatPalette.Ink,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        border = BorderStroke(1.dp, stroke),
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = if (enabled) iconTint else iconTint.copy(alpha = 0.42f),
-            modifier = Modifier.size(iconSize),
-        )
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = if (enabled) iconTint else iconTint.copy(alpha = 0.42f),
+                modifier = Modifier.size(iconSize),
+            )
+        }
     }
 }
 
-/** Compact clickable Liquid Glass pill button for header actions and inline CTAs. */
+/** Compact clickable flat pill button for header actions and inline CTAs (zero glass refraction). */
 @Composable
 fun FluidGlassPillButton(
     onClick: () -> Unit,
@@ -794,20 +836,24 @@ fun FluidGlassPillButton(
     enabled: Boolean = true,
     tintColor: Color? = null,
     borderAccent: Color? = null,
-    shadowElevation: Dp = 4.dp,
+    @Suppress("UNUSED_PARAMETER") shadowElevation: Dp = 0.dp,
     contentPadding: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 7.dp),
     content: @Composable RowScope.() -> Unit,
 ) {
-    FluidGlassSurface(
+    val isLight = OpenChatPalette.isLight
+    val fill = tintColor ?: if (isLight) Color.White else OpenChatPalette.Card
+    val stroke = borderAccent?.copy(alpha = if (isLight) 0.50f else 0.60f) ?: OpenChatPalette.Line
+    Surface(
         modifier = modifier
             .let { if (enabled) it.pressScale(0.95f) else it }
-            .clip(RoundedCornerShape(50))
+            .clip(CircleShape)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         shape = CircleShape,
-        isCapsule = true,
-        tintColor = tintColor,
-        borderAccent = borderAccent,
-        shadowElevation = shadowElevation,
+        color = fill,
+        contentColor = OpenChatPalette.Ink,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        border = BorderStroke(1.dp, stroke),
     ) {
         Row(
             modifier = Modifier.padding(contentPadding),

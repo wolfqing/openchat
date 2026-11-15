@@ -139,7 +139,7 @@
     <string name="note_no_location">留言需要你的位置，請先在「地區」頁使用位置</string>
     <string name="media_photo">照片</string>
     <string name="media_voice">語音</string>
-    <string name="media_recording">錄音中…點 ■ 傳送</string>
+    <string name="media_recording">錄音中…</string>
     <string name="media_too_big">檔案太大，無法經藍牙傳送。</string>
     <string name="media_geo_unsupported">照片和語音只能在「附近」和私聊中傳送。</string>
     <string name="media_private_unsupported">未傳送：對方還沒連上，或對方的應用不支援加密照片和語音。</string>
@@ -250,7 +250,7 @@
     <string name="pay_no_wallet">沒有安裝 Cashu 錢包應用。可複製權杖，貼到錢包裡。</string>
     <string name="pay_copy">複製</string>
     <string name="pay_copied">已複製權杖</string>
-    <string name="media_mic_hint">語音：按住說話，或點一下開始、再點一下傳送</string>
+    <string name="media_mic_hint">語音：按住說話，或點一下錄音（可停止試聽或直接傳送）</string>
     <string name="live_voice_title">即時語音</string>
     <string name="live_voice_body">在「附近」和私聊裡，你說話時別人就能邊聽；別人的語音在你打開該聊天時也會即時播放。關閉後雙方都只收發錄完的語音。</string>
     <string name="media_play">播放</string>
@@ -315,7 +315,38 @@
     <string name="theme_light">淺色</string>
     <string name="theme_dark">OLED 純黑</string>
     <string name="live_ptt_speaking">即時對講 · %1$s</string>
-    <string name="live_ptt_sending">即時對講中… 講完點傳送</string>
+    <string name="live_ptt_sending">即時對講中…</string>
     <string name="live_ptt_mute">靜音即時對講</string>
     <string name="live_ptt_unmute">開啟即時對講</string>
+
+    <string name="me_name_random">隨機</string>
+    <string name="guide_button">說明</string>
+    <string name="guide_title">使用說明</string>
+    <string name="guide_entry_sub">離線藍牙組網、加密私訊、即時對講、3D 地球與快捷指令</string>
+    <string name="guide_subtitle">無需註冊、手機號碼或中心伺服器——離線低功耗藍牙多跳網格與位置頻道通訊。</string>
+    <string name="guide_sec_features">核心能力</string>
+    <string name="guide_mesh_title">離線藍牙多跳網格（Nearby）</string>
+    <string name="guide_mesh_body">無行動網路與 Wi-Fi 時，訊息透過低功耗藍牙在手機之間自動接力轉發（最多 7 跳），跳數標籤直觀顯示接力距離。</string>
+    <string name="guide_e2e_title">端對端加密私訊與群聊（Private）</string>
+    <string name="guide_e2e_body">私訊採用 Noise XX 端對端加密並顯示四步送達路徑；對方暫時離開範圍時，訊息會封裝為密封信封由沿途節點代為捎帶。</string>
+    <string name="guide_voice_title">即時語音對講與語音訊息</string>
+    <string name="guide_voice_body">按住麥克風即可在附近藍牙網格內即時對講；點一下麥克風開始錄音，可隨時點停止試聽回放、刪除或傳送。</string>
+    <string name="guide_globe_title">位置頻道與 3D 地球（Location）</string>
+    <string name="guide_globe_body">轉動與雙指縮放 3D 地球，選擇街區、城市或地區級 #geohash 位置頻道，所有連線預設經 Tor 保護網路隱私。</string>
+    <string name="guide_board_title">附近公告板與地點留言</string>
+    <string name="guide_board_body">在附近頻道右上角打開「公告板」可張貼多日有效或緊急互助資訊；在位置頁可留下 24 小時有效的當前地點留言。</string>
+    <string name="guide_sec_privacy">身份與安全</string>
+    <string name="guide_id_title">零帳號本機身份與隨機暱稱</string>
+    <string name="guide_id_body">你的 暱稱#xxxx 後綴與對稱幾何徽記均由本機金鑰生成；在「我」頁面編輯名字時可一鍵點擊「隨機」自動生成代號。</string>
+    <string name="guide_verify_title">當面掃碼核驗身份</string>
+    <string name="guide_verify_body">在「我」頁面展示 QR 圖碼或掃描對方圖碼，即可核驗公鑰指紋並標記為已驗證，防止重名冒充。</string>
+    <string name="guide_panic_title">三擊緊急抹除（Panic Wipe）</string>
+    <string name="guide_panic_body">在任意頁面連續快速點擊三次左上角 OpenChat 標誌或頂部標題，即可無需確認立即銷毀本機金鑰、對話與快取並生成新身份。</string>
+    <string name="guide_sec_commands">聊天快捷指令</string>
+    <string name="guide_cmd_intro">在任意聊天輸入框輸入 / 或 @ 即可彈出快捷補全膠囊：</string>
+    <string name="guide_cmd_who">查看當前頻道內在線或可達的成員列表</string>
+    <string name="guide_cmd_msg">直接向指定成員發起或傳送端對端加密私訊</string>
+    <string name="guide_cmd_diag">測試與某位成員的藍牙往返延遲或查看中繼路徑</string>
+    <string name="guide_cmd_social">收藏好友（支援離線捎帶與網際網路回退）或封鎖騷擾</string>
+    <string name="guide_cmd_room">建立/管理加密群聊、在當前位置留字條，或清空本機聊天記錄</string>
 </resources>

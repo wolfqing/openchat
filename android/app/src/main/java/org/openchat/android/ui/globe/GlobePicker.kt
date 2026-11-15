@@ -59,6 +59,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -130,15 +131,6 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
         flyTo(GlobeView(lat.coerceIn(-GlobeView.MAX_LAT, GlobeView.MAX_LAT), lon, GlobeView.zoomFor(hash.length, lat)), 450)
     }
 
-    // After a pinch, settle on the current level's framing, as bitchat's stepped zoom does: the
-    // 3x3 grid is never a speck with its labels piled up, nor wider than the screen. The world
-    // level stays free so the globe can still be spun as a globe.
-    fun settle() {
-        val p = view.precision
-        if (p <= GlobeView.MIN_PRECISION) return
-        flyTo(view.copy(zoom = GlobeView.zoomFor(p, view.lat)), 280)
-    }
-
     // Fly in to the starting channel, else stay on the world view.
     LaunchedEffect(start) {
         val hash = start?.takeIf { Geohash.isValid(it) && it.length >= GlobeView.MIN_PRECISION }?.take(GlobeView.MAX_PRECISION) ?: return@LaunchedEffect
@@ -150,10 +142,27 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
 
     val precision = view.precision
     val cell = Geohash.encode(view.lat, view.lon, precision)
-    val colors = GlobeColors(
-        ocean = Color(0xFF0F1414), coast = MaterialTheme.colorScheme.onSurfaceVariant, border = MaterialTheme.colorScheme.outline,
-        grid = MaterialTheme.colorScheme.outlineVariant, accent = OpenChatPalette.Signal, label = MaterialTheme.colorScheme.onSurface,
-    )
+    val canZoomOut = precision > GlobeView.MIN_PRECISION || view.zoom > 0.98
+    fun stepZoomOut() {
+        val targetZoom = if (precision <= GlobeView.MIN_PRECISION) 0.9 else GlobeView.zoomFor(precision - 1, view.lat)
+        flyTo(view.copy(zoom = targetZoom), 320)
+    }
+    fun stepZoomIn() {
+        val nextP = (precision + 1).coerceAtMost(GlobeView.MAX_PRECISION)
+        flyTo(view.copy(zoom = GlobeView.zoomFor(nextP, view.lat)), 320)
+    }
+    // Always use dedicated space-dark colors regardless of whether the app is in Light or Dark mode,
+    // so city dots, city names, coastlines, and neighbour geohash labels never turn dark-on-dark.
+    val colors = remember {
+        GlobeColors(
+            ocean = Color(0xFF0E161B),
+            coast = Color(0xFFAEC0CA),
+            border = Color(0xFF435763),
+            grid = Color(0xFF1B2831),
+            accent = Color(0xFFFF7840),
+            label = Color(0xFFF0F5F8),
+        )
+    }
     // Nine cell names and up to forty cities are measured per redraw; the default cache holds eight.
     val measurer = rememberTextMeasurer(cacheSize = 64)
     val pulse by rememberInfiniteTransition(label = "crosshair").animateFloat(0.35f, 1f, infiniteRepeatable(tween(1100), RepeatMode.Reverse), label = "pulse")
@@ -178,17 +187,28 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
                         var multi = false
                         do {
                             val event = awaitPointerEvent()
-                            val zoom = event.calculateZoom()
-                            val pan = event.calculatePan()
-                            if (event.changes.size > 1) multi = true
-                            if (zoom != 1f) view = view.zoomedBy(zoom.toDouble())
-                            if (pan != Offset.Zero) {
-                                view = view.dragged(pan.x / baseR.toDouble(), pan.y / baseR.toDouble())
+                            val pressedCount = event.changes.count { it.pressed }
+                            if (pressedCount >= 2) multi = true
+                            if (multi) {
+                                if (pressedCount >= 2) {
+                                    val zoom = event.calculateZoom()
+                                    val pan = event.calculatePan()
+                                    if (zoom != 1f) view = view.zoomedBy(zoom.toDouble())
+                                    if (pan != Offset.Zero) {
+                                        view = view.dragged(pan.x / baseR.toDouble(), pan.y / baseR.toDouble())
+                                    }
+                                }
                                 event.changes.forEach { it.consume() }
+                            } else if (pressedCount == 1) {
+                                val pan = event.calculatePan()
+                                if (pan != Offset.Zero) {
+                                    view = view.dragged(pan.x / baseR.toDouble(), pan.y / baseR.toDouble())
+                                    event.changes.forEach { it.consume() }
+                                }
+                                event.changes.firstOrNull()?.let { tracker.addPosition(it.uptimeMillis, event.calculateCentroid()) }
                             }
-                            event.changes.firstOrNull()?.let { tracker.addPosition(it.uptimeMillis, event.calculateCentroid()) }
                         } while (event.changes.any { it.pressed })
-                        if (multi) { settle(); return@awaitEachGesture }
+                        if (multi) return@awaitEachGesture
                         // Let a flick keep spinning, slowing to a stop.
                         val v = tracker.calculateVelocity()
                         if (abs(v.x) + abs(v.y) < 300f) return@awaitEachGesture
@@ -261,15 +281,15 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
                     Text("#$cell", color = colors.accent, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("$levelName · ${distanceText(GlobeView.cellWidthMeters(cell))}", color = Color(0xFF9AA4A3), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                IconButton(enabled = precision > GlobeView.MIN_PRECISION, onClick = { frame(cell.take(precision - 1)) }) {
-                    Icon(Icons.Filled.Remove, stringResource(R.string.globe_zoom_out), tint = Color.White)
+                IconButton(enabled = canZoomOut, onClick = { stepZoomOut() }) {
+                    Icon(Icons.Filled.Remove, stringResource(R.string.globe_zoom_out), tint = if (canZoomOut) Color.White else Color.White.copy(alpha = 0.35f))
                 }
-                IconButton(enabled = precision < GlobeView.MAX_PRECISION, onClick = { frame(Geohash.encode(view.lat, view.lon, precision + 1)) }) {
-                    Icon(Icons.Filled.Add, stringResource(R.string.globe_zoom_in), tint = Color.White)
+                IconButton(enabled = precision < GlobeView.MAX_PRECISION, onClick = { stepZoomIn() }) {
+                    Icon(Icons.Filled.Add, stringResource(R.string.globe_zoom_in), tint = if (precision < GlobeView.MAX_PRECISION) Color.White else Color.White.copy(alpha = 0.35f))
                 }
                 Button(
                     onClick = { onSelect(cell) },
-                    colors = ButtonDefaults.buttonColors(containerColor = OpenChatPalette.Signal, contentColor = OpenChatPalette.OnSignal),
+                    colors = ButtonDefaults.buttonColors(containerColor = OpenChatPalette.Signal, contentColor = Color.White),
                 ) { Text(stringResource(R.string.globe_select), fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis) }
             }
         } else {
@@ -286,16 +306,16 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
                 Text("$levelName · ${distanceText(GlobeView.cellWidthMeters(cell))}", color = Color(0xFF9AA4A3), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(enabled = precision > GlobeView.MIN_PRECISION, onClick = { frame(cell.take(precision - 1)) }) {
-                        Icon(Icons.Filled.Remove, stringResource(R.string.globe_zoom_out), tint = Color.White)
+                    IconButton(enabled = canZoomOut, onClick = { stepZoomOut() }) {
+                        Icon(Icons.Filled.Remove, stringResource(R.string.globe_zoom_out), tint = if (canZoomOut) Color.White else Color.White.copy(alpha = 0.35f))
                     }
-                    IconButton(enabled = precision < GlobeView.MAX_PRECISION, onClick = { frame(Geohash.encode(view.lat, view.lon, precision + 1)) }) {
-                        Icon(Icons.Filled.Add, stringResource(R.string.globe_zoom_in), tint = Color.White)
+                    IconButton(enabled = precision < GlobeView.MAX_PRECISION, onClick = { stepZoomIn() }) {
+                        Icon(Icons.Filled.Add, stringResource(R.string.globe_zoom_in), tint = if (precision < GlobeView.MAX_PRECISION) Color.White else Color.White.copy(alpha = 0.35f))
                     }
                     Spacer(Modifier.weight(1f))
                     Button(
                         onClick = { onSelect(cell) },
-                        colors = ButtonDefaults.buttonColors(containerColor = OpenChatPalette.Signal, contentColor = OpenChatPalette.OnSignal),
+                        colors = ButtonDefaults.buttonColors(containerColor = OpenChatPalette.Signal, contentColor = Color.White),
                     ) { Text(stringResource(R.string.globe_select), fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 }
             }
@@ -317,10 +337,22 @@ private fun DrawScope.drawGlobe(
     val limit = maxOf(w, h) * 20f
 
     if (r < maxOf(w, h)) {
-        stars.forEach { (o, a) -> drawCircle(Color.White.copy(alpha = a * 0.5f), 1.2f, Offset(o.x * w, o.y * h)) }
-        drawCircle(Brush.radialGradient(listOf(c.accent.copy(alpha = 0.22f), Color.Transparent), Offset(cx, cy), r * 1.12f), r * 1.12f, Offset(cx, cy))
+        stars.forEach { (o, a) -> drawCircle(Color.White.copy(alpha = a * 0.55f), 1.3f, Offset(o.x * w, o.y * h)) }
+        drawCircle(Brush.radialGradient(listOf(c.accent.copy(alpha = 0.24f), Color.Transparent), Offset(cx, cy), (r * 1.14f).coerceAtLeast(2f)), r * 1.14f, Offset(cx, cy))
     }
     drawCircle(c.ocean, r, Offset(cx, cy))
+    if (r < maxOf(w, h) * 1.5f) {
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(Color(0xFF1A2A34).copy(alpha = 0.65f), Color.Transparent, Color(0xFF040709).copy(alpha = 0.55f)),
+                center = Offset(cx - r * 0.24f, cy - r * 0.24f),
+                radius = (r * 1.25f).coerceAtLeast(2f),
+            ),
+            radius = r,
+            center = Offset(cx, cy),
+        )
+        drawCircle(Color(0xFF4C6878).copy(alpha = 0.35f), r, Offset(cx, cy), style = Stroke(1.1.dp.toPx()))
+    }
 
     fun line(path: Path, lat: (Int) -> Double, lon: (Int) -> Double, n: Int) {
         var down = false
@@ -440,21 +472,34 @@ private fun DrawScope.drawGlobe(
         }
     }
 
-    // Cities: the most prominent first, more as you zoom in, at most 40 labels. A name goes to
+    // Cities: the most prominent first, more as you zoom in, at most 45 labels. A name goes to
     // the right of its dot, else to the left, else is left out where it would cover another.
     data?.let { d ->
-        val maxRank = when { view.zoom < 1.5 -> 1; view.zoom < 3 -> 3; view.zoom < 8 -> 6; else -> 10 }
+        val maxRank = when {
+            view.zoom < 1.3 -> 2
+            view.zoom < 2.6 -> 4
+            view.zoom < 6.5 -> 7
+            else -> 10
+        }
         var labels = 0
-        val style = TextStyle(color = c.label.copy(alpha = 0.75f), fontSize = 10.sp)
-        val gap = 4.dp.toPx()
+        val style = TextStyle(
+            color = c.label.copy(alpha = 0.90f),
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Medium,
+            shadow = Shadow(color = Color(0xE605080B), blurRadius = 4f),
+        )
+        val dotCore = 2.3.dp.toPx()
+        val dotHalo = 4.8.dp.toPx()
+        val gap = 5.dp.toPx()
         for (city in d.cities) {
             if (city.rank > maxRank) break
             view.project(city.lat.toDouble(), city.lon.toDouble(), p)
             if (p[2] < 0.05) continue
             val x = cx + (p[0] * r).toFloat(); val y = cy - (p[1] * r).toFloat()
             if (x < 0 || x > w || y < 0 || y > h) continue
-            drawCircle(c.label.copy(alpha = 0.8f), 2f, Offset(x, y))
-            if (labels >= 40) continue
+            drawCircle(Color(0xFFFF9A68).copy(alpha = 0.28f), dotHalo, Offset(x, y))
+            drawCircle(Color(0xFFFFEDE2), dotCore, Offset(x, y))
+            if (labels >= 45) continue
             val text = measurer.measure(city.name, style)
             val tw = text.size.width.toFloat(); val th = text.size.height.toFloat()
             val top = y - th / 2f

@@ -122,110 +122,108 @@ private fun ThemeCycleButton() {
 
 @Composable
 fun OnboardingScreen(onStart: () -> Unit, onLanguage: (AppLanguage.Choice) -> Unit) {
-    FluidGlassHost {
-        Box(Modifier.fillMaxSize().openChatCanvas()) {
-            BoxWithConstraints(
-                Modifier
-                    .fillMaxSize()
-                    .safeDrawingPadding()
-                    .padding(horizontal = 22.dp, vertical = 14.dp),
-            ) {
-                val compact = maxHeight < 680.dp
-                Column(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize().openChatCanvas()) {
+        BoxWithConstraints(
+            Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .padding(horizontal = 22.dp, vertical = 14.dp),
+        ) {
+            val compact = maxHeight < 680.dp
+            Column(Modifier.fillMaxSize()) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = OpenChatPalette.Card,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.size(if (compact) 40.dp else 44.dp).clipToBounds(),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_launcher_foreground),
+                            contentDescription = null,
+                            tint = OpenChatPalette.Signal,
+                            modifier = Modifier.fillMaxSize().scale(1.35f),
+                        )
+                    }
                     Row(
-                        Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = OpenChatPalette.Card,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                            modifier = Modifier.size(if (compact) 40.dp else 44.dp).clipToBounds(),
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_launcher_foreground),
-                                contentDescription = null,
-                                tint = OpenChatPalette.Signal,
-                                modifier = Modifier.fillMaxSize().scale(1.35f),
-                            )
-                        }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            ThemeCycleButton()
-                            LanguagePicker(onLanguage)
-                        }
+                        ThemeCycleButton()
+                        LanguagePicker(onLanguage)
                     }
+                }
 
-                    Column(
-                        Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                            .padding(vertical = if (compact) 10.dp else 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 14.dp, Alignment.CenterVertically),
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            SignalPulseDot(live = true)
-                            Text(
-                                stringResource(R.string.app_name),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = OpenChatPalette.Signal,
-                            )
-                        }
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(vertical = if (compact) 10.dp else 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 14.dp, Alignment.CenterVertically),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SignalPulseDot(live = true)
                         Text(
-                            stringResource(R.string.onboard_title),
-                            fontSize = if (compact) 26.sp else 32.sp,
-                            lineHeight = if (compact) 32.sp else 38.sp,
-                            fontWeight = FontWeight.Bold,
+                            stringResource(R.string.app_name),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OpenChatPalette.Signal,
                         )
-                        Text(
-                            stringResource(R.string.onboard_body),
-                            fontSize = if (compact) 14.5.sp else 16.sp,
-                            lineHeight = if (compact) 21.sp else 24.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Surface(
-                            shape = CircleShape,
-                            color = OpenChatPalette.Surface,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        ) {
-                            Text(
-                                stringResource(R.string.onboard_no_account),
-                                fontSize = if (compact) 13.sp else 13.5.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = if (compact) 6.dp else 7.dp),
-                            )
-                        }
-                        SafetyNote(compact = compact)
                     }
+                    Text(
+                        stringResource(R.string.onboard_title),
+                        fontSize = if (compact) 26.sp else 32.sp,
+                        lineHeight = if (compact) 32.sp else 38.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        stringResource(R.string.onboard_body),
+                        fontSize = if (compact) 14.5.sp else 16.sp,
+                        lineHeight = if (compact) 21.sp else 24.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Surface(
+                        shape = CircleShape,
+                        color = OpenChatPalette.Surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    ) {
+                        Text(
+                            stringResource(R.string.onboard_no_account),
+                            fontSize = if (compact) 13.sp else 13.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = if (compact) 6.dp else 7.dp),
+                        )
+                    }
+                    SafetyNote(compact = compact)
+                }
 
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp),
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp),
+                ) {
+                    Button(
+                        onClick = onStart,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().height(if (compact) 48.dp else 52.dp).pressScale(0.97f),
                     ) {
-                        Button(
-                            onClick = onStart,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth().height(if (compact) 48.dp else 52.dp).pressScale(0.97f),
-                        ) {
-                            Text(stringResource(R.string.onboard_start), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                        }
-                        Text(
-                            stringResource(R.string.onboard_next),
-                            fontSize = 12.sp,
-                            lineHeight = 17.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                        )
+                        Text(stringResource(R.string.onboard_start), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                     }
+                    Text(
+                        stringResource(R.string.onboard_next),
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
         }
@@ -243,8 +241,8 @@ fun SafetyNote(compact: Boolean = false) {
     val isLight = OpenChatPalette.isLight
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (isLight) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.76f) else androidx.compose.ui.graphics.Color(0xFF141A1D).copy(alpha = 0.74f),
-        border = BorderStroke(0.8.dp, if (isLight) androidx.compose.ui.graphics.Color(0xFF0F1C2E).copy(alpha = 0.08f) else androidx.compose.ui.graphics.Color.White.copy(alpha = 0.09f)),
+        color = if (isLight) androidx.compose.ui.graphics.Color.White else OpenChatPalette.Card,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(

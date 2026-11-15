@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.Text
@@ -77,10 +78,10 @@ internal val DarkOpenChatColors = OpenChatColors(
     muted = Color(0xFF9AA4A3),
     line = Color(0xFF222929),
     outline = Color(0xFF384343),
-    signal = Color(0xFFFF7840),
+    signal = Color(0xFFFF682B),
     signalSoft = Color(0xFF2E150A),
-    onSignal = Color(0xFF1A0A03),
-    lock = Color(0xFF93BCE8),
+    onSignal = Color(0xFFFFFFFF),
+    lock = Color(0xFF5CA6FF),
     lockSoft = Color(0xFF13263A),
     online = Color(0xFF2EB872),
 )
@@ -153,16 +154,16 @@ private val OpenChatTypography = Typography(
 )
 
 private val OpenChatDarkScheme = darkColorScheme(
-    primary = DarkOpenChatColors.ink,
-    onPrimary = Color(0xFF0B0E0E),
+    primary = DarkOpenChatColors.signal,
+    onPrimary = Color.White,
     primaryContainer = DarkOpenChatColors.lockSoft,
     onPrimaryContainer = DarkOpenChatColors.ink,
-    secondary = DarkOpenChatColors.ink,
-    onSecondary = Color(0xFF0B0E0E),
+    secondary = Color(0xFF28343B),
+    onSecondary = DarkOpenChatColors.ink,
     secondaryContainer = DarkOpenChatColors.cardRaised,
     onSecondaryContainer = DarkOpenChatColors.ink,
-    tertiary = DarkOpenChatColors.signal,
-    onTertiary = DarkOpenChatColors.onSignal,
+    tertiary = DarkOpenChatColors.lock,
+    onTertiary = Color.White,
     tertiaryContainer = DarkOpenChatColors.signalSoft,
     onTertiaryContainer = DarkOpenChatColors.ink,
     background = DarkOpenChatColors.screen,
@@ -185,7 +186,7 @@ private val OpenChatDarkScheme = darkColorScheme(
 )
 
 private val OpenChatLightScheme = lightColorScheme(
-    primary = LightOpenChatColors.ink,
+    primary = LightOpenChatColors.signal,
     onPrimary = Color.White,
     primaryContainer = LightOpenChatColors.lockSoft,
     onPrimaryContainer = LightOpenChatColors.ink,
@@ -193,8 +194,8 @@ private val OpenChatLightScheme = lightColorScheme(
     onSecondary = Color.White,
     secondaryContainer = LightOpenChatColors.cardRaised,
     onSecondaryContainer = LightOpenChatColors.ink,
-    tertiary = LightOpenChatColors.signal,
-    onTertiary = LightOpenChatColors.onSignal,
+    tertiary = LightOpenChatColors.lock,
+    onTertiary = Color.White,
     tertiaryContainer = LightOpenChatColors.signalSoft,
     onTertiaryContainer = LightOpenChatColors.ink,
     background = LightOpenChatColors.screen,
@@ -222,8 +223,13 @@ fun OpenChatTheme(content: @Composable () -> Unit) {
     val dark = AppTheme.resolveIsDark(choice, isSystemInDarkTheme())
     val palette = if (dark) DarkOpenChatColors else LightOpenChatColors
     val scheme = if (dark) OpenChatDarkScheme else OpenChatLightScheme
-    CompositionLocalProvider(LocalOpenChatColors provides palette) {
-        MaterialTheme(colorScheme = scheme, typography = OpenChatTypography, content = content)
+    CompositionLocalProvider(
+        LocalOpenChatColors provides palette,
+        LocalContentColor provides palette.ink,
+    ) {
+        MaterialTheme(colorScheme = scheme, typography = OpenChatTypography) {
+            CompositionLocalProvider(LocalContentColor provides palette.ink, content = content)
+        }
     }
 }
 

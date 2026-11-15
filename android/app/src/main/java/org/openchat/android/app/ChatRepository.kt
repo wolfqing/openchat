@@ -160,6 +160,8 @@ interface ChatController {
     fun sendMedia(conversation: String, bytes: ByteArray, mime: String, fileName: String? = null): Int
     /** Starts recording a voice note that also streams live where it can (§29); false if the microphone failed. */
     fun startVoice(conversation: String): Boolean
+    /** Stops recording and returns the finished voice file without sending it yet, or null when too short. */
+    fun stopVoice(): java.io.File? = null
     /** Stops and sends the note; false when it was too short. */
     fun finishVoice(): Boolean
     fun cancelVoice()

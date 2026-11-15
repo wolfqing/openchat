@@ -97,7 +97,13 @@ class MainActivity : ComponentActivity() {
                         onShareApp = { ApkShare.share(this) },
                         onLanguage = ::setLanguage,
                         onScan = {
-                            scanLauncher.launch(ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setBeepEnabled(false).setOrientationLocked(false).setPrompt(""))
+                            scanLauncher.launch(
+                                ScanOptions()
+                                    .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                                    .setBeepEnabled(false)
+                                    .setOrientationLocked(true)
+                                    .setPrompt(""),
+                            )
                         },
                         scanResult = scanResult.value,
                         onScanResultSeen = { scanResult.value = null },

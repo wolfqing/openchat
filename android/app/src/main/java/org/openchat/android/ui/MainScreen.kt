@@ -14,6 +14,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,10 +46,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Check
@@ -68,6 +71,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -84,6 +88,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -92,6 +98,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -239,6 +246,7 @@ fun MainScreen(
             route != null && Conversation.GeoPrivate.parse(route) != null -> GeoPrivateChatScreen(Conversation.GeoPrivate.parse(route)!!, onBack = { openChat = null }, onPanic = onPanic)
             route != null && route.startsWith("dm:") -> PrivateChatScreen(route.removePrefix("dm:"), onBack = { openChat = null }, onPanic = onPanic)
             route == BOARD -> BoardScreen(onBack = { openChat = null }, onPanic = onPanic)
+            route == GUIDE -> GuideScreen(onBack = { openChat = null }, onPanic = onPanic)
             route != null && route.startsWith("geo:") -> GeoChatScreen(route.removePrefix("geo:"), onBack = { openChat = null }, onPanic = onPanic)
             else -> ShellScaffold(
                 tab = tab,
@@ -250,6 +258,7 @@ fun MainScreen(
                 reducedMotion = reducedMotion,
                 onPanic = onPanic,
                 onOpenBoard = { openChat = BOARD },
+                onOpenGuide = { openChat = GUIDE },
                 onNewGroup = { creatingGroup = true },
                 onGrantPermissions = onGrantPermissions,
                 onEnableBluetooth = onEnableBluetooth,
@@ -276,6 +285,7 @@ private fun ShellScaffold(
     reducedMotion: Boolean,
     onPanic: () -> Unit,
     onOpenBoard: () -> Unit,
+    onOpenGuide: () -> Unit,
     onNewGroup: () -> Unit,
     onGrantPermissions: () -> Unit,
     onEnableBluetooth: () -> Unit,
@@ -310,6 +320,7 @@ private fun ShellScaffold(
             Box(Modifier.fillMaxSize().openChatCanvas()) {
                 Scaffold(
                     containerColor = Color.Transparent,
+                    contentColor = OpenChatPalette.Ink,
                     contentWindowInsets = WindowInsets(0, 0, 0, 0),
                     topBar = {
                         Column(
@@ -371,6 +382,27 @@ private fun ShellScaffold(
                                                 overflow = TextOverflow.Ellipsis,
                                             )
                                         }
+                                    } else if (tab == Tab.ME) {
+                                        FluidGlassPillButton(
+                                            onClick = onOpenGuide,
+                                            modifier = Modifier.padding(end = 12.dp),
+                                            contentPadding = PaddingValues(horizontal = 13.dp, vertical = 6.dp),
+                                        ) {
+                                            Icon(
+                                                Icons.AutoMirrored.Outlined.HelpOutline,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(15.dp),
+                                                tint = OpenChatPalette.Signal,
+                                            )
+                                            Text(
+                                                stringResource(R.string.guide_button),
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = OpenChatPalette.Ink,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                        }
                                     }
                                 },
                             )
@@ -420,7 +452,7 @@ private fun ShellScaffold(
                                     placeholder = stringResource(R.string.nearby_placeholder),
                                     onSend = { ChatRepository.controller?.sendPublic(it) },
                                     onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) onSelectPerson(PersonRef.Mesh(m.senderKey, m.senderName)) },
-                                    empty = if (otherPeers.isEmpty() && mesh.running) ({ onShowHistory -> NobodyNearby(onShareApp, onShowHistory, bottomClearance = bottomClearance + 58.dp) }) else null,
+                                    empty = if (otherPeers.isEmpty() && mesh.running) ({ onShowHistory -> NobodyNearby(onShareApp, onShowHistory, onOpenGuide = onOpenGuide, bottomClearance = bottomClearance + 58.dp) }) else null,
                                     cover = otherPeers.isEmpty() && mesh.running,
                                     topClearance = topClearance,
                                 )
@@ -439,6 +471,7 @@ private fun ShellScaffold(
                                     onLanguage = onLanguage,
                                     onScan = onScan,
                                     onPanic = onPanic,
+                                    onOpenGuide = onOpenGuide,
                                     topClearance = topClearance,
                                 )
                             }
@@ -676,12 +709,12 @@ fun PanicTitle(text: AnnotatedString, onPanic: () -> Unit) {
     )
 }
 
-/** The app mark in the top-left corner: a 36dp crystal orb with glowing Signal core inside a 48dp triple-tap target. */
+/** The app mark in the top-left corner: flat rounded OpenChat vector logo inside a 48dp triple-tap target. */
 @Composable
 fun PanicLogo(onPanic: () -> Unit) {
     val tap = rememberPanicTaps(onPanic)
     val desc = stringResource(R.string.panic_logo)
-    val signal = OpenChatPalette.Signal
+    val isLight = OpenChatPalette.isLight
     Box(
         modifier = Modifier
             .size(48.dp)
@@ -689,28 +722,20 @@ fun PanicLogo(onPanic: () -> Unit) {
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = tap),
         contentAlignment = Alignment.Center,
     ) {
-        FluidGlassSurface(
-            modifier = Modifier.size(36.dp),
-            shape = CircleShape,
-            isCapsule = true,
-            shadowElevation = 5.dp,
+        Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = if (isLight) Color.White else OpenChatPalette.Card,
+            border = BorderStroke(1.dp, OpenChatPalette.Line),
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp,
+            modifier = Modifier.size(36.dp).clipToBounds(),
         ) {
-            Canvas(Modifier.size(22.dp)) {
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(signal.copy(alpha = 0.42f), Color.Transparent),
-                        center = center,
-                        radius = size.minDimension * 0.5f,
-                    ),
-                    radius = size.minDimension * 0.5f,
-                    center = center,
-                )
-                drawCircle(
-                    color = signal,
-                    radius = 5.dp.toPx(),
-                    center = center,
-                )
-            }
+            Icon(
+                painter = painterResource(R.drawable.ic_launcher_foreground),
+                contentDescription = null,
+                tint = OpenChatPalette.Signal,
+                modifier = Modifier.fillMaxSize().scale(1.42f),
+            )
         }
     }
 }

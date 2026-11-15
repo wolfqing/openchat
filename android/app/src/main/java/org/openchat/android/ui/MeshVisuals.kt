@@ -40,6 +40,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.VolumeOff
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.Lock
@@ -394,11 +395,10 @@ internal fun NearbyStatusCapsuleRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        FluidGlassCapsule(
+        FlatCapsule(
             modifier = Modifier.weight(1f, fill = false),
-            tintColor = if (liveSpeakerLabel != null) signal.copy(alpha = if (OpenChatPalette.isLight) 0.16f else 0.20f) else null,
-            borderAccent = if (liveSpeakerLabel != null) signal else null,
-            shadowElevation = 5.dp,
+            containerColor = if (liveSpeakerLabel != null) OpenChatPalette.SignalSoft else null,
+            borderColor = if (liveSpeakerLabel != null) signal.copy(alpha = 0.50f) else null,
             contentAlignment = Alignment.CenterStart,
         ) {
             AnimatedContent(
@@ -562,10 +562,9 @@ fun RouteBand(name: String, hops: Int?, direct: Int, lastHeard: Long, liveSpeake
     val resources = LocalResources.current
     val signal = OpenChatPalette.Signal
     Box(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 0.dp, bottom = 6.dp)) {
-        FluidGlassCapsule(
-            tintColor = if (liveSpeakerLabel != null) signal.copy(alpha = if (OpenChatPalette.isLight) 0.16f else 0.20f) else null,
-            borderAccent = if (liveSpeakerLabel != null) signal else null,
-            shadowElevation = 5.dp,
+        FlatCapsule(
+            containerColor = if (liveSpeakerLabel != null) OpenChatPalette.SignalSoft else null,
+            borderColor = if (liveSpeakerLabel != null) signal.copy(alpha = 0.50f) else null,
             contentAlignment = Alignment.CenterStart,
         ) {
             if (liveSpeakerLabel != null) {
@@ -611,18 +610,15 @@ fun RouteBand(name: String, hops: Int?, direct: Int, lastHeard: Long, liveSpeake
     }
 }
 
-/** Liquid Glass pill naming who can read a conversation (Public vs End-to-End Encrypted). */
+/** Flat matte pill naming who can read a conversation (Public vs End-to-End Encrypted). */
 @Composable
 fun AudiencePill(encrypted: Boolean, modifier: Modifier = Modifier, compact: Boolean = false) {
     val fg = if (encrypted) OpenChatPalette.Lock else MaterialTheme.colorScheme.onSurfaceVariant
     val label = stringResource(if (encrypted) R.string.chip_encrypted else R.string.chip_public)
-    FluidGlassSurface(
+    FlatCapsule(
         modifier = modifier,
-        shape = CircleShape,
-        isCapsule = true,
-        tintColor = if (encrypted) OpenChatPalette.LockSoft.copy(alpha = if (OpenChatPalette.isLight) 0.72f else 0.55f) else null,
-        borderAccent = if (encrypted) OpenChatPalette.Lock else null,
-        shadowElevation = 2.dp,
+        containerColor = if (encrypted) OpenChatPalette.LockSoft else null,
+        borderColor = if (encrypted) OpenChatPalette.Lock.copy(alpha = 0.35f) else null,
     ) {
         Row(
             Modifier.padding(horizontal = if (compact) 8.dp else 10.dp, vertical = if (compact) 5.dp else 4.dp),
@@ -697,12 +693,17 @@ fun DayHeader(timestamp: Long, note: String?) {
 fun NobodyNearby(
     onShareApp: (() -> Unit)?,
     onShowHistory: (() -> Unit)? = null,
+    onOpenGuide: (() -> Unit)? = null,
     bottomClearance: Dp = 0.dp,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val availHeight = (maxHeight - bottomClearance).coerceAtLeast(160.dp)
         val compact = availHeight < 440.dp
-        val radarMax = minOf(224.dp, maxWidth * 0.56f, (availHeight * 0.36f).coerceIn(96.dp, 224.dp))
+        val radarMax = if (compact) {
+            minOf(236.dp, maxWidth * 0.70f)
+        } else {
+            minOf(296.dp, maxWidth * 0.80f)
+        }
         Column(
             Modifier
                 .fillMaxSize()
@@ -710,7 +711,7 @@ fun NobodyNearby(
                 .padding(
                     start = 20.dp,
                     end = 20.dp,
-                    top = if (compact) 6.dp else 12.dp,
+                    top = if (compact) 6.dp else 10.dp,
                     bottom = 16.dp + bottomClearance,
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -721,6 +722,7 @@ fun NobodyNearby(
                 stringResource(R.string.radar_title),
                 fontSize = if (compact) 18.sp else 20.sp,
                 fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.semantics { heading() },
             )
@@ -732,17 +734,43 @@ fun NobodyNearby(
                 lineHeight = 20.sp,
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
-            onShowHistory?.let {
-                FluidGlassPillButton(
-                    onClick = it,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            if (onShowHistory != null || onOpenGuide != null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        stringResource(R.string.radar_history),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    onShowHistory?.let {
+                        FluidGlassPillButton(
+                            onClick = it,
+                            contentPadding = PaddingValues(horizontal = 15.dp, vertical = 8.dp),
+                        ) {
+                            Text(
+                                stringResource(R.string.radar_history),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                    onOpenGuide?.let {
+                        FluidGlassPillButton(
+                            onClick = it,
+                            contentPadding = PaddingValues(horizontal = 15.dp, vertical = 8.dp),
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Outlined.HelpOutline,
+                                contentDescription = null,
+                                tint = OpenChatPalette.Signal,
+                                modifier = Modifier.size(15.dp),
+                            )
+                            Text(
+                                stringResource(R.string.guide_title),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
                 }
             }
             Spacer(Modifier.height(2.dp))
@@ -815,34 +843,44 @@ private fun Radar(modifier: Modifier) {
             sweep = sweepAngle(now / 1_000_000)
         }
     }
+    val isLight = OpenChatPalette.isLight
     val ring = MaterialTheme.colorScheme.outlineVariant
-    val tickColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)
+    val tickColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.60f)
     val accent = OpenChatPalette.Signal
-    val screenBg = OpenChatPalette.Screen
+    val hubBg = if (isLight) Color(0xFFF4F7FC) else Color(0xFF0A0F11)
     val dot = MaterialTheme.colorScheme.onSurface
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     val measurer = rememberTextMeasurer()
-    val labelStyle = TextStyle(fontFamily = FontFamily.Monospace, fontFeatureSettings = "tnum", fontSize = 10.5.sp, color = labelColor)
+    val labelStyle = TextStyle(fontFamily = FontFamily.Monospace, fontFeatureSettings = "tnum", fontSize = 11.sp, color = labelColor)
     Box(modifier.clearAndSetSemantics { }) {
         Canvas(Modifier.fillMaxSize()) {
             val c = center
             val maxR = size.minDimension / 2 - 4.dp.toPx()
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(accent.copy(alpha = if (isLight) 0.06f else 0.085f), accent.copy(alpha = if (isLight) 0.015f else 0.02f)),
+                    center = c,
+                    radius = maxR.coerceAtLeast(2f),
+                ),
+                radius = maxR,
+                center = c,
+            )
             val radii = listOf(maxR * 0.36f, maxR * 0.68f, maxR)
-            radii.forEach { drawCircle(ring, it, c, style = Stroke(1.dp.toPx())) }
+            radii.forEach { drawCircle(ring, it, c, style = Stroke(1.15.dp.toPx())) }
             for (deg in 0 until 360 step 15) {
                 val rad = deg * (PI / 180.0)
                 val major = deg % 45 == 0
-                val inner = maxR - (if (major) 5.dp.toPx() else 2.5.dp.toPx())
+                val inner = maxR - (if (major) 6.dp.toPx() else 3.dp.toPx())
                 drawLine(
                     color = if (major) tickColor else ring,
                     start = Offset(c.x + inner * cos(rad).toFloat(), c.y + inner * sin(rad).toFloat()),
                     end = Offset(c.x + maxR * cos(rad).toFloat(), c.y + maxR * sin(rad).toFloat()),
-                    strokeWidth = if (major) 1.2.dp.toPx() else 0.8.dp.toPx(),
+                    strokeWidth = if (major) 1.25.dp.toPx() else 0.85.dp.toPx(),
                 )
             }
             listOf("10 m", "30 m", "50 m+").forEachIndexed { i, label ->
                 val t = measurer.measure(label, labelStyle)
-                drawText(t, topLeft = Offset(c.x - t.size.width / 2f, c.y - radii[i] + 4.dp.toPx()))
+                drawText(t, topLeft = Offset(c.x - t.size.width / 2f, c.y - radii[i] + 5.dp.toPx()))
             }
         }
         Canvas(Modifier.fillMaxSize().graphicsLayer { rotationZ = sweep }) {
@@ -850,20 +888,20 @@ private fun Radar(modifier: Modifier) {
             val maxR = size.minDimension / 2 - 4.dp.toPx()
             if (!still) {
                 drawArc(
-                    Brush.sweepGradient(listOf(Color.Transparent, accent.copy(alpha = 0.04f), accent.copy(alpha = 0.38f)), c),
-                    startAngle = -48f, sweepAngle = 48f, useCenter = true,
+                    Brush.sweepGradient(listOf(Color.Transparent, accent.copy(alpha = 0.04f), accent.copy(alpha = 0.40f)), c),
+                    startAngle = -52f, sweepAngle = 52f, useCenter = true,
                     topLeft = Offset(c.x - maxR, c.y - maxR), size = Size(maxR * 2, maxR * 2),
                 )
                 drawLine(
-                    color = accent.copy(alpha = 0.72f),
+                    color = accent.copy(alpha = 0.78f),
                     start = c,
                     end = Offset(c.x + maxR, c.y),
-                    strokeWidth = 1.4.dp.toPx(),
+                    strokeWidth = 1.5.dp.toPx(),
                 )
             }
-            drawCircle(screenBg, 7.dp.toPx(), c)
-            drawCircle(accent, 4.8.dp.toPx(), c)
-            drawCircle(dot, 2.2.dp.toPx(), c)
+            drawCircle(hubBg, 7.5.dp.toPx(), c)
+            drawCircle(accent, 5.2.dp.toPx(), c)
+            drawCircle(dot, 2.3.dp.toPx(), c)
         }
     }
 }

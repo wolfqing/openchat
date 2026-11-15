@@ -87,92 +87,84 @@ fun BoardScreen(onBack: () -> Unit, onPanic: () -> Unit) {
     if (composing) {
         BoardComposerSheet(onDismiss = { composing = false })
     }
-    FluidGlassHost {
-        BoxWithConstraints(Modifier.fillMaxSize().openChatCanvas()) {
-            val compactBar = maxWidth < 360.dp
-            Scaffold(
-                containerColor = Color.Transparent,
-                contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                topBar = {
-                    TopAppBar(
-                        colors = chromeTopBarColors(),
-                        navigationIcon = { GlassBackButton(onBack) },
-                        title = {
-                            Column {
-                                PanicTitle(stringResource(R.string.board_title), onPanic)
-                                Text(
-                                    stringResource(R.string.board_subtitle),
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        },
-                        actions = { AudiencePill(encrypted = false, compact = compactBar, modifier = Modifier.padding(end = 12.dp)) },
+    BoxWithConstraints(Modifier.fillMaxSize().openChatCanvas()) {
+        val compactBar = maxWidth < 360.dp
+        Scaffold(
+            containerColor = Color.Transparent,
+            contentColor = OpenChatPalette.Ink,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            topBar = {
+                TopAppBar(
+                    colors = chromeTopBarColors(),
+                    navigationIcon = { GlassBackButton(onBack) },
+                    title = {
+                        Column {
+                            PanicTitle(stringResource(R.string.board_title), onPanic)
+                            Text(
+                                stringResource(R.string.board_subtitle),
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    },
+                    actions = { AudiencePill(encrypted = false, compact = compactBar, modifier = Modifier.padding(end = 12.dp)) },
+                )
+            },
+            floatingActionButton = {
+                if (posts.isNotEmpty()) {
+                    ExtendedFloatingActionButton(
+                        onClick = { composing = true },
+                        containerColor = OpenChatPalette.Signal,
+                        contentColor = Color.White,
+                        icon = { Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        text = { Text(stringResource(R.string.board_post), fontWeight = FontWeight.SemiBold) },
                     )
-                },
-                floatingActionButton = {
-                    if (posts.isNotEmpty()) {
-                        ExtendedFloatingActionButton(
-                            onClick = { composing = true },
-                            containerColor = OpenChatPalette.Ink,
-                            contentColor = OpenChatPalette.Screen,
-                            icon = { Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                            text = { Text(stringResource(R.string.board_post), fontWeight = FontWeight.SemiBold) },
-                        )
-                    }
-                },
-            ) { padding ->
-                val topClearance = padding.calculateTopPadding()
-                FluidGlassSource {
-                    Box(
+                }
+            },
+        ) { padding ->
+            val topClearance = padding.calculateTopPadding()
+            Box(Modifier.fillMaxSize().openChatCanvas()) {
+                if (posts.isEmpty()) {
+                    Column(
                         Modifier
                             .fillMaxSize()
-                            .openChatCanvas()
-                            .fluidGlassSource(),
+                            .verticalScroll(rememberScrollState())
+                            .padding(start = 28.dp, end = 28.dp, top = 20.dp + topClearance, bottom = 28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
                     ) {
-                        if (posts.isEmpty()) {
-                            Column(
-                                Modifier
-                                    .fillMaxSize()
-                                    .verticalScroll(rememberScrollState())
-                                    .padding(start = 28.dp, end = 28.dp, top = 20.dp + topClearance, bottom = 28.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = OpenChatPalette.SignalSoft,
-                                    border = BorderStroke(1.dp, OpenChatPalette.Signal.copy(alpha = 0.45f)),
-                                    modifier = Modifier.size(52.dp),
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Outlined.PushPin, contentDescription = null, tint = OpenChatPalette.Signal, modifier = Modifier.size(24.dp))
-                                    }
-                                }
-                                Text(
-                                    stringResource(R.string.board_empty),
-                                    textAlign = TextAlign.Center,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 14.5.sp,
-                                    lineHeight = 22.sp,
-                                )
-                                Button(onClick = { composing = true }) {
-                                    Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(stringResource(R.string.board_post))
-                                }
-                            }
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 8.dp + topClearance, bottom = 88.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                items(posts, key = { it.idHex }) { BoardCard(it) }
+                        Surface(
+                            shape = CircleShape,
+                            color = OpenChatPalette.SignalSoft,
+                            border = BorderStroke(1.dp, OpenChatPalette.Signal.copy(alpha = 0.45f)),
+                            modifier = Modifier.size(52.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Outlined.PushPin, contentDescription = null, tint = OpenChatPalette.Signal, modifier = Modifier.size(24.dp))
                             }
                         }
+                        Text(
+                            stringResource(R.string.board_empty),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 14.5.sp,
+                            lineHeight = 22.sp,
+                        )
+                        Button(onClick = { composing = true }) {
+                            Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.board_post))
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 8.dp + topClearance, bottom = 88.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        items(posts, key = { it.idHex }) { BoardCard(it) }
                     }
                 }
             }

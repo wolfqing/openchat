@@ -382,6 +382,7 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
         Box(Modifier.fillMaxSize().openChatCanvas()) {
             Scaffold(
                 containerColor = Color.Transparent,
+                contentColor = OpenChatPalette.Ink,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 topBar = {
                     TopAppBar(

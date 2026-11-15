@@ -119,6 +119,7 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
             val mesh by ChatRepository.mesh.collectAsState()
             Scaffold(
                 containerColor = Color.Transparent,
+                contentColor = OpenChatPalette.Ink,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 topBar = {
                     Column(
@@ -252,6 +253,7 @@ fun GroupChatScreen(idHex: String, onBack: () -> Unit, onPanic: () -> Unit) {
             val compactBar = maxWidth < 390.dp
             Scaffold(
                 containerColor = Color.Transparent,
+                contentColor = OpenChatPalette.Ink,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 topBar = {
                     TopAppBar(
@@ -468,6 +470,7 @@ fun GeoPrivateChatScreen(c: Conversation.GeoPrivate, onBack: () -> Unit, onPanic
             val compactBar = maxWidth < 380.dp
             Scaffold(
                 containerColor = Color.Transparent,
+                contentColor = OpenChatPalette.Ink,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 topBar = {
                     TopAppBar(

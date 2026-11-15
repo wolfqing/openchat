@@ -151,7 +151,7 @@
     <string name="note_no_location">留言需要你的位置，请先在「地区」页使用位置</string>
     <string name="media_photo">照片</string>
     <string name="media_voice">语音</string>
-    <string name="media_recording">录音中…点 ■ 发送</string>
+    <string name="media_recording">录音中…</string>
     <string name="media_too_big">文件太大，无法经蓝牙发送。</string>
     <string name="media_geo_unsupported">照片和语音只能在「附近」和私聊中发送。</string>
     <string name="media_private_unsupported">未发送：对方还没连上，或对方的应用不支持加密照片和语音。</string>
@@ -262,7 +262,7 @@
     <string name="pay_no_wallet">没有安装 Cashu 钱包应用。可复制令牌，粘贴到钱包里。</string>
     <string name="pay_copy">复制</string>
     <string name="pay_copied">已复制令牌</string>
-    <string name="media_mic_hint">语音：按住说话，或点一下开始、再点一下发送</string>
+    <string name="media_mic_hint">语音：按住说话，或点一下录音（可停止试听或直接发送）</string>
     <string name="live_voice_title">实时语音</string>
     <string name="live_voice_body">在「附近」和私聊里，你说话时别人就能边听；别人的语音在你打开该聊天时也会实时播放。关闭后双方都只收发录完的语音。</string>
     <string name="media_play">播放</string>
@@ -326,7 +326,38 @@
     <string name="theme_light">亮色</string>
     <string name="theme_dark">OLED 纯黑</string>
     <string name="live_ptt_speaking">实时对讲 · %1$s</string>
-    <string name="live_ptt_sending">实时对讲中… 讲完点发送</string>
+    <string name="live_ptt_sending">实时对讲中…</string>
     <string name="live_ptt_mute">静音实时对讲</string>
     <string name="live_ptt_unmute">开启实时对讲</string>
+
+    <string name="me_name_random">随机</string>
+    <string name="guide_button">说明</string>
+    <string name="guide_title">使用说明</string>
+    <string name="guide_entry_sub">离线蓝牙组网、加密私信、实时对讲、3D 地球与快捷指令</string>
+    <string name="guide_subtitle">无需注册、手机号或中心服务器——离线低功耗蓝牙多跳网格与位置频道通信。</string>
+    <string name="guide_sec_features">核心能力</string>
+    <string name="guide_mesh_title">离线蓝牙多跳网格（Nearby）</string>
+    <string name="guide_mesh_body">无手机信号和 Wi-Fi 时，消息通过低功耗蓝牙在手机之间自动接力转发（最多 7 跳），跳数标签直观显示接力距离。</string>
+    <string name="guide_e2e_title">端到端加密私信与群聊（Private）</string>
+    <string name="guide_e2e_body">私信采用 Noise XX 端到端加密并显示四步送达路径；对方暂时离开范围时，消息会封装为密封信封由沿途节点代为捎带。</string>
+    <string name="guide_voice_title">实时语音对讲与语音条</string>
+    <string name="guide_voice_body">按住麦克风即可在附近蓝牙网格内实时对讲；点一下麦克风开始录音，可随时点停止试听回放、删除或发送。</string>
+    <string name="guide_globe_title">位置频道与 3D 地球（Location）</string>
+    <string name="guide_globe_body">转动与双指缩放 3D 地球，选择街区、城市或省区级 #geohash 位置频道，所有连接默认经 Tor 保护网络隐私。</string>
+    <string name="guide_board_title">附近公告板与地点留言</string>
+    <string name="guide_board_body">在附近频道右上角打开「公告板」可张贴多日有效或紧急互助信息；在位置页可留下 24 小时有效的当前地点留言。</string>
+    <string name="guide_sec_privacy">身份与安全</string>
+    <string name="guide_id_title">零账号本地身份与随机昵称</string>
+    <string name="guide_id_body">你的 昵称#xxxx 后缀与对称几何徽记均由本机密钥生成；在「我」页面编辑名字时可一键点击「随机」自动生成代号。</string>
+    <string name="guide_verify_title">当面扫码核验身份</string>
+    <string name="guide_verify_body">在「我」页面展示二维码或扫描对方二维码，即可核验公钥指纹并标记为已验证，防止重名冒充。</string>
+    <string name="guide_panic_title">三击紧急抹除（Panic Wipe）</string>
+    <string name="guide_panic_body">在任意页面连续快速点击三次左上角 OpenChat 标志或顶部标题，即可无需确认立即销毁本机密钥、会话与缓存并生成新身份。</string>
+    <string name="guide_sec_commands">聊天快捷指令</string>
+    <string name="guide_cmd_intro">在任意聊天输入框输入 / 或 @ 即可弹出快捷补全胶囊：</string>
+    <string name="guide_cmd_who">查看当前频道内在线或可达的成员列表</string>
+    <string name="guide_cmd_msg">直接向指定成员发起或发送端到端加密私信</string>
+    <string name="guide_cmd_diag">测试与某位成员的蓝牙往返延迟或查看中继路径</string>
+    <string name="guide_cmd_social">收藏好友（支持离线捎带与互联网回退）或屏蔽骚扰</string>
+    <string name="guide_cmd_room">创建/管理加密群聊、在当前位置留字条，或清空本地聊天记录</string>
 </resources>

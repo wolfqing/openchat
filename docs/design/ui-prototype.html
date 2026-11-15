@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>openchat v0.7.7 · UI Prototype (Liquid Glass, Radiant Light &amp; OLED Dark)</title>
+<title>openchat v0.7.8 · UI Prototype (Bottom Liquid Glass + Flat Chrome, Radiant Light &amp; OLED Dark)</title>
 <style>
   :root {
     --page-bg: #0D1117;
@@ -352,8 +352,8 @@
   <header class="studio-bar">
     <div class="studio-top">
       <div>
-        <div class="studio-title">openchat v0.7.7 · Optical-Refraction Liquid Glass Prototype</div>
-        <div class="studio-sub">Scroll the Nearby or Private feed to inspect live Snell refraction behind the floating composer &amp; bottom tab capsule. Zero emojis — pure vector SVG icons.</div>
+        <div class="studio-title">openchat v0.7.8 · Bottom Liquid Glass + Flat Chrome Prototype</div>
+        <div class="studio-sub">Scroll the Nearby or Private feed to inspect frosted Snell refraction behind the bottom tab capsule, paired with flat zero-shadow chrome. Zero emojis — pure vector SVG icons.</div>
       </div>
       <div class="btn-row">
         <button class="ctrl-btn active" id="btnModeMix" onclick="setThemeMode('mix')">Light + OLED Dark</button>
@@ -376,8 +376,8 @@
       </label>
       <label class="optic-cell">
         <span>Clarity Blur (dp)</span>
-        <input type="range" id="slBlur" min="0" max="5" step="0.2" value="2.0" oninput="updateOptics()" />
-        <span id="valBlur" class="mono">2.0</span>
+        <input type="range" id="slBlur" min="0" max="12" step="0.5" value="7.5" oninput="updateOptics()" />
+        <span id="valBlur" class="mono">7.5</span>
       </label>
     </div>
   </header>
