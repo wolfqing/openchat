@@ -1,5 +1,58 @@
 # Changelog
 
+## Android v0.7.7 (preview) — 2026-11-15
+
+Anisotropic physical Liquid Glass rim for Radiant Light and full visual
+alignment with the refined zero-fog Liquid Glass design prototype
+([ui-prototype.html](docs/design/ui-prototype.html)). No wire-format change.
+199 unit tests. ~9.4 MB.
+
+### Improved
+
+- **Anisotropic Light-theme Liquid Glass rim & daylight separation (`FluidGlass`).**
+  Floating Liquid Glass capsules, circular action orbs, and active tab water
+  droplets now render circular-arc cosine-projected **thin dark refractive
+  left/right flanks** (`#14263C` at `50%` alpha on clear glass; darkened
+  amber/cobalt on accented glass) paired with **thin pure-white `#FFFFFF`
+  top/bottom specular catchlights**, a `0.60dp` `13%` cool-slate outer contact
+  contour, inner vertical specular sheen, and crisp cool-slate elevation
+  shadows—plus directional lateral absorption and `1.22x` chroma clarity in the
+  AGSL shader (`FLUID_GLASS_AGSL`)—so light-mode glass never melts into bright
+  daylight canvases while preserving the locked `15dp / 6dp / 2.0dp` optical
+  parameters, zero milky surface fog, and zero artificial inner crescent arcs.
+- **Full fidelity to the refined Radiant Light & OLED Dark design (`Theme`, `MainScreen`, `ChatPane`, `MeshVisuals`, `PrivateChats`, `LocationScreens`, `BoardScreen`, `MeScreen`, `People`, `Onboarding`).**
+  - **Atmospheric canvas (`Modifier.openChatCanvas()`)**: replaces flat solid
+    `#F4F7FC` fills across chat timelines and tab screens with a vertical
+    `#FFFFFF -> #F4F7FC -> #EBF1F8` daylight gradient + top-left warm
+    Signal-orange (`10.5%`) and bottom-right cool Lock-blue (`10.5%`) ambient
+    radial glows (and `#000000` + subtle warm/cool radial glows in OLED Dark).
+  - **Transparent floating header + full-screen live refraction**: `TopAppBar`
+    and `NearbyStatusCapsuleRow` / `RouteBand` float transparently over a
+    full-screen `.fluidGlassSource()` container (`0..H`) without opaque header
+    boxes or full-width grey hairlines, featuring a `36dp` crystal `PanicLogo`
+    orb with glowing Signal-orange core, `GlassBackButton` on secondary
+    screens, Signal-orange `Board` pushpin, and compact intrinsic-width status
+    capsules (`3 direct · 11 reachable · 4s ago`).
+  - **Refined timeline & card details**: rounded inset `@mention` cards
+    (`#FFF1EA` Light / `#22120B` Dark) and inline monospace `@mention` pill
+    badges, top-right Signal-soft hop badges (`2 hops`) beside timestamps,
+    text-indented `58dp` `7%` dividers, radial-gradient jewel `EmblemView`
+    avatars, Signal-orange / Lock-blue circular voice-note play buttons, clean
+    composer placeholders with translucent crystal `Mic` orbs, ultra-clear
+    `fluidGlassDroplet` active tab indicators, and `76%` translucent settings
+    and tip cards.
+
+### Checked, and not
+
+- Checked on GitHub Actions CI (`ubuntu-latest`, Temurin JDK 17): 199 unit
+  tests pass, `lintDebug` and `lintVitalRelease` 0 errors, debug and R8 release
+  APKs build cleanly (`app-release.apk`). Because `android/keystore.properties`
+  stays offline ([SECURITY.md](SECURITY.md)), the CI-built APK attached to the
+  GitHub pre-release (`openchat-0.7.7-ci-debug-signed.apk`, SHA-256 in the
+  release notes) uses the CI debug key.
+- Not checked on this build: real-device BLE mesh radio and stock bitchat
+  interop.
+
 ## Android v0.7.6 (preview) — 2026-11-15
 
 Hotfix for an immediate launch crash in v0.7.5 when entering `MainScreen`.

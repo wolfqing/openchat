@@ -7,16 +7,22 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -24,7 +30,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.VolumeOff
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.filled.Add
@@ -51,6 +56,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -61,6 +67,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -70,6 +77,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.openchat.android.R
@@ -105,82 +113,91 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
     if (sheet) PersonSheet(PersonRef.Mesh(peerHex, peer?.nickname ?: names[peerHex]), onDismiss = { sheet = false }, onMessage = {})
 
     FluidGlassHost {
-        Scaffold(
-            containerColor = OpenChatPalette.Screen,
-            topBar = {
-                Column {
-                    TopAppBar(
-                        colors = chromeTopBarColors(),
-                        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
-                        title = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                Box(Modifier.clip(RoundedCornerShape(8.dp)).clickable { sheet = true }) {
-                                    EmblemView(peerHex, 32.dp)
+        BoxWithConstraints(Modifier.fillMaxSize().openChatCanvas()) {
+            val compactBar = maxWidth < 400.dp
+            val showTopBand = peer != null || dmSpeaker != null
+            val mesh by ChatRepository.mesh.collectAsState()
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                topBar = {
+                    Column(
+                        Modifier.windowInsetsPadding(
+                            WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
+                        ),
+                    ) {
+                        TopAppBar(
+                            colors = chromeTopBarColors(),
+                            navigationIcon = { GlassBackButton(onBack) },
+                            title = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                ) {
+                                    Box(Modifier.clip(RoundedCornerShape(10.dp)).clickable { sheet = true }) {
+                                        EmblemView(peerHex, 32.dp)
+                                    }
+                                    Column(Modifier.weight(1f, fill = false)) {
+                                        PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex), vouched = social.isVouchedPeer(peerHex)), onPanic)
+                                        val hops = peer?.hops
+                                        Text(
+                                            when {
+                                                social.isBlockedPeer(peerHex) -> stringResource(R.string.peer_blocked_short)
+                                                peer != null && (peer.direct || hops == 1) -> stringResource(R.string.dm_status_direct)
+                                                peer != null && hops != null -> plural(R.plurals.dm_status_relayed, hops - 1)
+                                                peer != null -> stringResource(R.string.dm_status_here)
+                                                social.favoriteOf(peerHex)?.let { it.mine && it.theyFavorited && it.theirNpub != null } == true -> stringResource(R.string.dm_status_internet)
+                                                else -> stringResource(R.string.dm_status_away)
+                                            },
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
                                 }
-                                Column {
-                                    PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex), vouched = social.isVouchedPeer(peerHex)), onPanic)
-                                    val hops = peer?.hops
-                                    Text(
-                                        when {
-                                            social.isBlockedPeer(peerHex) -> stringResource(R.string.peer_blocked_short)
-                                            peer != null && (peer.direct || hops == 1) -> stringResource(R.string.dm_status_direct)
-                                            peer != null && hops != null -> plural(R.plurals.dm_status_relayed, hops - 1)
-                                            peer != null -> stringResource(R.string.dm_status_here)
-                                            social.favoriteOf(peerHex)?.let { it.mine && it.theyFavorited && it.theirNpub != null } == true -> stringResource(R.string.dm_status_internet)
-                                            else -> stringResource(R.string.dm_status_away)
-                                        },
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
+                            },
+                            actions = {
+                                AudiencePill(encrypted = true, compact = compactBar)
+                                IconButton(onClick = { LiveVoicePrefs.setEnabled(context, !liveVoiceOn) }) {
+                                    Icon(
+                                        if (liveVoiceOn) Icons.AutoMirrored.Outlined.VolumeUp else Icons.AutoMirrored.Outlined.VolumeOff,
+                                        contentDescription = stringResource(if (liveVoiceOn) R.string.live_ptt_mute else R.string.live_ptt_unmute),
+                                        tint = if (liveVoiceOn) OpenChatPalette.Ink else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp),
                                     )
                                 }
-                            }
-                        },
-                        actions = {
-                            AudiencePill(encrypted = true)
-                            IconButton(onClick = { LiveVoicePrefs.setEnabled(context, !liveVoiceOn) }) {
-                                Icon(
-                                    if (liveVoiceOn) Icons.AutoMirrored.Outlined.VolumeUp else Icons.AutoMirrored.Outlined.VolumeOff,
-                                    contentDescription = stringResource(if (liveVoiceOn) R.string.live_ptt_mute else R.string.live_ptt_unmute),
-                                    tint = if (liveVoiceOn) OpenChatPalette.Ink else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                            IconButton(onClick = { sheet = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.peer_more)) }
-                        },
-                    )
-                    Hairline()
-                }
-            },
-        ) { padding ->
-            val showTopBand = peer != null || dmSpeaker != null
-            Box(Modifier.padding(top = padding.calculateTopPadding()).fillMaxSize()) {
-                ChatPane(
-                    conversation = convKey,
-                    emptyText = stringResource(R.string.dm_empty, name),
-                    placeholder = stringResource(R.string.dm_placeholder, name),
-                    onSend = { ChatRepository.controller?.sendPrivate(peerHex, it) },
-                    onVisible = { list ->
-                        val unreadIds = list.filter { !it.mine && readSent.add(it.id) }.map { it.id }
-                        if (unreadIds.isNotEmpty()) ChatRepository.controller?.markRead(peerHex, unreadIds)
-                    },
-                    topClearance = if (showTopBand) 44.dp else 0.dp,
-                )
-                if (showTopBand) {
-                    val mesh by ChatRepository.mesh.collectAsState()
-                    Box(Modifier.align(Alignment.TopCenter)) {
-                        RouteBand(
-                            name = name,
-                            hops = if (peer?.direct == true) 1 else peer?.hops,
-                            direct = peers.count { it.direct && it.peerIdHex != mesh.myPeerHex },
-                            lastHeard = peer?.lastSeen ?: System.currentTimeMillis(),
-                            liveSpeakerLabel = dmSpeaker,
+                                IconButton(onClick = { sheet = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.peer_more)) }
+                            },
                         )
+                        if (showTopBand) {
+                            RouteBand(
+                                name = name,
+                                hops = if (peer?.direct == true) 1 else peer?.hops,
+                                direct = peers.count { it.direct && it.peerIdHex != mesh.myPeerHex },
+                                lastHeard = peer?.lastSeen ?: System.currentTimeMillis(),
+                                liveSpeakerLabel = dmSpeaker,
+                            )
+                        }
                     }
+                },
+            ) { padding ->
+                Box(
+                    Modifier
+                        .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal))
+                        .fillMaxSize(),
+                ) {
+                    ChatPane(
+                        conversation = convKey,
+                        emptyText = stringResource(R.string.dm_empty, name),
+                        placeholder = stringResource(R.string.dm_placeholder, name),
+                        onSend = { ChatRepository.controller?.sendPrivate(peerHex, it) },
+                        onVisible = { list ->
+                            val unreadIds = list.filter { !it.mine && readSent.add(it.id) }.map { it.id }
+                            if (unreadIds.isNotEmpty()) ChatRepository.controller?.markRead(peerHex, unreadIds)
+                        },
+                        topClearance = padding.calculateTopPadding(),
+                    )
                 }
             }
         }
@@ -231,13 +248,15 @@ fun GroupChatScreen(idHex: String, onBack: () -> Unit, onPanic: () -> Unit) {
     if (members) GroupMembersSheet(g, onDismiss = { members = false }, onLeave = { members = false; ChatRepository.controller?.groupLeave(idHex); onBack() })
     person?.let { p -> PersonSheet(p, onDismiss = { person = null }, onMessage = { key -> ChatRepository.requestOpen(Conversation.Private(key).key) }) }
     FluidGlassHost {
-        Scaffold(
-            containerColor = OpenChatPalette.Screen,
-            topBar = {
-                Column {
+        BoxWithConstraints(Modifier.fillMaxSize().openChatCanvas()) {
+            val compactBar = maxWidth < 390.dp
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                topBar = {
                     TopAppBar(
                         colors = chromeTopBarColors(),
-                        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
+                        navigationIcon = { GlassBackButton(onBack) },
                         title = {
                             Column {
                                 PanicTitle("#" + g.name, onPanic)
@@ -251,7 +270,7 @@ fun GroupChatScreen(idHex: String, onBack: () -> Unit, onPanic: () -> Unit) {
                             }
                         },
                         actions = {
-                            AudiencePill(encrypted = true, modifier = Modifier.padding(end = 6.dp))
+                            AudiencePill(encrypted = true, compact = compactBar, modifier = Modifier.padding(end = 6.dp))
                             FluidGlassPillButton(
                                 onClick = { members = true },
                                 modifier = Modifier.padding(end = 10.dp),
@@ -260,23 +279,30 @@ fun GroupChatScreen(idHex: String, onBack: () -> Unit, onPanic: () -> Unit) {
                                 Text(
                                     stringResource(R.string.group_members_title),
                                     fontSize = 13.sp,
-                                    fontWeight = FontWeight.Medium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = OpenChatPalette.Ink,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
                         },
                     )
-                    Hairline()
+                },
+            ) { padding ->
+                Box(
+                    Modifier
+                        .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal))
+                        .fillMaxSize(),
+                ) {
+                    ChatPane(
+                        conversation = Conversation.Group(idHex).key,
+                        emptyText = stringResource(R.string.group_empty),
+                        placeholder = stringResource(R.string.group_placeholder, g.name),
+                        onSend = { ChatRepository.controller?.sendGroup(idHex, it) },
+                        onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) person = PersonRef.Mesh(m.senderKey, m.senderName) },
+                        topClearance = padding.calculateTopPadding(),
+                    )
                 }
-            },
-        ) { padding ->
-            Box(Modifier.padding(top = padding.calculateTopPadding()).fillMaxSize()) {
-                ChatPane(
-                    conversation = Conversation.Group(idHex).key,
-                    emptyText = stringResource(R.string.group_empty),
-                    placeholder = stringResource(R.string.group_placeholder, g.name),
-                    onSend = { ChatRepository.controller?.sendGroup(idHex, it) },
-                    onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) person = PersonRef.Mesh(m.senderKey, m.senderName) },
-                )
             }
         }
     }
@@ -289,8 +315,10 @@ private fun GroupMembersSheet(g: org.openchat.android.app.GroupInfo, onDismiss: 
     val memberIds = g.members.map { it.fingerprint.take(16) }.toSet()
     val invitable = peers.filter { it.peerIdHex !in memberIds }
     val inlineIcons = rememberLabelInlineIcons()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = OpenChatPalette.Surface,
         contentColor = OpenChatPalette.Ink,
     ) {
@@ -298,112 +326,126 @@ private fun GroupMembersSheet(g: org.openchat.android.app.GroupInfo, onDismiss: 
             Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 GroupAvatar(size = 38)
                 Column(Modifier.weight(1f)) {
-                    Text("#" + g.name, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("#" + g.name, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
                         stringResource(R.string.group_status, plural(R.plurals.group_members, g.members.size)),
                         fontSize = 12.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
 
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = OpenChatPalette.Card,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.fillMaxWidth(),
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Column {
-                    g.members.forEachIndexed { idx, m ->
-                        if (idx > 0) Hairline(Modifier.padding(start = 52.dp))
-                        val hex = m.fingerprint.take(16)
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = OpenChatPalette.Card,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column {
+                        g.members.forEachIndexed { idx, m ->
+                            if (idx > 0) Hairline(Modifier.padding(start = 52.dp))
+                            val hex = m.fingerprint.take(16)
+                            Row(
+                                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                EmblemView(hex, 28.dp)
+                                Text(
+                                    buildAnnotatedString {
+                                        append(labelText(PeerLabel.mesh(m.nickname, hex)))
+                                        if (m.fingerprint == g.myFingerprint) {
+                                            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
+                                                append(" · " + stringResource(R.string.group_you))
+                                            }
+                                        }
+                                    },
+                                    Modifier.weight(1f),
+                                    inlineContent = inlineIcons,
+                                    fontSize = 14.sp,
+                                )
+                                if (m.fingerprint == g.creatorFingerprint) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Icon(Icons.Filled.Star, contentDescription = null, tint = OpenChatPalette.Signal, modifier = Modifier.size(13.dp))
+                                        Text(stringResource(R.string.group_creator), fontSize = 12.sp, color = OpenChatPalette.Signal, fontWeight = FontWeight.Medium)
+                                    }
+                                } else if (g.iAmCreator) {
+                                    TextButton(onClick = { ChatRepository.controller?.groupRemove(g.idHex, m.fingerprint) }) {
+                                        Text(stringResource(R.string.group_remove), color = MaterialTheme.colorScheme.error)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (g.iAmCreator) {
+                    Text(stringResource(R.string.group_invite_title), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    if (invitable.isEmpty()) {
+                        Text(stringResource(R.string.group_none_nearby), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = OpenChatPalette.Card,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
-                            EmblemView(hex, 28.dp)
-                            Text(
-                                buildAnnotatedString {
-                                    append(labelText(PeerLabel.mesh(m.nickname, hex)))
-                                    if (m.fingerprint == g.myFingerprint) {
-                                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
-                                            append(" · " + stringResource(R.string.group_you))
+                            Column {
+                                invitable.forEachIndexed { idx, p ->
+                                    if (idx > 0) Hairline(Modifier.padding(start = 52.dp))
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    ) {
+                                        EmblemView(p.peerIdHex, 28.dp)
+                                        Text(labelText(PeerLabel.mesh(p.nickname, p.peerIdHex)), Modifier.weight(1f), inlineContent = inlineIcons, fontSize = 14.sp)
+                                        FilledTonalButton(
+                                            enabled = g.members.size < org.openchat.android.core.Group.MAX_MEMBERS,
+                                            onClick = { ChatRepository.controller?.groupInvite(g.idHex, p.peerIdHex) },
+                                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                        ) {
+                                            Text(stringResource(R.string.group_invite), fontSize = 13.sp)
                                         }
                                     }
-                                },
-                                Modifier.weight(1f),
-                                inlineContent = inlineIcons,
-                                fontSize = 14.sp,
-                            )
-                            if (m.fingerprint == g.creatorFingerprint) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Icon(Icons.Filled.Star, contentDescription = null, tint = OpenChatPalette.Signal, modifier = Modifier.size(13.dp))
-                                    Text(stringResource(R.string.group_creator), fontSize = 12.sp, color = OpenChatPalette.Signal, fontWeight = FontWeight.Medium)
-                                }
-                            } else if (g.iAmCreator) {
-                                TextButton(onClick = { ChatRepository.controller?.groupRemove(g.idHex, m.fingerprint) }) {
-                                    Text(stringResource(R.string.group_remove), color = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }
                     }
-                }
-            }
-
-            if (g.iAmCreator) {
-                Text(stringResource(R.string.group_invite_title), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                if (invitable.isEmpty()) {
-                    Text(stringResource(R.string.group_none_nearby), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = OpenChatPalette.Card,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Column {
-                            invitable.forEachIndexed { idx, p ->
-                                if (idx > 0) Hairline(Modifier.padding(start = 52.dp))
-                                Row(
-                                    Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                ) {
-                                    EmblemView(p.peerIdHex, 28.dp)
-                                    Text(labelText(PeerLabel.mesh(p.nickname, p.peerIdHex)), Modifier.weight(1f), inlineContent = inlineIcons, fontSize = 14.sp)
-                                    FilledTonalButton(
-                                        enabled = g.members.size < org.openchat.android.core.Group.MAX_MEMBERS,
-                                        onClick = { ChatRepository.controller?.groupInvite(g.idHex, p.peerIdHex) },
-                                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                                    ) {
-                                        Text(stringResource(R.string.group_invite), fontSize = 13.sp)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    Text(stringResource(R.string.group_creator_manages), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            } else {
-                Text(stringResource(R.string.group_creator_manages), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedButton(
                     onClick = onLeave,
                     modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
-                ) { Text(stringResource(R.string.group_leave)) }
-                FilledTonalButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.close))
+                ) { Text(stringResource(R.string.group_leave), maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                FilledTonalButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                ) {
+                    Text(stringResource(R.string.close), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
@@ -422,19 +464,21 @@ fun GeoPrivateChatScreen(c: Conversation.GeoPrivate, onBack: () -> Unit, onPanic
     LaunchedEffect(c) { ChatRepository.controller?.joinGeo(c.geohash, teleported = ChatRepository.geo.value.locationGeohash?.startsWith(c.geohash) != true) }
     if (sheet) PersonSheet(PersonRef.Geo(c.pubkey, names[c.pubkey], c.geohash), onDismiss = { sheet = false }, onMessage = {})
     FluidGlassHost {
-        Scaffold(
-            containerColor = OpenChatPalette.Screen,
-            topBar = {
-                Column {
+        BoxWithConstraints(Modifier.fillMaxSize().openChatCanvas()) {
+            val compactBar = maxWidth < 380.dp
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                topBar = {
                     TopAppBar(
                         colors = chromeTopBarColors(),
-                        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
+                        navigationIcon = { GlassBackButton(onBack) },
                         title = {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Box(Modifier.clip(RoundedCornerShape(8.dp)).clickable { sheet = true }) {
+                                Box(Modifier.clip(RoundedCornerShape(10.dp)).clickable { sheet = true }) {
                                     EmblemView(c.pubkey, 32.dp)
                                 }
-                                Column {
+                                Column(Modifier.weight(1f, fill = false)) {
                                     PanicTitle(labelText(label), onPanic)
                                     Text(
                                         stringResource(R.string.geo_dm_status, c.geohash),
@@ -447,25 +491,29 @@ fun GeoPrivateChatScreen(c: Conversation.GeoPrivate, onBack: () -> Unit, onPanic
                             }
                         },
                         actions = {
-                            AudiencePill(encrypted = true)
+                            AudiencePill(encrypted = true, compact = compactBar)
                             IconButton(onClick = { sheet = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.peer_more)) }
                         },
                     )
-                    Hairline()
+                },
+            ) { padding ->
+                Box(
+                    Modifier
+                        .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal))
+                        .fillMaxSize(),
+                ) {
+                    ChatPane(
+                        conversation = c.key,
+                        emptyText = stringResource(R.string.geo_dm_empty, label.toString(), c.geohash),
+                        placeholder = stringResource(R.string.dm_placeholder, label.toString()),
+                        onSend = { ChatRepository.controller?.sendGeoPrivate(c.geohash, c.pubkey, it) },
+                        onVisible = { list ->
+                            val unreadIds = list.filter { !it.mine && !it.system && readSent.add(it.id) }.map { it.id }
+                            if (unreadIds.isNotEmpty()) ChatRepository.controller?.markRead(c.key, unreadIds)
+                        },
+                        topClearance = padding.calculateTopPadding(),
+                    )
                 }
-            },
-        ) { padding ->
-            Box(Modifier.padding(top = padding.calculateTopPadding()).fillMaxSize()) {
-                ChatPane(
-                    conversation = c.key,
-                    emptyText = stringResource(R.string.geo_dm_empty, label.toString(), c.geohash),
-                    placeholder = stringResource(R.string.dm_placeholder, label.toString()),
-                    onSend = { ChatRepository.controller?.sendGeoPrivate(c.geohash, c.pubkey, it) },
-                    onVisible = { list ->
-                        val unreadIds = list.filter { !it.mine && !it.system && readSent.add(it.id) }.map { it.id }
-                        if (unreadIds.isNotEmpty()) ChatRepository.controller?.markRead(c.key, unreadIds)
-                    },
-                )
             }
         }
     }
@@ -519,7 +567,7 @@ private fun MessagePreviewText(last: ChatMessage?, fallback: String) {
 }
 
 @Composable
-internal fun PrivateList(onOpen: (String) -> Unit, onNewGroup: () -> Unit = {}) {
+internal fun PrivateList(onOpen: (String) -> Unit, onNewGroup: () -> Unit = {}, topClearance: Dp = 0.dp) {
     val peers by ChatRepository.peers.collectAsState()
     val all by ChatRepository.messages.collectAsState()
     val names by ChatRepository.names.collectAsState()
@@ -561,10 +609,11 @@ internal fun PrivateList(onOpen: (String) -> Unit, onNewGroup: () -> Unit = {}) 
             Column(
                 Modifier
                     .fillMaxSize()
-                    .background(OpenChatPalette.Screen)
+                    .openChatCanvas()
                     .fluidGlassSource()
-                    .padding(start = 32.dp, end = 32.dp, top = 24.dp, bottom = 24.dp + bottomClearance),
-                verticalArrangement = Arrangement.Center,
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 28.dp, end = 28.dp, top = 16.dp + topClearance, bottom = 16.dp + bottomClearance),
+                verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Surface(
@@ -577,7 +626,6 @@ internal fun PrivateList(onOpen: (String) -> Unit, onNewGroup: () -> Unit = {}) 
                         Icon(Icons.Outlined.Lock, contentDescription = null, tint = OpenChatPalette.Lock, modifier = Modifier.size(24.dp))
                     }
                 }
-                Spacer(Modifier.height(14.dp))
                 Text(
                     stringResource(R.string.dm_list_empty),
                     textAlign = TextAlign.Center,
@@ -585,13 +633,12 @@ internal fun PrivateList(onOpen: (String) -> Unit, onNewGroup: () -> Unit = {}) 
                     fontSize = 14.5.sp,
                     lineHeight = 22.sp,
                 )
-                Spacer(Modifier.height(16.dp))
                 FluidGlassPillButton(
                     onClick = onNewGroup,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 9.dp),
                 ) {
-                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Text(stringResource(R.string.group_new), fontWeight = FontWeight.Medium)
+                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = OpenChatPalette.Signal)
+                    Text(stringResource(R.string.group_new), fontWeight = FontWeight.SemiBold, color = OpenChatPalette.Ink)
                 }
             }
         }
@@ -602,9 +649,9 @@ internal fun PrivateList(onOpen: (String) -> Unit, onNewGroup: () -> Unit = {}) 
         LazyColumn(
             Modifier
                 .fillMaxSize()
-                .background(OpenChatPalette.Screen)
+                .openChatCanvas()
                 .fluidGlassSource(),
-            contentPadding = PaddingValues(bottom = bottomClearance + 14.dp),
+            contentPadding = PaddingValues(top = 4.dp + topClearance, bottom = bottomClearance + 14.dp),
         ) {
             items(groupList, key = { "grp:" + it.idHex }) { g ->
                 val key = Conversation.Group(g.idHex).key

@@ -15,16 +15,24 @@ import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -66,6 +74,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -152,7 +161,9 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
     val levelName = stringResource(levelLabel(precision))
     val readout = "$levelName · #$cell · ${distanceText(GlobeView.cellWidthMeters(cell))}"
 
-    Box(Modifier.fillMaxSize().background(Color(0xFF060808))) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(Color(0xFF060808))) {
+        val compactHeight = maxHeight < 480.dp
+        val horizontalSafe = WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal)
         Canvas(
             Modifier.fillMaxSize()
                 // Its own layer: what is recorded here is replayed, not redrawn, while only the crosshair above changes.
@@ -217,32 +228,76 @@ private fun GlobePicker(start: String?, onSelect: (String) -> Unit, onBack: () -
         // Sharing a layer with the globe, every coastline was redrawn with it, 60 times a second.
         Canvas(Modifier.fillMaxSize().graphicsLayer()) { drawCrosshair(colors.accent, pulse) }
 
-        Row(Modifier.fillMaxWidth().statusBarsPadding().padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .windowInsetsPadding(horizontalSafe)
+                .padding(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), tint = Color.White) }
-            Column {
-                Text(stringResource(R.string.globe_title), color = Color.White, fontWeight = FontWeight.SemiBold)
-                Text(stringResource(R.string.globe_hint), color = Color(0xFF9AA4A3), fontSize = 12.sp)
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.globe_title), color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (!compactHeight) {
+                    Text(stringResource(R.string.globe_hint), color = Color(0xFF9AA4A3), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
             }
         }
 
-        Column(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Color(0xE6101515)).navigationBarsPadding().padding(16.dp),
-        ) {
-            Text("#$cell", color = colors.accent, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-            Text("$levelName · ${distanceText(GlobeView.cellWidthMeters(cell))}", color = Color(0xFF9AA4A3), fontSize = 13.sp)
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        if (compactHeight) {
+            Row(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(Color(0xE6101515))
+                    .navigationBarsPadding()
+                    .windowInsetsPadding(horizontalSafe)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("#$cell", color = colors.accent, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text("$levelName · ${distanceText(GlobeView.cellWidthMeters(cell))}", color = Color(0xFF9AA4A3), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
                 IconButton(enabled = precision > GlobeView.MIN_PRECISION, onClick = { frame(cell.take(precision - 1)) }) {
                     Icon(Icons.Filled.Remove, stringResource(R.string.globe_zoom_out), tint = Color.White)
                 }
                 IconButton(enabled = precision < GlobeView.MAX_PRECISION, onClick = { frame(Geohash.encode(view.lat, view.lon, precision + 1)) }) {
                     Icon(Icons.Filled.Add, stringResource(R.string.globe_zoom_in), tint = Color.White)
                 }
-                Spacer(Modifier.weight(1f))
                 Button(
                     onClick = { onSelect(cell) },
                     colors = ButtonDefaults.buttonColors(containerColor = OpenChatPalette.Signal, contentColor = OpenChatPalette.OnSignal),
-                ) { Text(stringResource(R.string.globe_select), fontWeight = FontWeight.SemiBold) }
+                ) { Text(stringResource(R.string.globe_select), fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            }
+        } else {
+            Column(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(Color(0xE6101515))
+                    .navigationBarsPadding()
+                    .windowInsetsPadding(horizontalSafe)
+                    .padding(16.dp),
+            ) {
+                Text("#$cell", color = colors.accent, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 22.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("$levelName · ${distanceText(GlobeView.cellWidthMeters(cell))}", color = Color(0xFF9AA4A3), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(enabled = precision > GlobeView.MIN_PRECISION, onClick = { frame(cell.take(precision - 1)) }) {
+                        Icon(Icons.Filled.Remove, stringResource(R.string.globe_zoom_out), tint = Color.White)
+                    }
+                    IconButton(enabled = precision < GlobeView.MAX_PRECISION, onClick = { frame(Geohash.encode(view.lat, view.lon, precision + 1)) }) {
+                        Icon(Icons.Filled.Add, stringResource(R.string.globe_zoom_in), tint = Color.White)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Button(
+                        onClick = { onSelect(cell) },
+                        colors = ButtonDefaults.buttonColors(containerColor = OpenChatPalette.Signal, contentColor = OpenChatPalette.OnSignal),
+                    ) { Text(stringResource(R.string.globe_select), fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                }
             }
         }
     }

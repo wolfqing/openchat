@@ -22,6 +22,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -107,8 +108,8 @@ object Emblem {
     )
 
     private val LIGHT_PALETTE = listOf(
-        Color(0xFFC85032), Color(0xFF148562), Color(0xFF5B47D6), Color(0xFFA87608),
-        Color(0xFF166EB8), Color(0xFFB33882), Color(0xFF4D8214), Color(0xFF9E5D2B),
+        Color(0xFFD94E28), Color(0xFF0D9488), Color(0xFF6941C6), Color(0xFFB45309),
+        Color(0xFF0284C7), Color(0xFFBE185D), Color(0xFF047857), Color(0xFFC2410C),
     )
 
     /** 25 cells, row by row; column 4 mirrors 0 and column 3 mirrors 1. Never empty. */
@@ -141,36 +142,33 @@ fun EmblemView(key: String, size: Dp = 36.dp) {
     val cells = remember(key) { Emblem.cells(key) }
     val color = Emblem.uiColor(key)
     val isLight = OpenChatPalette.isLight
-    val baseBg = OpenChatPalette.Surface
-    val corner = (size.value * 0.24f).coerceIn(7f, 18f).dp
+    val bgEnd = if (isLight) Color.White else Color(0xFF12181A)
+    val strokeColor = if (isLight) Color(0xFF0F1C2E).copy(alpha = 0.10f) else Color.White.copy(alpha = 0.18f)
+    val corner = (size.value * 0.29f).coerceIn(8f, 18f).dp
     Box(
         Modifier
             .size(size)
             .clip(RoundedCornerShape(corner))
-            .background(baseBg)
-            .border(
-                1.dp,
-                color.copy(alpha = if (isLight) 0.24f else 0.28f),
-                RoundedCornerShape(corner),
-            )
-            .padding(size / 5.4f),
+            .border(1.dp, strokeColor, RoundedCornerShape(corner)),
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            drawCircle(
+            drawRect(
                 brush = Brush.radialGradient(
-                    colors = listOf(color.copy(alpha = if (isLight) 0.14f else 0.18f), Color.Transparent),
-                    center = center,
-                    radius = this.size.minDimension * 0.72f,
+                    colors = listOf(color.copy(alpha = 0.26f), bgEnd),
+                    center = Offset(this.size.width * 0.35f, this.size.height * 0.22f),
+                    radius = maxOf(this.size.width, this.size.height) * 0.85f,
                 ),
             )
-            val step = this.size.width / 5f
-            val gap = step * 0.12f
+            val pad = this.size.minDimension * 0.185f
+            val grid = (this.size.minDimension - pad * 2f).coerceAtLeast(4f)
+            val step = grid / 5f
+            val gap = step * 0.16f
             val dotSize = (step - gap).coerceAtLeast(1.5f)
-            val dotRadius = CornerRadius(dotSize * 0.28f, dotSize * 0.28f)
+            val dotRadius = CornerRadius(dotSize * 0.36f, dotSize * 0.36f)
             for (i in 0 until 25) if (cells[i]) {
                 drawRoundRect(
                     color = color,
-                    topLeft = Offset((i % 5) * step + gap * 0.5f, (i / 5) * step + gap * 0.5f),
+                    topLeft = Offset(pad + (i % 5) * step + gap * 0.5f, pad + (i / 5) * step + gap * 0.5f),
                     size = Size(dotSize, dotSize),
                     cornerRadius = dotRadius,
                 )
@@ -383,6 +381,7 @@ internal fun NearbyStatusCapsuleRow(
     liveSpeakerLabel: String?,
     liveVoiceEnabled: Boolean,
     onToggleLiveVoice: () -> Unit,
+    showVoiceToggle: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val now = rememberNow()
@@ -391,15 +390,15 @@ internal fun NearbyStatusCapsuleRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(start = 14.dp, end = 14.dp, top = 0.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         FluidGlassCapsule(
-            modifier = Modifier.weight(1f),
-            tintColor = if (liveSpeakerLabel != null) signal.copy(alpha = if (OpenChatPalette.isLight) 0.14f else 0.20f) else null,
+            modifier = Modifier.weight(1f, fill = false),
+            tintColor = if (liveSpeakerLabel != null) signal.copy(alpha = if (OpenChatPalette.isLight) 0.16f else 0.20f) else null,
             borderAccent = if (liveSpeakerLabel != null) signal else null,
-            shadowElevation = 6.dp,
+            shadowElevation = 5.dp,
             contentAlignment = Alignment.CenterStart,
         ) {
             AnimatedContent(
@@ -409,73 +408,77 @@ internal fun NearbyStatusCapsuleRow(
             ) { speaker ->
                 if (speaker != null) {
                     Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 8.dp),
+                        Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
                     ) {
                         LiveEqualizerBars(active = true, color = signal)
                         Text(
                             stringResource(R.string.live_ptt_speaking, speaker),
                             style = TabularMonoStyle,
-                            fontSize = 12.5.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = signal,
+                            color = if (OpenChatPalette.isLight) Color(0xFFC93B06) else Color.White,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
                         )
                     }
                 } else if (scanningSince != null) {
                     val secs = ((now - scanningSince) / 1000).coerceAtLeast(0)
                     Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 8.dp),
+                        Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
                     ) {
                         SignalPulseDot(live = false)
                         Text(
                             stringResource(R.string.band_scanning),
                             style = TabularMonoStyle,
-                            fontSize = 12.5.sp,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f, fill = false),
                         )
+                        Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 11.5.sp)
                         Text(
                             stringResource(R.string.band_for, String.format(locale, "%d:%02d", secs / 60, secs % 60)),
                             style = TabularMonoStyle,
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
                         )
                     }
                 } else {
                     Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 8.dp),
+                        Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
                     ) {
                         SignalPulseDot(live = true)
-                        BandNumber(stringResource(R.string.band_direct), direct)
-                        Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 12.5.sp)
-                        BandNumber(stringResource(R.string.band_reach), reach)
-                        Spacer(Modifier.weight(1f))
+                        BandNumber(stringResource(R.string.band_direct), direct, highlight = false)
+                        Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 11.5.sp)
+                        BandNumber(stringResource(R.string.band_reach), reach, highlight = true)
                         lastHeard?.let {
-                            Text(agoText(it, now, locale), color = MaterialTheme.colorScheme.onSurfaceVariant, style = TabularMonoStyle, fontSize = 11.5.sp, maxLines = 1)
+                            Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 11.5.sp)
+                            Text(agoText(it, now, locale), color = MaterialTheme.colorScheme.onSurfaceVariant, style = TabularMonoStyle, fontSize = 11.sp, maxLines = 1)
                         }
                     }
                 }
             }
         }
-        FluidGlassCircleButton(
-            icon = if (liveVoiceEnabled) Icons.AutoMirrored.Outlined.VolumeUp else Icons.AutoMirrored.Outlined.VolumeOff,
-            contentDescription = stringResource(if (liveVoiceEnabled) R.string.live_ptt_mute else R.string.live_ptt_unmute),
-            onClick = onToggleLiveVoice,
-            size = 36.dp,
-            iconSize = 18.dp,
-            iconTint = if (liveVoiceEnabled) OpenChatPalette.Ink else MaterialTheme.colorScheme.onSurfaceVariant,
-            shadowElevation = 6.dp,
-        )
+        if (showVoiceToggle) {
+            FluidGlassCircleButton(
+                icon = if (liveVoiceEnabled) Icons.AutoMirrored.Outlined.VolumeUp else Icons.AutoMirrored.Outlined.VolumeOff,
+                contentDescription = stringResource(if (liveVoiceEnabled) R.string.live_ptt_mute else R.string.live_ptt_unmute),
+                onClick = onToggleLiveVoice,
+                size = 32.dp,
+                iconSize = 16.dp,
+                iconTint = if (liveVoiceEnabled) OpenChatPalette.Ink else MaterialTheme.colorScheme.onSurfaceVariant,
+                shadowElevation = 5.dp,
+            )
+        }
     }
 }
 
@@ -491,9 +494,9 @@ fun SignalBand(direct: Int, reach: Int, lastHeard: Long?) {
         horizontalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         SignalPulseDot(live = true)
-        BandNumber(stringResource(R.string.band_direct), direct)
+        BandNumber(stringResource(R.string.band_direct), direct, highlight = false)
         Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 13.sp)
-        BandNumber(stringResource(R.string.band_reach), reach)
+        BandNumber(stringResource(R.string.band_reach), reach, highlight = true)
         Spacer(Modifier.weight(1f))
         lastHeard?.let {
             Text(agoText(it, now, locale), color = muted, style = TabularMonoStyle, fontSize = 12.sp, maxLines = 1)
@@ -502,10 +505,23 @@ fun SignalBand(direct: Int, reach: Int, lastHeard: Long?) {
 }
 
 @Composable
-private fun BandNumber(label: String, n: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = TabularMonoStyle, fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurface)
-        Text("$n", style = TabularMonoStyle, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = OpenChatPalette.Signal)
+private fun BandNumber(label: String, n: Int, highlight: Boolean = false) {
+    val tone = if (highlight) OpenChatPalette.Signal else MaterialTheme.colorScheme.onSurface
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            "$n",
+            style = TabularMonoStyle,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = tone,
+        )
+        Text(
+            label.lowercase(appLocale()),
+            style = TabularMonoStyle,
+            fontSize = 11.5.sp,
+            fontWeight = if (highlight) FontWeight.SemiBold else FontWeight.Medium,
+            color = tone,
+        )
     }
 }
 
@@ -545,49 +561,50 @@ fun RouteBand(name: String, hops: Int?, direct: Int, lastHeard: Long, liveSpeake
     val locale = appLocale()
     val resources = LocalResources.current
     val signal = OpenChatPalette.Signal
-    Box(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp)) {
+    Box(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 0.dp, bottom = 6.dp)) {
         FluidGlassCapsule(
-            modifier = Modifier.fillMaxWidth(),
-            tintColor = if (liveSpeakerLabel != null) signal.copy(alpha = if (OpenChatPalette.isLight) 0.14f else 0.20f) else null,
+            tintColor = if (liveSpeakerLabel != null) signal.copy(alpha = if (OpenChatPalette.isLight) 0.16f else 0.20f) else null,
             borderAccent = if (liveSpeakerLabel != null) signal else null,
-            shadowElevation = 4.dp,
+            shadowElevation = 5.dp,
             contentAlignment = Alignment.CenterStart,
         ) {
             if (liveSpeakerLabel != null) {
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 7.dp),
+                    Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
                     LiveEqualizerBars(active = true, color = signal)
                     Text(
                         stringResource(R.string.live_ptt_speaking, liveSpeakerLabel),
                         style = TabularMonoStyle,
-                        fontSize = 12.5.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = signal,
+                        color = if (OpenChatPalette.isLight) Color(0xFFC93B06) else Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
             } else {
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 7.dp),
+                    Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
                     SignalPulseDot(live = true)
                     Text(
                         if (hops == null) stringResource(R.string.dm_relayed) else resources.getQuantityString(R.plurals.route_hops, hops, hops, name),
                         style = TabularMonoStyle,
-                        fontSize = 12.sp,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f, fill = false),
                     )
-                    Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 12.5.sp)
-                    BandNumber(stringResource(R.string.band_direct), direct)
-                    Text(agoText(lastHeard, now, locale), color = MaterialTheme.colorScheme.onSurfaceVariant, style = TabularMonoStyle, fontSize = 11.5.sp, maxLines = 1)
+                    Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 11.5.sp)
+                    BandNumber(stringResource(R.string.band_direct), direct, highlight = false)
+                    Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 11.5.sp)
+                    Text(agoText(lastHeard, now, locale), color = MaterialTheme.colorScheme.onSurfaceVariant, style = TabularMonoStyle, fontSize = 11.sp, maxLines = 1)
                 }
             }
         }
@@ -596,8 +613,9 @@ fun RouteBand(name: String, hops: Int?, direct: Int, lastHeard: Long, liveSpeake
 
 /** Liquid Glass pill naming who can read a conversation (Public vs End-to-End Encrypted). */
 @Composable
-fun AudiencePill(encrypted: Boolean, modifier: Modifier = Modifier) {
+fun AudiencePill(encrypted: Boolean, modifier: Modifier = Modifier, compact: Boolean = false) {
     val fg = if (encrypted) OpenChatPalette.Lock else MaterialTheme.colorScheme.onSurfaceVariant
+    val label = stringResource(if (encrypted) R.string.chip_encrypted else R.string.chip_public)
     FluidGlassSurface(
         modifier = modifier,
         shape = CircleShape,
@@ -607,12 +625,19 @@ fun AudiencePill(encrypted: Boolean, modifier: Modifier = Modifier) {
         shadowElevation = 2.dp,
     ) {
         Row(
-            Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            Modifier.padding(horizontal = if (compact) 8.dp else 10.dp, vertical = if (compact) 5.dp else 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Icon(if (encrypted) Icons.Outlined.Lock else Icons.Outlined.Sensors, contentDescription = null, tint = fg, modifier = Modifier.size(13.dp))
-            Text(stringResource(if (encrypted) R.string.chip_encrypted else R.string.chip_public), color = fg, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Icon(
+                if (encrypted) Icons.Outlined.Lock else Icons.Outlined.Sensors,
+                contentDescription = if (compact) label else null,
+                tint = fg,
+                modifier = Modifier.size(13.dp),
+            )
+            if (!compact) {
+                Text(label, color = fg, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+            }
         }
     }
 }
@@ -646,17 +671,18 @@ fun DeliveryPathDots(state: DeliveryState) {
 @Composable
 fun DayHeader(timestamp: Long, note: String?) {
     val day = dayText(timestamp, System.currentTimeMillis(), appLocale())
+    val isLight = OpenChatPalette.isLight
     Box(Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 20.dp), contentAlignment = Alignment.Center) {
         Text(
             if (note == null) day else "$day · $note",
             modifier = Modifier
-                .background(OpenChatPalette.Surface, RoundedCornerShape(12.dp))
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+                .background(if (isLight) Color(0xFFE9EEF5) else Color(0xFF14191B), CircleShape)
+                .border(0.75.dp, if (isLight) Color(0xFF0F1722).copy(alpha = 0.06f) else Color.White.copy(alpha = 0.08f), CircleShape)
                 .padding(horizontal = 12.dp, vertical = 4.dp)
                 .semantics { heading() },
             textAlign = TextAlign.Center,
             style = TabularMonoStyle,
-            fontSize = 11.5.sp,
+            fontSize = 11.sp,
             lineHeight = 16.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -673,56 +699,75 @@ fun NobodyNearby(
     onShowHistory: (() -> Unit)? = null,
     bottomClearance: Dp = 0.dp,
 ) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 16.dp + bottomClearance),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Radar(Modifier.widthIn(max = 232.dp).fillMaxWidth().aspectRatio(1f))
-        Text(
-            stringResource(R.string.radar_title),
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.semantics { heading() },
-        )
-        Text(
-            stringResource(R.string.radar_body),
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            lineHeight = 20.sp,
-            modifier = Modifier.padding(horizontal = 8.dp),
-        )
-        onShowHistory?.let {
-            FluidGlassPillButton(
-                onClick = it,
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            ) {
-                Text(
-                    stringResource(R.string.radar_history),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val availHeight = (maxHeight - bottomClearance).coerceAtLeast(160.dp)
+        val compact = availHeight < 440.dp
+        val radarMax = minOf(224.dp, maxWidth * 0.56f, (availHeight * 0.36f).coerceIn(96.dp, 224.dp))
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = if (compact) 6.dp else 12.dp,
+                    bottom = 16.dp + bottomClearance,
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 10.dp),
+        ) {
+            Radar(Modifier.widthIn(max = radarMax).fillMaxWidth().aspectRatio(1f))
+            Text(
+                stringResource(R.string.radar_title),
+                fontSize = if (compact) 18.sp else 20.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.semantics { heading() },
+            )
+            Text(
+                stringResource(R.string.radar_body),
+                fontSize = if (compact) 13.5.sp else 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                lineHeight = 20.sp,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            )
+            onShowHistory?.let {
+                FluidGlassPillButton(
+                    onClick = it,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.radar_history),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
+            Spacer(Modifier.height(2.dp))
+            TipCard(1, stringResource(R.string.tip_open_title), stringResource(R.string.tip_open_body), null)
+            TipCard(2, stringResource(R.string.tip_window_title), stringResource(R.string.tip_window_body), null)
+            TipCard(3, stringResource(R.string.tip_share_title), stringResource(R.string.tip_share_body), onShareApp)
         }
-        Spacer(Modifier.height(2.dp))
-        TipCard(1, stringResource(R.string.tip_open_title), stringResource(R.string.tip_open_body), null)
-        TipCard(2, stringResource(R.string.tip_window_title), stringResource(R.string.tip_window_body), null)
-        TipCard(3, stringResource(R.string.tip_share_title), stringResource(R.string.tip_share_body), onShareApp)
     }
 }
 
 @Composable
 private fun TipCard(n: Int, title: String, body: String, onClick: (() -> Unit)?) {
+    val isLight = OpenChatPalette.isLight
     Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = OpenChatPalette.Surface,
-        border = BorderStroke(1.dp, if (onClick != null) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant),
+        shape = RoundedCornerShape(16.dp),
+        color = if (isLight) Color.White.copy(alpha = 0.76f) else Color(0xFF141A1D).copy(alpha = 0.74f),
+        border = BorderStroke(
+            0.8.dp,
+            when {
+                onClick != null && isLight -> Color(0xFF0F1C2E).copy(alpha = 0.14f)
+                isLight -> Color(0xFF0F1C2E).copy(alpha = 0.08f)
+                onClick != null -> Color.White.copy(alpha = 0.16f)
+                else -> Color.White.copy(alpha = 0.09f)
+            },
+        ),
         modifier = Modifier.fillMaxWidth().let { if (onClick != null) it.pressScale(0.98f).clickable(onClick = onClick) else it },
     ) {
         Row(
@@ -731,14 +776,18 @@ private fun TipCard(n: Int, title: String, body: String, onClick: (() -> Unit)?)
             verticalAlignment = Alignment.Top,
         ) {
             Box(
-                Modifier.padding(top = 1.dp).size(24.dp).border(1.5.dp, OpenChatPalette.Signal, CircleShape).clearAndSetSemantics { },
+                Modifier
+                    .padding(top = 1.dp)
+                    .size(24.dp)
+                    .background(OpenChatPalette.Signal, CircleShape)
+                    .clearAndSetSemantics { },
                 contentAlignment = Alignment.Center,
             ) {
-                Text("$n", color = OpenChatPalette.Signal, style = TabularMonoStyle, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                Text("$n", color = Color.White, style = TabularMonoStyle, fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                Text(body, fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(title, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                Text(body, fontSize = 12.5.sp, lineHeight = 18.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (onClick != null) {
                 Icon(

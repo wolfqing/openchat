@@ -3,7 +3,6 @@ package org.openchat.android.ui
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -11,16 +10,24 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.outlined.MyLocation
@@ -51,12 +58,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.openchat.android.R
@@ -69,10 +78,11 @@ import org.openchat.android.ui.globe.GlobeView
 import kotlin.math.roundToInt
 
 @Composable
-internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Unit) {
+internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Unit, topClearance: Dp = 0.dp) {
     val geo by ChatRepository.geo.collectAsState()
     val unread by ChatRepository.unread.collectAsState()
     val bottomClearance = LocalBottomBarClearance.current
+    val imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
     var manual by rememberSaveable { mutableStateOf("") }
     var globe by rememberSaveable { mutableStateOf(false) }
     val here = geo.locationGeohash
@@ -90,10 +100,10 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
         Column(
             Modifier
                 .fillMaxSize()
-                .background(OpenChatPalette.Screen)
+                .openChatCanvas()
                 .fluidGlassSource()
                 .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 18.dp + bottomClearance),
+                .padding(start = 16.dp, end = 16.dp, top = 10.dp + topClearance, bottom = 18.dp + maxOf(bottomClearance, imeBottom)),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
         Text(
@@ -104,10 +114,11 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
         )
 
         // 1. 3D Globe Picker Hero Card
+        val isLight = OpenChatPalette.isLight
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = OpenChatPalette.Card,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            color = if (isLight) Color.White.copy(alpha = 0.78f) else Color(0xFF141A1D).copy(alpha = 0.76f),
+            border = BorderStroke(0.8.dp, if (isLight) Color(0xFF0F1C2E).copy(alpha = 0.10f) else Color.White.copy(alpha = 0.10f)),
             modifier = Modifier.fillMaxWidth().pressScale(0.98f).clip(RoundedCornerShape(16.dp)).clickable { globe = true },
         ) {
             Row(
@@ -368,13 +379,14 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
     BackHandler(onBack = onBack)
     person?.let { PersonSheet(it, onDismiss = { person = null }, onMessage = { key -> ChatRepository.requestOpen(key) }) }
     FluidGlassHost {
-        Scaffold(
-            containerColor = OpenChatPalette.Screen,
-            topBar = {
-                Column {
+        Box(Modifier.fillMaxSize().openChatCanvas()) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                topBar = {
                     TopAppBar(
                         colors = chromeTopBarColors(),
-                        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
+                        navigationIcon = { GlassBackButton(onBack) },
                         title = {
                             Column {
                                 PanicTitle("#$geohash", onPanic)
@@ -395,18 +407,22 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
                             }
                         },
                     )
-                    Hairline()
+                },
+            ) { padding ->
+                Box(
+                    Modifier
+                        .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal))
+                        .fillMaxSize(),
+                ) {
+                    ChatPane(
+                        conversation = Conversation.Geo(geohash).key,
+                        emptyText = stringResource(R.string.geo_empty, geohash),
+                        placeholder = stringResource(R.string.geo_placeholder, geohash),
+                        onSend = { ChatRepository.controller?.sendGeo(geohash, it) },
+                        onSenderClick = { m -> person = PersonRef.Geo(m.senderKey, m.senderName, geohash) },
+                        topClearance = padding.calculateTopPadding(),
+                    )
                 }
-            },
-        ) { padding ->
-            Box(Modifier.padding(padding).fillMaxSize()) {
-                ChatPane(
-                    conversation = Conversation.Geo(geohash).key,
-                    emptyText = stringResource(R.string.geo_empty, geohash),
-                    placeholder = stringResource(R.string.geo_placeholder, geohash),
-                    onSend = { ChatRepository.controller?.sendGeo(geohash, it) },
-                    onSenderClick = { m -> person = PersonRef.Geo(m.senderKey, m.senderName, geohash) },
-                )
             }
         }
     }

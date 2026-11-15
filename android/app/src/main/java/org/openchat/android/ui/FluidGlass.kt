@@ -5,9 +5,6 @@ import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -36,26 +35,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import org.openchat.android.R
 
 /**
  * Optical parameters for OpenChat's in-tree Liquid Glass engine:
@@ -226,11 +231,22 @@ private const val FLUID_GLASS_AGSL = """
 
         half3 rgb = half3(cR.r, cG.g, cB.b);
         half luma = dot(rgb, half3(0.2126, 0.7152, 0.0722));
-        rgb = clamp(mix(half3(luma), rgb, half(1.18)), half3(0.0), half3(1.0));
+        rgb = clamp(mix(half3(luma), rgb, half(1.22)), half3(0.0), half3(1.0));
 
-        float lightDir = dot(grad, float2(-0.62, -0.78));
-        float catchLight = max(lightDir, 0.0) * (t * t * t) * (uLightMode > 0.5 ? 0.34 : 0.20);
-        rgb = clamp(rgb + half3(catchLight), half3(0.0), half3(1.0));
+        float edgeGlow = t * t * t;
+        float vert = abs(grad.y);
+        float horiz = abs(grad.x);
+        if (uLightMode > 0.5) {
+            // Anisotropic crystal glass in daylight: crisp bright specular along top/bottom,
+            // thin dark refractive absorption on left/right lateral edges.
+            float specTB = vert * edgeGlow * 0.28;
+            float absorbLR = horiz * edgeGlow;
+            rgb = rgb + half3(specTB) - half3(absorbLR * 0.11, absorbLR * 0.085, absorbLR * 0.05);
+        } else {
+            float specTB = vert * edgeGlow * 0.22;
+            rgb = rgb + half3(specTB);
+        }
+        rgb = clamp(rgb, half3(0.0), half3(1.0));
 
         return half4(rgb, half(1.0));
     }
@@ -350,45 +366,9 @@ fun FluidGlassSurface(
         }
     }
 
-    // Ultra-clear interior tint (zero milky fog)
-    val fillTint = tintColor ?: if (isLight) {
-        if (overlapsSource && composeEffect != null) Color.White.copy(alpha = 0.22f)
-        else Color.White.copy(alpha = 0.84f)
-    } else {
-        if (overlapsSource && composeEffect != null) Color(0xFF141B1D).copy(alpha = 0.34f)
-        else Color(0xFF151C1E).copy(alpha = 0.86f)
-    }
-
-    // Crisp directional Fresnel specular border (top-left primary catchlight + bottom-right rim)
-    val rimBrush = remember(isLight, borderAccent) {
-        if (borderAccent != null) {
-            Brush.linearGradient(
-                colors = listOf(
-                    borderAccent.copy(alpha = if (isLight) 0.85f else 0.78f),
-                    borderAccent.copy(alpha = 0.28f),
-                    borderAccent.copy(alpha = if (isLight) 0.55f else 0.48f),
-                ),
-            )
-        } else if (isLight) {
-            Brush.linearGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = 0.96f),
-                    Color(0xFFC8D4E6).copy(alpha = 0.52f),
-                    Color.White.copy(alpha = 0.82f),
-                ),
-            )
-        } else {
-            Brush.linearGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = 0.36f),
-                    Color.White.copy(alpha = 0.09f),
-                    Color(0xFF93BCE8).copy(alpha = 0.22f),
-                ),
-            )
-        }
-    }
-
-    val ambientShadow = if (isLight) Color(0x220E1829) else Color(0x66000000)
+    val refractingLive = overlapsSource && composeEffect != null
+    val ambientShadow = if (isLight) Color(0x3B0F203A) else Color(0x6E000000)
+    val spotShadow = if (isLight) Color(0x520F203A) else Color(0x80000000)
 
     Box(
         modifier = modifier
@@ -406,7 +386,7 @@ fun FluidGlassSurface(
                         elevation = shadowElevation,
                         shape = shape,
                         ambientColor = ambientShadow,
-                        spotColor = ambientShadow,
+                        spotColor = spotShadow,
                     )
                 } else it
             }
@@ -414,7 +394,7 @@ fun FluidGlassSurface(
         contentAlignment = contentAlignment,
     ) {
         // Layer 1: Refracted & clarity-blurred live backdrop slice (strictly outside FluidGlassSource)
-        if (host != null && overlapsSource && composeEffect != null) {
+        if (host != null && refractingLive) {
             Box(
                 Modifier
                     .matchParentSize()
@@ -437,16 +417,308 @@ fun FluidGlassSurface(
             )
         }
 
-        // Layer 2: Ultra-clear glass body + crisp Fresnel rim (no interior fog, no artificial arcs)
+        // Layer 2: Zero-fog crystal glass body + anisotropic optical rim
+        // (Light theme: thin dark refractive left/right edges + thin bright top/bottom specular edges)
         Box(
             Modifier
                 .matchParentSize()
-                .background(fillTint, shape)
-                .border(BorderStroke(1.2.dp, rimBrush), shape),
+                .drawFluidGlassOpticalBody(
+                    isLight = isLight,
+                    isCapsule = isCapsule,
+                    fixedCornerPx = fixedCornerPx,
+                    refractingLive = refractingLive,
+                    tintColor = tintColor,
+                    borderAccent = borderAccent,
+                ),
         )
 
         // Layer 3: Razor-sharp foreground content
         content()
+    }
+}
+
+/**
+ * Draws the zero-fog crystal interior, subtle bottom optical caustic, and physical anisotropic
+ * glass rim:
+ * - **Left & right flanks (`两边`)**: thin dark refractive glass edges so light-theme glass never
+ *   melts into a daylight canvas.
+ * - **Top & bottom rims (`上下`)**: thin bright specular catchlights backed by a micro-hairline
+ *   outer separation contour.
+ */
+private fun Modifier.drawFluidGlassOpticalBody(
+    isLight: Boolean,
+    isCapsule: Boolean,
+    fixedCornerPx: Float,
+    refractingLive: Boolean,
+    tintColor: Color?,
+    borderAccent: Color?,
+): Modifier = drawWithCache {
+    val w = size.width.coerceAtLeast(2f)
+    val h = size.height.coerceAtLeast(2f)
+    val r = if (isCapsule) {
+        minOf(w, h) * 0.5f
+    } else {
+        fixedCornerPx.coerceAtMost(minOf(w, h) * 0.5f)
+    }
+    val outerCorner = CornerRadius(r, r)
+
+    // 1. Interior crystal fill + subtle bottom caustic glow (zero milky surface fog)
+    val baseFillBrush: Brush = when {
+        tintColor != null -> {
+            val caustic = (borderAccent ?: tintColor).copy(alpha = if (isLight) 0.30f else 0.34f)
+            Brush.verticalGradient(
+                0.00f to tintColor,
+                0.72f to tintColor,
+                1.00f to lerp(tintColor, caustic, 0.48f),
+            )
+        }
+        isLight && refractingLive -> {
+            Brush.verticalGradient(
+                0.00f to Color.White.copy(alpha = 0.12f),
+                0.65f to Color.White.copy(alpha = 0.07f),
+                1.00f to Color(0xFF2878FF).copy(alpha = 0.08f),
+            )
+        }
+        isLight -> {
+            Brush.verticalGradient(
+                0.00f to Color.White.copy(alpha = 0.72f),
+                0.55f to Color(0xFFF3F8FE).copy(alpha = 0.52f),
+                1.00f to Color(0xFFDCE9F8).copy(alpha = 0.62f),
+            )
+        }
+        refractingLive -> {
+            Brush.verticalGradient(
+                0.00f to Color(0xFF141C20).copy(alpha = 0.24f),
+                0.70f to Color(0xFF0E1418).copy(alpha = 0.18f),
+                1.00f to Color(0xFF68B2FF).copy(alpha = 0.10f),
+            )
+        }
+        else -> {
+            Brush.verticalGradient(
+                0.00f to Color(0xFF1A2327).copy(alpha = 0.80f),
+                1.00f to Color(0xFF12181B).copy(alpha = 0.82f),
+            )
+        }
+    }
+
+    // 2. Anisotropic perimeter rim parameterized by circular-arc cosine projection:
+    //    - 0..30 deg on left/right curved flanks: thin dark refractive glass edge
+    //    - 45 deg corner: smooth mid-tone transition
+    //    - 65..115 deg across top & bottom rails: thin bright pure-white specular catchlight
+    val capRatio = (r / w).coerceIn(0.05f, 0.50f)
+    val darkHoldStop = (capRatio * 0.14f).coerceIn(0.012f, 0.08f)
+    val diagStop = (capRatio * 0.30f).coerceIn(0.028f, 0.16f)
+    val brightStop = (capRatio * 0.58f).coerceIn(0.055f, 0.30f)
+
+    val rimStrokePx = 1.18.dp.toPx()
+    val outerHairPx = 0.60.dp.toPx()
+    val rimInset = rimStrokePx * 0.5f + (if (isLight) outerHairPx * 0.85f else 0f)
+    val rimCorner = CornerRadius((r - rimInset).coerceAtLeast(1f), (r - rimInset).coerceAtLeast(1f))
+
+    val rimBrush = if (isLight) {
+        val darkPole = if (borderAccent != null) {
+            lerp(borderAccent, Color(0xFF0D1B2C), 0.48f).copy(alpha = 0.68f)
+        } else {
+            Color(0xFF14263C).copy(alpha = 0.50f)
+        }
+        val midCap = if (borderAccent != null) {
+            borderAccent.copy(alpha = 0.44f)
+        } else {
+            Color(0xFF435D7C).copy(alpha = 0.28f)
+        }
+        val brightTopBottom = if (borderAccent != null) {
+            lerp(borderAccent, Color.White, 0.80f).copy(alpha = 1.0f)
+        } else {
+            Color.White
+        }
+        Brush.horizontalGradient(
+            0.00f to darkPole,
+            darkHoldStop to darkPole,
+            diagStop to midCap,
+            brightStop to brightTopBottom,
+            (1f - brightStop) to brightTopBottom,
+            (1f - diagStop) to midCap,
+            (1f - darkHoldStop) to darkPole,
+            1.00f to darkPole,
+        )
+    } else {
+        val darkPole = if (borderAccent != null) {
+            borderAccent.copy(alpha = 0.36f)
+        } else {
+            Color.White.copy(alpha = 0.14f)
+        }
+        val midCap = if (borderAccent != null) {
+            borderAccent.copy(alpha = 0.52f)
+        } else {
+            Color(0xFF8CC4FF).copy(alpha = 0.22f)
+        }
+        val brightTopBottom = if (borderAccent != null) {
+            lerp(borderAccent, Color.White, 0.58f).copy(alpha = 0.88f)
+        } else {
+            Color.White.copy(alpha = 0.62f)
+        }
+        Brush.horizontalGradient(
+            0.00f to darkPole,
+            darkHoldStop to darkPole,
+            diagStop to midCap,
+            brightStop to brightTopBottom,
+            (1f - brightStop) to brightTopBottom,
+            (1f - diagStop) to midCap,
+            (1f - darkHoldStop) to darkPole,
+            1.00f to darkPole,
+        )
+    }
+
+    // 3. Crisp top & bottom inner specular sheen
+    val innerSpecStrokePx = 0.85.dp.toPx()
+    val innerInset = rimInset + 0.75.dp.toPx()
+    val innerCorner = CornerRadius((r - innerInset).coerceAtLeast(1f), (r - innerInset).coerceAtLeast(1f))
+    val innerSpecBrush = Brush.verticalGradient(
+        0.00f to Color.White.copy(alpha = if (isLight) 0.95f else 0.40f),
+        0.18f to Color.Transparent,
+        0.82f to Color.Transparent,
+        1.00f to Color.White.copy(alpha = if (isLight) 0.78f else 0.24f),
+    )
+
+    val outerHairColor = if (isLight) {
+        (borderAccent?.let { lerp(it, Color(0xFF102036), 0.55f) } ?: Color(0xFF102036)).copy(alpha = 0.13f)
+    } else {
+        Color.Transparent
+    }
+
+    onDrawBehind {
+        drawRoundRect(brush = baseFillBrush, cornerRadius = outerCorner)
+        if (isLight && size.width > 4f && size.height > 4f) {
+            val hi = outerHairPx * 0.5f
+            drawRoundRect(
+                color = outerHairColor,
+                topLeft = Offset(hi, hi),
+                size = Size(size.width - hi * 2f, size.height - hi * 2f),
+                cornerRadius = outerCorner,
+                style = Stroke(width = outerHairPx),
+            )
+        }
+        if (size.width > rimInset * 2f + 2f && size.height > rimInset * 2f + 2f) {
+            drawRoundRect(
+                brush = rimBrush,
+                topLeft = Offset(rimInset, rimInset),
+                size = Size(size.width - rimInset * 2f, size.height - rimInset * 2f),
+                cornerRadius = rimCorner,
+                style = Stroke(width = rimStrokePx),
+            )
+        }
+        if (size.width > innerInset * 2f + 2f && size.height > innerInset * 2f + 2f) {
+            drawRoundRect(
+                brush = innerSpecBrush,
+                topLeft = Offset(innerInset, innerInset),
+                size = Size(size.width - innerInset * 2f, size.height - innerInset * 2f),
+                cornerRadius = innerCorner,
+                style = Stroke(width = innerSpecStrokePx),
+            )
+        }
+    }
+}
+
+/**
+ * Ultra-clear active water-droplet indicator used inside [CapsuleNavigationBar] and segmented
+ * selectors: lets underlying refracted pixels shine through with thin dark left/right edges and
+ * thin bright top/bottom specular highlights.
+ */
+internal fun Modifier.fluidGlassDroplet(isLight: Boolean): Modifier = drawWithCache {
+    val w = size.width.coerceAtLeast(2f)
+    val h = size.height.coerceAtLeast(2f)
+    val r = minOf(w, h) * 0.5f
+    val corner = CornerRadius(r, r)
+    val capRatio = (r / w).coerceIn(0.08f, 0.50f)
+    val darkHoldStop = (capRatio * 0.14f).coerceIn(0.015f, 0.08f)
+    val diagStop = (capRatio * 0.30f).coerceIn(0.032f, 0.16f)
+    val brightStop = (capRatio * 0.58f).coerceIn(0.06f, 0.30f)
+    val outerHairPx = 0.50.dp.toPx()
+    val strokePx = 1.08.dp.toPx()
+    val inset = strokePx * 0.5f + (if (isLight) outerHairPx * 0.75f else 0f)
+    val innerCorner = CornerRadius((r - inset).coerceAtLeast(1f), (r - inset).coerceAtLeast(1f))
+
+    val fillBrush = if (isLight) {
+        Brush.verticalGradient(
+            0.00f to Color.White.copy(alpha = 0.36f),
+            0.58f to Color.White.copy(alpha = 0.20f),
+            1.00f to Color(0xFF2476FF).copy(alpha = 0.10f),
+        )
+    } else {
+        Brush.verticalGradient(
+            0.00f to Color.White.copy(alpha = 0.14f),
+            0.60f to Color.White.copy(alpha = 0.08f),
+            1.00f to Color(0xFF87CDFF).copy(alpha = 0.13f),
+        )
+    }
+    val rimBrush = if (isLight) {
+        val darkPole = Color(0xFF15273D).copy(alpha = 0.42f)
+        val midCap = Color(0xFF4C6584).copy(alpha = 0.24f)
+        val brightTB = Color.White
+        Brush.horizontalGradient(
+            0.00f to darkPole,
+            darkHoldStop to darkPole,
+            diagStop to midCap,
+            brightStop to brightTB,
+            (1f - brightStop) to brightTB,
+            (1f - diagStop) to midCap,
+            (1f - darkHoldStop) to darkPole,
+            1.00f to darkPole,
+        )
+    } else {
+        val darkPole = Color.White.copy(alpha = 0.15f)
+        val midCap = Color(0xFF87CDFF).copy(alpha = 0.24f)
+        val brightTB = Color.White.copy(alpha = 0.60f)
+        Brush.horizontalGradient(
+            0.00f to darkPole,
+            darkHoldStop to darkPole,
+            diagStop to midCap,
+            brightStop to brightTB,
+            (1f - brightStop) to brightTB,
+            (1f - diagStop) to midCap,
+            (1f - darkHoldStop) to darkPole,
+            1.00f to darkPole,
+        )
+    }
+    onDrawBehind {
+        drawRoundRect(brush = fillBrush, cornerRadius = corner)
+        if (isLight && w > 4f && h > 4f) {
+            val hi = outerHairPx * 0.5f
+            drawRoundRect(
+                color = Color(0xFF102036).copy(alpha = 0.10f),
+                topLeft = Offset(hi, hi),
+                size = Size(w - hi * 2f, h - hi * 2f),
+                cornerRadius = corner,
+                style = Stroke(width = outerHairPx),
+            )
+        }
+        if (w > inset * 2f + 2f && h > inset * 2f + 2f) {
+            drawRoundRect(
+                brush = rimBrush,
+                topLeft = Offset(inset, inset),
+                size = Size(w - inset * 2f, h - inset * 2f),
+                cornerRadius = innerCorner,
+                style = Stroke(width = strokePx),
+            )
+        }
+    }
+}
+
+/** 36dp circular Liquid Glass back button inside a comfortable 48dp header touch target. */
+@Composable
+internal fun GlassBackButton(onClick: () -> Unit) {
+    Box(
+        modifier = Modifier.size(48.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        FluidGlassCircleButton(
+            icon = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = stringResource(R.string.back),
+            onClick = onClick,
+            size = 36.dp,
+            iconSize = 18.dp,
+            shadowElevation = 5.dp,
+        )
     }
 }
 

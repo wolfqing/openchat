@@ -42,7 +42,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -50,6 +50,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
@@ -58,7 +59,6 @@ import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Sensors
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -106,6 +106,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -208,13 +209,13 @@ fun ChatPane(
     }
 
     FluidGlassHost {
-        Box(Modifier.fillMaxSize().background(OpenChatPalette.Screen)) {
-            // Backdrop timeline layer: messages scroll underneath both the floating composer and bottom tab capsule
+        Box(Modifier.fillMaxSize().openChatCanvas()) {
+            // Backdrop timeline layer: messages scroll underneath top glass header, floating composer, and bottom tab capsule
             FluidGlassSource {
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .background(OpenChatPalette.Screen)
+                        .openChatCanvas()
                         .fluidGlassSource(),
                 ) {
                     if (covered) {
@@ -224,10 +225,16 @@ fun ChatPane(
                     } else if (list.isEmpty()) {
                         Column(
                             Modifier
-                                .align(Alignment.Center)
-                                .padding(start = 32.dp, end = 32.dp, top = topClearance, bottom = timelineBottomPadding * 0.5f),
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(
+                                    start = 28.dp,
+                                    end = 28.dp,
+                                    top = 12.dp + topClearance,
+                                    bottom = timelineBottomPadding + 12.dp,
+                                ),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
                         ) {
                             AudiencePill(encrypted = !isPublicFeed)
                             Text(
@@ -242,17 +249,25 @@ fun ChatPane(
                         LazyColumn(
                             state = state,
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(top = 8.dp + topClearance, bottom = timelineBottomPadding),
+                            contentPadding = PaddingValues(top = 6.dp + topClearance, bottom = timelineBottomPadding),
                             verticalArrangement = Arrangement.spacedBy(if (isPublicFeed) 0.dp else 2.dp),
                         ) {
-                            items(rows, key = { it.key }) { r ->
+                            itemsIndexed(rows, key = { _, r -> r.key }) { idx, r ->
                                 when (r) {
                                     is TimelineRow.Day -> DayHeader(r.timestamp, note?.takeIf { r.first })
                                     is TimelineRow.Message -> {
                                         if (r.m.system) {
                                             SystemNoticeRow(r.m.text)
                                         } else if (isPublicFeed) {
-                                            PublicPostRow(r, myNickname = mesh.myNickname, myPeerHex = mesh.myPeerHex, onSenderClick = onSenderClick)
+                                            val prev = rows.getOrNull(idx - 1)
+                                            val showDivider = prev is TimelineRow.Message && !prev.m.mentionsMe
+                                            PublicPostRow(
+                                                row = r,
+                                                showTopDivider = showDivider,
+                                                myNickname = mesh.myNickname,
+                                                myPeerHex = mesh.myPeerHex,
+                                                onSenderClick = onSenderClick,
+                                            )
                                         } else {
                                             EncryptedBubbleRow(r, onSenderClick = onSenderClick)
                                         }
@@ -315,35 +330,45 @@ private fun SystemNoticeRow(text: String) {
 @Composable
 private fun PublicPostRow(
     row: TimelineRow.Message,
+    showTopDivider: Boolean,
     myNickname: String,
     myPeerHex: String,
     onSenderClick: ((ChatMessage) -> Unit)?,
 ) {
     val m = row.m
+    val isLight = OpenChatPalette.isLight
     val locale = appLocale()
     val time = remember(m.timestamp, locale) { stampText(m.timestamp, locale) }
     val social by Social.state.collectAsState()
     val senderKey = if (m.mine && m.senderKey.isEmpty()) myPeerHex else m.senderKey
     val inlineIcons = rememberLabelInlineIcons()
     val peerTint = Emblem.uiColor(senderKey.ifEmpty { "self" })
+    val hops = m.hops?.takeIf { !m.mine && !m.bridged && m.conversation == Conversation.Mesh.key }
+    val mentionCardBg = if (isLight) Color(0xFFFFF1EA) else Color(0xFF22120B)
 
     Column(
         Modifier
             .fillMaxWidth()
             .let {
-                if (m.mentionsMe) it.background(OpenChatPalette.SignalSoft.copy(alpha = if (OpenChatPalette.isLight) 0.55f else 0.4f))
-                else it
+                if (m.mentionsMe) {
+                    it
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .background(mentionCardBg, RoundedCornerShape(14.dp))
+                } else {
+                    it
+                }
             },
     ) {
-        if (row.groupStart) {
-            Hairline(Modifier.padding(horizontal = 16.dp))
+        if (row.groupStart && showTopDivider && !m.mentionsMe) {
+            Hairline(Modifier.padding(start = 58.dp, end = 16.dp))
         }
+        val sidePad = if (m.mentionsMe) 8.dp else 16.dp
         Row(
             Modifier
                 .fillMaxWidth()
                 .padding(
-                    start = 16.dp,
-                    end = 16.dp,
+                    start = sidePad,
+                    end = sidePad,
                     top = if (row.groupStart) 10.dp else 2.dp,
                     bottom = if (row.groupEnd) 10.dp else 3.dp,
                 ),
@@ -352,14 +377,14 @@ private fun PublicPostRow(
             if (row.groupStart) {
                 Box(
                     Modifier
-                        .padding(top = 2.dp)
+                        .padding(top = 1.dp)
                         .let { if (!m.mine && onSenderClick != null && !m.bridged) it.clickable { onSenderClick(m) } else it }
                         .clearAndSetSemantics { },
                 ) {
-                    EmblemView(senderKey.ifEmpty { "self" }, 30.dp)
+                    EmblemView(senderKey.ifEmpty { "self" }, 32.dp)
                 }
             } else {
-                Spacer(Modifier.width(30.dp))
+                Spacer(Modifier.width(32.dp))
             }
 
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -367,6 +392,7 @@ private fun PublicPostRow(
                     Row(
                         Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         val isMesh = !m.bridged && !m.conversation.startsWith("geo:")
                         val label = if (m.mine) {
@@ -396,7 +422,9 @@ private fun PublicPostRow(
                             },
                             inlineContent = inlineIcons,
                             fontSize = 13.5.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
                                 .weight(1f)
                                 .let {
@@ -404,24 +432,43 @@ private fun PublicPostRow(
                                     else it
                                 },
                         )
+                        if (hops != null) {
+                            Box(
+                                Modifier
+                                    .background(
+                                        if (isLight) Color(0xFFFFEBE2) else Color(0x2EFF7840),
+                                        RoundedCornerShape(6.dp),
+                                    )
+                                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                            ) {
+                                Text(
+                                    hopsText(hops),
+                                    fontSize = 10.5.sp,
+                                    style = TabularMonoStyle,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isLight) Color(0xFFDC430B) else Color(0xFFFF8F62),
+                                    maxLines = 1,
+                                )
+                            }
+                        }
                         Text(
                             time,
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             style = TabularMonoStyle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
                         )
                     }
                 }
 
                 MessageContent(m, inBubble = false)
 
-                val hops = m.hops?.takeIf { !m.mine && !m.bridged && m.conversation == Conversation.Mesh.key }
                 val myStatus = if (m.mine && (row.groupEnd || m.state == DeliveryState.FAILED)) statusLabel(m.state) else null
-                if (hops != null || myStatus != null || (!row.groupStart && row.groupEnd)) {
+                if (myStatus != null || (!row.groupStart && (row.groupEnd || hops != null))) {
                     val parts = buildList {
                         if (!row.groupStart) add(time)
                         myStatus?.let { add(it) }
-                        hops?.let { add(hopsText(it)) }
+                        if (!row.groupStart) hops?.let { add(hopsText(it)) }
                     }
                     if (parts.isNotEmpty()) {
                         Text(
@@ -518,6 +565,7 @@ private fun EncryptedBubbleRow(
             }
 
             // Flat, matte bubble container (zero elevation, zero inner gradients)
+            val isLight = OpenChatPalette.isLight
             Surface(
                 shape = shape,
                 color = if (m.mine) OpenChatPalette.LockSoft else OpenChatPalette.Card,
@@ -525,8 +573,8 @@ private fun EncryptedBubbleRow(
                 shadowElevation = 0.dp,
                 border = when {
                     m.mentionsMe -> BorderStroke(1.dp, OpenChatPalette.Signal)
-                    m.mine -> BorderStroke(1.dp, OpenChatPalette.Lock.copy(alpha = 0.20f))
-                    else -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    m.mine -> BorderStroke(0.75.dp, OpenChatPalette.Lock.copy(alpha = 0.16f))
+                    else -> BorderStroke(0.75.dp, if (isLight) Color(0xFF0F1722).copy(alpha = 0.06f) else Color.White.copy(alpha = 0.08f))
                 },
                 modifier = Modifier.widthIn(max = 304.dp),
             ) {
@@ -543,9 +591,17 @@ private fun EncryptedBubbleRow(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(7.dp),
                     ) {
-                        Text(time, fontSize = 11.sp, style = TabularMonoStyle, color = tone)
+                        Text(time, fontSize = 11.sp, style = TabularMonoStyle, color = tone, maxLines = 1, softWrap = false)
                         Box(Modifier.clearAndSetSemantics { }) { DeliveryPathDots(m.state) }
-                        Text(status, fontSize = 11.sp, style = TabularMonoStyle, color = if (failed) tone else MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            status,
+                            fontSize = 11.sp,
+                            style = TabularMonoStyle,
+                            color = if (failed) tone else MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
                         if (failed && m.attachment == null) {
                             Text(
                                 stringResource(R.string.retry),
@@ -553,6 +609,8 @@ private fun EncryptedBubbleRow(
                                 style = TabularMonoStyle,
                                 color = OpenChatPalette.Signal,
                                 textDecoration = TextDecoration.Underline,
+                                maxLines = 1,
+                                softWrap = false,
                                 modifier = Modifier
                                     .clickable(role = Role.Button) { ChatRepository.controller?.retry(m.conversation, m.id) }
                                     .defaultMinSize(minHeight = 28.dp)
@@ -593,26 +651,27 @@ private fun statusLabel(state: DeliveryState): String = stringResource(
 
 @Composable
 private fun MessageContent(m: ChatMessage, inBubble: Boolean) {
+    val isLight = OpenChatPalette.isLight
+    val voiceAccent = if (inBubble && m.mine) OpenChatPalette.Lock else OpenChatPalette.Signal
     when {
         m.attachment != null && m.audio -> {
-            if (inBubble) VoiceNote(m.attachment)
+            if (inBubble) VoiceNote(m.attachment, accentColor = voiceAccent)
             else Surface(
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = OpenChatPalette.Card,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.padding(top = 2.dp),
-            ) { VoiceNote(m.attachment) }
+                modifier = Modifier.padding(top = 3.dp),
+            ) { VoiceNote(m.attachment, accentColor = voiceAccent) }
         }
         m.attachment != null -> PhotoView(m.attachment, covered = !m.mine, inBubble = inBubble)
         else -> Column {
             Text(
                 withMentions(m.text),
                 modifier = if (inBubble) Modifier.padding(horizontal = 13.dp, vertical = 9.dp) else Modifier,
-                fontSize = 16.sp,
-                lineHeight = 23.sp,
-                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 15.sp,
+                lineHeight = 22.sp,
+                color = if (inBubble && m.mine && isLight) Color(0xFF091E42) else MaterialTheme.colorScheme.onSurface,
             )
             Cashu.tokensIn(m.text).take(3).forEach { CashuCard(it, inBubble = inBubble) }
         }
@@ -645,17 +704,23 @@ private fun CashuCard(token: String, inBubble: Boolean) {
             )
             info.memo?.let { Text(it, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = {
-                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("cashu:$token"))
-                    try { ctx.startActivity(intent) } catch (e: android.content.ActivityNotFoundException) {
-                        android.widget.Toast.makeText(ctx, R.string.pay_no_wallet, android.widget.Toast.LENGTH_LONG).show()
-                    }
-                }) { Text(stringResource(R.string.pay_open_wallet)) }
-                TextButton(onClick = {
-                    val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
-                    cm.setPrimaryClip(android.content.ClipData.newPlainText("cashu", token))
-                    android.widget.Toast.makeText(ctx, R.string.pay_copied, android.widget.Toast.LENGTH_SHORT).show()
-                }) { Text(stringResource(R.string.pay_copy)) }
+                TextButton(
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                    onClick = {
+                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("cashu:$token"))
+                        try { ctx.startActivity(intent) } catch (e: android.content.ActivityNotFoundException) {
+                            android.widget.Toast.makeText(ctx, R.string.pay_no_wallet, android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    },
+                ) { Text(stringResource(R.string.pay_open_wallet), maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                TextButton(
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                    onClick = {
+                        val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("cashu", token))
+                        android.widget.Toast.makeText(ctx, R.string.pay_copied, android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                ) { Text(stringResource(R.string.pay_copy), maxLines = 1, overflow = TextOverflow.Ellipsis) }
             }
         }
     }
@@ -709,7 +774,7 @@ private val voiceDurations = LruCache<String, Int>(64)
 
 /** Flat voice note row with deterministic 20-bar waveform and live playback progress. */
 @Composable
-private fun VoiceNote(path: String) {
+private fun VoiceNote(path: String, accentColor: Color = OpenChatPalette.Signal) {
     var player by remember { mutableStateOf<MediaPlayer?>(null) }
     var progress by remember { mutableFloatStateOf(0f) }
     val duration by produceState(voiceDurations.get(path) ?: 0, path) {
@@ -734,19 +799,19 @@ private fun VoiceNote(path: String) {
     DisposableEffect(path) { onDispose { player?.release() } }
 
     Row(
-        Modifier.padding(start = 8.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
+        Modifier.padding(start = 8.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         val label = stringResource(if (player != null) R.string.media_stop else R.string.media_play)
         Surface(
             shape = CircleShape,
-            color = OpenChatPalette.Ink,
-            contentColor = OpenChatPalette.Surface,
+            color = accentColor,
+            contentColor = Color.White,
             tonalElevation = 0.dp,
             shadowElevation = 0.dp,
             modifier = Modifier
-                .size(34.dp)
+                .size(30.dp)
                 .clip(CircleShape)
                 .clickable {
                     val p = player
@@ -770,12 +835,12 @@ private fun VoiceNote(path: String) {
                 Icon(
                     if (player != null) Icons.Outlined.Stop else Icons.Outlined.PlayArrow,
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }
-        val activeBarColor = OpenChatPalette.Signal
-        val idleBarColor = MaterialTheme.colorScheme.outline
+        val activeBarColor = accentColor
+        val idleBarColor = if (OpenChatPalette.isLight) Color(0xFF0F1722).copy(alpha = 0.18f) else Color.White.copy(alpha = 0.22f)
         Canvas(Modifier.width(96.dp).height(22.dp).clearAndSetSemantics { }) {
             val step = size.width / bars.size
             val barW = (step * 0.56f).coerceAtLeast(2f)
@@ -886,17 +951,31 @@ private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conv
     }
 }
 
-/** Message text with every @mention set in signal orange. */
+/** Message text with every @mention styled as a tinted monospace badge pill. */
 @Composable
 internal fun withMentions(text: String): AnnotatedString {
     val ranges = Mentions.ranges(text)
     if (ranges.isEmpty()) return AnnotatedString(text)
-    val accent = OpenChatPalette.Signal
+    val isLight = OpenChatPalette.isLight
+    val mentionFg = if (isLight) Color(0xFFD43F09) else Color(0xFFFF986E)
+    val mentionBg = if (isLight) Color(0xFFFFE6D8) else Color(0x38FF7840)
     return buildAnnotatedString {
         var at = 0
         for (r in ranges) {
             append(text.substring(at, r.first))
-            withStyle(SpanStyle(color = accent, fontWeight = FontWeight.SemiBold)) { append(text.substring(r.first, r.last + 1)) }
+            withStyle(
+                SpanStyle(
+                    color = mentionFg,
+                    background = mentionBg,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
+                ),
+            ) {
+                append("\u00A0")
+                append(text.substring(r.first, r.last + 1))
+                append("\u00A0")
+            }
             at = r.last + 1
         }
         append(text.substring(at))
@@ -1116,21 +1195,23 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+                    Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(
-                        if (encrypted) Icons.Outlined.Lock else Icons.Outlined.Sensors,
-                        contentDescription = stringResource(if (encrypted) R.string.chip_encrypted else R.string.chip_public),
-                        tint = if (encrypted) OpenChatPalette.Lock else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp),
-                    )
+                    if (encrypted) {
+                        Icon(
+                            Icons.Outlined.Lock,
+                            contentDescription = stringResource(R.string.chip_encrypted),
+                            tint = OpenChatPalette.Lock,
+                            modifier = Modifier.size(15.dp),
+                        )
+                    }
                     BasicTextField(
                         value = text,
                         onValueChange = { if (it.length <= 1000) set(it) },
                         modifier = Modifier.weight(1f).onFocusChanged { focused = it.isFocused },
-                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp, lineHeight = 22.sp),
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.5.sp, lineHeight = 22.sp),
                         cursorBrush = SolidColor(OpenChatPalette.Ink),
                         maxLines = 5,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -1140,8 +1221,9 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                                 if (text.isEmpty()) {
                                     Text(
                                         placeholder,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = 15.sp,
+                                        color = if (OpenChatPalette.isLight) Color(0xFF2A3646) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
@@ -1179,12 +1261,13 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                         val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
                         if (granted) recording = beginVoice() else micPerm.launch(android.Manifest.permission.RECORD_AUDIO)
                     }
+                    val isLight = OpenChatPalette.isLight
                     val micAccent = if (encrypted) OpenChatPalette.Lock else OpenChatPalette.Signal
                     FluidGlassSurface(
                         shape = CircleShape,
                         isCapsule = true,
-                        tintColor = micAccent.copy(alpha = if (OpenChatPalette.isLight) 0.14f else 0.20f),
-                        borderAccent = micAccent.copy(alpha = 0.65f),
+                        tintColor = micAccent.copy(alpha = if (isLight) 0.20f else 0.22f),
+                        borderAccent = micAccent,
                         shadowElevation = 8.dp,
                         modifier = Modifier
                             .size(44.dp)
@@ -1209,8 +1292,8 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                         Icon(
                             Icons.Outlined.Mic,
                             contentDescription = null,
-                            tint = if (encrypted) OpenChatPalette.Lock else OpenChatPalette.Signal,
-                            modifier = Modifier.size(21.dp),
+                            tint = if (isLight) (if (encrypted) Color(0xFF0E56D8) else Color(0xFFD93F07)) else Color.White,
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                 }

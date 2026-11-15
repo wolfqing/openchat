@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>openchat v0.7.5 · UI Prototype (Liquid Glass, Radiant Light &amp; OLED Dark)</title>
+<title>openchat v0.7.7 · UI Prototype (Liquid Glass, Radiant Light &amp; OLED Dark)</title>
 <style>
   :root {
     --page-bg: #0D1117;
@@ -155,17 +155,20 @@
   }
   .canvas-light {
     background:
-      radial-gradient(92% 34% at 16% 6%, rgba(230, 81, 0, 0.08) 0%, transparent 70%),
-      radial-gradient(86% 36% at 86% 94%, rgba(21, 101, 192, 0.08) 0%, transparent 72%),
-      linear-gradient(180deg, #FFFFFF 0%, #F4F7FC 56%, #ECF1F8 100%);
+      radial-gradient(92% 38% at 18% 8%, rgba(255, 106, 48, 0.105) 0%, transparent 70%),
+      radial-gradient(88% 42% at 88% 92%, rgba(36, 122, 255, 0.105) 0%, transparent 72%),
+      linear-gradient(180deg, #FFFFFF 0%, #F4F7FC 52%, #EBF1F8 100%);
     color: #0F1722;
   }
   .canvas-dark {
-    background: #000000;
+    background:
+      radial-gradient(90% 36% at 20% 6%, rgba(255, 120, 64, 0.085) 0%, transparent 70%),
+      radial-gradient(86% 40% at 85% 94%, rgba(82, 152, 242, 0.075) 0%, transparent 72%),
+      #000000;
     color: #EDF1EF;
   }
 
-  /* Directional Fresnel Specular Rim (Zero milky interior fog, zero drawn crescent arcs) */
+  /* Anisotropic Optical Rim: Thin dark refractive left/right flanks + thin bright pure-white top/bottom specular edges */
   .rim-light, .rim-dark, .rim-orange, .rim-blue { position: relative; }
   .rim-light::before, .rim-dark::before, .rim-orange::before, .rim-blue::before {
     content: "";
@@ -180,27 +183,57 @@
     z-index: 3;
   }
   .rim-light::before {
-    background: linear-gradient(138deg, rgba(255,255,255,0.98) 0%, rgba(188,204,226,0.52) 48%, rgba(255,255,255,0.88) 100%);
+    background: linear-gradient(90deg,
+      rgba(20, 38, 60, 0.52) 0%,
+      rgba(20, 38, 60, 0.50) 4.5%,
+      rgba(67, 93, 124, 0.28) 9.5%,
+      #FFFFFF 17%,
+      #FFFFFF 83%,
+      rgba(67, 93, 124, 0.28) 90.5%,
+      rgba(20, 38, 60, 0.50) 95.5%,
+      rgba(20, 38, 60, 0.52) 100%
+    );
   }
   .rim-dark::before {
-    background: linear-gradient(138deg, rgba(255,255,255,0.46) 0%, rgba(255,255,255,0.10) 46%, rgba(147,188,232,0.26) 100%);
+    background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.14) 0%,
+      rgba(140, 196, 255, 0.24) 9%,
+      rgba(255, 255, 255, 0.62) 18%,
+      rgba(255, 255, 255, 0.62) 82%,
+      rgba(140, 196, 255, 0.24) 91%,
+      rgba(255, 255, 255, 0.14) 100%
+    );
   }
   .rim-orange::before {
     padding: 1.35px;
-    background: linear-gradient(138deg, rgba(255,255,255,0.92) 0%, rgba(255,120,64,0.55) 45%, rgba(255,90,31,0.88) 100%);
+    background: linear-gradient(90deg,
+      rgba(128, 38, 12, 0.68) 0%,
+      rgba(230, 81, 0, 0.46) 14%,
+      #FFF4EE 28%,
+      #FFF4EE 72%,
+      rgba(230, 81, 0, 0.46) 86%,
+      rgba(128, 38, 12, 0.68) 100%
+    );
   }
   .rim-blue::before {
     padding: 1.35px;
-    background: linear-gradient(138deg, rgba(255,255,255,0.90) 0%, rgba(147,188,232,0.50) 45%, rgba(66,142,245,0.86) 100%);
+    background: linear-gradient(90deg,
+      rgba(14, 48, 108, 0.68) 0%,
+      rgba(26, 107, 255, 0.46) 14%,
+      #F0F6FF 28%,
+      #F0F6FF 72%,
+      rgba(26, 107, 255, 0.46) 86%,
+      rgba(14, 48, 108, 0.68) 100%
+    );
   }
 
   /* Optical-Refraction Liquid Glass Surfaces */
   .lg-dock-light {
     width: 316px; height: 60px; border-radius: 999px;
-    backdrop-filter: var(--f-dock) saturate(165%) contrast(104%);
-    -webkit-backdrop-filter: var(--f-dock) saturate(165%) contrast(104%);
-    background: rgba(255, 255, 255, 0.22);
-    box-shadow: 0 12px 26px -8px rgba(15, 30, 54, 0.18), 0 0 0 0.5px rgba(15, 23, 34, 0.08);
+    backdrop-filter: var(--f-dock) saturate(175%) contrast(105%);
+    -webkit-backdrop-filter: var(--f-dock) saturate(175%) contrast(105%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.08) 68%, rgba(40, 120, 255, 0.08) 100%);
+    box-shadow: 0 12px 26px -7px rgba(15, 32, 58, 0.24), 0 0 0 0.6px rgba(16, 32, 54, 0.13), inset 0 1px 0 rgba(255,255,255,0.92), inset 0 -1px 0 rgba(255,255,255,0.75);
   }
   .lg-dock-dark {
     width: 316px; height: 60px; border-radius: 999px;
@@ -210,8 +243,8 @@
     box-shadow: 0 14px 30px -8px rgba(0, 0, 0, 0.82), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
   }
   .lg-droplet-light {
-    background: rgba(255, 255, 255, 0.72);
-    box-shadow: 0 2px 8px -2px rgba(15, 30, 54, 0.12), inset 0 1px 0 #FFFFFF;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.20) 60%, rgba(36, 118, 255, 0.10) 100%);
+    box-shadow: 0 2px 8px -2px rgba(15, 32, 58, 0.14), 0 0 0 0.5px rgba(16, 32, 54, 0.10), inset 0 1px 0 #FFFFFF;
   }
   .lg-droplet-dark {
     background: rgba(255, 255, 255, 0.11);
@@ -220,10 +253,10 @@
 
   .lg-comp-light {
     width: 212px; height: 44px; border-radius: 999px;
-    backdrop-filter: var(--f-comp) saturate(165%) contrast(104%);
-    -webkit-backdrop-filter: var(--f-comp) saturate(165%) contrast(104%);
-    background: rgba(255, 255, 255, 0.22);
-    box-shadow: 0 10px 22px -6px rgba(15, 30, 54, 0.15), 0 0 0 0.5px rgba(15, 23, 34, 0.08);
+    backdrop-filter: var(--f-comp) saturate(175%) contrast(105%);
+    -webkit-backdrop-filter: var(--f-comp) saturate(175%) contrast(105%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.08) 68%, rgba(40, 120, 255, 0.08) 100%);
+    box-shadow: 0 10px 22px -6px rgba(15, 32, 58, 0.22), 0 0 0 0.6px rgba(16, 32, 54, 0.13), inset 0 1px 0 rgba(255,255,255,0.92), inset 0 -1px 0 rgba(255,255,255,0.75);
   }
   .lg-comp-dark {
     width: 212px; height: 44px; border-radius: 999px;
@@ -235,10 +268,10 @@
 
   .lg-orb-light {
     width: 44px; height: 44px; border-radius: 999px;
-    backdrop-filter: var(--f-orb) saturate(170%) contrast(106%);
-    -webkit-backdrop-filter: var(--f-orb) saturate(170%) contrast(106%);
-    background: rgba(255, 255, 255, 0.20);
-    box-shadow: 0 10px 20px -5px rgba(15, 30, 54, 0.18), 0 0 0 0.5px rgba(15, 23, 34, 0.09);
+    backdrop-filter: var(--f-orb) saturate(180%) contrast(106%);
+    -webkit-backdrop-filter: var(--f-orb) saturate(180%) contrast(106%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.08) 68%, rgba(40, 120, 255, 0.08) 100%);
+    box-shadow: 0 10px 20px -5px rgba(15, 32, 58, 0.24), 0 0 0 0.6px rgba(16, 32, 54, 0.14), inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(255,255,255,0.78);
   }
   .lg-orb-dark {
     width: 44px; height: 44px; border-radius: 999px;
@@ -251,23 +284,23 @@
     width: 44px; height: 44px; border-radius: 999px;
     backdrop-filter: var(--f-orb) saturate(185%) contrast(108%);
     -webkit-backdrop-filter: var(--f-orb) saturate(185%) contrast(108%);
-    background: rgba(230, 81, 0, 0.22);
-    box-shadow: 0 10px 20px -5px rgba(230, 81, 0, 0.34);
+    background: rgba(230, 81, 0, 0.20);
+    box-shadow: 0 10px 20px -5px rgba(230, 81, 0, 0.34), 0 0 0 0.6px rgba(140, 42, 12, 0.18), inset 0 1px 0 rgba(255,255,255,0.88);
   }
   .lg-orb-blue {
     width: 44px; height: 44px; border-radius: 999px;
     backdrop-filter: var(--f-orb) saturate(185%) contrast(108%);
     -webkit-backdrop-filter: var(--f-orb) saturate(185%) contrast(108%);
-    background: rgba(45, 118, 218, 0.24);
-    box-shadow: 0 10px 20px -5px rgba(25, 92, 190, 0.38);
+    background: rgba(45, 118, 218, 0.22);
+    box-shadow: 0 10px 20px -5px rgba(25, 92, 190, 0.38), 0 0 0 0.6px rgba(14, 48, 108, 0.18), inset 0 1px 0 rgba(255,255,255,0.88);
   }
 
   .lg-sig-light {
     border-radius: 999px;
-    backdrop-filter: var(--f-sig) saturate(165%);
-    -webkit-backdrop-filter: var(--f-sig) saturate(165%);
-    background: rgba(255, 255, 255, 0.24);
-    box-shadow: 0 6px 16px -5px rgba(15, 30, 54, 0.13);
+    backdrop-filter: var(--f-sig) saturate(170%);
+    -webkit-backdrop-filter: var(--f-sig) saturate(170%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.56) 0%, rgba(243, 248, 254, 0.42) 100%);
+    box-shadow: 0 6px 16px -5px rgba(15, 32, 58, 0.18), 0 0 0 0.6px rgba(16, 32, 54, 0.13), inset 0 1px 0 #FFFFFF;
   }
   .lg-sig-dark {
     border-radius: 999px;
@@ -278,10 +311,10 @@
   }
   .lg-pill-light {
     border-radius: 999px;
-    backdrop-filter: var(--f-pill) saturate(165%);
-    -webkit-backdrop-filter: var(--f-pill) saturate(165%);
-    background: rgba(255, 255, 255, 0.26);
-    box-shadow: 0 5px 14px -4px rgba(15, 30, 54, 0.12);
+    backdrop-filter: var(--f-pill) saturate(170%);
+    -webkit-backdrop-filter: var(--f-pill) saturate(170%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(243, 248, 254, 0.44) 100%);
+    box-shadow: 0 5px 14px -4px rgba(15, 32, 58, 0.17), 0 0 0 0.6px rgba(16, 32, 54, 0.13), inset 0 1px 0 #FFFFFF;
   }
   .lg-pill-dark {
     border-radius: 999px;
@@ -319,7 +352,7 @@
   <header class="studio-bar">
     <div class="studio-top">
       <div>
-        <div class="studio-title">openchat v0.7.5 · Optical-Refraction Liquid Glass Prototype</div>
+        <div class="studio-title">openchat v0.7.7 · Optical-Refraction Liquid Glass Prototype</div>
         <div class="studio-sub">Scroll the Nearby or Private feed to inspect live Snell refraction behind the floating composer &amp; bottom tab capsule. Zero emojis — pure vector SVG icons.</div>
       </div>
       <div class="btn-row">
@@ -649,9 +682,9 @@ function sysBarHtml(time, noSvc, isLight) {
 
 function bottomTabCapsuleHtml(isLight, tabs) {
   const dockCls = isLight ? 'lg-dock-light rim-light' : 'lg-dock-dark rim-dark';
-  const dropCls = isLight ? 'lg-droplet-light' : 'lg-droplet-dark';
+  const dropCls = isLight ? 'lg-droplet-light rim-light' : 'lg-droplet-dark rim-dark';
   const activeCol = isLight ? '#0F1722' : '#FFFFFF';
-  const idleCol = isLight ? '#4A5768' : '#9AA4A3';
+  const idleCol = isLight ? '#2B3748' : '#9AA4A3';
   const sig = isLight ? '#E65100' : '#FF6D00';
   const icons = [VEC.nearby, VEC.dmIdle, VEC.geoIdle, VEC.meIdle];
   const badges = [0, 2, 0, 0];
@@ -724,8 +757,8 @@ function renderNearbyScreen(el, isLight, L) {
     const body = p.voice
       ? voiceWaveformHtml(isLight, sig, p.voice, false)
       : `<div style="font-size:13.4px;line-height:1.45;margin-top:3px">${p.txt.replace(/(@\S+#[0-9a-f]{4})/, `<span class="mono" style="padding:1px 5px;border-radius:5px;background:${mentionTagBg};color:${mentionTagCol};font-size:11.5px;font-weight:600">$1</span>`)}</div>`;
-    const borderTop = idx > 0 ? `border-top:1px solid ${isLight ? 'rgba(15,23,34,0.07)' : 'rgba(255,255,255,0.07)'};` : '';
-    const rowBg = p.m ? `background:${isLight ? 'rgba(230,81,0,0.06)' : 'rgba(255,120,64,0.08)'};border-radius:12px;margin:2px -6px;padding:9px 6px;` : `padding:9px 0;${borderTop}`;
+    const borderTop = (idx > 0 && !p.m && !(L.posts[idx - 1] && L.posts[idx - 1].m)) ? `border-top:1px solid ${isLight ? 'rgba(15,23,34,0.07)' : 'rgba(255,255,255,0.07)'};` : '';
+    const rowBg = p.m ? `background:${isLight ? '#FFF1EA' : '#22120B'};border-radius:14px;margin:2px -8px;padding:10px 8px;` : `padding:9px 0;${borderTop}`;
 
     return `<div style="display:flex;gap:10px;${rowBg}">
       ${emblemSvg(isLight, p.hex, p.lc, p.dc, 31)}
@@ -746,10 +779,12 @@ function renderNearbyScreen(el, isLight, L) {
 
   el.innerHTML = `
     ${sysBarHtml('14:32', L.noSvc, isLight)}
-    <div style="padding:2px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:20">
-      <div>
+    <div style="padding:2px 16px 6px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:20">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="${pillCls}" style="width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center">
+          <span style="width:9px;height:9px;border-radius:99px;background:${sig};box-shadow:0 0 10px ${sig}"></span>
+        </div>
         <div style="font-size:20px;font-weight:750;letter-spacing:-0.02em;line-height:1.15">${L.nearby}</div>
-        <div style="font-size:11.5px;color:${muted};margin-top:1px">${L.nearbySub}</div>
       </div>
       <div class="${pillCls}" style="height:31px;padding:0 12px;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600">
         <span style="color:${sig};display:inline-flex">${VEC.pin}</span>
@@ -905,10 +940,12 @@ function renderEmptyScreen(el, isLight, L) {
 
   el.innerHTML = `
     ${sysBarHtml('14:30', L.noSvc, isLight)}
-    <div style="padding:2px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:20">
-      <div>
+    <div style="padding:2px 16px 6px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:20">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="${pillCls}" style="width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center">
+          <span style="width:9px;height:9px;border-radius:99px;background:${sig};box-shadow:0 0 10px ${sig}"></span>
+        </div>
         <div style="font-size:20px;font-weight:750;letter-spacing:-0.02em;line-height:1.15">${L.nearby}</div>
-        <div style="font-size:11.5px;color:${muted};margin-top:1px">${L.nearbySub}</div>
       </div>
       <div class="${pillCls}" style="height:31px;padding:0 12px;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600">
         <span style="color:${sig};display:inline-flex">${VEC.pin}</span>

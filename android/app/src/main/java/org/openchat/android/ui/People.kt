@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -43,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -60,6 +62,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.zxing.BarcodeFormat
@@ -96,24 +99,29 @@ internal fun FingerprintGrid(hex: String, modifier: Modifier = Modifier) {
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = modifier.fillMaxWidth(),
     ) {
-        Column(
-            Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            chunks.chunked(4).forEach { rowChunks ->
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    rowChunks.forEach { block ->
-                        Text(
-                            block,
-                            style = TabularMonoStyle,
-                            fontSize = 13.5.sp,
-                            letterSpacing = 0.5.sp,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val compactText = maxWidth < 290.dp
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = if (compactText) 10.dp else 14.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                chunks.chunked(4).forEach { rowChunks ->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        rowChunks.forEach { block ->
+                            Text(
+                                block,
+                                style = TabularMonoStyle,
+                                fontSize = if (compactText) 12.sp else 13.5.sp,
+                                letterSpacing = 0.5.sp,
+                                maxLines = 1,
+                                softWrap = false,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
                 }
             }
@@ -127,6 +135,7 @@ internal fun FingerprintGrid(hex: String, modifier: Modifier = Modifier) {
 fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) -> Unit) {
     val social by Social.state.collectAsState()
     val inlineIcons = rememberLabelInlineIcons()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val emblemKey = when (person) {
         is PersonRef.Mesh -> person.peerHex
         is PersonRef.Geo -> person.pubkey
@@ -138,178 +147,197 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = OpenChatPalette.Surface,
         contentColor = OpenChatPalette.Ink,
     ) {
-        Column(
+        BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 22.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .navigationBarsPadding(),
         ) {
-            EmblemView(emblemKey, 76.dp)
-            Text(
-                labelText(
-                    peerLabel,
-                    verified = person is PersonRef.Mesh && social.isVerifiedPeer(person.peerHex),
-                    vouched = person is PersonRef.Mesh && social.isVouchedPeer(person.peerHex),
-                ),
-                inlineContent = inlineIcons,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            )
+            val compact = maxHeight < 560.dp
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 22.dp, vertical = if (compact) 4.dp else 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 12.dp),
+            ) {
+                EmblemView(emblemKey, if (compact) 56.dp else 76.dp)
+                Text(
+                    labelText(
+                        peerLabel,
+                        verified = person is PersonRef.Mesh && social.isVerifiedPeer(person.peerHex),
+                        vouched = person is PersonRef.Mesh && social.isVouchedPeer(person.peerHex),
+                    ),
+                    inlineContent = inlineIcons,
+                    fontSize = if (compact) 18.sp else 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                )
 
-            when (person) {
-                is PersonRef.Mesh -> {
-                    val fp = meshFingerprint(person.peerHex)
-                    val blocked = fp != null && fp in social.blocked
-                    val fav = fp?.let { social.favorites[it] }
-                    val mine = fav?.mine == true
+                when (person) {
+                    is PersonRef.Mesh -> {
+                        val fp = meshFingerprint(person.peerHex)
+                        val blocked = fp != null && fp in social.blocked
+                        val fav = fp?.let { social.favorites[it] }
+                        val mine = fav?.mine == true
 
-                    if (!blocked) {
-                        Button(
-                            onClick = { onDismiss(); onMessage(person.peerHex) },
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                        ) {
-                            Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.peer_message), fontWeight = FontWeight.SemiBold)
+                        if (!blocked) {
+                            Button(
+                                onClick = { onDismiss(); onMessage(person.peerHex) },
+                                modifier = Modifier.fillMaxWidth().height(if (compact) 44.dp else 48.dp),
+                            ) {
+                                Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.peer_message), fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
                         }
-                    }
 
-                    if (fp != null) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            if (!blocked) {
+                        if (fp != null) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                if (!blocked) {
+                                    OutlinedButton(
+                                        onClick = { ChatRepository.controller?.setFavorite(person.peerHex, person.nickname ?: person.peerHex.take(8), !mine) },
+                                        modifier = Modifier.weight(1f),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                    ) {
+                                        Icon(
+                                            if (mine) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                                            contentDescription = null,
+                                            tint = if (mine) OpenChatPalette.Signal else MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.size(16.dp),
+                                        )
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(
+                                            stringResource(if (mine) R.string.peer_fav_remove else R.string.peer_fav_add),
+                                            fontSize = 13.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                }
                                 OutlinedButton(
-                                    onClick = { ChatRepository.controller?.setFavorite(person.peerHex, person.nickname ?: person.peerHex.take(8), !mine) },
+                                    onClick = { if (blocked) Social.unblock(fp) else Social.block(fp, person.nickname ?: person.peerHex.take(8)) },
                                     modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = if (blocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+                                    ),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (blocked) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error.copy(alpha = 0.45f),
+                                    ),
                                 ) {
-                                    Icon(
-                                        if (mine) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                                        contentDescription = null,
-                                        tint = if (mine) OpenChatPalette.Signal else MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.size(16.dp),
-                                    )
-                                    Spacer(Modifier.width(6.dp))
-                                    Text(stringResource(if (mine) R.string.peer_fav_remove else R.string.peer_fav_add), fontSize = 13.sp, maxLines = 1)
-                                }
-                            }
-                            OutlinedButton(
-                                onClick = { if (blocked) Social.unblock(fp) else Social.block(fp, person.nickname ?: person.peerHex.take(8)) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = if (blocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
-                                ),
-                                border = BorderStroke(
-                                    1.dp,
-                                    if (blocked) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error.copy(alpha = 0.45f),
-                                ),
-                            ) {
-                                Text(stringResource(if (blocked) R.string.peer_unblock else R.string.peer_block), fontSize = 13.sp)
-                            }
-                        }
-
-                        val note = when {
-                            blocked -> R.string.peer_blocked_note
-                            mine && fav.theyFavorited -> R.string.fav_mutual_note
-                            mine -> R.string.fav_waiting_note
-                            fav?.theyFavorited == true -> R.string.fav_they_note
-                            else -> null
-                        }
-                        note?.let {
-                            Text(stringResource(it), fontSize = 12.5.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-                        }
-
-                        Hairline(Modifier.padding(vertical = 2.dp))
-
-                        val verified = fp in social.verified
-                        if (verified) {
-                            Surface(
-                                shape = CircleShape,
-                                color = OpenChatPalette.SignalSoft,
-                                border = BorderStroke(1.dp, OpenChatPalette.Signal.copy(alpha = 0.6f)),
-                            ) {
-                                Row(
-                                    Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                                ) {
-                                    Icon(Icons.Filled.Check, contentDescription = null, tint = OpenChatPalette.Signal, modifier = Modifier.size(14.dp))
                                     Text(
-                                        stringResource(R.string.verify_badge_on).removePrefix("\u2713").trim(),
-                                        fontSize = 12.5.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = OpenChatPalette.Signal,
+                                        stringResource(if (blocked) R.string.peer_unblock else R.string.peer_block),
+                                        fontSize = 13.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
                                     )
                                 }
                             }
-                        } else {
-                            Text(
-                                stringResource(R.string.verify_badge_off),
-                                fontSize = 12.5.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
 
-                        val vouchers = social.vouchersFor(fp)
-                        if (vouchers.isNotEmpty()) {
-                            val names by ChatRepository.names.collectAsState()
-                            val peers by ChatRepository.peers.collectAsState()
-                            val who = vouchers.joinToString(", ") { v ->
-                                val hex = v.take(16)
-                                PeerLabel.mesh(peers.firstOrNull { it.peerIdHex == hex }?.nickname ?: social.favorites[v]?.nickname ?: names[hex], hex).toString()
+                            val note = when {
+                                blocked -> R.string.peer_blocked_note
+                                mine && fav.theyFavorited -> R.string.fav_mutual_note
+                                mine -> R.string.fav_waiting_note
+                                fav?.theyFavorited == true -> R.string.fav_they_note
+                                else -> null
                             }
-                            Text(stringResource(R.string.vouch_by, who), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-                        }
+                            note?.let {
+                                Text(stringResource(it), fontSize = 12.5.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                            }
 
-                        FingerprintGrid(fp)
-                        TextButton(onClick = { Social.setVerified(fp, !verified) }) {
-                            Text(
-                                stringResource(if (verified) R.string.verify_unmark else R.string.verify_mark),
-                                color = if (verified) MaterialTheme.colorScheme.onSurfaceVariant else OpenChatPalette.Signal,
-                            )
+                            Hairline(Modifier.padding(vertical = 2.dp))
+
+                            val verified = fp in social.verified
+                            if (verified) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = OpenChatPalette.SignalSoft,
+                                    border = BorderStroke(1.dp, OpenChatPalette.Signal.copy(alpha = 0.6f)),
+                                ) {
+                                    Row(
+                                        Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                    ) {
+                                        Icon(Icons.Filled.Check, contentDescription = null, tint = OpenChatPalette.Signal, modifier = Modifier.size(14.dp))
+                                        Text(
+                                            stringResource(R.string.verify_badge_on).removePrefix("\u2713").trim(),
+                                            fontSize = 12.5.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = OpenChatPalette.Signal,
+                                        )
+                                    }
+                                }
+                            } else {
+                                Text(
+                                    stringResource(R.string.verify_badge_off),
+                                    fontSize = 12.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+
+                            val vouchers = social.vouchersFor(fp)
+                            if (vouchers.isNotEmpty()) {
+                                val names by ChatRepository.names.collectAsState()
+                                val peers by ChatRepository.peers.collectAsState()
+                                val who = vouchers.joinToString(", ") { v ->
+                                    val hex = v.take(16)
+                                    PeerLabel.mesh(peers.firstOrNull { it.peerIdHex == hex }?.nickname ?: social.favorites[v]?.nickname ?: names[hex], hex).toString()
+                                }
+                                Text(stringResource(R.string.vouch_by, who), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                            }
+
+                            FingerprintGrid(fp)
+                            TextButton(onClick = { Social.setVerified(fp, !verified) }) {
+                                Text(
+                                    stringResource(if (verified) R.string.verify_unmark else R.string.verify_mark),
+                                    color = if (verified) MaterialTheme.colorScheme.onSurfaceVariant else OpenChatPalette.Signal,
+                                )
+                            }
                         }
                     }
-                }
-                is PersonRef.Geo -> {
-                    val blocked = person.pubkey in social.geoBlocked
-                    if (!blocked) {
-                        Button(
-                            onClick = { onDismiss(); onMessage(Conversation.GeoPrivate(person.geohash, person.pubkey).key) },
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                        ) {
-                            Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.peer_message), fontWeight = FontWeight.SemiBold)
+                    is PersonRef.Geo -> {
+                        val blocked = person.pubkey in social.geoBlocked
+                        if (!blocked) {
+                            Button(
+                                onClick = { onDismiss(); onMessage(Conversation.GeoPrivate(person.geohash, person.pubkey).key) },
+                                modifier = Modifier.fillMaxWidth().height(if (compact) 44.dp else 48.dp),
+                            ) {
+                                Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.peer_message), fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
                         }
+                        OutlinedButton(
+                            onClick = { if (blocked) Social.unblockGeo(person.pubkey) else Social.blockGeo(person.pubkey, person.nickname ?: "anon") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = if (blocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+                            ),
+                            border = BorderStroke(
+                                1.dp,
+                                if (blocked) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error.copy(alpha = 0.45f),
+                            ),
+                        ) { Text(stringResource(if (blocked) R.string.peer_unblock else R.string.peer_block)) }
+                        Text(
+                            stringResource(if (blocked) R.string.peer_blocked_note else R.string.peer_geo_note),
+                            fontSize = 12.5.sp,
+                            lineHeight = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 12.dp),
+                        )
                     }
-                    OutlinedButton(
-                        onClick = { if (blocked) Social.unblockGeo(person.pubkey) else Social.blockGeo(person.pubkey, person.nickname ?: "anon") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = if (blocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
-                        ),
-                        border = BorderStroke(
-                            1.dp,
-                            if (blocked) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error.copy(alpha = 0.45f),
-                        ),
-                    ) { Text(stringResource(if (blocked) R.string.peer_unblock else R.string.peer_block)) }
-                    Text(
-                        stringResource(if (blocked) R.string.peer_blocked_note else R.string.peer_geo_note),
-                        fontSize = 12.5.sp,
-                        lineHeight = 18.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(bottom = 12.dp),
-                    )
                 }
+                Spacer(Modifier.height(6.dp))
             }
-            Spacer(Modifier.height(8.dp))
         }
     }
 }
@@ -320,41 +348,59 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
 fun MyQrDialog(onDismiss: () -> Unit) {
     val url = remember { ChatRepository.controller?.myVerifyUrl() }
     val bitmap = remember(url) { url?.let { qrBitmap(it, 720) } }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = OpenChatPalette.Surface,
         contentColor = OpenChatPalette.Ink,
     ) {
-        Column(
+        BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+                .navigationBarsPadding(),
         ) {
-            Text(stringResource(R.string.verify_my_qr), fontSize = 19.sp, fontWeight = FontWeight.Bold)
-            if (bitmap != null) {
-                Box(
+            val compact = maxHeight < 460.dp
+            val qrMaxSize = minOf(248.dp, maxWidth - 56.dp, (maxHeight - 190.dp).coerceAtLeast(136.dp))
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = if (compact) 6.dp else 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 14.dp),
+            ) {
+                Text(stringResource(R.string.verify_my_qr), fontSize = 19.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                Column(
                     Modifier
-                        .widthIn(max = 260.dp)
                         .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(Color.White)
-                        .padding(14.dp),
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp),
                 ) {
-                    Image(bitmap, contentDescription = stringResource(R.string.verify_my_qr), modifier = Modifier.fillMaxWidth().aspectRatio(1f))
+                    if (bitmap != null) {
+                        Box(
+                            Modifier
+                                .widthIn(max = qrMaxSize)
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(Color.White)
+                                .padding(if (compact) 10.dp else 14.dp),
+                        ) {
+                            Image(bitmap, contentDescription = stringResource(R.string.verify_my_qr), modifier = Modifier.fillMaxWidth().aspectRatio(1f))
+                        }
+                    }
+                    Text(
+                        stringResource(R.string.verify_my_qr_note),
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
                 }
-            }
-            Text(
-                stringResource(R.string.verify_my_qr_note),
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            FilledTonalButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                Text(stringResource(R.string.close))
+                FilledTonalButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                    Text(stringResource(R.string.close))
+                }
             }
         }
     }
@@ -367,19 +413,21 @@ fun qrBitmap(text: String, size: Int): ImageBitmap {
     return Bitmap.createBitmap(pixels, m.width, m.height, Bitmap.Config.ARGB_8888).asImageBitmap()
 }
 
-/** Rounded container grouping related settings rows on the Me tab. */
+/** Rounded container grouping related settings rows on the Me & Location tabs (`.card-light` / `.card-dark`). */
 @Composable
 internal fun SettingsGroupCard(
     modifier: Modifier = Modifier,
-    borderColor: Color = MaterialTheme.colorScheme.outlineVariant,
+    borderColor: Color? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val isLight = OpenChatPalette.isLight
+    val defaultBorder = if (isLight) Color(0xFF0F1C2E).copy(alpha = 0.08f) else Color.White.copy(alpha = 0.09f)
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = OpenChatPalette.Card,
+        color = if (isLight) Color.White.copy(alpha = 0.76f) else Color(0xFF141A1D).copy(alpha = 0.74f),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        border = BorderStroke(1.dp, borderColor),
+        border = BorderStroke(0.8.dp, borderColor ?: defaultBorder),
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(content = content)
@@ -402,16 +450,50 @@ fun VerifySection(onShowQr: () -> Unit, onScan: () -> Unit) {
             lineHeight = 19.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 4.dp)) {
-            FilledTonalButton(onClick = onShowQr, modifier = Modifier.weight(1f)) {
-                Icon(Icons.Outlined.QrCode2, contentDescription = null, modifier = Modifier.size(17.dp))
-                Spacer(Modifier.width(6.dp))
-                Text(stringResource(R.string.verify_show), maxLines = 1)
-            }
-            OutlinedButton(onClick = onScan, modifier = Modifier.weight(1f)) {
-                Icon(Icons.Outlined.QrCodeScanner, contentDescription = null, modifier = Modifier.size(17.dp))
-                Spacer(Modifier.width(6.dp))
-                Text(stringResource(R.string.verify_scan), maxLines = 1)
+        BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+            val stackButtons = maxWidth < 280.dp
+            if (stackButtons) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilledTonalButton(
+                        onClick = onShowQr,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Outlined.QrCode2, contentDescription = null, modifier = Modifier.size(17.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.verify_show), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    OutlinedButton(
+                        onClick = onScan,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Outlined.QrCodeScanner, contentDescription = null, modifier = Modifier.size(17.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.verify_scan), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            } else {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    FilledTonalButton(
+                        onClick = onShowQr,
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Outlined.QrCode2, contentDescription = null, modifier = Modifier.size(17.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.verify_show), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    OutlinedButton(
+                        onClick = onScan,
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Outlined.QrCodeScanner, contentDescription = null, modifier = Modifier.size(17.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.verify_scan), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
             }
         }
     }

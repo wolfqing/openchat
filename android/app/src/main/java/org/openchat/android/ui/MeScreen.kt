@@ -7,16 +7,19 @@ import android.text.format.Formatter
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -63,6 +66,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.openchat.android.R
@@ -73,13 +77,20 @@ import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.PeerLabel
 
 @Composable
-internal fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> Unit, onScan: () -> Unit, onPanic: () -> Unit) {
+internal fun MePane(
+    onShareApp: () -> Unit,
+    onLanguage: (AppLanguage.Choice) -> Unit,
+    onScan: () -> Unit,
+    onPanic: () -> Unit,
+    topClearance: Dp = 0.dp,
+) {
     val mesh by ChatRepository.mesh.collectAsState()
     var nick by rememberSaveable(mesh.myNickname) { mutableStateOf(mesh.myNickname) }
     var editingName by rememberSaveable { mutableStateOf(false) }
     var showQr by remember { mutableStateOf(false) }
     var showFingerprint by rememberSaveable { mutableStateOf(false) }
     val bottomClearance = LocalBottomBarClearance.current
+    val imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
 
     if (showQr) MyQrDialog { showQr = false }
 
@@ -87,39 +98,44 @@ internal fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> 
         Column(
             Modifier
                 .fillMaxSize()
-                .background(OpenChatPalette.Screen)
+                .openChatCanvas()
                 .fluidGlassSource()
                 .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 18.dp + bottomClearance),
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp + topClearance, bottom = 18.dp + maxOf(bottomClearance, imeBottom)),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
         // 1. Identity Card (Emblem, Nickname#xxxx, QR shortcut, Fingerprint & Verification)
         SettingsGroupCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
-                    EmblemView(mesh.myPeerHex.ifEmpty { "self" }, 54.dp)
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            labelText(PeerLabel.mesh(mesh.myNickname, mesh.myPeerHex)),
-                            fontSize = 19.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            stringResource(R.string.me_suffix_note),
-                            fontSize = 12.sp,
-                            lineHeight = 16.5.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    IconButton(onClick = { nick = mesh.myNickname; editingName = !editingName }) {
-                        Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.me_name), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    IconButton(onClick = { showQr = true }) {
-                        Icon(Icons.Outlined.QrCode2, contentDescription = stringResource(R.string.verify_my_qr), tint = MaterialTheme.colorScheme.onSurface)
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val compactId = maxWidth < 310.dp
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(if (compactId) 10.dp else 14.dp),
+                    ) {
+                        EmblemView(mesh.myPeerHex.ifEmpty { "self" }, if (compactId) 44.dp else 54.dp)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                labelText(PeerLabel.mesh(mesh.myNickname, mesh.myPeerHex)),
+                                fontSize = if (compactId) 17.sp else 19.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                stringResource(R.string.me_suffix_note),
+                                fontSize = 12.sp,
+                                lineHeight = 16.5.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        IconButton(onClick = { nick = mesh.myNickname; editingName = !editingName }) {
+                            Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.me_name), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        IconButton(onClick = { showQr = true }) {
+                            Icon(Icons.Outlined.QrCode2, contentDescription = stringResource(R.string.verify_my_qr), tint = MaterialTheme.colorScheme.onSurface)
+                        }
                     }
                 }
 
@@ -227,6 +243,7 @@ internal fun MePane(onShareApp: () -> Unit, onLanguage: (AppLanguage.Choice) -> 
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(stringResource(R.string.me_language), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
                 LanguagePicker(onLanguage)
@@ -278,61 +295,53 @@ private fun ThemeSection() {
         Text(stringResource(R.string.theme_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
         Surface(
             shape = CircleShape,
-            color = OpenChatPalette.Screen,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            color = if (isLight) Color(0xFFE7EEF7) else Color(0xFF0E1416),
+            border = BorderStroke(0.8.dp, if (isLight) Color(0xFF0F1C2E).copy(alpha = 0.08f) else Color.White.copy(alpha = 0.09f)),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Row(
-                Modifier.fillMaxWidth().padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                val options = listOf(
-                    Triple(AppTheme.Choice.SYSTEM, Icons.Outlined.BrightnessAuto, R.string.theme_system),
-                    Triple(AppTheme.Choice.LIGHT, Icons.Outlined.LightMode, R.string.theme_light),
-                    Triple(AppTheme.Choice.DARK, Icons.Outlined.DarkMode, R.string.theme_dark),
-                )
-                options.forEach { (choice, icon, labelRes) ->
-                    val selected = current == choice
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(CircleShape)
-                            .background(
-                                when {
-                                    !selected -> Color.Transparent
-                                    isLight -> Color.White
-                                    else -> OpenChatPalette.CardRaised
-                                },
-                            )
-                            .let {
-                                if (selected) {
-                                    it.border(
-                                        1.dp,
-                                        if (isLight) MaterialTheme.colorScheme.outline else Color.White.copy(alpha = 0.20f),
-                                        CircleShape,
-                                    )
-                                } else it
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val hideIcon = maxWidth < 280.dp
+                Row(
+                    Modifier.fillMaxWidth().padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    val options = listOf(
+                        Triple(AppTheme.Choice.SYSTEM, Icons.Outlined.BrightnessAuto, R.string.theme_system),
+                        Triple(AppTheme.Choice.LIGHT, Icons.Outlined.LightMode, R.string.theme_light),
+                        Triple(AppTheme.Choice.DARK, Icons.Outlined.DarkMode, R.string.theme_dark),
+                    )
+                    options.forEach { (choice, icon, labelRes) ->
+                        val selected = current == choice
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(CircleShape)
+                                .let {
+                                    if (selected) it.fluidGlassDroplet(isLight) else it
+                                }
+                                .clickable(role = Role.RadioButton) { AppTheme.set(context, choice) }
+                                .padding(horizontal = if (hideIcon) 6.dp else 8.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (!hideIcon) {
+                                Icon(
+                                    icon,
+                                    contentDescription = null,
+                                    tint = if (selected) OpenChatPalette.Ink else OpenChatPalette.Muted,
+                                    modifier = Modifier.size(15.dp),
+                                )
+                                Spacer(Modifier.width(5.dp))
                             }
-                            .clickable(role = Role.RadioButton) { AppTheme.set(context, choice) }
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            icon,
-                            contentDescription = null,
-                            tint = if (selected) OpenChatPalette.Ink else OpenChatPalette.Muted,
-                            modifier = Modifier.size(15.dp),
-                        )
-                        Spacer(Modifier.width(5.dp))
-                        Text(
-                            stringResource(labelRes),
-                            fontSize = 12.5.sp,
-                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (selected) OpenChatPalette.Ink else OpenChatPalette.Muted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                            Text(
+                                stringResource(labelRes),
+                                fontSize = 12.5.sp,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (selected) OpenChatPalette.Ink else OpenChatPalette.Muted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
             }
@@ -340,7 +349,7 @@ private fun ThemeSection() {
     }
 }
 
-/** "openchat 0.7.6 (17)": the installed versionName and versionCode, so a report names its build. */
+/** "openchat 0.7.7 (18)": the installed versionName and versionCode, so a report names its build. */
 @Composable
 private fun appVersion(): String {
     val context = LocalContext.current

@@ -32,6 +32,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -247,10 +250,69 @@ internal fun Modifier.pressScale(pressedScale: Float = 0.94f): Modifier = compos
         }
 }
 
+/**
+ * Atmospheric canvas background from the approved Radiant Light & OLED Dark design:
+ * - Radiant Light: `#FFFFFF -> #F4F7FC -> #EBF1F8` vertical daylight gradient with subtle
+ *   warm Signal-orange top-left and cool Lock-blue bottom-right ambient radial glows.
+ * - OLED Dark: pure `#000000` canvas with ultra-subtle top-left warm and bottom-right cool glows.
+ */
+internal fun Modifier.openChatCanvas(): Modifier = composed {
+    val isLight = OpenChatPalette.isLight
+    this.drawWithCache {
+        val w = size.width.coerceAtLeast(1f)
+        val h = size.height.coerceAtLeast(1f)
+        val topGlowRadius = maxOf(w * 0.90f, h * 0.38f).coerceAtLeast(2f)
+        val bottomGlowRadius = maxOf(w * 0.86f, h * 0.42f).coerceAtLeast(2f)
+        if (isLight) {
+            val baseBrush = Brush.verticalGradient(
+                0.00f to Color(0xFFFFFFFF),
+                0.52f to Color(0xFFF4F7FC),
+                1.00f to Color(0xFFEBF1F8),
+            )
+            val topGlow = Brush.radialGradient(
+                colors = listOf(Color(0xFFFF6A30).copy(alpha = 0.105f), Color.Transparent),
+                center = Offset(w * 0.18f, h * 0.08f),
+                radius = topGlowRadius,
+            )
+            val bottomGlow = Brush.radialGradient(
+                colors = listOf(Color(0xFF247AFF).copy(alpha = 0.105f), Color.Transparent),
+                center = Offset(w * 0.88f, h * 0.92f),
+                radius = bottomGlowRadius,
+            )
+            onDrawBehind {
+                drawRect(brush = baseBrush)
+                drawRect(brush = topGlow)
+                drawRect(brush = bottomGlow)
+            }
+        } else {
+            val topGlow = Brush.radialGradient(
+                colors = listOf(Color(0xFFFF7840).copy(alpha = 0.085f), Color.Transparent),
+                center = Offset(w * 0.20f, h * 0.06f),
+                radius = topGlowRadius,
+            )
+            val bottomGlow = Brush.radialGradient(
+                colors = listOf(Color(0xFF5298F2).copy(alpha = 0.075f), Color.Transparent),
+                center = Offset(w * 0.85f, h * 0.94f),
+                radius = bottomGlowRadius,
+            )
+            onDrawBehind {
+                drawRect(color = Color.Black)
+                drawRect(brush = topGlow)
+                drawRect(brush = bottomGlow)
+            }
+        }
+    }
+}
+
 /** 1dp low-contrast separator matching `--line` in the UI prototype. */
 @Composable
 internal fun Hairline(modifier: Modifier = Modifier) {
-    HorizontalDivider(modifier = modifier, thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+    val isLight = OpenChatPalette.isLight
+    HorizontalDivider(
+        modifier = modifier,
+        thickness = 0.75.dp,
+        color = if (isLight) Color(0xFF0F1722).copy(alpha = 0.07f) else Color.White.copy(alpha = 0.07f),
+    )
 }
 
 /** Unread count pill in signal orange, reserved for genuine network activity. */
@@ -260,7 +322,7 @@ internal fun UnreadBadge(count: Int, modifier: Modifier = Modifier) {
     Badge(
         modifier = modifier.defaultMinSize(minWidth = 18.dp),
         containerColor = OpenChatPalette.Signal,
-        contentColor = OpenChatPalette.OnSignal,
+        contentColor = Color.White,
     ) {
         Text(
             if (count > 99) "99+" else "$count",
@@ -275,8 +337,8 @@ internal fun UnreadBadge(count: Int, modifier: Modifier = Modifier) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun chromeTopBarColors(): TopAppBarColors = TopAppBarDefaults.topAppBarColors(
-    containerColor = OpenChatPalette.Surface.copy(alpha = if (OpenChatPalette.isLight) 0.90f else 0.92f),
-    scrolledContainerColor = OpenChatPalette.Surface,
+    containerColor = Color.Transparent,
+    scrolledContainerColor = Color.Transparent,
     navigationIconContentColor = OpenChatPalette.Ink,
     titleContentColor = OpenChatPalette.Ink,
     actionIconContentColor = OpenChatPalette.Ink,
