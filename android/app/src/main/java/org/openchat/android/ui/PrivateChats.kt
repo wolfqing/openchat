@@ -30,8 +30,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.VolumeOff
-import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
@@ -68,7 +66,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -85,14 +82,12 @@ import org.openchat.android.app.ChatMessage
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.DeliveryState
-import org.openchat.android.app.LiveVoicePrefs
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.app.Social
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) {
-    val context = LocalContext.current
     val names by ChatRepository.names.collectAsState()
     val peers by ChatRepository.peers.collectAsState()
     val peer = peers.firstOrNull { it.peerIdHex == peerHex }
@@ -102,7 +97,8 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
     val readSent = remember { HashSet<String>() }
     var sheet by remember { mutableStateOf(false) }
     val social by Social.state.collectAsState()
-    val liveVoiceOn by LiveVoicePrefs.enabledFlow.collectAsState()
+    val pttOpenSet by ChatRepository.pttOpen.collectAsState()
+    val pttOpen = convKey in pttOpenSet
     val liveSpeakers by ChatRepository.liveSpeakers.collectAsState()
     val dmSpeaker = remember(liveSpeakers, convKey) {
         liveSpeakers.values.firstOrNull { it.conversation == convKey }
@@ -115,6 +111,8 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
     FluidGlassHost {
         BoxWithConstraints(Modifier.fillMaxSize().openChatCanvas()) {
             val compactBar = maxWidth < 400.dp
+            val ultraNarrowBar = maxWidth < 340.dp
+            val pttAccent = if (dmSpeaker != null) OpenChatPalette.Signal else OpenChatPalette.Lock
             val showTopBand = peer != null || dmSpeaker != null
             val mesh by ChatRepository.mesh.collectAsState()
             Scaffold(
@@ -160,13 +158,48 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
                             },
                             actions = {
                                 AudiencePill(encrypted = true, compact = compactBar)
-                                IconButton(onClick = { LiveVoicePrefs.setEnabled(context, !liveVoiceOn) }) {
-                                    Icon(
-                                        if (liveVoiceOn) Icons.AutoMirrored.Outlined.VolumeUp else Icons.AutoMirrored.Outlined.VolumeOff,
-                                        contentDescription = stringResource(if (liveVoiceOn) R.string.live_ptt_mute else R.string.live_ptt_unmute),
-                                        tint = if (liveVoiceOn) OpenChatPalette.Ink else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(20.dp),
+                                if (ultraNarrowBar) {
+                                    FluidGlassCircleButton(
+                                        icon = WalkieTalkieIcon,
+                                        contentDescription = stringResource(R.string.ptt_button),
+                                        onClick = { ChatRepository.togglePttOpen(convKey) },
+                                        modifier = Modifier.padding(start = 6.dp),
+                                        size = 32.dp,
+                                        iconSize = 15.dp,
+                                        iconTint = if (pttOpen) Color.White else pttAccent,
+                                        tintColor = when {
+                                            pttOpen -> pttAccent
+                                            dmSpeaker != null -> OpenChatPalette.SignalSoft
+                                            else -> null
+                                        },
+                                        borderAccent = if (pttOpen || dmSpeaker != null) pttAccent else null,
                                     )
+                                } else {
+                                    FluidGlassPillButton(
+                                        onClick = { ChatRepository.togglePttOpen(convKey) },
+                                        modifier = Modifier.padding(start = 6.dp),
+                                        tintColor = when {
+                                            pttOpen -> pttAccent
+                                            dmSpeaker != null -> OpenChatPalette.SignalSoft
+                                            else -> null
+                                        },
+                                        borderAccent = if (pttOpen || dmSpeaker != null) pttAccent else null,
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
+                                    ) {
+                                        Icon(
+                                            imageVector = WalkieTalkieIcon,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(14.dp),
+                                            tint = if (pttOpen) Color.White else pttAccent,
+                                        )
+                                        Text(
+                                            stringResource(R.string.ptt_button),
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (pttOpen) Color.White else OpenChatPalette.Ink,
+                                            maxLines = 1,
+                                        )
+                                    }
                                 }
                                 IconButton(onClick = { sheet = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.peer_more)) }
                             },
@@ -178,6 +211,7 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
                                 direct = peers.count { it.direct && it.peerIdHex != mesh.myPeerHex },
                                 lastHeard = peer?.lastSeen ?: System.currentTimeMillis(),
                                 liveSpeakerLabel = dmSpeaker,
+                                onSpeakerClick = { ChatRepository.setPttOpen(convKey, true) },
                             )
                         }
                     }

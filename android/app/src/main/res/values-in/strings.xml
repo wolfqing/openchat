@@ -349,4 +349,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">Radio</string>
+    <string name="ptt_menu_item">Walkie-talkie Langsung</string>
+    <string name="ptt_keyboard">Papan ketik</string>
+    <string name="ptt_hold_to_talk">Tahan bicara</string>
+    <string name="ptt_release_to_end">Lepas untuk selesai</string>
+    <string name="ptt_idle_nearby">Saluran kosong · %1$d terjangkau</string>
+    <string name="ptt_idle_private">Saluran terenkripsi · %1$s</string>
+    <string name="ptt_tx_status">Memancarkan · yang lain mendengarkan</string>
+    <string name="ptt_tx_remaining">Sisa %1$d dtk</string>
+    <string name="ptt_rx_locked">Saluran Sibuk</string>
+    <string name="ptt_busy_hint">%1$s sedang bicara — tunggu selesai</string>
+    <string name="ptt_tap_hint">Tahan tombol untuk bicara, lepas untuk selesai</string>
+    <string name="ptt_no_peers">Tidak ada perangkat di sekitar</string>
+    <string name="ptt_peer_away">Di luar jangkauan Bluetooth</string>
+    <string name="ptt_handshaking">Menghubungkan saluran terenkripsi…</string>
+    <string name="ptt_muted_hint">Walkie-talkie dibisukan</string>
+    <string name="ptt_muted_enable">Ketuk aktifkan suara</string>
 </resources>

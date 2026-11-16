@@ -355,4 +355,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">Telsiz</string>
+    <string name="ptt_menu_item">Canlı Telsiz</string>
+    <string name="ptt_keyboard">Klavye</string>
+    <string name="ptt_hold_to_talk">Basılı Tut</string>
+    <string name="ptt_release_to_end">Bitirmek için bırak</string>
+    <string name="ptt_idle_nearby">Kanal boş · %1$d kişi menzilde</string>
+    <string name="ptt_idle_private">Şifreli hat · %1$s</string>
+    <string name="ptt_tx_status">Gönderiliyor · diğerleri dinlemede</string>
+    <string name="ptt_tx_remaining">Son %1$d sn</string>
+    <string name="ptt_rx_locked">Kanal Meşgul</string>
+    <string name="ptt_busy_hint">%1$s konuşuyor — lütfen bekleyin</string>
+    <string name="ptt_tap_hint">Konuşmak için düğmeyi basılı tutun, bitince bırakın</string>
+    <string name="ptt_no_peers">Yakında cihaz yok</string>
+    <string name="ptt_peer_away">Bluetooth menzili dışında</string>
+    <string name="ptt_handshaking">Şifreli kanal bağlanıyor…</string>
+    <string name="ptt_muted_hint">Canlı telsiz sessize alındı</string>
+    <string name="ptt_muted_enable">Sesi Aç</string>
 </resources>

@@ -251,8 +251,8 @@
     <string name="pay_copy">複製</string>
     <string name="pay_copied">已複製權杖</string>
     <string name="media_mic_hint">語音：按住說話，或點一下錄音（可停止試聽或直接傳送）</string>
-    <string name="live_voice_title">即時語音</string>
-    <string name="live_voice_body">在「附近」和私聊裡，你說話時別人就能邊聽；別人的語音在你打開該聊天時也會即時播放。關閉後雙方都只收發錄完的語音。</string>
+    <string name="live_voice_title">即時對講</string>
+    <string name="live_voice_body">打開「附近」或私訊時即時播放對方的對講語音，並允許按住發射（同一時刻僅一人講話，聽過即走不留氣泡）。關閉後對講靜音。</string>
     <string name="media_play">播放</string>
     <string name="media_stop">停止</string>
     <string name="me_wipe_title">清除所有資料</string>
@@ -330,7 +330,7 @@
     <string name="guide_e2e_title">端對端加密私訊與群聊（Private）</string>
     <string name="guide_e2e_body">私訊採用 Noise XX 端對端加密並顯示四步送達路徑；對方暫時離開範圍時，訊息會封裝為密封信封由沿途節點代為捎帶。</string>
     <string name="guide_voice_title">即時語音對講與語音訊息</string>
-    <string name="guide_voice_body">按住麥克風即可在附近藍牙網格內即時對講；點一下麥克風開始錄音，可隨時點停止試聽回放、刪除或傳送。</string>
+    <string name="guide_voice_body">在「附近」或私訊頂部點擊「對講」（或點左下角 + 選擇「即時對講」），按住圓盤即可半雙工即時對講——同一時刻僅一人講話，聽過即走不留氣泡；點右下角麥克風則用於錄製一般語音訊息。</string>
     <string name="guide_globe_title">位置頻道與 3D 地球（Location）</string>
     <string name="guide_globe_body">轉動與雙指縮放 3D 地球，選擇街區、城市或地區級 #geohash 位置頻道，所有連線預設經 Tor 保護網路隱私。</string>
     <string name="guide_board_title">附近公告板與地點留言</string>
@@ -349,4 +349,22 @@
     <string name="guide_cmd_diag">測試與某位成員的藍牙往返延遲或查看中繼路徑</string>
     <string name="guide_cmd_social">收藏好友（支援離線捎帶與網際網路回退）或封鎖騷擾</string>
     <string name="guide_cmd_room">建立/管理加密群聊、在當前位置留字條，或清空本機聊天記錄</string>
+
+    <string name="ptt_button">對講</string>
+    <string name="ptt_menu_item">即時對講</string>
+    <string name="ptt_keyboard">鍵盤</string>
+    <string name="ptt_hold_to_talk">按住 說話</string>
+    <string name="ptt_release_to_end">鬆手結束</string>
+    <string name="ptt_idle_nearby">頻道空閒 · 可達 %1$d 人</string>
+    <string name="ptt_idle_private">加密專線 · %1$s</string>
+    <string name="ptt_tx_status">正在發射 · 他人僅收聽</string>
+    <string name="ptt_tx_remaining">剩餘 %1$d 秒</string>
+    <string name="ptt_rx_locked">頻道佔用中</string>
+    <string name="ptt_busy_hint">%1$s 正在講話，請稍候</string>
+    <string name="ptt_tap_hint">請按住圓盤說話，鬆手結束</string>
+    <string name="ptt_no_peers">附近暫無節點</string>
+    <string name="ptt_peer_away">對方不在藍牙範圍內</string>
+    <string name="ptt_handshaking">正在建立加密頻道…</string>
+    <string name="ptt_muted_hint">即時對講已靜音</string>
+    <string name="ptt_muted_enable">點此開啟聲音</string>
 </resources>

@@ -349,4 +349,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">Bộ đàm</string>
+    <string name="ptt_menu_item">Bộ đàm trực tiếp</string>
+    <string name="ptt_keyboard">Bàn phím</string>
+    <string name="ptt_hold_to_talk">Giữ để nói</string>
+    <string name="ptt_release_to_end">Thả để kết thúc</string>
+    <string name="ptt_idle_nearby">Kênh trống · %1$d người trong tầm</string>
+    <string name="ptt_idle_private">Kênh mã hóa · %1$s</string>
+    <string name="ptt_tx_status">Đang phát · người khác chỉ nghe</string>
+    <string name="ptt_tx_remaining">Còn %1$d giây</string>
+    <string name="ptt_rx_locked">Kênh đang bận</string>
+    <string name="ptt_busy_hint">%1$s đang nói — vui lòng đợi</string>
+    <string name="ptt_tap_hint">Nhấn giữ nút tròn để nói, thả tay để kết thúc</string>
+    <string name="ptt_no_peers">Không có thiết bị ở gần</string>
+    <string name="ptt_peer_away">Ngoài tầm phủ sóng Bluetooth</string>
+    <string name="ptt_handshaking">Đang kết nối kênh mã hóa…</string>
+    <string name="ptt_muted_hint">Đã tắt tiếng bộ đàm</string>
+    <string name="ptt_muted_enable">Chạm để bật tiếng</string>
 </resources>

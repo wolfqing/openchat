@@ -91,7 +91,7 @@ interface MeshListener {
     /** The peer proved it holds the keys from the verification QR we scanned (§16.2). */
     fun onVerified(peerHex: String) {}
     /** A live voice packet (§29) from an authenticated sender. */
-    fun onVoiceFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean) {}
+    fun onVoiceFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean, hops: Int? = null) {}
     /** A vouch batch over Noise from the holder of [sessionKey], whose announced signing key is [signingKey] (§26). */
     fun onVouch(peerHex: String, sessionKey: ByteArray, signingKey: ByteArray, batch: ByteArray) {}
     /**
@@ -374,6 +374,14 @@ class MeshEngine(
     fun isReachable(peerHex: String) = peers.containsKey(peerHex)
 
     fun hasSession(peerHex: String) = sessions[peerHex]?.established == true
+
+    /** Peers with an active established Noise XX session, for live private PTT readiness. */
+    fun establishedSessionPeers(): Set<String> = sessions.filterValues { it.established }.keys.toSet()
+
+    /** Pre-warms a Noise XX session with a reachable peer before private live PTT starts. */
+    fun ensureSession(peerHex: String) {
+        if (isReachable(peerHex) && !hasSession(peerHex)) startHandshake(peerHex)
+    }
 
     // ---------------------------------------------------------------- presence
 
@@ -740,7 +748,7 @@ class MeshEngine(
         val hex = p.senderId.toHex()
         val peer = peers[hex] ?: return false
         if (!verify(p, peer.signingKey)) return false
-        if (!isBlocked(peer.noiseKey)) listener.onVoiceFrame(hex, peer.nickname, p.payload, isPrivate = false)
+        if (!isBlocked(peer.noiseKey)) listener.onVoiceFrame(hex, peer.nickname, p.payload, isPrivate = false, hops = hopsOf(p))
         return true
     }
 
@@ -1174,7 +1182,7 @@ class MeshEngine(
             }
             NoisePayloadType.VOICE_FRAME -> {
                 if (noiseKeyOf(peerHex)?.let(isBlocked) == true) return
-                listener.onVoiceFrame(peerHex, nickname, payload.body, isPrivate = true)
+                listener.onVoiceFrame(peerHex, nickname, payload.body, isPrivate = true, hops = hops)
             }
             NoisePayloadType.VOUCH -> {
                 // The voucher is whoever holds this session; its announced signing key checks the batch.

@@ -1,6 +1,6 @@
 # openchat for Android
 
-Status: **v0.7.8 preview.** Builds and passes its 201 unit tests. v0.7.6 ran
+Status: **v0.7.9 preview.** Builds and passes its 206 unit tests. v0.7.6 ran
 on an Android 14 (`API 34`) emulator before publishing and previews up to
 v0.7.2 ran on an Android 15 emulator (see [CHANGELOG.md](../CHANGELOG.md) per
 release); the mesh has not been tried between real phones, and it is not yet
@@ -36,7 +36,7 @@ bitchat-android source was never read.
 | Vouching: verified people share whom they verified, 30-day lapse (spec §26) | `core/Vouch.kt`, `app/Vouching.kt` |
 | One-time prekeys, forward-secret courier mail (spec §27) | `core/Prekeys.kt`, `core/Courier.kt` |
 | `/pay` and Cashu token cards, no mint contact (spec §28) | `core/Cashu.kt`, `app/Commands.kt` |
-| Live push-to-talk voice, signed public bursts, header speaker equalizer, mic level and quick mute (spec §29) | `core/VoiceBurst.kt`, `app/LiveVoice.kt`, `app/ChatRepository.kt`, `ui/MeshVisuals.kt` |
+| Half-duplex Live Walkie-Talkie drawer, single-speaker floor lock, radio chirp/Roger tones, pure-live playback (spec §29) | `core/VoiceBurst.kt`, `app/PttFloorCoordinator.kt`, `app/PttTones.kt`, `app/LiveVoice.kt`, `ui/WalkieTalkieDrawer.kt`, `ui/MeshVisuals.kt` |
 | The mesh made visible: signal band, hop counts, emblems, delivery path, radar (spec §30) | `ui/MeshVisuals.kt`, `ui/ChatPane.kt` |
 | Radiant Light and OLED Dark themes, AGSL Liquid Glass floating chrome, flat matte bubbles and vector icons | `app/AppTheme.kt`, `ui/FluidGlass.kt`, `ui/Theme.kt`, `ui/MainScreen.kt` |
 | Globe picker for location channels, Natural Earth data packed to 275 KB | `ui/globe/`, `tools/pack_globe.py` |
@@ -89,7 +89,7 @@ published from `./gradlew :app:assembleRelease` (R8-shrunk, ARM only, about
 | `GroupsTest`, `BoardTest`, `BridgeWireTest`, `PrekeysTest`, `VouchTest`, `CashuTest`, `VoiceBurstTest` | the v0.6 formats: roster and key signing, post lifetimes and takedowns, bridge envelopes, prekey publish and consume, vouch attestations and batches, token parsing, voice burst framing against bitchat's layout |
 | `RateLimiterTest`, `ScanDutyCycleTest`, `PowTest`, `NostrSendersTest`, `PeerLabelTest`, `RelayUrlTest` | flood limits, scan timing, NIP-13 difficulty, Nostr sender binding, name and suffix labels, relay URL checks |
 | `ChatRepositoryTest`, `PanicTest`, `SaveScheduleTest`, `AppUpdaterTest` | delivery states (a late receipt replaces "not delivered", giving up never hides a receipt), a wipe leaves nothing in memory, the sealed-file directory is emptied whatever is in it, the save debounce has a ceiling, questions to the mesh thread time out, release parsing, SHA-256 sums and URL host checks |
-| `MeshVisualsTest`, `GlobeTest`, `AppThemeTest` | emblem derivation and colours, delivery dots only move forward, day markers and speaker grouping; globe projection and inverse, settled-level framing, precision from zoom, drag clamping at the poles, bundled map data parses; theme persistence/resolution and PCM live-mic level normalisation |
+| `MeshVisualsTest`, `GlobeTest`, `AppThemeTest`, `RandomNicknamesTest`, `PttFloorCoordinatorTest` | emblem derivation and colours, delivery dots only move forward, day markers and speaker grouping; globe projection and inverse, settled-level framing, precision from zoom, drag clamping at the poles, bundled map data parses; theme persistence/resolution and PCM live-mic level normalisation; random callsign formatting; half-duplex PTT floor lock, collision tie-breaking, idle timeout and live-burst note deduplication |
 
 ## Known risks
 

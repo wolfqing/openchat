@@ -138,6 +138,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         org.openchat.android.app.ChatRepository.foreground = false
+        org.openchat.android.app.ChatRepository.controller?.cancelPtt()
         super.onPause()
     }
 

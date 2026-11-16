@@ -395,4 +395,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">لاسلكي</string>
+    <string name="ptt_menu_item">جهاز لاسلكي مباشر</string>
+    <string name="ptt_keyboard">لوحة المفاتيح</string>
+    <string name="ptt_hold_to_talk">اضغط مطولاً للتحدث</string>
+    <string name="ptt_release_to_end">أفلت للإنهاء</string>
+    <string name="ptt_idle_nearby">القناة متاحة · %1$d في النطاق</string>
+    <string name="ptt_idle_private">قناة مشفرة · %1$s</string>
+    <string name="ptt_tx_status">جارٍ الإرسال · الآخرون يستمعون فقط</string>
+    <string name="ptt_tx_remaining">متبقٍ %1$d ث</string>
+    <string name="ptt_rx_locked">القناة مشغولة</string>
+    <string name="ptt_busy_hint">%1$s يتحدث — انتظر حتى ينتهي</string>
+    <string name="ptt_tap_hint">اضغط مطولاً على الزر للتحدث وأفلته للإنهاء</string>
+    <string name="ptt_no_peers">لا توجد أجهزة قريبة في النطاق</string>
+    <string name="ptt_peer_away">خارج نطاق البلوتوث</string>
+    <string name="ptt_handshaking">جارٍ إنشاء القناة المشفرة…</string>
+    <string name="ptt_muted_hint">اللاسلكي المباشر مكتوم</string>
+    <string name="ptt_muted_enable">انقر لإلغاء الكتم</string>
 </resources>

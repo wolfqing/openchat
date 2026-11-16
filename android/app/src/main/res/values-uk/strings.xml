@@ -375,4 +375,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">Рація</string>
+    <string name="ptt_menu_item">Жива рація</string>
+    <string name="ptt_keyboard">Клавіатура</string>
+    <string name="ptt_hold_to_talk">Утримуйте</string>
+    <string name="ptt_release_to_end">Відпустіть у кінці</string>
+    <string name="ptt_idle_nearby">Канал вільний · доступно: %1$d</string>
+    <string name="ptt_idle_private">Зашифрований канал · %1$s</string>
+    <string name="ptt_tx_status">Передача · інші слухають</string>
+    <string name="ptt_tx_remaining">Залишилось %1$d с</string>
+    <string name="ptt_rx_locked">Канал зайнятий</string>
+    <string name="ptt_busy_hint">Говорить %1$s — зачекайте завершення</string>
+    <string name="ptt_tap_hint">Утримуйте кнопку для розмови та відпустіть у кінці</string>
+    <string name="ptt_no_peers">Поруч немає пристроїв</string>
+    <string name="ptt_peer_away">Поза зоною дії Bluetooth</string>
+    <string name="ptt_handshaking">Встановлення захищеного каналу…</string>
+    <string name="ptt_muted_hint">Жива рація без звуку</string>
+    <string name="ptt_muted_enable">Увімкнути звук</string>
 </resources>

@@ -349,4 +349,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">ရေဒီယို</string>
+    <string name="ptt_menu_item">တိုက်ရိုက် စကားပြောစက်</string>
+    <string name="ptt_keyboard">ကီးဘုတ်</string>
+    <string name="ptt_hold_to_talk">ဖိထားပြီး ပြောပါ</string>
+    <string name="ptt_release_to_end">ရပ်ရန် လွှတ်ပါ</string>
+    <string name="ptt_idle_nearby">လိုင်းအားနေသည် · %1$d ဦး ချိတ်ဆက်နိုင်</string>
+    <string name="ptt_idle_private">လုံခြုံရေးလိုင်း · %1$s</string>
+    <string name="ptt_tx_status">ထုတ်လွှင့်နေသည် · အခြားသူများ နားထောင်သာရမည်</string>
+    <string name="ptt_tx_remaining">%1$d စက္ကန့် ကျန်</string>
+    <string name="ptt_rx_locked">လိုင်းမအားသေးပါ</string>
+    <string name="ptt_busy_hint">%1$s ပြောနေသည် — ခေတ္တစောင့်ပါ</string>
+    <string name="ptt_tap_hint">ပြောရန် ခလုတ်ကို ဖိထားပြီး ပြီးလျှင် လွှတ်ပါ</string>
+    <string name="ptt_no_peers">အနီးအနားတွင် စက်မရှိပါ</string>
+    <string name="ptt_peer_away">ဘလူးတုသ် အကွာအဝေးပြင်ပ ရောက်နေသည်</string>
+    <string name="ptt_handshaking">လုံခြုံရေးလိုင်း ချိတ်ဆက်နေသည်…</string>
+    <string name="ptt_muted_hint">စကားပြောစက် အသံပိတ်ထားသည်</string>
+    <string name="ptt_muted_enable">အသံပြန်ဖွင့်ရန် နှိပ်ပါ</string>
 </resources>

@@ -361,4 +361,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">Radio</string>
+    <string name="ptt_menu_item">Walkie-talkie en vivo</string>
+    <string name="ptt_keyboard">Teclado</string>
+    <string name="ptt_hold_to_talk">Mantén para hablar</string>
+    <string name="ptt_release_to_end">Suelta para terminar</string>
+    <string name="ptt_idle_nearby">Canal libre · %1$d al alcance</string>
+    <string name="ptt_idle_private">Enlace cifrado · %1$s</string>
+    <string name="ptt_tx_status">Transmitiendo · los demás escuchan</string>
+    <string name="ptt_tx_remaining">Quedan %1$d s</string>
+    <string name="ptt_rx_locked">Canal ocupado</string>
+    <string name="ptt_busy_hint">%1$s está hablando — espera su turno</string>
+    <string name="ptt_tap_hint">Mantén pulsado el botón para hablar y suelta al terminar</string>
+    <string name="ptt_no_peers">No hay dispositivos cerca</string>
+    <string name="ptt_peer_away">Fuera del alcance Bluetooth</string>
+    <string name="ptt_handshaking">Conectando canal cifrado…</string>
+    <string name="ptt_muted_hint">Walkie-talkie silenciado</string>
+    <string name="ptt_muted_enable">Toca para activar</string>
 </resources>

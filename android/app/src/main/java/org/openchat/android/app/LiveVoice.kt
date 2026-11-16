@@ -9,25 +9,21 @@ import android.media.AudioTrack
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
-import android.media.MediaMuxer
 import android.media.MediaRecorder
 import android.os.Handler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.openchat.android.core.Adts
-import org.openchat.android.core.BurstAssembly
 import org.openchat.android.core.VoiceBurst
 import org.openchat.android.core.VoicePacketizer
-import org.openchat.android.core.toHex
 import org.openchat.android.crypto.Crypto
 import java.io.File
-import java.io.FileOutputStream
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import kotlin.math.sqrt
 
-/** One switch for live voice in both directions, on by default as in bitchat (§29). */
+/** One switch for live walkie-talkie voice in both directions, on by default as in bitchat (§29). */
 object LiveVoicePrefs {
     private val _enabledFlow = MutableStateFlow(true)
     val enabledFlow: StateFlow<Boolean> = _enabledFlow.asStateFlow()
@@ -67,59 +63,82 @@ private const val FRAME_SAMPLES = 1024 // one AAC-LC frame, 64 ms
 private const val MIME = MediaFormat.MIMETYPE_AUDIO_AAC
 
 /**
- * Records a voice note while streaming it live (§29): microphone → AAC-LC 16 kHz mono at
- * 16 kbps; each encoded frame goes both into `voice_<burst>.m4a`, the note sent at the end,
- * and into burst packets handed to [send] as they fill. Packets are sent only when [live].
+ * Pure real-time Walkie-Talkie capture (§29): microphone → AAC-LC 16 kHz mono at 16 kbps →
+ * [VoiceBurst] packets handed straight to [send] without writing a voice-note bubble to disk.
  */
-class LiveCapture(context: Context, private val live: Boolean, private val send: (ByteArray) -> Unit) {
+class LivePttCapture(
+    private val context: Context,
+    private val send: (ByteArray) -> Unit,
+    private val onMaxDurationReached: () -> Unit = {},
+) {
     val burstId: ByteArray = Crypto.randomBytes(VoiceBurst.ID_LENGTH)
-    val file = File(Media.dir(context), "voice_${burstId.toHex()}.m4a")
     private val packetizer = VoicePacketizer(burstId)
     @Volatile private var running = false
     private var thread: Thread? = null
-    private var frames = 0
-    private var startedAt = 0L
+    @Volatile private var frames = 0
 
-    @SuppressLint("MissingPermission") // the caller asked for RECORD_AUDIO
+    @SuppressLint("MissingPermission") // caller verified RECORD_AUDIO
     fun start(): Boolean {
         val minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         if (minBuf <= 0) return false
         val record = try {
-            AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(minBuf, FRAME_SAMPLES * 8))
-        } catch (e: Exception) { return false }
-        if (record.state != AudioRecord.STATE_INITIALIZED) { record.release(); return false }
+            AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                SAMPLE_RATE,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                maxOf(minBuf, FRAME_SAMPLES * 8),
+            )
+        } catch (e: Exception) {
+            return false
+        }
+        if (record.state != AudioRecord.STATE_INITIALIZED) {
+            record.release()
+            return false
+        }
         val encoder = try {
             MediaCodec.createEncoderByType(MIME).apply {
-                configure(MediaFormat.createAudioFormat(MIME, SAMPLE_RATE, 1).apply {
-                    setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
-                    setInteger(MediaFormat.KEY_BIT_RATE, 16_000)
-                    setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, FRAME_SAMPLES * 2)
-                }, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
+                configure(
+                    MediaFormat.createAudioFormat(MIME, SAMPLE_RATE, 1).apply {
+                        setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
+                        setInteger(MediaFormat.KEY_BIT_RATE, 16_000)
+                        setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, FRAME_SAMPLES * 2)
+                    },
+                    null,
+                    null,
+                    MediaCodec.CONFIGURE_FLAG_ENCODE,
+                )
                 start()
             }
-        } catch (e: Exception) { record.release(); return false }
-        val muxer = try { MediaMuxer(file.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4) } catch (e: Exception) { encoder.release(); record.release(); return false }
-        try { record.startRecording() } catch (e: Exception) { encoder.release(); muxer.release(); record.release(); return false }
+        } catch (e: Exception) {
+            record.release()
+            return false
+        }
         running = true
-        startedAt = System.currentTimeMillis()
-        if (live) send(VoiceBurst(burstId, 0, VoiceBurst.Kind.Start(VoiceBurst.CODEC_AAC_LC_16K_MONO)).encode())
-        thread = Thread({ loop(record, encoder, muxer) }, "live-voice").apply { start() }
+        send(VoiceBurst(burstId, 0, VoiceBurst.Kind.Start(VoiceBurst.CODEC_AAC_LC_16K_MONO)).encode())
+        thread = Thread({ loop(record, encoder) }, "live-ptt").apply { start() }
         return true
     }
 
-    private fun loop(record: AudioRecord, encoder: MediaCodec, muxer: MediaMuxer) {
+    private fun loop(record: AudioRecord, encoder: MediaCodec) {
         val pcm = ByteArray(FRAME_SAMPLES * 2)
         val info = MediaCodec.BufferInfo()
-        var track = -1
         var samples = 0L
         var eosQueued = false
+        var hitMaxLimit = false
         try {
+            // Play the short PTT rising chirp before opening the microphone so it never bleeds into TX audio.
+            if (running) PttTones.playStartBlocking(context)
+            if (!running) return
+            record.startRecording()
+            val startedAt = System.currentTimeMillis()
             while (true) {
                 if (!eosQueued) {
                     val i = encoder.dequeueInputBuffer(10_000)
                     if (i >= 0) {
-                        val stop = !running || System.currentTimeMillis() - startedAt >= Media.MAX_VOICE_MS
-                        if (stop) {
+                        val timedOut = System.currentTimeMillis() - startedAt >= PttFloorCoordinator.MAX_HOLD_MS
+                        if (!running || timedOut) {
+                            if (timedOut && running) hitMaxLimit = true
                             encoder.queueInputBuffer(i, 0, 0, samples * 1_000_000 / SAMPLE_RATE, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
                             eosQueued = true
                         } else {
@@ -132,71 +151,64 @@ class LiveCapture(context: Context, private val live: Boolean, private val send:
                     }
                 }
                 val o = encoder.dequeueOutputBuffer(info, 10_000)
-                when {
-                    o == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> { track = muxer.addTrack(encoder.outputFormat); muxer.start() }
-                    o >= 0 -> {
-                        val buf = encoder.getOutputBuffer(o)!!
-                        if (info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0 && info.size > 0 && track >= 0) {
-                            buf.position(info.offset); buf.limit(info.offset + info.size)
-                            val frame = ByteArray(info.size).also { buf.get(it) }
-                            buf.position(info.offset)
-                            muxer.writeSampleData(track, buf, info)
-                            frames++
-                            if (live) packetizer.add(frame).forEach(send)
-                        }
-                        encoder.releaseOutputBuffer(o, false)
-                        if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) break
+                if (o >= 0) {
+                    val buf = encoder.getOutputBuffer(o)!!
+                    if (info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0 && info.size > 0) {
+                        buf.position(info.offset)
+                        buf.limit(info.offset + info.size)
+                        val frame = ByteArray(info.size).also { buf.get(it) }
+                        frames++
+                        packetizer.add(frame).forEach(send)
                     }
+                    encoder.releaseOutputBuffer(o, false)
+                    if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) break
                 }
             }
         } catch (e: Exception) {
             frames = 0
         } finally {
             ChatRepository.setLiveMicLevel(0f)
-            try { record.stop() } catch (e: Exception) { }
+            try { if (record.recordingState == AudioRecord.RECORDSTATE_RECORDING) record.stop() } catch (e: Exception) { }
             record.release()
             try { encoder.stop() } catch (e: Exception) { }
             encoder.release()
-            try { if (track >= 0) muxer.stop() } catch (e: Exception) { frames = 0 }
-            muxer.release()
+            if (hitMaxLimit) onMaxDurationReached()
         }
     }
 
-    private fun join() { running = false; thread?.join(2_000); thread = null }
+    private fun join() {
+        running = false
+        thread?.join(1_500)
+        thread = null
+    }
 
-    /** Stops; returns the finished note, or null (and a cancel to listeners) when too short or broken. */
-    fun finish(): File? {
+    /** Stops and flushes `END` when [validHold] and audible frames were captured; otherwise sends `CANCELED`. */
+    fun finish(validHold: Boolean): Boolean {
         join()
         val durationMs = frames.toLong() * FRAME_SAMPLES * 1000 / SAMPLE_RATE
-        if (durationMs < MIN_MS || !file.exists() || file.length() == 0L) {
-            if (live) send(packetizer.control(VoiceBurst.Kind.Canceled))
-            file.delete()
-            return null
+        if (!validHold || frames == 0 || durationMs < PttFloorCoordinator.MIN_HOLD_MS) {
+            send(packetizer.control(VoiceBurst.Kind.Canceled))
+            return false
         }
-        if (live) {
-            packetizer.flush().forEach(send)
-            send(packetizer.control(VoiceBurst.Kind.End(packetizer.dataPackets, durationMs)))
-        }
-        return file
+        packetizer.flush().forEach(send)
+        send(packetizer.control(VoiceBurst.Kind.End(packetizer.dataPackets, durationMs)))
+        return true
     }
 
     fun cancel() {
         val wasRunning = running
         join()
-        if (live && wasRunning) send(packetizer.control(VoiceBurst.Kind.Canceled))
-        file.delete()
+        if (wasRunning) send(packetizer.control(VoiceBurst.Kind.Canceled))
     }
-
-    private companion object { const val MIN_MS = 700L }
 }
 
-/** Decodes a live burst's AAC frames and plays them, after a short jitter buffer. */
-private class LivePlayer {
+/** Decodes a live burst's AAC frames and plays them after a brief jitter buffer, reporting RX voice level. */
+private class LivePlayer(private val onDrainedCleanly: (() -> Unit)? = null) {
     private val queue = LinkedBlockingQueue<ByteArray>()
     @Volatile private var finishing = false
     @Volatile private var stopped = false
 
-    init { Thread(::run, "live-voice-play").start() }
+    init { Thread(::run, "live-ptt-play").start() }
 
     fun enqueue(frames: List<ByteArray>) { if (!stopped) frames.forEach { queue.put(it) } }
     fun finishAfterDrain() { finishing = true }
@@ -205,163 +217,200 @@ private class LivePlayer {
     private fun run() {
         val decoder = try {
             MediaCodec.createDecoderByType(MIME).apply {
-                configure(MediaFormat.createAudioFormat(MIME, SAMPLE_RATE, 1).apply {
-                    setByteBuffer("csd-0", java.nio.ByteBuffer.wrap(Adts.CONFIG))
-                    setInteger(MediaFormat.KEY_IS_ADTS, 0)
-                }, null, null, 0)
+                configure(
+                    MediaFormat.createAudioFormat(MIME, SAMPLE_RATE, 1).apply {
+                        setByteBuffer("csd-0", java.nio.ByteBuffer.wrap(Adts.CONFIG))
+                        setInteger(MediaFormat.KEY_IS_ADTS, 0)
+                    },
+                    null,
+                    null,
+                    0,
+                )
                 start()
             }
-        } catch (e: Exception) { return }
+        } catch (e: Exception) {
+            return
+        }
         val minBuf = AudioTrack.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
         val track = try {
             AudioTrack.Builder()
-                .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
-                .setAudioFormat(AudioFormat.Builder().setSampleRate(SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).setEncoding(AudioFormat.ENCODING_PCM_16BIT).build())
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build(),
+                )
+                .setAudioFormat(
+                    AudioFormat.Builder()
+                        .setSampleRate(SAMPLE_RATE)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .build(),
+                )
                 .setBufferSizeInBytes(maxOf(minBuf, FRAME_SAMPLES * 8))
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build()
-        } catch (e: Exception) { decoder.release(); return }
+        } catch (e: Exception) {
+            decoder.release()
+            return
+        }
         val info = MediaCodec.BufferInfo()
+        var wroteAudio = false
         try {
-            // Jitter buffer: about 350 ms of audio, or half a second of waiting, whichever comes first.
-            val waitUntil = System.currentTimeMillis() + 500
-            while (!stopped && queue.size < 6 && System.currentTimeMillis() < waitUntil && !finishing) Thread.sleep(20)
+            // Snappy walkie-talkie jitter buffer: ~250 ms (4 frames) or 350 ms max wait.
+            val waitUntil = System.currentTimeMillis() + 350
+            while (!stopped && queue.size < 4 && System.currentTimeMillis() < waitUntil && !finishing) {
+                Thread.sleep(20)
+            }
             track.play()
             while (!stopped) {
-                val frame = queue.poll(100, TimeUnit.MILLISECONDS)
-                if (frame == null) { if (finishing) break else continue }
+                val frame = queue.poll(80, TimeUnit.MILLISECONDS)
+                if (frame == null) {
+                    if (finishing) break else {
+                        ChatRepository.setLiveRxLevel(0f)
+                        continue
+                    }
+                }
                 val i = decoder.dequeueInputBuffer(20_000)
-                if (i >= 0) { decoder.getInputBuffer(i)!!.apply { clear(); put(frame) }; decoder.queueInputBuffer(i, 0, frame.size, 0, 0) }
+                if (i >= 0) {
+                    decoder.getInputBuffer(i)!!.apply { clear(); put(frame) }
+                    decoder.queueInputBuffer(i, 0, frame.size, 0, 0)
+                }
                 while (true) {
                     val o = decoder.dequeueOutputBuffer(info, 0)
                     if (o < 0) break
                     val pcm = ByteArray(info.size)
                     decoder.getOutputBuffer(o)!!.apply { position(info.offset); get(pcm) }
                     decoder.releaseOutputBuffer(o, false)
-                    if (!stopped) track.write(pcm, 0, pcm.size)
+                    if (!stopped && pcm.isNotEmpty()) {
+                        wroteAudio = true
+                        ChatRepository.setLiveRxLevel(pcmLevel(pcm, pcm.size))
+                        track.write(pcm, 0, pcm.size)
+                    }
                 }
             }
         } catch (e: Exception) {
         } finally {
+            ChatRepository.setLiveRxLevel(0f)
             try { track.stop() } catch (e: Exception) { }
             track.release()
             try { decoder.stop() } catch (e: Exception) { }
             decoder.release()
+            if (!stopped && finishing && wroteAudio) {
+                onDrainedCleanly?.invoke()
+            }
         }
     }
 }
 
 /**
- * Inbound live bursts (§29), bitchat's way: each becomes a voice bubble at once, written
- * as an ADTS file so even a partial burst can be replayed, and played live when that chat
- * is open. The sender's finished `voice_<burst>.m4a` later replaces the partial file in the
- * same bubble. Runs on the mesh thread.
+ * Inbound & floor-managed Walkie-Talkie engine (§29):
+ * plays live bursts immediately without cluttering the chat timeline with voice bubbles,
+ * enforces half-duplex single-speaker occupancy per channel via [PttFloorCoordinator],
+ * and absorbs duplicate trailing `.m4a` notes from stock bitchat peers when already heard live.
  */
-class LiveVoice(private val context: Context, private val handler: Handler) {
-    private class Burst(
-        val key: String, val senderHex: String, val isPrivate: Boolean, val conversation: String, val messageId: String,
-        val timestamp: Long, val assembly: BurstAssembly, val file: File, var out: FileOutputStream?, var player: LivePlayer?,
-    )
-
-    private val bursts = LinkedHashMap<String, Burst>()
-    private val finished = LinkedHashMap<String, Burst>() // waiting for the finished note, 10 minutes
+class LiveVoice(
+    private val context: Context,
+    private val handler: Handler,
+    private val onPreemptLocalTx: (conversation: String) -> Unit = {},
+) {
+    val coordinator = PttFloorCoordinator()
+    private val players = HashMap<String, LivePlayer>()
     private var ticking = false
 
     init {
         ChatRepository.onLiveVoiceEnabledChanged = { on ->
             handler.post {
                 if (!on) {
-                    (bursts.values + finished.values).forEach { it.player?.stop(); it.player = null }
-                    ChatRepository.clearLiveSpeakers()
+                    players.values.forEach { it.stop() }
+                    players.clear()
+                    ChatRepository.setLiveRxLevel(0f)
                 }
             }
         }
     }
 
-    private fun key(sender: String, isPrivate: Boolean, burstHex: String) = "$sender/${if (isPrivate) "dm" else "mesh"}/$burstHex"
-
-    fun onFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean) {
-        if (!LiveVoicePrefs.enabled(context)) return
-        val p = VoiceBurst.decode(content) ?: return
-        // A burst ID only names a burst within its authenticated sender and chat.
-        val k = key(senderHex, isPrivate, p.burstHex)
-        val b = bursts[k] ?: run {
-            if (p.kind is VoiceBurst.Kind.End || p.kind == VoiceBurst.Kind.Canceled || k in finished) return
-            if (bursts.size >= BurstAssembly.MAX_CONCURRENT) return
-            open(k, senderHex, nickname, isPrivate, p.burstHex)
+    fun syncUiStates() {
+        val states = coordinator.snapshotStates()
+        ChatRepository.setPttStates(states)
+        val speakers = HashMap<String, LiveSpeaker>()
+        for ((conv, st) in states) {
+            if (st is PttFloorState.Receiving) {
+                speakers[conv] = LiveSpeaker(conv, st.senderKey, st.senderName, st.startedAt, st.hops)
+            }
         }
-        deliver(b, b.assembly.accept(p, content.size))
-        settle(b)
+        ChatRepository.replaceLiveSpeakers(speakers)
+    }
+
+    fun onFrame(myPeerHex: String, senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean, hops: Int?) {
+        val p = VoiceBurst.decode(content) ?: return
+        val conv = if (isPrivate) Conversation.Private(senderHex).key else Conversation.Mesh.key
+        val playLive = LiveVoicePrefs.enabled(context) && ChatRepository.foreground && ChatRepository.openConversation == conv
+        val outcome = coordinator.onRemotePacket(conv, myPeerHex, senderHex, nickname, hops, p, content.size, playLive)
+        if (outcome !is PttRemoteOutcome.Active) return
+
+        if (nickname.isNotEmpty()) ChatRepository.rememberName(senderHex, nickname)
+        applyOutcome(outcome, playLive)
+        syncUiStates()
         armTick()
     }
 
-    private fun open(k: String, senderHex: String, nickname: String, isPrivate: Boolean, burstHex: String): Burst {
-        val conv = if (isPrivate) Conversation.Private(senderHex).key else Conversation.Mesh.key
-        val file = File(Media.dir(context), "voice_live_${burstHex}_${senderHex}_${if (isPrivate) "dm" else "mesh"}.aac")
-        val now = System.currentTimeMillis()
-        val b = Burst(k, senderHex, isPrivate, conv, "live-$burstHex-$senderHex", now, BurstAssembly(System::currentTimeMillis), file, FileOutputStream(file), null)
-        bursts[k] = b
-        ChatRepository.rememberName(senderHex, nickname)
-        ChatRepository.add(ChatMessage(b.messageId, conv, nickname, senderHex, "", now, mine = false, attachment = file.absolutePath, audio = true))
-        ChatRepository.setLiveSpeaker(k, LiveSpeaker(conv, senderHex, nickname, now))
-        if (ChatRepository.foreground && ChatRepository.openConversation == conv) b.player = LivePlayer()
-        return b
-    }
-
-    private fun deliver(b: Burst, frames: List<ByteArray>) {
-        if (frames.isEmpty()) return
-        try { b.out?.let { o -> frames.forEach { o.write(Adts.frame(it)) } } } catch (e: Exception) { b.out = null }
-        b.player?.enqueue(frames)
-    }
-
-    /** Closes a burst that just finished or was canceled. */
-    private fun settle(b: Burst) {
-        if (b.assembly.state == BurstAssembly.State.OPEN) return
-        bursts.remove(b.key)
-        ChatRepository.setLiveSpeaker(b.key, null)
-        try { b.out?.close() } catch (e: Exception) { }
-        b.out = null
-        if (b.assembly.state == BurstAssembly.State.CANCELED || b.assembly.delivered == 0) {
-            b.player?.stop()
-            ChatRepository.remove(b.conversation, b.messageId)
-            b.file.delete()
-            return
+    private fun applyOutcome(outcome: PttRemoteOutcome.Active, playLive: Boolean) {
+        val conv = outcome.conversation
+        if (outcome.preemptedLocalTx) {
+            onPreemptLocalTx(conv)
+            PttTones.playBusy(context)
         }
-        b.player?.finishAfterDrain()
-        finished[b.key] = b
-        while (finished.size > 32) finished.remove(finished.keys.first())
+        if (outcome.startedNew) {
+            players.remove(conv)?.stop()
+            if (playLive && !outcome.canceled) {
+                players[conv] = LivePlayer(onDrainedCleanly = { PttTones.playEnd(context) })
+            }
+        }
+        if (outcome.frames.isNotEmpty()) {
+            players[conv]?.enqueue(outcome.frames)
+        }
+        if (outcome.canceled) {
+            players.remove(conv)?.stop()
+        } else if (outcome.finishedCleanly) {
+            players.remove(conv)?.finishAfterDrain()
+        }
     }
 
     private fun armTick() {
-        if (ticking || bursts.isEmpty()) return
+        if (ticking || !coordinator.hasActiveRx()) return
         ticking = true
         handler.postDelayed({
             ticking = false
-            bursts.values.toList().forEach { b -> deliver(b, b.assembly.tick()); settle(b) }
+            val updates = coordinator.tick()
+            for (u in updates) {
+                val playLive = LiveVoicePrefs.enabled(context) && ChatRepository.foreground && ChatRepository.openConversation == u.conversation
+                applyOutcome(u, playLive)
+            }
+            if (updates.isNotEmpty()) syncUiStates()
             armTick()
         }, TICK_MS)
     }
 
     /**
-     * A received voice note: when it is the finished file of a burst we assembled (same
-     * sender, same chat, `voice_<burst>` name), it takes over that bubble; true means handled.
+     * When a stock bitchat sender follows its live burst with a `voice_<burst>.m4a` file packet,
+     * drop the duplicate file if we already played that burst live out loud; otherwise let `onFile`
+     * show it as an ordinary missed voice note.
      */
     fun absorb(senderHex: String, isPrivate: Boolean, fileName: String?, stored: File): Boolean {
-        val hex = fileName?.removePrefix("voice_")?.takeIf { fileName.startsWith("voice_") }?.take(16)?.takeIf { h -> h.length == 16 && h.all { it.isDigit() || it in 'a'..'f' } } ?: return false
-        val k = key(senderHex, isPrivate, hex)
-        bursts[k]?.let { b -> deliver(b, b.assembly.finish()); settle(b) }
-        val b = finished.remove(k) ?: return false
-        val old = ChatRepository.messages.value[b.conversation].orEmpty().firstOrNull { it.id == b.messageId } ?: return false
-        ChatRepository.remove(b.conversation, b.messageId)
-        ChatRepository.add(old.copy(id = "file-${stored.nameWithoutExtension}", attachment = stored.absolutePath))
-        b.file.delete()
+        val conv = if (isPrivate) Conversation.Private(senderHex).key else Conversation.Mesh.key
+        if (!coordinator.shouldAbsorbVoiceNote(conv, senderHex, fileName)) return false
+        stored.delete()
         return true
     }
 
-    /** Panic wipe: stop every stream and forget it. */
+    /** Panic wipe: stop every stream and forget all floor state. */
     fun wipe() {
-        (bursts.values + finished.values).forEach { it.player?.stop(); try { it.out?.close() } catch (e: Exception) { }; it.file.delete() }
-        bursts.clear(); finished.clear()
+        players.values.forEach { it.stop() }
+        players.clear()
+        coordinator.wipe()
+        ChatRepository.setLiveRxLevel(0f)
+        ChatRepository.setPttStates(emptyMap())
         ChatRepository.clearLiveSpeakers()
         LiveVoicePrefs.wipe(context)
     }

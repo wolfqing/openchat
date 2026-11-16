@@ -59,7 +59,7 @@ class Recorder : MeshListener {
     val drops = ArrayList<ByteArray>()
     val vouches = ArrayList<Pair<ByteArray, ByteArray>>() // session key, signing key
     val voice = ArrayList<Boolean>() // private
-    override fun onVoiceFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean) { voice += isPrivate }
+    override fun onVoiceFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean, hops: Int?) { voice += isPrivate }
     override fun onVouch(peerHex: String, sessionKey: ByteArray, signingKey: ByteArray, batch: ByteArray) { vouches += sessionKey to signingKey }
     override fun onCarrier(senderHex: String, payload: ByteArray, directed: Boolean) { carriers += directed to payload }
     override fun onDrop(envelope: ByteArray, recipientTagHex: String, expiresAt: Long) { drops += envelope }

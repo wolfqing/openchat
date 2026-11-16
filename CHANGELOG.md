@@ -1,5 +1,54 @@
 # Changelog
 
+## Android v0.7.9 (preview) — 2026-11-16
+
+Dedicated half-duplex **Live Walkie-Talkie (`对讲 / 实时对讲`)** drawer for
+`Nearby` public Bluetooth mesh (`0x29`) and `Private` 1-on-1 Noise XX chats
+(`0x08`), modeled after real two-way handheld radios and WeChat's live
+walkie-talkie: single-speaker floor lock, synthesized radio chirp/Roger/busy
+tones, pure live playback with zero chat-bubble clutter, and a clean split from
+ordinary `.m4a` voice notes. Localized across all 18 languages. No wire-format
+change. 206 unit tests. ~9.0 MB.
+
+### Added
+
+- **Half-duplex Walkie-Talkie drawer & entry points (`WalkieTalkieDrawer`, `MeshVisuals`, `MainScreen`, `PrivateChats`, `ChatPane`).**
+  - Added a persistent `[ Talk / 对讲 ]` pill on the right of `NearbyStatusCapsuleRow`
+    and in `PrivateChatScreen`'s top bar, clickable active-speaker banners, and
+    a `[ Photo ]` + `[ Live Walkie-Talkie ]` 2-pill `+` attachment tray in
+    `Composer`.
+  - Opening Walkie-Talkie swaps the single-line composer for a docked `216dp`
+    flat panel keeping upper chat messages, photos, and hop badges visible,
+    featuring a `116dp` hold-to-talk disc, concentric voice-level rings,
+    active-speaker `EmblemView` + hop count, quick mute toggle, and a one-tap
+    `[ Keyboard ]` switch.
+- **Half-duplex channel floor coordinator (`PttFloorCoordinator`, `PttFloorCoordinatorTest`).**
+  - Enforces single-speaker occupancy per channel (`Channel Busy` lock while a
+    peer speaks, dropping concurrent 3rd-party bursts), deterministic lowercase
+    `peerIdHex` tie-breaking on simultaneous BLE TX collisions, `300 ms`
+    minimum hold (with tap hint), `60 s` TOT auto-release (with 5 s countdown),
+    and `3 s` RX idle release.
+- **Synthesized two-way radio cues (`PttTones`).**
+  - Zero-asset `16 kHz` PCM sine-wave cues with `5 ms` cosine fade-in/out:
+    rising start chirp (`880 Hz -> 1175 Hz`, played before opening `AudioRecord`
+    so it never bleeds into transmitted audio), clean `1046 Hz` Roger beep on
+    TX/RX completion, and `330 Hz` double-beep on busy/preempted floor.
+
+### Changed
+
+- **Pure-live walkie-talkie streaming & decoupled voice notes (`LiveVoice`, `MeshService`, `ChatRepository`, `MeshEngine`, `MainActivity`).**
+  - Walkie-talkie bursts stream AAC-LC `16 kHz` frames directly over `§29`
+    without creating chat voice bubbles; trailing `voice_<burst>.m4a` packets
+    from stock bitchat peers are absorbed when already heard live and kept as
+    missed voice notes when muted or backgrounded.
+  - Decoupled the composer's right `Mic` button exclusively to `VoiceRecorder`
+    for ordinary `.m4a` voice notes (hold to send, or tap to record & preview).
+  - Auto-cancels active PTT transmission on transient audio-focus loss (phone
+    calls/alarms), Bluetooth power-off, app backgrounding, or triple-tap panic.
+- **18-language localization & Usage Guide (`values*/strings.xml`, `GuideScreen`).**
+  - Added 17 `ptt_*` string resources across all 18 locales and updated the
+    Usage Guide & `Me` Live Walkie-Talkie copy and vector icon.
+
 ## Android v0.7.8 (preview) — 2026-11-15
 
 Focused real-device polish: bottom-only frosted Liquid Glass navigation bar

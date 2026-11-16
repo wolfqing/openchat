@@ -355,4 +355,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">Funk</string>
+    <string name="ptt_menu_item">Live-Funkgerät</string>
+    <string name="ptt_keyboard">Tastatur</string>
+    <string name="ptt_hold_to_talk">Gedrückt halten</string>
+    <string name="ptt_release_to_end">Loslassen zum Beenden</string>
+    <string name="ptt_idle_nearby">Kanal frei · %1$d erreichbar</string>
+    <string name="ptt_idle_private">Verschlüsselt · %1$s</string>
+    <string name="ptt_tx_status">Sendet · andere hören nur zu</string>
+    <string name="ptt_tx_remaining">Noch %1$d s</string>
+    <string name="ptt_rx_locked">Kanal belegt</string>
+    <string name="ptt_busy_hint">%1$s spricht — bitte warten</string>
+    <string name="ptt_tap_hint">Zum Sprechen gedrückt halten, zum Beenden loslassen</string>
+    <string name="ptt_no_peers">Keine Geräte in Reichweite</string>
+    <string name="ptt_peer_away">Außerhalb der Bluetooth-Reichweite</string>
+    <string name="ptt_handshaking">Verschlüsselter Kanal verbindet…</string>
+    <string name="ptt_muted_hint">Funkgerät ist stummgeschaltet</string>
+    <string name="ptt_muted_enable">Ton einschalten</string>
 </resources>

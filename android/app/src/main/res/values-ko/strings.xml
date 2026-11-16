@@ -349,4 +349,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">무전</string>
+    <string name="ptt_menu_item">실시간 무전기</string>
+    <string name="ptt_keyboard">키보드</string>
+    <string name="ptt_hold_to_talk">누르고 말하기</string>
+    <string name="ptt_release_to_end">떼면 종료</string>
+    <string name="ptt_idle_nearby">채널 비어 있음 · 도달 %1$d명</string>
+    <string name="ptt_idle_private">암호화 채널 · %1$s</string>
+    <string name="ptt_tx_status">송신 중 · 상대방은 청취 전용</string>
+    <string name="ptt_tx_remaining">%1$d초 남음</string>
+    <string name="ptt_rx_locked">채널 사용 중</string>
+    <string name="ptt_busy_hint">%1$s 님이 말하고 있습니다 — 잠시 기다려 주세요</string>
+    <string name="ptt_tap_hint">원판을 길게 누르고 말한 뒤 떼면 종료됩니다</string>
+    <string name="ptt_no_peers">주변에 기기가 없습니다</string>
+    <string name="ptt_peer_away">상대방이 블루투스 범위 밖에 있습니다</string>
+    <string name="ptt_handshaking">암호화 채널 연결 중…</string>
+    <string name="ptt_muted_hint">실시간 무전이 음소거됨</string>
+    <string name="ptt_muted_enable">탭하여 소리 켜기</string>
 </resources>

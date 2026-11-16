@@ -108,6 +108,7 @@ data class LiveSpeaker(
     val senderKey: String,
     val senderName: String,
     val startedAt: Long,
+    val hops: Int? = null,
 )
 
 data class GeoStatus(
@@ -158,13 +159,14 @@ interface ChatController {
     fun watchNotes(cell: String?)
     /** Sends a photo or voice note into a Nearby or private chat; returns a reason string resource on immediate refusal, or 0. A refusal decided later shows as a local line in that chat. */
     fun sendMedia(conversation: String, bytes: ByteArray, mime: String, fileName: String? = null): Int
-    /** Starts recording a voice note that also streams live where it can (§29); false if the microphone failed. */
-    fun startVoice(conversation: String): Boolean
-    /** Stops recording and returns the finished voice file without sending it yet, or null when too short. */
-    fun stopVoice(): java.io.File? = null
-    /** Stops and sends the note; false when it was too short. */
-    fun finishVoice(): Boolean
-    fun cancelVoice()
+    /** Pre-warms a Noise XX session when opening the Walkie-Talkie drawer in a private chat. */
+    fun preparePtt(conversation: String) {}
+    /** Acquires the half-duplex floor and starts live Walkie-Talkie PTT transmission (§29). */
+    fun startPtt(conversation: String): PttStartResult = PttStartResult.MIC_FAILED
+    /** Releases the PTT button; returns true when held long enough to transmit, false when a brief tap. */
+    fun stopPtt(): Boolean = false
+    /** Immediately aborts any active local PTT transmission (`Canceled` packet). */
+    fun cancelPtt() {}
     fun setTor(on: Boolean)
     fun refreshLocation()
     fun panic()
@@ -263,11 +265,33 @@ object ChatRepository {
     fun setLiveSpeaker(burstKey: String, speaker: LiveSpeaker?) {
         _liveSpeakers.update { if (speaker == null) it - burstKey else it + (burstKey to speaker) }
     }
+    fun replaceLiveSpeakers(speakers: Map<String, LiveSpeaker>) { _liveSpeakers.value = speakers }
     fun clearLiveSpeakers() { _liveSpeakers.value = emptyMap() }
+
+    private val _pttStates = MutableStateFlow<Map<String, PttFloorState>>(emptyMap())
+    val pttStates: StateFlow<Map<String, PttFloorState>> = _pttStates.asStateFlow()
+    fun setPttStates(states: Map<String, PttFloorState>) { _pttStates.value = states }
+
+    private val _pttOpen = MutableStateFlow<Set<String>>(emptySet())
+    val pttOpen: StateFlow<Set<String>> = _pttOpen.asStateFlow()
+    fun setPttOpen(conversation: String, open: Boolean) {
+        _pttOpen.update { if (open) it + conversation else it - conversation }
+    }
+    fun togglePttOpen(conversation: String) {
+        _pttOpen.update { if (conversation in it) it - conversation else it + conversation }
+    }
+
+    private val _sessionPeers = MutableStateFlow<Set<String>>(emptySet())
+    val sessionPeers: StateFlow<Set<String>> = _sessionPeers.asStateFlow()
+    fun setSessionPeers(peers: Set<String>) { _sessionPeers.value = peers }
 
     private val _liveMicLevel = MutableStateFlow(0f)
     val liveMicLevel: StateFlow<Float> = _liveMicLevel.asStateFlow()
     fun setLiveMicLevel(level: Float) { _liveMicLevel.value = level.coerceIn(0f, 1f) }
+
+    private val _liveRxLevel = MutableStateFlow(0f)
+    val liveRxLevel: StateFlow<Float> = _liveRxLevel.asStateFlow()
+    fun setLiveRxLevel(level: Float) { _liveRxLevel.value = level.coerceIn(0f, 1f) }
 
     @Volatile var onLiveVoiceEnabledChanged: ((Boolean) -> Unit)? = null
 
@@ -286,7 +310,8 @@ object ChatRepository {
         _board.value = emptyList(); _boardUnseen.value = 0
         // A running service republishes these as it resets; without one, nobody else would clear them.
         _groups.value = emptyMap(); _bridge.value = BridgeStatus(); _openRequest.value = null
-        _liveSpeakers.value = emptyMap(); _liveMicLevel.value = 0f
+        _pttStates.value = emptyMap(); _pttOpen.value = emptySet(); _sessionPeers.value = emptySet()
+        _liveSpeakers.value = emptyMap(); _liveMicLevel.value = 0f; _liveRxLevel.value = 0f
         _messages.value = emptyMap()
         _peers.value = emptyList()
         _unread.value = emptyMap()

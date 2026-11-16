@@ -268,8 +268,8 @@
     <string name="pay_copy">Copy</string>
     <string name="pay_copied">Token copied</string>
     <string name="media_mic_hint">Voice: hold to talk, or tap to record (stop to preview or send)</string>
-    <string name="live_voice_title">Live voice</string>
-    <string name="live_voice_body">Voice notes in Nearby and private chats play for others while you are still talking, and theirs play for you when that chat is open. Off: only finished notes, both ways.</string>
+    <string name="live_voice_title">Live walkie-talkie</string>
+    <string name="live_voice_body">Play incoming walkie-talkie transmissions in real time when Nearby or a private chat is open, and allow push-to-talk radio. Off: walkie-talkie audio is muted.</string>
     <string name="media_play">Play</string>
     <string name="media_stop">Stop</string>
     <string name="me_wipe_title">Erase everything</string>
@@ -349,7 +349,7 @@
     <string name="guide_e2e_title">End-to-End Encrypted Chats &amp; Groups</string>
     <string name="guide_e2e_body">Private chats use Noise XX encryption with a 4-step delivery path. When a peer is out of range, sealed courier envelopes relay automatically.</string>
     <string name="guide_voice_title">Live Walkie-Talkie &amp; Voice Notes</string>
-    <string name="guide_voice_body">Hold the mic button to stream real-time voice over nearby Bluetooth, or tap once to record, stop to preview, and send.</string>
+    <string name="guide_voice_body">Tap Talk in Nearby or a private chat (or + → Live Walkie-Talkie) for half-duplex radio—one speaker at a time, played live without leaving chat bubbles. Use the mic button to record voice notes.</string>
     <string name="guide_globe_title">Location Channels &amp; 3D Globe</string>
     <string name="guide_globe_body">Spin and pinch the 3D globe to join neighborhood, city, or regional #geohash channels routed privately over Tor.</string>
     <string name="guide_board_title">Nearby Notice Board &amp; Place Notes</string>
@@ -368,4 +368,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">Talk</string>
+    <string name="ptt_menu_item">Live Walkie-Talkie</string>
+    <string name="ptt_keyboard">Keyboard</string>
+    <string name="ptt_hold_to_talk">Hold to Talk</string>
+    <string name="ptt_release_to_end">Release to end</string>
+    <string name="ptt_idle_nearby">Channel clear · %1$d reachable</string>
+    <string name="ptt_idle_private">Encrypted link · %1$s</string>
+    <string name="ptt_tx_status">Transmitting · others listen only</string>
+    <string name="ptt_tx_remaining">%1$ds left</string>
+    <string name="ptt_rx_locked">Channel Busy</string>
+    <string name="ptt_busy_hint">%1$s is speaking — wait for release</string>
+    <string name="ptt_tap_hint">Hold the disc to talk, release to end</string>
+    <string name="ptt_no_peers">No nearby devices in range</string>
+    <string name="ptt_peer_away">Not in Bluetooth range</string>
+    <string name="ptt_handshaking">Connecting encrypted channel…</string>
+    <string name="ptt_muted_hint">Live walkie-talkie is muted</string>
+    <string name="ptt_muted_enable">Tap to Unmute</string>
 </resources>

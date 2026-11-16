@@ -65,7 +65,7 @@ it; that has not yet been checked against a stock bitchat phone (see
 
 | | State |
 |---|---|
-| Android app | **v0.7.8 preview.** 201 unit tests, 9.4 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
+| Android app | **v0.7.9 preview.** 206 unit tests, 9.0 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
 | Tried on devices | v0.7.6 was verified on an Android 14 (`API 34`) emulator across onboarding, cold launch, `MeshService` startup, all four tabs and `Board`, previews up to v0.7.2 ran on an Android 15 emulator, and earlier previews ran on one real phone; see [CHANGELOG.md](CHANGELOG.md) per release. **The mesh itself has not been tried between real phones**: Bluetooth range, multi-hop relaying, connection limits and behaviour in the background are untested in the field. The emulator has no Bluetooth |
 | Interop with stock bitchat | **Not yet verified.** Implemented from the [spec](docs/protocol-spec.md), upstream test vectors and envelopes recorded from bitchat builds. Verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
@@ -155,9 +155,10 @@ is drawn on screen.
   long-term key instead, without that protection.
 - **History sync.** A late joiner receives the last 15 minutes of public
   messages, plus board posts and prekeys, from a neighbour.
-- **Photos and voice notes**, public or private. **Live voice (push-to-talk)**:
-  hold the mic and people hear you while you are still talking, with a live
-  signal-band equalizer, active speaker label and one-tap mute.
+- **Photos and voice notes**, public or private. **Half-duplex Live Walkie-Talkie**:
+  open the Walkie-Talkie drawer (`Talk` in the header or `+` → `Live Walkie-Talkie`)
+  and hold the PTT disc to transmit live over Bluetooth mesh—one speaker at a
+  time, played immediately with chirp/Roger tones and leaving zero chat bubbles.
 - **In-person verification** with a QR code and a Noise challenge, and
   **vouching**: people you verified tell your phone whom they verified, so
   their contacts get a grey tick on their card.

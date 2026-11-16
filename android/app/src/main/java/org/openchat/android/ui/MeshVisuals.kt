@@ -41,8 +41,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
-import androidx.compose.material.icons.automirrored.outlined.VolumeOff
-import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Sensors
 import androidx.compose.material3.Icon
@@ -368,10 +366,10 @@ internal fun LiveEqualizerBars(
 }
 
 /**
- * Floating refractive signal & Live PTT capsule row on the Nearby tab:
- * shows Direct / Reach / Last-heard in a compact Liquid Glass capsule, morphs into an animated
- * walkie-talkie speaker banner when a peer streams live PTT, and pairs with a one-tap Live PTT
- * speaker mute/unmute circular glass button.
+ * Floating signal & Live Walkie-Talkie status row on the Nearby tab:
+ * shows Direct / Reach / Last-heard in a compact flat capsule, morphs into a clickable animated
+ * walkie-talkie speaker banner when a peer transmits live PTT, and pairs with the primary
+ * `[ Walkie-Talkie ]` drawer toggle pill on the right.
  */
 @Composable
 internal fun NearbyStatusCapsuleRow(
@@ -380,9 +378,9 @@ internal fun NearbyStatusCapsuleRow(
     lastHeard: Long?,
     scanningSince: Long?,
     liveSpeakerLabel: String?,
-    liveVoiceEnabled: Boolean,
-    onToggleLiveVoice: () -> Unit,
-    showVoiceToggle: Boolean = true,
+    pttOpen: Boolean = false,
+    onTogglePtt: (() -> Unit)? = null,
+    onSpeakerClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val now = rememberNow()
@@ -396,7 +394,16 @@ internal fun NearbyStatusCapsuleRow(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         FlatCapsule(
-            modifier = Modifier.weight(1f, fill = false),
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .padding(end = if (onTogglePtt != null) 8.dp else 0.dp)
+                .let {
+                    if (liveSpeakerLabel != null && onSpeakerClick != null) {
+                        it.clip(CircleShape).clickable(onClick = onSpeakerClick)
+                    } else {
+                        it
+                    }
+                },
             containerColor = if (liveSpeakerLabel != null) OpenChatPalette.SignalSoft else null,
             borderColor = if (liveSpeakerLabel != null) signal.copy(alpha = 0.50f) else null,
             contentAlignment = Alignment.CenterStart,
@@ -468,16 +475,32 @@ internal fun NearbyStatusCapsuleRow(
                 }
             }
         }
-        if (showVoiceToggle) {
-            FluidGlassCircleButton(
-                icon = if (liveVoiceEnabled) Icons.AutoMirrored.Outlined.VolumeUp else Icons.AutoMirrored.Outlined.VolumeOff,
-                contentDescription = stringResource(if (liveVoiceEnabled) R.string.live_ptt_mute else R.string.live_ptt_unmute),
-                onClick = onToggleLiveVoice,
-                size = 32.dp,
-                iconSize = 16.dp,
-                iconTint = if (liveVoiceEnabled) OpenChatPalette.Ink else MaterialTheme.colorScheme.onSurfaceVariant,
-                shadowElevation = 5.dp,
-            )
+        if (onTogglePtt != null) {
+            FluidGlassPillButton(
+                onClick = onTogglePtt,
+                tintColor = when {
+                    pttOpen -> signal
+                    liveSpeakerLabel != null -> OpenChatPalette.SignalSoft
+                    else -> null
+                },
+                borderAccent = if (pttOpen || liveSpeakerLabel != null) signal else null,
+                contentPadding = PaddingValues(horizontal = 11.dp, vertical = 6.dp),
+            ) {
+                Icon(
+                    imageVector = WalkieTalkieIcon,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = if (pttOpen) Color.White else signal,
+                )
+                Text(
+                    stringResource(R.string.ptt_button),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (pttOpen) Color.White else OpenChatPalette.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
@@ -556,13 +579,25 @@ fun ScanningBand(since: Long) {
 
 /** Under a private chat's title: how many links away the peer is, our neighbours, and when we last heard them. */
 @Composable
-fun RouteBand(name: String, hops: Int?, direct: Int, lastHeard: Long, liveSpeakerLabel: String? = null) {
+fun RouteBand(
+    name: String,
+    hops: Int?,
+    direct: Int,
+    lastHeard: Long,
+    liveSpeakerLabel: String? = null,
+    onSpeakerClick: (() -> Unit)? = null,
+) {
     val now = rememberNow()
     val locale = appLocale()
     val resources = LocalResources.current
     val signal = OpenChatPalette.Signal
     Box(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 0.dp, bottom = 6.dp)) {
         FlatCapsule(
+            modifier = if (liveSpeakerLabel != null && onSpeakerClick != null) {
+                Modifier.clip(CircleShape).clickable(onClick = onSpeakerClick)
+            } else {
+                Modifier
+            },
             containerColor = if (liveSpeakerLabel != null) OpenChatPalette.SignalSoft else null,
             borderColor = if (liveSpeakerLabel != null) signal.copy(alpha = 0.50f) else null,
             contentAlignment = Alignment.CenterStart,

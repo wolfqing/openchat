@@ -355,4 +355,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">वॉकी</string>
+    <string name="ptt_menu_item">लाइव वॉकी-टॉकी</string>
+    <string name="ptt_keyboard">कीबोर्ड</string>
+    <string name="ptt_hold_to_talk">दबाकर बोलें</string>
+    <string name="ptt_release_to_end">रोकने के लिए छोड़ें</string>
+    <string name="ptt_idle_nearby">चैनल खाली · %1$d पहुँच में</string>
+    <string name="ptt_idle_private">एन्क्रिप्टेड लिंक · %1$s</string>
+    <string name="ptt_tx_status">प्रसारण जारी · अन्य केवल सुन रहे हैं</string>
+    <string name="ptt_tx_remaining">%1$d से॰ शेष</string>
+    <string name="ptt_rx_locked">चैनल व्यस्त</string>
+    <string name="ptt_busy_hint">%1$s बोल रहे हैं — कृपया प्रतीक्षा करें</string>
+    <string name="ptt_tap_hint">बोलने के लिए बटन दबाए रखें, समाप्त करने के लिए छोड़ें</string>
+    <string name="ptt_no_peers">आस-पास कोई डिवाइस नहीं है</string>
+    <string name="ptt_peer_away">ब्लूटूथ रेंज से बाहर</string>
+    <string name="ptt_handshaking">एन्क्रिप्टेड चैनल जुड़ रहा है…</string>
+    <string name="ptt_muted_hint">लाइव वॉकी-टॉकी म्यूट है</string>
+    <string name="ptt_muted_enable">आवाज़ चालू करें</string>
 </resources>

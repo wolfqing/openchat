@@ -16,6 +16,9 @@ import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.location.Location
 import android.location.LocationManager
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
@@ -77,7 +80,9 @@ class MeshService : Service(), ChatController {
     private lateinit var bridge: Bridge
     private val vouching = Vouching { engine }
     private lateinit var liveVoice: LiveVoice
-    @Volatile private var capture: Pair<LiveCapture, String>? = null // recording now, and its chat
+    private val pttLock = Any()
+    @Volatile private var pttCapture: Pair<LivePttCapture, String>? = null // active PTT burst and its chat
+    @Volatile private var pttFocusRequest: AudioFocusRequest? = null
     private lateinit var nostrSeenStore: SealedFile
     private val publicLimiter = RateLimiter()
     private val nostrSeen = LinkedHashSet<String>() // message IDs already shown from Nostr, kept across restarts
@@ -159,7 +164,7 @@ class MeshService : Service(), ChatController {
         geo = GeoChannels(directory, identity.nostrSeed, { engine.identity.nickname }) { from, text ->
             notifyMention(from, text)
         }
-        liveVoice = LiveVoice(this, handler)
+        liveVoice = LiveVoice(this, handler) { conv -> abortLocalPttOnPreempt(conv) }
         geo.onLive = { ev, g -> handler.post { bridge.onChannelEvent(ev, g) } }
         geo.onOfflineSend = { ev, g -> handler.post { bridge.uplinkChannelEvent(ev, g) } }
         groups = GroupManager(this, SealedFile(this, "groups.bin"), { engine }) { from, text -> notifyPrivate(from, text) }
@@ -190,6 +195,7 @@ class MeshService : Service(), ChatController {
 
     override fun onDestroy() {
         if (disabled) { super.onDestroy(); return }
+        cancelPtt()
         ChatRepository.controller = null
         Social.onChanged = null
         try { unregisterReceiver(btReceiver) } catch (e: Exception) { }
@@ -226,6 +232,7 @@ class MeshService : Service(), ChatController {
     private var lastHeartbeat = 0L
     private fun publishStatus() {
         val id = engine.identity
+        ChatRepository.setSessionPeers(engine.establishedSessionPeers())
         ChatRepository.updateMesh {
             it.copy(bluetoothOn = ble.isEnabled, running = bleStarted, links = engine.linkCount, myNickname = id.nickname, myPeerHex = id.peerIdHex, fingerprint = id.fingerprint, carriedCount = engine.carriedCount)
         }
@@ -238,7 +245,7 @@ class MeshService : Service(), ChatController {
             val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
             handler.post {
                 if (state == BluetoothAdapter.STATE_ON) startBleIfPossible()
-                if (state == BluetoothAdapter.STATE_OFF || state == BluetoothAdapter.STATE_TURNING_OFF) { ble.stop(); bleStarted = false }
+                if (state == BluetoothAdapter.STATE_OFF || state == BluetoothAdapter.STATE_TURNING_OFF) { cancelPtt(); ble.stop(); bleStarted = false }
                 publishStatus()
             }
         }
@@ -327,10 +334,13 @@ class MeshService : Service(), ChatController {
             engine.noiseKeyOf(peerHex)?.let { Social.setVerified(sha256(it).toHex(), true) }
         }
 
-        override fun onSessionEstablished(peerHex: String) { vouching.attempt(peerHex) }
+        override fun onSessionEstablished(peerHex: String) {
+            ChatRepository.setSessionPeers(engine.establishedSessionPeers())
+            vouching.attempt(peerHex)
+        }
 
-        override fun onVoiceFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean) =
-            liveVoice.onFrame(senderHex, nickname, content, isPrivate)
+        override fun onVoiceFrame(senderHex: String, nickname: String, content: ByteArray, isPrivate: Boolean, hops: Int?) =
+            liveVoice.onFrame(engine.myPeerHex, senderHex, nickname, content, isPrivate, hops)
 
         override fun onVouch(peerHex: String, sessionKey: ByteArray, signingKey: ByteArray, batch: ByteArray) = vouching.receive(sessionKey, signingKey, batch)
 
@@ -590,34 +600,125 @@ class MeshService : Service(), ChatController {
         return 0
     }
 
-    override fun startVoice(conversation: String): Boolean {
-        capture?.first?.cancel()
-        // Live where a burst can go: Nearby, or a private chat with a session up (§29).
+    override fun preparePtt(conversation: String) {
+        val peerHex = conversation.removePrefix("dm:").takeIf { conversation.startsWith("dm:") } ?: return
+        handler.post {
+            engine.ensureSession(peerHex)
+            ChatRepository.setSessionPeers(engine.establishedSessionPeers())
+        }
+    }
+
+    override fun startPtt(conversation: String): PttStartResult {
+        if (!LiveVoicePrefs.enabled(this)) return PttStartResult.MUTED
         val peerHex = conversation.removePrefix("dm:").takeIf { conversation.startsWith("dm:") }
-        val live = LiveVoicePrefs.enabled(this) && (conversation == Conversation.Mesh.key || peerHex != null)
-        val c = LiveCapture(this, live) { packet -> handler.post { engine.sendVoiceFrame(peerHex, packet) } }
-        if (!c.start()) return false
-        capture = c to conversation
-        return true
+        if (peerHex == null && conversation != Conversation.Mesh.key) return PttStartResult.MIC_FAILED
+        val myHex = ChatRepository.mesh.value.myPeerHex
+        val peers = ChatRepository.peers.value
+        if (peerHex == null) {
+            if (peers.none { it.peerIdHex != myHex }) return PttStartResult.NO_PEERS
+        } else {
+            if (peers.none { it.peerIdHex == peerHex }) return PttStartResult.PEER_UNREACHABLE
+            if (peerHex !in ChatRepository.sessionPeers.value) {
+                preparePtt(conversation)
+                return PttStartResult.HANDSHAKING
+            }
+        }
+        synchronized(pttLock) {
+            pttCapture?.let { (old, oldConv) ->
+                pttCapture = null
+                abandonPttAudioFocus()
+                liveVoice.coordinator.cancelTx(oldConv)
+                Thread { old.cancel() }.start()
+            }
+            val res = liveVoice.coordinator.tryAcquireTx(conversation)
+            if (res != PttStartResult.STARTED) {
+                if (res == PttStartResult.BUSY) PttTones.playBusy(this)
+                return res
+            }
+            requestPttAudioFocus()
+            val c = LivePttCapture(
+                context = this,
+                send = { packet -> handler.post { engine.sendVoiceFrame(peerHex, packet) } },
+                onMaxDurationReached = { stopPtt() },
+            )
+            if (!c.start()) {
+                abandonPttAudioFocus()
+                liveVoice.coordinator.cancelTx(conversation)
+                liveVoice.syncUiStates()
+                return PttStartResult.MIC_FAILED
+            }
+            pttCapture = c to conversation
+            liveVoice.syncUiStates()
+            return PttStartResult.STARTED
+        }
     }
 
-    override fun stopVoice(): java.io.File? {
-        val (c, _) = capture ?: return null
-        capture = null
-        return c.finish()
+    override fun stopPtt(): Boolean {
+        val pair: Pair<LivePttCapture, String>
+        val valid: Boolean
+        synchronized(pttLock) {
+            pair = pttCapture ?: return false
+            pttCapture = null
+            abandonPttAudioFocus()
+            valid = liveVoice.coordinator.releaseTx(pair.second)
+            liveVoice.syncUiStates()
+        }
+        Thread {
+            val sent = pair.first.finish(valid)
+            if (sent) PttTones.playEnd(this)
+        }.start()
+        return valid
     }
 
-    override fun finishVoice(): Boolean {
-        val (c, conversation) = capture ?: return false
-        capture = null
-        val f = c.finish() ?: return false
-        val bytes = f.readBytes().also { f.delete() }
-        val reason = sendMedia(conversation, bytes, "audio/mp4", f.name)
-        if (reason != 0) ChatRepository.addLocal(conversation, getString(reason))
-        return true
+    override fun cancelPtt() {
+        val pair: Pair<LivePttCapture, String>
+        synchronized(pttLock) {
+            pair = pttCapture ?: return
+            pttCapture = null
+            abandonPttAudioFocus()
+            liveVoice.coordinator.cancelTx(pair.second)
+            liveVoice.syncUiStates()
+        }
+        Thread { pair.first.cancel() }.start()
     }
 
-    override fun cancelVoice() { capture?.first?.cancel(); capture = null }
+    private fun abortLocalPttOnPreempt(conversation: String) {
+        val pair: Pair<LivePttCapture, String>? = synchronized(pttLock) {
+            val cur = pttCapture
+            if (cur != null && cur.second == conversation) {
+                pttCapture = null
+                abandonPttAudioFocus()
+                cur
+            } else null
+        }
+        pair?.let { (c, _) -> Thread { c.cancel() }.start() }
+    }
+
+    private fun requestPttAudioFocus() {
+        val am = getSystemService(AudioManager::class.java) ?: return
+        val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build(),
+            )
+            .setOnAudioFocusChangeListener { change ->
+                if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                    cancelPtt()
+                }
+            }
+            .build()
+        pttFocusRequest = req
+        try { am.requestAudioFocus(req) } catch (e: Exception) { }
+    }
+
+    private fun abandonPttAudioFocus() {
+        val req = pttFocusRequest ?: return
+        pttFocusRequest = null
+        val am = getSystemService(AudioManager::class.java) ?: return
+        try { am.abandonAudioFocusRequest(req) } catch (e: Exception) { }
+    }
 
     override fun setTor(on: Boolean) = tor.setWanted(on)
 
@@ -687,7 +788,7 @@ class MeshService : Service(), ChatController {
      * no timelines, no channels, no caches. No confirmation by design.
      */
     override fun panic() {
-        cancelVoice()
+        cancelPtt()
         ChatRepository.wipe()
         NotificationPrivacy.reset(this)
         Social.wipe()

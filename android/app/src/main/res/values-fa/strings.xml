@@ -355,4 +355,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">بی‌سیم</string>
+    <string name="ptt_menu_item">بی‌سیم زنده</string>
+    <string name="ptt_keyboard">صفحه‌کلید</string>
+    <string name="ptt_hold_to_talk">نگه دارید و بگویید</string>
+    <string name="ptt_release_to_end">برای پایان رها کنید</string>
+    <string name="ptt_idle_nearby">کانال آزاد · %1$d نفر در دسترس</string>
+    <string name="ptt_idle_private">کانال رمزگذاری‌شده · %1$s</string>
+    <string name="ptt_tx_status">در حال ارسال · دیگران فقط می‌شنوند</string>
+    <string name="ptt_tx_remaining">%1$d ثانیه مانده</string>
+    <string name="ptt_rx_locked">کانال مشغول</string>
+    <string name="ptt_busy_hint">%1$s در حال صحبت است — کمی صبر کنید</string>
+    <string name="ptt_tap_hint">دکمه را نگه دارید و صحبت کنید، در پایان رها کنید</string>
+    <string name="ptt_no_peers">دستگاهی در نزدیکی نیست</string>
+    <string name="ptt_peer_away">خارج از برد بلوتوث</string>
+    <string name="ptt_handshaking">در حال برقراری کانال رمزگذاری‌شده…</string>
+    <string name="ptt_muted_hint">بی‌سیم زنده بی‌صداست</string>
+    <string name="ptt_muted_enable">ضربه برای وصل صدا</string>
 </resources>

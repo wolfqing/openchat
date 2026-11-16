@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material.icons.outlined.Public
@@ -179,7 +178,7 @@ fun GuideScreen(onBack: () -> Unit, onPanic: () -> Unit) {
                         body = stringResource(R.string.guide_e2e_body),
                     ),
                     GuideItem(
-                        icon = Icons.Outlined.GraphicEq,
+                        icon = WalkieTalkieIcon,
                         tint = signal,
                         badgeBg = signalSoft,
                         title = stringResource(R.string.guide_voice_title),

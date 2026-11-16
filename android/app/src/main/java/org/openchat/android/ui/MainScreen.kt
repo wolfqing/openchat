@@ -121,7 +121,6 @@ import org.openchat.android.app.AppLanguage
 import org.openchat.android.app.AppUpdater
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
-import org.openchat.android.app.LiveVoicePrefs
 import org.openchat.android.app.MeshService
 import org.openchat.android.app.MeshStatus
 import org.openchat.android.app.Panic
@@ -296,14 +295,14 @@ private fun ShellScaffold(
     onOpenChat: (String) -> Unit,
     onSelectPerson: (PersonRef) -> Unit,
 ) {
-    val context = LocalContext.current
     val density = LocalDensity.current
     val imeBottomPx = WindowInsets.ime.getBottom(density)
     val navBottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val imeVisible = imeBottomPx > with(density) { 80.dp.toPx() }
     val bottomClearance = if (imeVisible) 0.dp else FLOATING_NAV_HEIGHT + FLOATING_NAV_MARGIN_BOTTOM + navBottomInset
 
-    val liveVoiceOn by LiveVoicePrefs.enabledFlow.collectAsState()
+    val pttOpenSet by ChatRepository.pttOpen.collectAsState()
+    val nearbyPttOpen = Conversation.Mesh.key in pttOpenSet
     val liveSpeakers by ChatRepository.liveSpeakers.collectAsState()
     val nearbySpeaker = remember(liveSpeakers) {
         liveSpeakers.values.firstOrNull { it.conversation == Conversation.Mesh.key }
@@ -422,9 +421,9 @@ private fun ShellScaffold(
                                     lastHeard = otherPeers.maxOfOrNull { it.lastSeen },
                                     scanningSince = if (alone) aloneSince else null,
                                     liveSpeakerLabel = if (tab == Tab.NEARBY) nearbySpeaker else null,
-                                    liveVoiceEnabled = liveVoiceOn,
-                                    onToggleLiveVoice = { LiveVoicePrefs.setEnabled(context, !liveVoiceOn) },
-                                    showVoiceToggle = tab == Tab.NEARBY,
+                                    pttOpen = tab == Tab.NEARBY && nearbyPttOpen,
+                                    onTogglePtt = if (tab == Tab.NEARBY) ({ ChatRepository.togglePttOpen(Conversation.Mesh.key) }) else null,
+                                    onSpeakerClick = if (tab == Tab.NEARBY) ({ ChatRepository.setPttOpen(Conversation.Mesh.key, true) }) else null,
                                 )
                             }
                         }
@@ -452,7 +451,10 @@ private fun ShellScaffold(
                                     placeholder = stringResource(R.string.nearby_placeholder),
                                     onSend = { ChatRepository.controller?.sendPublic(it) },
                                     onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) onSelectPerson(PersonRef.Mesh(m.senderKey, m.senderName)) },
-                                    empty = if (otherPeers.isEmpty() && mesh.running) ({ onShowHistory -> NobodyNearby(onShareApp, onShowHistory, onOpenGuide = onOpenGuide, bottomClearance = bottomClearance + 58.dp) }) else null,
+                                    empty = if (otherPeers.isEmpty() && mesh.running) {
+                                        val extraClearance = if (nearbyPttOpen) WALKIE_TALKIE_DRAWER_HEIGHT + 10.dp else 58.dp
+                                        { onShowHistory -> NobodyNearby(onShareApp, onShowHistory, onOpenGuide = onOpenGuide, bottomClearance = bottomClearance + extraClearance) }
+                                    } else null,
                                     cover = otherPeers.isEmpty() && mesh.running,
                                     topClearance = topClearance,
                                 )

@@ -349,4 +349,22 @@
     <string name="guide_cmd_diag">Measure round-trip latency or inspect the multi-hop relay path</string>
     <string name="guide_cmd_social">Favorite a peer for courier/Nostr routing, or block spam</string>
     <string name="guide_cmd_room">Manage encrypted groups, drop a place note, or clear local history</string>
+
+    <string name="ptt_button">無線</string>
+    <string name="ptt_menu_item">リアルタイム無線</string>
+    <string name="ptt_keyboard">キーボード</string>
+    <string name="ptt_hold_to_talk">長押しで話す</string>
+    <string name="ptt_release_to_end">離して終了</string>
+    <string name="ptt_idle_nearby">チャンネル空き · 到達 %1$d 人</string>
+    <string name="ptt_idle_private">暗号化回線 · %1$s</string>
+    <string name="ptt_tx_status">送信中 · 他の人は受信のみ</string>
+    <string name="ptt_tx_remaining">残り %1$d 秒</string>
+    <string name="ptt_rx_locked">通話中</string>
+    <string name="ptt_busy_hint">%1$s が話しています — 終了までお待ちください</string>
+    <string name="ptt_tap_hint">ボタンを長押しして話し、離して終了します</string>
+    <string name="ptt_no_peers">近くに端末がありません</string>
+    <string name="ptt_peer_away">相手がBluetooth範囲外です</string>
+    <string name="ptt_handshaking">暗号化チャネルを接続中…</string>
+    <string name="ptt_muted_hint">リアルタイム無線はミュート中です</string>
+    <string name="ptt_muted_enable">タップして音声オン</string>
 </resources>

@@ -96,6 +96,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -123,14 +124,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withContext
 import org.openchat.android.R
 import org.openchat.android.app.ChatMessage
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Commands
 import org.openchat.android.app.Conversation
 import org.openchat.android.app.DeliveryState
-import org.openchat.android.app.LiveVoicePrefs
 import org.openchat.android.app.Media
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.app.Social
@@ -176,6 +175,13 @@ fun ChatPane(
     val note = if (private) stringResource(R.string.dm_day_note) else null
 
     val density = LocalDensity.current
+    val focusManager = LocalFocusManager.current
+    val pttOpenSet by ChatRepository.pttOpen.collectAsState()
+    val supportsWalkieTalkie = conversation == Conversation.Mesh.key || conversation.startsWith("dm:")
+    val walkieTalkieOpen = supportsWalkieTalkie && conversation in pttOpenSet
+    LaunchedEffect(walkieTalkieOpen) {
+        if (walkieTalkieOpen) focusManager.clearFocus()
+    }
     val imeBottomDp = with(density) { WindowInsets.ime.getBottom(density).toDp() }
     val navInsetDp = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val bottomBarClearance = LocalBottomBarClearance.current
@@ -183,7 +189,7 @@ fun ChatPane(
         imeBottomDp + 6.dp,
         if (bottomBarClearance > 0.dp) bottomBarClearance + 2.dp else navInsetDp + 8.dp,
     )
-    val timelineBottomPadding = composerBottomOffset + 58.dp
+    val timelineBottomPadding = composerBottomOffset + if (walkieTalkieOpen) (WALKIE_TALKIE_DRAWER_HEIGHT + 10.dp) else 58.dp
 
     DisposableEffect(conversation) {
         ChatRepository.openConversation = conversation
@@ -207,6 +213,11 @@ fun ChatPane(
     }
     val covered = empty != null && (list.isEmpty() || (cover && !showHistory))
     LaunchedEffect(covered) { if (!covered && rows.isNotEmpty()) state.scrollToItem(rows.size - 1) }
+    LaunchedEffect(walkieTalkieOpen) {
+        if (walkieTalkieOpen && !covered && rows.isNotEmpty() && atBottom) {
+            state.animateScrollToItem(rows.size - 1)
+        }
+    }
     LaunchedEffect(newest?.id, newest?.senderKey) {
         if (newest != null && (newest.mine || atBottom)) state.animateScrollToItem(rows.size - 1)
         ChatRepository.clearUnread(conversation)
@@ -291,16 +302,23 @@ fun ChatPane(
         val dmPeer = conversation.takeIf { it.startsWith("dm:") }?.removePrefix("dm:")?.let { Commands.Person(PeerLabel.mesh(names[it], it), it) }
         val ctx = LocalContext.current
 
-        // Flat bottom composer bar
+        // Flat bottom composer bar or docked half-duplex Walkie-Talkie drawer
         Box(
             Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .padding(bottom = composerBottomOffset),
         ) {
-            Composer(conversation, placeholder, persons.map { it.label }) { text ->
-                if (!Commands.isCommand(text)) onSend(text)
-                else applyCommand(ctx, Commands.run(text, conversation, mesh.myNickname, persons, dmPeer), conversation, onSend)
+            if (walkieTalkieOpen) {
+                WalkieTalkieDrawer(
+                    conversation = conversation,
+                    onCloseToKeyboard = { ChatRepository.setPttOpen(conversation, false) },
+                )
+            } else {
+                Composer(conversation, placeholder, persons.map { it.label }) { text ->
+                    if (!Commands.isCommand(text)) onSend(text)
+                    else applyCommand(ctx, Commands.run(text, conversation, mesh.myNickname, persons, dmPeer), conversation, onSend)
+                }
             }
         }
     }
@@ -1103,12 +1121,11 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
     val send = { val t = text.trim(); if (t.isNotEmpty()) { onSend(t); set("") } }
 
     val supportsMedia = !conversation.startsWith("geo:") && !conversation.startsWith("gdm:") && !conversation.startsWith("grp:")
-    val liveVoiceOn by LiveVoicePrefs.enabledFlow.collectAsState()
-    val liveMicLevel by ChatRepository.liveMicLevel.collectAsState()
+    val supportsWalkieTalkie = conversation == Conversation.Mesh.key || conversation.startsWith("dm:")
+    var plusMenuOpen by remember(conversation) { mutableStateOf(false) }
     val recorder = remember { VoiceRecorder(ctx) }
     var recording by remember { mutableStateOf(false) }
     var recordStartedAt by remember { mutableLongStateOf(0L) }
-    var viaRecorder by remember { mutableStateOf(false) }
     var previewFile by remember(conversation) { mutableStateOf<java.io.File?>(null) }
 
     fun sendMedia(bytes: ByteArray?, mime: String, fileName: String? = null) {
@@ -1116,10 +1133,10 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
         if (reason != 0) ChatRepository.addLocal(conversation, resources.getString(reason))
     }
     fun beginVoice(): Boolean {
+        plusMenuOpen = false
         previewFile?.delete()
         previewFile = null
-        viaRecorder = ChatRepository.controller?.startVoice(conversation) != true
-        val ok = if (viaRecorder) recorder.start() else true
+        val ok = recorder.start()
         if (ok) {
             recordStartedAt = System.currentTimeMillis()
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -1129,24 +1146,16 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
     fun stopVoiceToPreview() {
         recording = false
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        if (viaRecorder) {
-            previewFile = recorder.stop()
-        } else {
-            scope.launch {
-                val stopped = withContext(Dispatchers.IO) { ChatRepository.controller?.stopVoice() }
-                previewFile = stopped
-            }
-        }
+        previewFile = recorder.stop()
     }
     fun stopAndSendVoice() {
         recording = false
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        if (viaRecorder) recorder.stop()?.let { f -> sendMedia(f.readBytes(), "audio/mp4", f.name); f.delete() }
-        else Thread { ChatRepository.controller?.finishVoice() }.start()
+        recorder.stop()?.let { f -> sendMedia(f.readBytes(), "audio/mp4", f.name); f.delete() }
     }
-    fun cancelVoice() {
+    fun cancelNoteRecording() {
         recording = false
-        if (viaRecorder) recorder.cancel() else ChatRepository.controller?.cancelVoice()
+        recorder.cancel()
     }
 
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -1157,7 +1166,7 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
     }
     DisposableEffect(conversation) {
         onDispose {
-            if (recording) cancelVoice()
+            if (recording) cancelNoteRecording()
             previewFile?.delete()
             previewFile = null
         }
@@ -1219,8 +1228,8 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
         if (recording) {
             val now = rememberNow()
             val secs = ((now - recordStartedAt) / 1000).coerceAtLeast(0)
-            val isLiveStream = !viaRecorder && liveVoiceOn && (conversation == Conversation.Mesh.key || conversation.startsWith("dm:"))
-            val signal = OpenChatPalette.Signal
+            val recAccent = if (encrypted) OpenChatPalette.Lock else OpenChatPalette.Signal
+            val recSoft = if (encrypted) OpenChatPalette.LockSoft else OpenChatPalette.SignalSoft
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1229,15 +1238,15 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                 FluidGlassCircleButton(
                     icon = Icons.Filled.Close,
                     contentDescription = stringResource(R.string.cancel),
-                    onClick = { cancelVoice() },
+                    onClick = { cancelNoteRecording() },
                     size = 44.dp,
                     iconSize = 19.dp,
                     iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 FlatCapsule(
                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
-                    containerColor = OpenChatPalette.SignalSoft,
-                    borderColor = signal.copy(alpha = 0.55f),
+                    containerColor = recSoft,
+                    borderColor = recAccent.copy(alpha = 0.55f),
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     Row(
@@ -1248,16 +1257,16 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                         SignalPulseDot(live = true)
                         LiveEqualizerBars(
                             active = true,
-                            level = if (viaRecorder) null else liveMicLevel,
+                            level = null,
                             barCount = 6,
-                            color = signal,
+                            color = recAccent,
                             modifier = Modifier.size(width = 30.dp, height = 16.dp),
                         )
                         Text(
-                            stringResource(if (isLiveStream) R.string.live_ptt_sending else R.string.media_recording),
+                            stringResource(R.string.media_recording),
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.Medium,
-                            color = if (isLiveStream) signal else MaterialTheme.colorScheme.onSurface,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
@@ -1277,9 +1286,9 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                     onClick = { stopVoiceToPreview() },
                     size = 44.dp,
                     iconSize = 19.dp,
-                    iconTint = signal,
-                    tintColor = OpenChatPalette.SignalSoft,
-                    borderAccent = signal,
+                    iconTint = recAccent,
+                    tintColor = recSoft,
+                    borderAccent = recAccent,
                 )
                 FluidGlassCircleButton(
                     icon = Icons.AutoMirrored.Filled.Send,
@@ -1288,8 +1297,8 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                     size = 44.dp,
                     iconSize = 19.dp,
                     iconTint = Color.White,
-                    tintColor = signal,
-                    borderAccent = signal,
+                    tintColor = recAccent,
+                    borderAccent = recAccent,
                 )
             }
             return
@@ -1356,6 +1365,61 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
             else -> OpenChatPalette.Line
         }
 
+        if (plusMenuOpen && supportsMedia && text.isEmpty()) {
+            val menuAccent = if (encrypted) OpenChatPalette.Lock else OpenChatPalette.Signal
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 12.dp, bottom = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                FluidGlassPillButton(
+                    onClick = {
+                        plusMenuOpen = false
+                        pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                ) {
+                    Icon(
+                        Icons.Outlined.Image,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = OpenChatPalette.Ink,
+                    )
+                    Text(
+                        stringResource(R.string.media_photo),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OpenChatPalette.Ink,
+                    )
+                }
+                if (supportsWalkieTalkie) {
+                    FluidGlassPillButton(
+                        onClick = {
+                            plusMenuOpen = false
+                            ChatRepository.setPttOpen(conversation, true)
+                        },
+                        borderAccent = menuAccent,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                    ) {
+                        Icon(
+                            WalkieTalkieIcon,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = menuAccent,
+                        )
+                        Text(
+                            stringResource(R.string.ptt_menu_item),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OpenChatPalette.Ink,
+                        )
+                    }
+                }
+            }
+        }
+
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
             verticalAlignment = Alignment.Bottom,
@@ -1363,9 +1427,9 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
         ) {
             if (supportsMedia && text.isEmpty()) {
                 FluidGlassCircleButton(
-                    icon = Icons.Filled.Add,
+                    icon = if (plusMenuOpen) Icons.Filled.Close else Icons.Filled.Add,
                     contentDescription = stringResource(R.string.media_photo),
-                    onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    onClick = { plusMenuOpen = !plusMenuOpen },
                     size = 44.dp,
                     iconSize = 21.dp,
                     iconTint = OpenChatPalette.Ink,
@@ -1469,7 +1533,7 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                                     recording = beginVoice()
                                     if (!recording) return@detectTapGestures
                                     val pressedAt = System.currentTimeMillis()
-                                    if (!tryAwaitRelease()) cancelVoice()
+                                    if (!tryAwaitRelease()) cancelNoteRecording()
                                     else if (System.currentTimeMillis() - pressedAt >= 400) stopAndSendVoice()
                                 })
                             },
