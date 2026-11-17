@@ -8,7 +8,9 @@ Dedicated half-duplex **Live Walkie-Talkie (`对讲 / 实时对讲`)** drawer fo
 walkie-talkie: single-speaker floor lock, synthesized radio chirp/Roger/busy
 tones, pure live playback with zero chat-bubble clutter, and a clean split from
 ordinary `.m4a` voice notes. Localized across all 18 languages. No wire-format
-change. 206 unit tests. ~9.0 MB.
+change. Signed with the release key ([SECURITY.md](SECURITY.md)). 206 unit
+tests. 9.5 MB.
+APK SHA-256 `0be05769114d101de39ee1e3a00e62f71d0e76ec09bc4c120f16404d1d146084`.
 
 ### Added
 

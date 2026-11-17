@@ -47,7 +47,7 @@ openchat 是**同一张网络上的独立客户端，MIT 许可**。它按 bitch
 
 | | 状态 |
 |---|---|
-| Android 应用 | **v0.7.9 预览版。** 206 个单元测试，APK 9.0 MB，18 种语言。改动见 [CHANGELOG.md](CHANGELOG.md) |
+| Android 应用 | **v0.7.9 预览版。** 206 个单元测试，APK 9.5 MB，18 种语言。改动见 [CHANGELOG.md](CHANGELOG.md) |
 | 设备上试过什么 | v0.7.6 发布前已在 Android 14（API 34）模拟器上实测引导页、冷启动、`MeshService` 前台启动、四个主标签页与公告板，v0.7.2 及更早版本在 Android 15 模拟器上跑过，更早的预览版也在一部真机上运行过；每版验证情况见 [CHANGELOG.md](CHANGELOG.md)。**手机之间的 mesh 还没有实测过**：蓝牙距离、多跳转发、连接数上限、后台表现都没有实地验证。模拟器没有蓝牙 |
 | 与原版 bitchat 互通 | **尚未验证。** 按[规范](docs/protocol-spec.md)、上游测试向量和从 bitchat 构建中录得的信封实现；与原版 bitchat 客户端的互通验证是下一个里程碑 |
 | 安全审计 | **没有。** 线路上的一切都是上游的；上游做过一次审计（Cure53，2025-11），仍有未关闭的发现 |
