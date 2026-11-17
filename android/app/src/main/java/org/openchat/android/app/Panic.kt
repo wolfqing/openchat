@@ -38,6 +38,7 @@ object Panic {
         LiveVoicePrefs.wipe(context)
         Bridge.forget(context)
         AppUpdater.reset(context)
+        IdentityStore.resetMeta(context)
         return clean
     }
 

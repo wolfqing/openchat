@@ -806,13 +806,16 @@ class MeshService : Service(), ChatController {
             bridge.wipe()
             groups.wipe()
             liveVoice.wipe()
+            val previousName = engine.identity.nickname
             stateStore.destroy()
             socialStore.delete()
             store.destroy()
             // Whatever else is in there (a write caught half way, a file a later feature added).
             Panic.eraseDirectory(noBackupFilesDir, overwrite = true)
-            val fresh = Identity.generate()
+            val locale = resources.configuration.locales.takeIf { !it.isEmpty }?.get(0) ?: java.util.Locale.getDefault()
+            val fresh = Identity.generate(RandomNicknames.next(previousName, locale))
             store.save(fresh)
+            IdentityStore.markMigrated(this@MeshService)
             engine.resetIdentity(fresh)
             geo.reset(fresh.nostrSeed)
             nostr.reset(fresh.nostrSeed)

@@ -1,5 +1,27 @@
 # Changelog
 
+## Android v0.7.10 (preview) — 2026-11-17
+
+Random callsigns by default instead of `"anon"`, across fresh installs, panic
+wipes, and upgrades from older previews. No wire-format change. Signed with the
+release key ([SECURITY.md](SECURITY.md)); installs over v0.7.9 and earlier
+release-signed builds. 208 unit tests. 9.5 MB.
+APK SHA-256 `60acaaaef7f5d60e64c1af1009b18820fb8eed612d6a4e302213c92cea07ab44`.
+
+### Changed
+
+- **Random default callsigns (`RandomNicknames`, `Identity`, `IdentityStore`, `MeshService`, `Panic`).**
+  - Extracted the curated Simplified Chinese, Traditional Chinese, and Latin
+    callsign pools (`ZH_HANS`, `ZH_HANT`, `LATIN`) into a shared
+    `RandomNicknames` helper matching the in-app locale.
+  - First launch generates a random callsign instead of `"anon"`.
+  - Upgrading an existing install whose saved nickname is still the legacy
+    default `"anon"` (or blank) automatically replaces it once with a random
+    callsign while keeping all keys, `peerId`, fingerprint, and contacts intact.
+  - Triple-tap / "Erase everything" panic wipes pick a fresh random callsign
+    guaranteed to differ from the wiped identity's name and reset migration
+    metadata.
+
 ## Android v0.7.9 (preview) — 2026-11-16
 
 Dedicated half-duplex **Live Walkie-Talkie (`对讲 / 实时对讲`)** drawer for

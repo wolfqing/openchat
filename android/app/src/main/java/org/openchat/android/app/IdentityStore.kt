@@ -103,7 +103,7 @@ class SealedFile(context: Context, name: String) {
 }
 
 /** Keeps the identity sealed in app-private storage. */
-class IdentityStore(context: Context) {
+class IdentityStore(private val context: Context) {
     private val file = SealedFile(context, "identity.bin")
 
     /** The saved identity exists but cannot be opened. Never silently replaced: that would lose the user's keys. */
@@ -115,13 +115,26 @@ class IdentityStore(context: Context) {
      * caller can report it and try again later, instead of overwriting the keys with fresh ones.
      */
     fun loadOrCreate(): Identity {
+        val locale = currentLocale()
         val bytes = try { file.read() } catch (e: SealedFile.Unreadable) { throw Locked(e) }
         if (bytes != null) {
             // The decoded identity holds its own copies; the plaintext buffer is zeroed right away.
             val identity = try { Identity.deserialize(bytes) } finally { bytes.fill(0) }
-            return identity ?: throw Locked(IllegalStateException("undecodable identity"))
+                ?: throw Locked(IllegalStateException("undecodable identity"))
+            val alreadyMigrated = metaPrefs(context).getBoolean(KEY_ANON_MIGRATED, false)
+            val migrated = RandomNicknames.migrateIfDefaultAnon(identity, alreadyMigrated, locale)
+            if (migrated != null) {
+                save(migrated)
+                markMigrated(context)
+                return migrated
+            }
+            if (!alreadyMigrated) markMigrated(context)
+            return identity
         }
-        return Identity.generate().also { save(it) }
+        return Identity.generate(Identity.defaultNickname(locale)).also {
+            save(it)
+            markMigrated(context)
+        }
     }
 
     fun save(identity: Identity): Boolean {
@@ -132,7 +145,20 @@ class IdentityStore(context: Context) {
     /** Panic wipe: destroys the sealed file and the Keystore key that could open it. */
     fun destroy() {
         file.delete()
+        resetMeta(context)
         SealedFile.destroyKey()
+    }
+
+    private fun currentLocale(): java.util.Locale =
+        context.resources.configuration.locales.takeIf { !it.isEmpty }?.get(0) ?: java.util.Locale.getDefault()
+
+    companion object {
+        private const val META_PREFS = "identity_meta"
+        private const val KEY_ANON_MIGRATED = "anon_migrated"
+
+        private fun metaPrefs(context: Context) = context.getSharedPreferences(META_PREFS, Context.MODE_PRIVATE)
+        fun markMigrated(context: Context) = metaPrefs(context).edit().putBoolean(KEY_ANON_MIGRATED, true).apply()
+        fun resetMeta(context: Context) = metaPrefs(context).edit().clear().apply()
     }
 }
 

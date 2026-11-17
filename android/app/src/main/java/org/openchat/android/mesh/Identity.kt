@@ -1,10 +1,12 @@
 package org.openchat.android.mesh
 
+import org.openchat.android.app.RandomNicknames
 import org.openchat.android.core.ByteReader
 import org.openchat.android.core.ByteWriter
 import org.openchat.android.core.sha256
 import org.openchat.android.core.toHex
 import org.openchat.android.crypto.Crypto
+import java.util.Locale
 
 /**
  * Long-term identity (docs/protocol-spec.md §4.1): an X25519 Noise key, an
@@ -64,6 +66,7 @@ class Identity(
             return Identity(Crypto.x25519FromPrivate(noise), Crypto.ed25519FromPrivate(signing), String(nick, Charsets.UTF_8), seed)
         }
 
-        fun defaultNickname(): String = "anon" // the UI adds #xxxx; a number here would make two
+        fun defaultNickname(locale: Locale = Locale.getDefault()): String =
+            RandomNicknames.next("", locale) // the UI adds #xxxx; curated callsigns carry no trailing digits
     }
 }

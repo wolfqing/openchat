@@ -65,7 +65,7 @@ it; that has not yet been checked against a stock bitchat phone (see
 
 | | State |
 |---|---|
-| Android app | **v0.7.9 preview.** 206 unit tests, 9.5 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
+| Android app | **v0.7.10 preview.** 208 unit tests, 9.5 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
 | Tried on devices | v0.7.6 was verified on an Android 14 (`API 34`) emulator across onboarding, cold launch, `MeshService` startup, all four tabs and `Board`, previews up to v0.7.2 ran on an Android 15 emulator, and earlier previews ran on one real phone; see [CHANGELOG.md](CHANGELOG.md) per release. **The mesh itself has not been tried between real phones**: Bluetooth range, multi-hop relaying, connection limits and behaviour in the background are untested in the field. The emulator has no Bluetooth |
 | Interop with stock bitchat | **Not yet verified.** Implemented from the [spec](docs/protocol-spec.md), upstream test vectors and envelopes recorded from bitchat builds. Verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
@@ -193,9 +193,9 @@ is drawn on screen.
 ### Safety and everyday use
 
 - **No account, no phone number, no email.** Keys are generated on first
-  launch. The default nickname is `anon`; every name carries a `#xxxx`
-  suffix derived from the key, so two people with the same name cannot be
-  confused.
+  launch with a random callsign (changeable or re-rolled anytime on the Me
+  tab); every name carries a `#xxxx` suffix derived from the key, so two
+  people with the same name cannot be confused.
 - **Triple-tap the logo** in the top-left corner to erase everything and
   start with a new identity. No confirmation, by design. The Me tab also
   has an "Erase everything" button with a confirmation for people who
@@ -307,7 +307,7 @@ There is no CLA.
 
 ## Roadmap in one line
 
-Android first, from scratch, against the spec: done through v0.7.8. Next
+Android first, from scratch, against the spec: done through v0.7.10. Next
 is interop verification against stock bitchat phones, then iOS, then one
 real pilot in a disaster-preparedness drill or a crowded venue. Each phase
 has an exit criterion and a kill condition in
