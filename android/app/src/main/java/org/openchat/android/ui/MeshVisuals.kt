@@ -405,7 +405,6 @@ internal fun NearbyStatusCapsuleRow(
                     }
                 },
             containerColor = if (liveSpeakerLabel != null) OpenChatPalette.SignalSoft else null,
-            borderColor = if (liveSpeakerLabel != null) signal.copy(alpha = 0.50f) else null,
             contentAlignment = Alignment.CenterStart,
         ) {
             AnimatedContent(
@@ -599,7 +598,6 @@ fun RouteBand(
                 Modifier
             },
             containerColor = if (liveSpeakerLabel != null) OpenChatPalette.SignalSoft else null,
-            borderColor = if (liveSpeakerLabel != null) signal.copy(alpha = 0.50f) else null,
             contentAlignment = Alignment.CenterStart,
         ) {
             if (liveSpeakerLabel != null) {
@@ -653,7 +651,6 @@ fun AudiencePill(encrypted: Boolean, modifier: Modifier = Modifier, compact: Boo
     FlatCapsule(
         modifier = modifier,
         containerColor = if (encrypted) OpenChatPalette.LockSoft else null,
-        borderColor = if (encrypted) OpenChatPalette.Lock.copy(alpha = 0.35f) else null,
     ) {
         Row(
             Modifier.padding(horizontal = if (compact) 8.dp else 10.dp, vertical = if (compact) 5.dp else 4.dp),
@@ -707,8 +704,7 @@ fun DayHeader(timestamp: Long, note: String?) {
         Text(
             if (note == null) day else "$day · $note",
             modifier = Modifier
-                .background(if (isLight) Color(0xFFE9EEF5) else Color(0xFF14191B), CircleShape)
-                .border(0.75.dp, if (isLight) Color(0xFF0F1722).copy(alpha = 0.06f) else Color.White.copy(alpha = 0.08f), CircleShape)
+                .background(if (isLight) Color(0xFFE7EDF5) else Color(0xFF14191B), CircleShape)
                 .padding(horizontal = 12.dp, vertical = 4.dp)
                 .semantics { heading() },
             textAlign = TextAlign.Center,
@@ -821,17 +817,8 @@ private fun TipCard(n: Int, title: String, body: String, onClick: (() -> Unit)?)
     val isLight = OpenChatPalette.isLight
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (isLight) Color.White.copy(alpha = 0.76f) else Color(0xFF141A1D).copy(alpha = 0.74f),
-        border = BorderStroke(
-            0.8.dp,
-            when {
-                onClick != null && isLight -> Color(0xFF0F1C2E).copy(alpha = 0.14f)
-                isLight -> Color(0xFF0F1C2E).copy(alpha = 0.08f)
-                onClick != null -> Color.White.copy(alpha = 0.16f)
-                else -> Color.White.copy(alpha = 0.09f)
-            },
-        ),
-        modifier = Modifier.fillMaxWidth().let { if (onClick != null) it.pressScale(0.98f).clickable(onClick = onClick) else it },
+        color = if (isLight) Color.White else Color(0xFF13181B),
+        modifier = Modifier.fillMaxWidth().let { if (onClick != null) it.pressScale(0.98f).clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick) else it },
     ) {
         Row(
             Modifier.padding(horizontal = 14.dp, vertical = 12.dp),

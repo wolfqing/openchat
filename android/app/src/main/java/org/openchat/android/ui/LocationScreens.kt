@@ -2,7 +2,6 @@ package org.openchat.android.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -117,8 +116,7 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
         val isLight = OpenChatPalette.isLight
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = if (isLight) Color.White.copy(alpha = 0.78f) else Color(0xFF141A1D).copy(alpha = 0.76f),
-            border = BorderStroke(0.8.dp, if (isLight) Color(0xFF0F1C2E).copy(alpha = 0.10f) else Color.White.copy(alpha = 0.10f)),
+            color = if (isLight) Color.White else Color(0xFF13181B),
             modifier = Modifier.fillMaxWidth().pressScale(0.98f).clip(RoundedCornerShape(16.dp)).clickable { globe = true },
         ) {
             Row(
@@ -129,7 +127,6 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
                 Surface(
                     shape = CircleShape,
                     color = OpenChatPalette.SignalSoft,
-                    border = BorderStroke(1.dp, OpenChatPalette.Signal.copy(alpha = 0.5f)),
                     modifier = Modifier.size(38.dp),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -207,7 +204,6 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
                             Surface(
                                 shape = CircleShape,
                                 color = OpenChatPalette.Online.copy(alpha = 0.14f),
-                                border = BorderStroke(1.dp, OpenChatPalette.Online.copy(alpha = 0.4f)),
                             ) {
                                 Text(
                                     plural(R.plurals.geo_online, n),
@@ -248,6 +244,7 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
                     )
                     Button(
                         enabled = Geohash.isValid(manual) && manual.length >= 2,
+                        shape = RoundedCornerShape(12.dp),
                         onClick = { ChatRepository.controller?.joinGeo(manual, teleported = true); onOpen(manual) },
                     ) { Text(stringResource(R.string.geo_enter)) }
                 }

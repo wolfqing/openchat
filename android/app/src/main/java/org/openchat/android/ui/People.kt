@@ -38,7 +38,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -93,10 +92,10 @@ fun meshFingerprint(peerHex: String): String? =
 @Composable
 internal fun FingerprintGrid(hex: String, modifier: Modifier = Modifier) {
     val chunks = remember(hex) { hex.chunked(4) }
+    val isLight = OpenChatPalette.isLight
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = OpenChatPalette.Screen,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        color = if (isLight) Color(0xFFF1F5FA) else Color(0xFF0C1012),
         modifier = modifier.fillMaxWidth(),
     ) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -188,6 +187,7 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                         if (!blocked) {
                             Button(
                                 onClick = { onDismiss(); onMessage(person.peerHex) },
+                                shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.fillMaxWidth().height(if (compact) 44.dp else 48.dp),
                             ) {
                                 Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -199,10 +199,10 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                         if (fp != null) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 if (!blocked) {
-                                    OutlinedButton(
+                                    TonalActionButton(
                                         onClick = { ChatRepository.controller?.setFavorite(person.peerHex, person.nickname ?: person.peerHex.take(8), !mine) },
                                         modifier = Modifier.weight(1f),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp),
                                     ) {
                                         Icon(
                                             if (mine) Icons.Filled.Star else Icons.Outlined.StarBorder,
@@ -214,26 +214,22 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                                         Text(
                                             stringResource(if (mine) R.string.peer_fav_remove else R.string.peer_fav_add),
                                             fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
                                     }
                                 }
-                                OutlinedButton(
+                                TonalActionButton(
                                     onClick = { if (blocked) Social.unblock(fp) else Social.block(fp, person.nickname ?: person.peerHex.take(8)) },
+                                    destructive = !blocked,
                                     modifier = Modifier.weight(1f),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        contentColor = if (blocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
-                                    ),
-                                    border = BorderStroke(
-                                        1.dp,
-                                        if (blocked) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error.copy(alpha = 0.45f),
-                                    ),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp),
                                 ) {
                                     Text(
                                         stringResource(if (blocked) R.string.peer_unblock else R.string.peer_block),
                                         fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
@@ -258,7 +254,6 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                                 Surface(
                                     shape = CircleShape,
                                     color = OpenChatPalette.SignalSoft,
-                                    border = BorderStroke(1.dp, OpenChatPalette.Signal.copy(alpha = 0.6f)),
                                 ) {
                                     Row(
                                         Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
@@ -308,6 +303,7 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                         if (!blocked) {
                             Button(
                                 onClick = { onDismiss(); onMessage(Conversation.GeoPrivate(person.geohash, person.pubkey).key) },
+                                shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.fillMaxWidth().height(if (compact) 44.dp else 48.dp),
                             ) {
                                 Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -315,17 +311,11 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                                 Text(stringResource(R.string.peer_message), fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
-                        OutlinedButton(
+                        TonalActionButton(
                             onClick = { if (blocked) Social.unblockGeo(person.pubkey) else Social.blockGeo(person.pubkey, person.nickname ?: "anon") },
+                            destructive = !blocked,
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = if (blocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
-                            ),
-                            border = BorderStroke(
-                                1.dp,
-                                if (blocked) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error.copy(alpha = 0.45f),
-                            ),
-                        ) { Text(stringResource(if (blocked) R.string.peer_unblock else R.string.peer_block)) }
+                        ) { Text(stringResource(if (blocked) R.string.peer_unblock else R.string.peer_block), fontWeight = FontWeight.Medium) }
                         Text(
                             stringResource(if (blocked) R.string.peer_blocked_note else R.string.peer_geo_note),
                             fontSize = 12.5.sp,
@@ -421,13 +411,12 @@ internal fun SettingsGroupCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val isLight = OpenChatPalette.isLight
-    val defaultBorder = if (isLight) Color(0xFF0F1C2E).copy(alpha = 0.08f) else Color.White.copy(alpha = 0.09f)
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (isLight) Color.White.copy(alpha = 0.76f) else Color(0xFF141A1D).copy(alpha = 0.74f),
+        color = if (isLight) Color.White else Color(0xFF13181B),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        border = BorderStroke(0.8.dp, borderColor ?: defaultBorder),
+        border = borderColor?.let { BorderStroke(1.dp, it) },
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(content = content)
@@ -454,44 +443,44 @@ fun VerifySection(onShowQr: () -> Unit, onScan: () -> Unit) {
             val stackButtons = maxWidth < 280.dp
             if (stackButtons) {
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilledTonalButton(
+                    TonalActionButton(
                         onClick = onShowQr,
                         modifier = Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp),
                     ) {
                         Icon(Icons.Outlined.QrCode2, contentDescription = null, modifier = Modifier.size(17.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.verify_show), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(stringResource(R.string.verify_show), fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    OutlinedButton(
+                    TonalActionButton(
                         onClick = onScan,
                         modifier = Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp),
                     ) {
                         Icon(Icons.Outlined.QrCodeScanner, contentDescription = null, modifier = Modifier.size(17.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.verify_scan), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(stringResource(R.string.verify_scan), fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             } else {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    FilledTonalButton(
+                    TonalActionButton(
                         onClick = onShowQr,
                         modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp),
                     ) {
                         Icon(Icons.Outlined.QrCode2, contentDescription = null, modifier = Modifier.size(17.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.verify_show), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(stringResource(R.string.verify_show), fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    OutlinedButton(
+                    TonalActionButton(
                         onClick = onScan,
                         modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp),
                     ) {
                         Icon(Icons.Outlined.QrCodeScanner, contentDescription = null, modifier = Modifier.size(17.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.verify_scan), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(stringResource(R.string.verify_scan), fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -607,14 +596,14 @@ fun RelaySection() {
     val social by Social.state.collectAsState()
     var draft by remember { mutableStateOf("") }
     var bad by remember { mutableStateOf(false) }
+    val isLight = OpenChatPalette.isLight
     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.relays_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
         Text(stringResource(R.string.relays_body), fontSize = 13.sp, lineHeight = 18.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         social.relays.forEach { r ->
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = OpenChatPalette.Screen,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                color = if (isLight) Color(0xFFF1F5FA) else Color(0xFF0C1012),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(Modifier.padding(start = 12.dp, end = 4.dp, top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -637,13 +626,13 @@ fun RelaySection() {
                     modifier = Modifier.weight(1f),
                     isError = bad,
                 )
-                FilledTonalButton(
+                TonalActionButton(
                     enabled = draft.isNotBlank(),
                     onClick = {
                         val url = NostrDirect.normalizeRelay(draft)
                         if (url == null) bad = true else { Social.addRelay(url); draft = "" }
                     },
-                ) { Text(stringResource(R.string.relays_add)) }
+                ) { Text(stringResource(R.string.relays_add), fontWeight = FontWeight.Medium) }
             }
             if (bad) Text(stringResource(R.string.relays_invalid), fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
         }

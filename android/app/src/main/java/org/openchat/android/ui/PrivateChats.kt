@@ -1,7 +1,6 @@
 package org.openchat.android.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,7 +46,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -386,10 +384,10 @@ private fun GroupMembersSheet(g: org.openchat.android.app.GroupInfo, onDismiss: 
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                val isLight = OpenChatPalette.isLight
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = OpenChatPalette.Card,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    color = if (isLight) Color(0xFFF1F5FA) else Color(0xFF171E21),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column {
@@ -437,8 +435,7 @@ private fun GroupMembersSheet(g: org.openchat.android.app.GroupInfo, onDismiss: 
                     } else {
                         Surface(
                             shape = RoundedCornerShape(14.dp),
-                            color = OpenChatPalette.Card,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            color = if (isLight) Color(0xFFF1F5FA) else Color(0xFF171E21),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Column {
@@ -469,19 +466,18 @@ private fun GroupMembersSheet(g: org.openchat.android.app.GroupInfo, onDismiss: 
             }
 
             Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(
+                TonalActionButton(
                     onClick = onLeave,
+                    destructive = true,
                     modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
-                ) { Text(stringResource(R.string.group_leave), maxLines = 1, overflow = TextOverflow.Ellipsis) }
-                FilledTonalButton(
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp),
+                ) { Text(stringResource(R.string.group_leave), fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                TonalActionButton(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp),
                 ) {
-                    Text(stringResource(R.string.close), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(stringResource(R.string.close), fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
@@ -561,7 +557,6 @@ private fun GroupAvatar(size: Int = 42) {
     Surface(
         shape = RoundedCornerShape(10.dp),
         color = OpenChatPalette.LockSoft,
-        border = BorderStroke(1.dp, OpenChatPalette.Lock.copy(alpha = 0.35f)),
         modifier = Modifier.size(size.dp),
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -656,7 +651,6 @@ internal fun PrivateList(onOpen: (String) -> Unit, onNewGroup: () -> Unit = {}, 
                 Surface(
                     shape = CircleShape,
                     color = OpenChatPalette.LockSoft,
-                    border = BorderStroke(1.dp, OpenChatPalette.Lock.copy(alpha = 0.35f)),
                     modifier = Modifier.size(52.dp),
                 ) {
                     Box(contentAlignment = Alignment.Center) {

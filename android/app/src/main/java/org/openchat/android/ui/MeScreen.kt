@@ -5,9 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,7 +48,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -206,6 +204,7 @@ internal fun MePane(
                             )
                             Button(
                                 enabled = nick.isNotBlank(),
+                                shape = RoundedCornerShape(12.dp),
                                 onClick = {
                                     if (nick != mesh.myNickname) ChatRepository.controller?.setNickname(nick)
                                     editingName = false
@@ -219,7 +218,6 @@ internal fun MePane(
                     Surface(
                         shape = CircleShape,
                         color = OpenChatPalette.SignalSoft,
-                        border = BorderStroke(1.dp, OpenChatPalette.Signal.copy(alpha = 0.5f)),
                     ) {
                         Text(
                             stringResource(R.string.me_carrying, mesh.carriedCount),
@@ -287,7 +285,6 @@ internal fun MePane(
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = OpenChatPalette.SignalSoft,
-                        border = BorderStroke(1.dp, OpenChatPalette.Signal.copy(alpha = 0.35f)),
                         tonalElevation = 0.dp,
                         shadowElevation = 0.dp,
                         modifier = Modifier.size(38.dp),
@@ -330,7 +327,11 @@ internal fun MePane(
                 Text(stringResource(R.string.me_share_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                 Text(stringResource(R.string.me_share_body), fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(2.dp))
-                Button(onClick = onShareApp, modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = onShareApp,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 44.dp),
+                ) {
                     Icon(Icons.Outlined.Share, contentDescription = null, modifier = Modifier.size(17.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.me_share_button), fontWeight = FontWeight.SemiBold)
@@ -399,9 +400,8 @@ private fun ThemeSection() {
     ) {
         Text(stringResource(R.string.theme_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
         Surface(
-            shape = CircleShape,
-            color = if (isLight) Color(0xFFE7EEF7) else Color(0xFF0E1416),
-            border = BorderStroke(0.8.dp, if (isLight) Color(0xFF0F1C2E).copy(alpha = 0.08f) else Color.White.copy(alpha = 0.09f)),
+            shape = RoundedCornerShape(12.dp),
+            color = if (isLight) Color(0xFFECF1F7) else Color(0xFF0C1012),
             modifier = Modifier.fillMaxWidth(),
         ) {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -420,19 +420,13 @@ private fun ThemeSection() {
                         Row(
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(CircleShape)
+                                .clip(RoundedCornerShape(9.dp))
                                 .let {
                                     if (selected) {
-                                        it
-                                            .background(
-                                                if (isLight) Color.White else OpenChatPalette.CardRaised,
-                                                CircleShape,
-                                            )
-                                            .border(
-                                                1.dp,
-                                                MaterialTheme.colorScheme.outlineVariant,
-                                                CircleShape,
-                                            )
+                                        it.background(
+                                            if (isLight) Color.White else Color(0xFF1F272B),
+                                            RoundedCornerShape(9.dp),
+                                        )
                                     } else {
                                         it
                                     }
@@ -512,13 +506,13 @@ private fun UpdateSection() {
 
             when (val s = state) {
                 is AppUpdater.UpdateState.Idle -> {
-                    OutlinedButton(
+                    TonalActionButton(
                         onClick = { AppUpdater.checkNow(context) },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Icon(Icons.Outlined.SystemUpdateAlt, contentDescription = null, modifier = Modifier.size(17.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.update_check))
+                        Text(stringResource(R.string.update_check), fontWeight = FontWeight.Medium)
                     }
                 }
                 is AppUpdater.UpdateState.Checking -> {
@@ -546,19 +540,19 @@ private fun UpdateSection() {
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    OutlinedButton(
+                    TonalActionButton(
                         onClick = { AppUpdater.checkNow(context) },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(stringResource(R.string.update_check))
+                        Text(stringResource(R.string.update_check), fontWeight = FontWeight.Medium)
                     }
                 }
                 is AppUpdater.UpdateState.Available -> {
                     val rel = s.release
+                    val isLight = OpenChatPalette.isLight
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = OpenChatPalette.CardRaised,
-                        border = BorderStroke(1.dp, OpenChatPalette.Signal.copy(alpha = 0.45f)),
+                        color = if (isLight) Color(0xFFF3F6FB) else Color(0xFF192024),
                     ) {
                         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
@@ -581,7 +575,8 @@ private fun UpdateSection() {
                             }
                             Button(
                                 onClick = { AppUpdater.download(context, rel) },
-                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 44.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = OpenChatPalette.Signal,
                                     contentColor = OpenChatPalette.OnSignal,
@@ -598,10 +593,10 @@ private fun UpdateSection() {
                     val total = s.totalBytes.coerceAtLeast(1L)
                     val fraction = (s.bytesRead.toFloat() / total.toFloat()).coerceIn(0f, 1f)
                     val pct = (fraction * 100f).toInt()
+                    val isLight = OpenChatPalette.isLight
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = OpenChatPalette.CardRaised,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        color = if (isLight) Color(0xFFF3F6FB) else Color(0xFF192024),
                     ) {
                         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
@@ -620,11 +615,11 @@ private fun UpdateSection() {
                                 color = OpenChatPalette.Signal,
                                 trackColor = OpenChatPalette.Line,
                             )
-                            OutlinedButton(
+                            TonalActionButton(
                                 onClick = { AppUpdater.cancel() },
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
-                                Text(stringResource(R.string.cancel))
+                                Text(stringResource(R.string.cancel), fontWeight = FontWeight.Medium)
                             }
                         }
                     }
@@ -641,10 +636,10 @@ private fun UpdateSection() {
                 }
                 is AppUpdater.UpdateState.ReadyToInstall -> {
                     val rel = s.release
+                    val isLight = OpenChatPalette.isLight
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = OpenChatPalette.CardRaised,
-                        border = BorderStroke(1.dp, OpenChatPalette.Online.copy(alpha = 0.5f)),
+                        color = if (isLight) Color(0xFFF3F6FB) else Color(0xFF192024),
                     ) {
                         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -658,7 +653,8 @@ private fun UpdateSection() {
                             }
                             Button(
                                 onClick = { context.findActivity()?.let { AppUpdater.install(it, s.apkFile) } },
-                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 44.dp),
                             ) {
                                 Text(stringResource(R.string.update_install, rel.tagName), fontWeight = FontWeight.SemiBold)
                             }
@@ -678,14 +674,14 @@ private fun UpdateSection() {
                         AppUpdater.UpdateError.INSTALL_FAILED -> stringResource(R.string.update_err_install)
                     }
                     Text(msg, fontSize = 12.5.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.error)
-                    OutlinedButton(
+                    TonalActionButton(
                         onClick = {
                             if (s.release != null) AppUpdater.download(context, s.release)
                             else AppUpdater.checkNow(context)
                         },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(stringResource(R.string.retry))
+                        Text(stringResource(R.string.retry), fontWeight = FontWeight.Medium)
                     }
                 }
             }
@@ -731,17 +727,16 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
 @Composable
 private fun WipeSection(onPanic: () -> Unit) {
     var confirm by remember { mutableStateOf(false) }
-    SettingsGroupCard(borderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.35f)) {
+    SettingsGroupCard {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.me_wipe_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.error)
             Text(stringResource(R.string.me_wipe_body), fontSize = 13.sp, lineHeight = 18.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(2.dp))
-            OutlinedButton(
+            TonalActionButton(
                 onClick = { confirm = true },
+                destructive = true,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.55f)),
-            ) { Text(stringResource(R.string.me_wipe_button)) }
+            ) { Text(stringResource(R.string.me_wipe_button), fontWeight = FontWeight.SemiBold) }
         }
     }
     if (confirm) AlertDialog(

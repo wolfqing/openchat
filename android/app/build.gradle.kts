@@ -21,8 +21,8 @@ android {
         applicationId = "org.openchat.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 21
-        versionName = "0.7.10"
+        versionCode = 22
+        versionName = "0.7.11"
     }
 
     signingConfigs {

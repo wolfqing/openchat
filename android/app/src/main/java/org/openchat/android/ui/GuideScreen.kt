@@ -1,7 +1,6 @@
 package org.openchat.android.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -130,8 +129,7 @@ fun GuideScreen(onBack: () -> Unit, onPanic: () -> Unit) {
                     ) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = if (isLight) OpenChatPalette.Card else OpenChatPalette.CardRaised,
-                            border = BorderStroke(1.dp, OpenChatPalette.Line),
+                            color = if (isLight) Color(0xFFEDF2F8) else Color(0xFF1C2428),
                             tonalElevation = 0.dp,
                             shadowElevation = 0.dp,
                             modifier = Modifier.size(46.dp).clipToBounds(),
@@ -260,8 +258,7 @@ fun GuideScreen(onBack: () -> Unit, onPanic: () -> Unit) {
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isLight) OpenChatPalette.Card else OpenChatPalette.CardRaised,
-                                border = BorderStroke(1.dp, OpenChatPalette.Line),
+                                color = if (isLight) Color(0xFFEDF2F8) else Color(0xFF1C2428),
                                 tonalElevation = 0.dp,
                                 shadowElevation = 0.dp,
                                 modifier = Modifier.size(34.dp),
@@ -329,11 +326,10 @@ private fun FlatGuideCard(content: @Composable () -> Unit) {
     val isLight = OpenChatPalette.isLight
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (isLight) Color.White else OpenChatPalette.Card,
+        color = if (isLight) Color.White else Color(0xFF13181B),
         contentColor = OpenChatPalette.Ink,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        border = BorderStroke(1.dp, OpenChatPalette.Line),
         modifier = Modifier.fillMaxWidth(),
         content = content,
     )
@@ -349,7 +345,6 @@ private fun GuideRow(item: GuideItem) {
         Surface(
             shape = RoundedCornerShape(10.dp),
             color = item.badgeBg,
-            border = BorderStroke(1.dp, item.tint.copy(alpha = 0.28f)),
             tonalElevation = 0.dp,
             shadowElevation = 0.dp,
             modifier = Modifier.padding(top = 1.dp).size(36.dp),

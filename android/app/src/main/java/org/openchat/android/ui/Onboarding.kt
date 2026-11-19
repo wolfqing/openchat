@@ -1,6 +1,5 @@
 package org.openchat.android.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -136,10 +135,10 @@ fun OnboardingScreen(onStart: () -> Unit, onLanguage: (AppLanguage.Choice) -> Un
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
+                    val isLight = OpenChatPalette.isLight
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = OpenChatPalette.Card,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        color = if (isLight) androidx.compose.ui.graphics.Color(0xFFE5ECF4) else androidx.compose.ui.graphics.Color(0xFF171E21),
                         modifier = Modifier.size(if (compact) 40.dp else 44.dp).clipToBounds(),
                     ) {
                         Icon(
@@ -187,10 +186,10 @@ fun OnboardingScreen(onStart: () -> Unit, onLanguage: (AppLanguage.Choice) -> Un
                         lineHeight = if (compact) 21.sp else 24.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    val isLightPill = OpenChatPalette.isLight
                     Surface(
                         shape = CircleShape,
-                        color = OpenChatPalette.Surface,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        color = if (isLightPill) androidx.compose.ui.graphics.Color(0xFFE5ECF4) else androidx.compose.ui.graphics.Color(0xFF151C1F),
                     ) {
                         Text(
                             stringResource(R.string.onboard_no_account),
@@ -241,8 +240,7 @@ fun SafetyNote(compact: Boolean = false) {
     val isLight = OpenChatPalette.isLight
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (isLight) androidx.compose.ui.graphics.Color.White else OpenChatPalette.Card,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        color = if (isLight) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color(0xFF13181B),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(

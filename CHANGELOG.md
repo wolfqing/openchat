@@ -1,5 +1,34 @@
 # Changelog
 
+## Android v0.7.11 (preview) — 2026-11-19
+
+Borderless tonal surface hierarchy across every screen: removed over 40 `1dp`
+wireframe strokes and `OutlinedButton`s in favour of clean tonal fills, ghost
+navigation icons, and `12dp` rounded-rectangle card actions. No wire-format
+change. Signed with the release key ([SECURITY.md](SECURITY.md)); installs over
+v0.7.10 and earlier release-signed builds. 208 unit tests. 9.5 MB.
+APK SHA-256 `f3c7bb462dc43988d69feef19566fab5ccdcb0f88517d060282123a28a0b44d6`.
+
+### Changed
+
+- **Borderless tonal buttons and navigation (`FluidGlass`, `MainScreen`).**
+  - Removed the `1dp` outline from `FluidGlassCircleButton`,
+    `FluidGlassPillButton`, `FlatCapsule` (unless focused), and `PanicLogo`,
+    relying on clean tonal contrast in both Radiant Light and OLED Dark themes.
+  - Turned `GlassBackButton` into a pure `48dp` borderless ghost back icon and
+    softened the bottom frosted navigation bar's specular rim.
+- **Replaced wireframe `OutlinedButton`s with `12dp` `TonalActionButton` (`MeScreen`, `People`, `PrivateChats`).**
+  - Verification actions, update checks/retries, peer favorite/block actions,
+    group leave/close buttons, and "Erase everything" now use borderless `12dp`
+    tonal rectangles (with soft danger fills for destructive actions instead of
+    red-outlined boxes inside red-outlined cards).
+- **Borderless cards, bubbles and composer (`ChatPane`, `MeshVisuals`, `LocationScreens`, `BoardScreen`, `WalkieTalkieDrawer`, `GuideScreen`, `Onboarding`).**
+  - Removed decorative borders from `SettingsGroupCard`, chat message bubbles
+    (keeping the signal ring strictly for `@mention` alerts), the microphone and
+    recording capsules, status bands, notice-board cards, walkie-talkie drawer,
+    guide cards, and onboarding cards; the text composer shows a subtle border
+    only while focused.
+
 ## Android v0.7.10 (preview) — 2026-11-17
 
 Random callsigns by default instead of `"anon"`, across fresh installs, panic

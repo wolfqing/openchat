@@ -1,7 +1,6 @@
 package org.openchat.android.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -138,7 +137,6 @@ fun BoardScreen(onBack: () -> Unit, onPanic: () -> Unit) {
                         Surface(
                             shape = CircleShape,
                             color = OpenChatPalette.SignalSoft,
-                            border = BorderStroke(1.dp, OpenChatPalette.Signal.copy(alpha = 0.45f)),
                             modifier = Modifier.size(52.dp),
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -152,7 +150,7 @@ fun BoardScreen(onBack: () -> Unit, onPanic: () -> Unit) {
                             fontSize = 14.5.sp,
                             lineHeight = 22.sp,
                         )
-                        Button(onClick = { composing = true }) {
+                        Button(onClick = { composing = true }, shape = RoundedCornerShape(12.dp)) {
                             Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.board_post))
@@ -183,19 +181,11 @@ private fun BoardCard(p: BoardItem) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = when {
-            p.urgent && isLight -> Color(0xFFFFF1EA)
-            p.urgent -> OpenChatPalette.SignalSoft.copy(alpha = 0.65f)
-            isLight -> Color.White.copy(alpha = 0.78f)
-            else -> Color(0xFF141A1D).copy(alpha = 0.76f)
+            p.urgent && isLight -> Color(0xFFFFEFE6)
+            p.urgent -> Color(0xFF28140B)
+            isLight -> Color.White
+            else -> Color(0xFF13181B)
         },
-        border = BorderStroke(
-            if (p.urgent) 1.dp else 0.8.dp,
-            when {
-                p.urgent -> OpenChatPalette.Signal
-                isLight -> Color(0xFF0F1C2E).copy(alpha = 0.08f)
-                else -> Color.White.copy(alpha = 0.09f)
-            },
-        ),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -378,6 +368,7 @@ private fun BoardComposerSheet(onDismiss: () -> Unit) {
                     Button(
                         enabled = fits,
                         onClick = submit,
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = if (compactHeight) 6.dp else 12.dp)

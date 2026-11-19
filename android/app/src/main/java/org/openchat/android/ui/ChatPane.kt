@@ -326,11 +326,11 @@ fun ChatPane(
 
 @Composable
 private fun SystemNoticeRow(text: String) {
+    val isLight = OpenChatPalette.isLight
     Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
         Surface(
             shape = RoundedCornerShape(10.dp),
-            color = OpenChatPalette.Surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            color = if (isLight) Color(0xFFE7EDF5) else Color(0xFF14191C),
         ) {
             Text(
                 text,
@@ -421,13 +421,9 @@ private fun PublicPostRow(
 
                 Surface(
                     shape = bubbleShape,
-                    color = if (isLight) Color(0xFFE6F0FE) else Color(0xFF15273B),
+                    color = if (isLight) Color(0xFFDFECFE) else Color(0xFF15273B),
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp,
-                    border = BorderStroke(
-                        0.75.dp,
-                        if (isLight) Color(0xFF1A6BFF).copy(alpha = 0.16f) else Color(0xFF5CA6FF).copy(alpha = 0.24f),
-                    ),
                     modifier = Modifier.widthIn(max = 296.dp),
                 ) {
                     MessageContent(m, inBubble = true)
@@ -674,18 +670,18 @@ private fun EncryptedBubbleRow(
                 )
             }
 
-            // Flat, matte bubble container (zero elevation, zero inner gradients)
+            // Borderless tonal bubble container (stroke reserved solely for @mention alerts)
             val isLight = OpenChatPalette.isLight
             Surface(
                 shape = shape,
-                color = if (m.mine) OpenChatPalette.LockSoft else OpenChatPalette.Card,
+                color = when {
+                    m.mine -> OpenChatPalette.LockSoft
+                    isLight -> Color.White
+                    else -> Color(0xFF161D20)
+                },
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
-                border = when {
-                    m.mentionsMe -> BorderStroke(1.dp, OpenChatPalette.Signal)
-                    m.mine -> BorderStroke(0.75.dp, OpenChatPalette.Lock.copy(alpha = 0.16f))
-                    else -> BorderStroke(0.75.dp, if (isLight) Color(0xFF0F1722).copy(alpha = 0.06f) else Color.White.copy(alpha = 0.08f))
-                },
+                border = if (m.mentionsMe) BorderStroke(1.dp, OpenChatPalette.Signal) else null,
                 modifier = Modifier.widthIn(max = 304.dp),
             ) {
                 MessageContent(m, inBubble = true)
@@ -793,12 +789,12 @@ private fun MessageContent(m: ChatMessage, inBubble: Boolean) {
 private fun CashuCard(token: String, inBubble: Boolean) {
     val ctx = LocalContext.current
     val info = remember(token) { Cashu.decode(token) } ?: return
+    val isLight = OpenChatPalette.isLight
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = OpenChatPalette.Surface,
+        color = if (isLight) Color(0xFFF2F6FC) else Color(0xFF0E1315),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier.padding(
             start = if (inBubble) 10.dp else 0.dp,
             end = if (inBubble) 10.dp else 0.dp,
@@ -871,8 +867,7 @@ private fun PhotoView(path: String, covered: Boolean, inBubble: Boolean) {
                 fontWeight = FontWeight.Medium,
                 color = Color.White,
                 modifier = Modifier
-                    .background(Color(0xB3000000), CircleShape)
-                    .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape)
+                    .background(Color(0xBF000000), CircleShape)
                     .padding(horizontal = 14.dp, vertical = 7.dp),
             )
         }
@@ -1246,7 +1241,6 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                 FlatCapsule(
                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
                     containerColor = recSoft,
-                    borderColor = recAccent.copy(alpha = 0.55f),
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     Row(
@@ -1325,8 +1319,7 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                 )
                 FlatCapsule(
                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
-                    containerColor = if (isLight) Color(0xFFF7F9FC) else OpenChatPalette.Card,
-                    borderColor = accent.copy(alpha = 0.45f),
+                    containerColor = if (isLight) Color.White else Color(0xFF161D20),
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     VoiceNote(readyPreview.absolutePath, accentColor = accent)
@@ -1354,15 +1347,14 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
         }
 
         val inputFill = when {
-            isLight && (focused || text.isNotEmpty()) -> Color.White
-            isLight -> Color(0xFFF6F8FC)
-            focused || text.isNotEmpty() -> Color(0xFF192226)
-            else -> Color(0xFF141B1E)
+            isLight -> Color.White
+            focused || text.isNotEmpty() -> Color(0xFF1C2529)
+            else -> Color(0xFF161D20)
         }
         val inputBorder = when {
-            focused && encrypted -> OpenChatPalette.Lock
-            focused -> OpenChatPalette.Outline
-            else -> OpenChatPalette.Line
+            focused && encrypted -> OpenChatPalette.Lock.copy(alpha = 0.45f)
+            focused -> OpenChatPalette.Outline.copy(alpha = 0.55f)
+            else -> null
         }
 
         if (plusMenuOpen && supportsMedia && text.isEmpty()) {
@@ -1516,7 +1508,6 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                         color = micFill,
                         tonalElevation = 0.dp,
                         shadowElevation = 0.dp,
-                        border = BorderStroke(1.dp, micAccent.copy(alpha = if (isLight) 0.45f else 0.55f)),
                         modifier = Modifier
                             .size(44.dp)
                             .pressScale(0.93f)

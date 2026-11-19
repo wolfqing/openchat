@@ -726,8 +726,7 @@ fun PanicLogo(onPanic: () -> Unit) {
     ) {
         Surface(
             shape = RoundedCornerShape(10.dp),
-            color = if (isLight) Color.White else OpenChatPalette.Card,
-            border = BorderStroke(1.dp, OpenChatPalette.Line),
+            color = if (isLight) Color(0xFFE5ECF4) else Color(0xFF171E21),
             tonalElevation = 0.dp,
             shadowElevation = 0.dp,
             modifier = Modifier.size(36.dp).clipToBounds(),

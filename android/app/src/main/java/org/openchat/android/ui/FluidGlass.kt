@@ -7,21 +7,26 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Surface
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -522,19 +527,19 @@ private fun Modifier.drawFluidGlassOpticalBody(
 
     val rimBrush = if (isLight) {
         val darkPole = if (borderAccent != null) {
-            lerp(borderAccent, Color(0xFF0D1B2C), 0.48f).copy(alpha = 0.68f)
+            lerp(borderAccent, Color(0xFF0D1B2C), 0.48f).copy(alpha = 0.22f)
         } else {
-            Color(0xFF14263C).copy(alpha = 0.50f)
+            Color(0xFF14263C).copy(alpha = 0.14f)
         }
         val midCap = if (borderAccent != null) {
-            borderAccent.copy(alpha = 0.44f)
+            borderAccent.copy(alpha = 0.16f)
         } else {
-            Color(0xFF435D7C).copy(alpha = 0.28f)
+            Color(0xFF435D7C).copy(alpha = 0.08f)
         }
         val brightTopBottom = if (borderAccent != null) {
-            lerp(borderAccent, Color.White, 0.80f).copy(alpha = 1.0f)
+            lerp(borderAccent, Color.White, 0.80f).copy(alpha = 0.48f)
         } else {
-            Color.White
+            Color.White.copy(alpha = 0.48f)
         }
         Brush.horizontalGradient(
             0.00f to darkPole,
@@ -548,19 +553,19 @@ private fun Modifier.drawFluidGlassOpticalBody(
         )
     } else {
         val darkPole = if (borderAccent != null) {
-            borderAccent.copy(alpha = 0.36f)
+            borderAccent.copy(alpha = 0.14f)
         } else {
-            Color.White.copy(alpha = 0.14f)
+            Color.White.copy(alpha = 0.05f)
         }
         val midCap = if (borderAccent != null) {
-            borderAccent.copy(alpha = 0.52f)
+            borderAccent.copy(alpha = 0.18f)
         } else {
-            Color(0xFF8CC4FF).copy(alpha = 0.22f)
+            Color(0xFF8CC4FF).copy(alpha = 0.07f)
         }
         val brightTopBottom = if (borderAccent != null) {
-            lerp(borderAccent, Color.White, 0.58f).copy(alpha = 0.88f)
+            lerp(borderAccent, Color.White, 0.58f).copy(alpha = 0.24f)
         } else {
-            Color.White.copy(alpha = 0.62f)
+            Color.White.copy(alpha = 0.16f)
         }
         Brush.horizontalGradient(
             0.00f to darkPole,
@@ -574,19 +579,19 @@ private fun Modifier.drawFluidGlassOpticalBody(
         )
     }
 
-    // 3. Crisp top & bottom inner specular sheen
-    val innerSpecStrokePx = 0.85.dp.toPx()
+    // 3. Subtle top & bottom inner specular sheen
+    val innerSpecStrokePx = 0.75.dp.toPx()
     val innerInset = rimInset + 0.75.dp.toPx()
     val innerCorner = CornerRadius((r - innerInset).coerceAtLeast(1f), (r - innerInset).coerceAtLeast(1f))
     val innerSpecBrush = Brush.verticalGradient(
-        0.00f to Color.White.copy(alpha = if (isLight) 0.95f else 0.40f),
+        0.00f to Color.White.copy(alpha = if (isLight) 0.42f else 0.12f),
         0.18f to Color.Transparent,
         0.82f to Color.Transparent,
-        1.00f to Color.White.copy(alpha = if (isLight) 0.78f else 0.24f),
+        1.00f to Color.White.copy(alpha = if (isLight) 0.25f else 0.06f),
     )
 
     val outerHairColor = if (isLight) {
-        (borderAccent?.let { lerp(it, Color(0xFF102036), 0.55f) } ?: Color(0xFF102036)).copy(alpha = 0.13f)
+        (borderAccent?.let { lerp(it, Color(0xFF102036), 0.55f) } ?: Color(0xFF102036)).copy(alpha = 0.06f)
     } else {
         Color.Transparent
     }
@@ -625,103 +630,52 @@ private fun Modifier.drawFluidGlassOpticalBody(
 }
 
 /**
- * Ultra-clear active water-droplet indicator used inside [CapsuleNavigationBar] and segmented
- * selectors: lets underlying refracted pixels shine through with thin dark left/right edges and
- * thin bright top/bottom specular highlights.
+ * Soft active pill indicator used inside [CapsuleNavigationBar]: subtle tonal sheen with zero
+ * wireframe stroke.
  */
 internal fun Modifier.fluidGlassDroplet(isLight: Boolean): Modifier = drawWithCache {
     val w = size.width.coerceAtLeast(2f)
     val h = size.height.coerceAtLeast(2f)
     val r = minOf(w, h) * 0.5f
     val corner = CornerRadius(r, r)
-    val capRatio = (r / w).coerceIn(0.08f, 0.50f)
-    val darkHoldStop = (capRatio * 0.14f).coerceIn(0.015f, 0.08f)
-    val diagStop = (capRatio * 0.30f).coerceIn(0.032f, 0.16f)
-    val brightStop = (capRatio * 0.58f).coerceIn(0.06f, 0.30f)
-    val outerHairPx = 0.50.dp.toPx()
-    val strokePx = 1.08.dp.toPx()
-    val inset = strokePx * 0.5f + (if (isLight) outerHairPx * 0.75f else 0f)
-    val innerCorner = CornerRadius((r - inset).coerceAtLeast(1f), (r - inset).coerceAtLeast(1f))
 
     val fillBrush = if (isLight) {
         Brush.verticalGradient(
-            0.00f to Color.White.copy(alpha = 0.36f),
-            0.58f to Color.White.copy(alpha = 0.20f),
-            1.00f to Color(0xFF2476FF).copy(alpha = 0.10f),
+            0.00f to Color.White.copy(alpha = 0.62f),
+            1.00f to Color.White.copy(alpha = 0.44f),
         )
     } else {
         Brush.verticalGradient(
-            0.00f to Color.White.copy(alpha = 0.14f),
-            0.60f to Color.White.copy(alpha = 0.08f),
-            1.00f to Color(0xFF87CDFF).copy(alpha = 0.13f),
-        )
-    }
-    val rimBrush = if (isLight) {
-        val darkPole = Color(0xFF15273D).copy(alpha = 0.42f)
-        val midCap = Color(0xFF4C6584).copy(alpha = 0.24f)
-        val brightTB = Color.White
-        Brush.horizontalGradient(
-            0.00f to darkPole,
-            darkHoldStop to darkPole,
-            diagStop to midCap,
-            brightStop to brightTB,
-            (1f - brightStop) to brightTB,
-            (1f - diagStop) to midCap,
-            (1f - darkHoldStop) to darkPole,
-            1.00f to darkPole,
-        )
-    } else {
-        val darkPole = Color.White.copy(alpha = 0.15f)
-        val midCap = Color(0xFF87CDFF).copy(alpha = 0.24f)
-        val brightTB = Color.White.copy(alpha = 0.60f)
-        Brush.horizontalGradient(
-            0.00f to darkPole,
-            darkHoldStop to darkPole,
-            diagStop to midCap,
-            brightStop to brightTB,
-            (1f - brightStop) to brightTB,
-            (1f - diagStop) to midCap,
-            (1f - darkHoldStop) to darkPole,
-            1.00f to darkPole,
+            0.00f to Color.White.copy(alpha = 0.15f),
+            1.00f to Color.White.copy(alpha = 0.09f),
         )
     }
     onDrawBehind {
         drawRoundRect(brush = fillBrush, cornerRadius = corner)
-        if (isLight && w > 4f && h > 4f) {
-            val hi = outerHairPx * 0.5f
-            drawRoundRect(
-                color = Color(0xFF102036).copy(alpha = 0.10f),
-                topLeft = Offset(hi, hi),
-                size = Size(w - hi * 2f, h - hi * 2f),
-                cornerRadius = corner,
-                style = Stroke(width = outerHairPx),
-            )
-        }
-        if (w > inset * 2f + 2f && h > inset * 2f + 2f) {
-            drawRoundRect(
-                brush = rimBrush,
-                topLeft = Offset(inset, inset),
-                size = Size(w - inset * 2f, h - inset * 2f),
-                cornerRadius = innerCorner,
-                style = Stroke(width = strokePx),
-            )
-        }
     }
 }
 
-/** 36dp flat circular back button inside a comfortable 48dp header touch target. */
+/** Pure borderless ghost back icon inside a comfortable 48dp header touch target. */
 @Composable
 internal fun GlassBackButton(onClick: () -> Unit) {
     Box(
-        modifier = Modifier.size(48.dp),
+        modifier = Modifier
+            .size(48.dp)
+            .pressScale(0.90f)
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true, radius = 20.dp),
+                role = Role.Button,
+                onClick = onClick,
+            ),
         contentAlignment = Alignment.Center,
     ) {
-        FluidGlassCircleButton(
-            icon = Icons.AutoMirrored.Filled.ArrowBack,
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = stringResource(R.string.back),
-            onClick = onClick,
-            size = 36.dp,
-            iconSize = 18.dp,
+            tint = OpenChatPalette.Ink,
+            modifier = Modifier.size(21.dp),
         )
     }
 }
@@ -754,8 +708,8 @@ fun FluidGlassCapsule(
 }
 
 /**
- * Crisp, zero-shadow flat stadium capsule used for status bands, composer inputs, and voice bars
- * (Liquid Glass is reserved exclusively for the bottom navigation bar).
+ * Borderless tonal stadium capsule used for status bands, composer inputs, and voice bars.
+ * Draws a stroke only when [borderColor] is explicitly provided (e.g. an active focus ring).
  */
 @Composable
 fun FlatCapsule(
@@ -766,8 +720,7 @@ fun FlatCapsule(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val isLight = OpenChatPalette.isLight
-    val fill = containerColor ?: if (isLight) Color.White else OpenChatPalette.Card
-    val stroke = borderColor ?: OpenChatPalette.Line
+    val fill = containerColor ?: if (isLight) Color(0xFFE7EDF5) else Color(0xFF151C1F)
     Surface(
         modifier = modifier,
         shape = CircleShape,
@@ -775,15 +728,15 @@ fun FlatCapsule(
         contentColor = OpenChatPalette.Ink,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        border = BorderStroke(1.dp, stroke),
+        border = borderColor?.let { BorderStroke(1.dp, it) },
     ) {
         Box(contentAlignment = contentAlignment, content = content)
     }
 }
 
 /**
- * Clean flat circular button (zero drop-shadow, zero glass refraction) with crisp 1dp border
- * and tactile spring press bounce.
+ * Borderless tonal circular button (zero drop-shadow, zero wireframe border) with tactile
+ * spring press bounce.
  */
 @Composable
 fun FluidGlassCircleButton(
@@ -795,13 +748,12 @@ fun FluidGlassCircleButton(
     iconSize: Dp = 20.dp,
     iconTint: Color = OpenChatPalette.Ink,
     tintColor: Color? = null,
-    borderAccent: Color? = null,
+    @Suppress("UNUSED_PARAMETER") borderAccent: Color? = null,
     enabled: Boolean = true,
     @Suppress("UNUSED_PARAMETER") shadowElevation: Dp = 0.dp,
 ) {
     val isLight = OpenChatPalette.isLight
-    val fill = tintColor ?: if (isLight) Color.White else OpenChatPalette.Card
-    val stroke = borderAccent?.copy(alpha = if (isLight) 0.45f else 0.55f) ?: OpenChatPalette.Line
+    val fill = tintColor ?: if (isLight) Color(0xFFE5ECF4) else Color(0xFF1A2226)
     Surface(
         modifier = modifier
             .size(size)
@@ -815,7 +767,6 @@ fun FluidGlassCircleButton(
         contentColor = OpenChatPalette.Ink,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        border = BorderStroke(1.dp, stroke),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
@@ -828,21 +779,20 @@ fun FluidGlassCircleButton(
     }
 }
 
-/** Compact clickable flat pill button for header actions and inline CTAs (zero glass refraction). */
+/** Borderless tonal pill button for header actions and inline CTAs. */
 @Composable
 fun FluidGlassPillButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     tintColor: Color? = null,
-    borderAccent: Color? = null,
+    @Suppress("UNUSED_PARAMETER") borderAccent: Color? = null,
     @Suppress("UNUSED_PARAMETER") shadowElevation: Dp = 0.dp,
     contentPadding: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 7.dp),
     content: @Composable RowScope.() -> Unit,
 ) {
     val isLight = OpenChatPalette.isLight
-    val fill = tintColor ?: if (isLight) Color.White else OpenChatPalette.Card
-    val stroke = borderAccent?.copy(alpha = if (isLight) 0.50f else 0.60f) ?: OpenChatPalette.Line
+    val fill = tintColor ?: if (isLight) Color(0xFFE5ECF4) else Color(0xFF1A2226)
     Surface(
         modifier = modifier
             .let { if (enabled) it.pressScale(0.95f) else it }
@@ -853,7 +803,6 @@ fun FluidGlassPillButton(
         contentColor = OpenChatPalette.Ink,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        border = BorderStroke(1.dp, stroke),
     ) {
         Row(
             modifier = Modifier.padding(contentPadding),
@@ -862,4 +811,46 @@ fun FluidGlassPillButton(
             content = content,
         )
     }
+}
+
+/**
+ * 12dp rounded-rectangle borderless tonal button used inside cards and bottom sheets, replacing
+ * wireframe `OutlinedButton`s across settings, verification, updates, and moderation actions.
+ */
+@Composable
+internal fun TonalActionButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    destructive: Boolean = false,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+    content: @Composable RowScope.() -> Unit,
+) {
+    val isLight = OpenChatPalette.isLight
+    val container = when {
+        destructive && isLight -> Color(0xFFFEE4E2)
+        destructive -> Color(0xFF331512)
+        isLight -> Color(0xFFEDF2F8)
+        else -> Color(0xFF1E272B)
+    }
+    val fg = if (destructive) {
+        if (isLight) Color(0xFFD92D20) else Color(0xFFFF8970)
+    } else {
+        OpenChatPalette.Ink
+    }
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(12.dp),
+        elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp, 0.dp, 0.dp, 0.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = container,
+            contentColor = fg,
+            disabledContainerColor = container.copy(alpha = 0.55f),
+            disabledContentColor = fg.copy(alpha = 0.45f),
+        ),
+        contentPadding = contentPadding,
+        modifier = modifier.defaultMinSize(minHeight = 44.dp),
+        content = content,
+    )
 }

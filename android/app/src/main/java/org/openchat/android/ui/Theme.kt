@@ -88,10 +88,10 @@ internal val DarkOpenChatColors = OpenChatColors(
 
 internal val LightOpenChatColors = OpenChatColors(
     isLight = true,
-    screen = Color(0xFFF4F7FC),
+    screen = Color(0xFFF1F5FA),
     surface = Color(0xFFFFFFFF),
-    card = Color(0xFFEEF2F7),
-    cardRaised = Color(0xFFE3EAF3),
+    card = Color(0xFFE9EEF5),
+    cardRaised = Color(0xFFDFE6F0),
     ink = Color(0xFF0E1621),
     muted = Color(0xFF5B6776),
     line = Color(0xFFDCE3EC),
