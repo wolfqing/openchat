@@ -26,7 +26,7 @@ class GeoChannels(
 
     private val joined = ConcurrentHashMap<String, Joined>()
     private val presence = ConcurrentHashMap<String, ConcurrentHashMap<String, Long>>() // geohash -> pubkey -> last seen (s)
-    private val pool = RelayPool(::onEvent)
+    private val pool = RelayPool(::onEvent).apply { onStatusChange = ::publishStatus }
     private val limiter = RateLimiter()
     // Mining proof of work takes up to two seconds; never on the caller's thread.
     private val sender = java.util.concurrent.Executors.newSingleThreadExecutor()
@@ -47,16 +47,47 @@ class GeoChannels(
 
     fun join(geohash: String, teleported: Boolean) {
         if (joined.containsKey(geohash)) return
-        val relays = directory.closest(geohash, 5)
+        val candidates = directory.closest(geohash, CANDIDATE_RELAYS)
+        val relays = candidates.take(PRIMARY_RELAYS)
         if (relays.isEmpty()) return
         joined[geohash] = Joined(relays, teleported, NostrKey.forGeohash(seed, geohash))
+        subscribeChannel(geohash, relays, candidates.drop(PRIMARY_RELAYS))
+        if (!teleported) heartbeat(geohash)
+        publishStatus()
+    }
+
+    private fun subscribeChannel(geohash: String, primary: List<String>, fallbacks: List<String>) {
         val filter = JSONObject()
             .put("kinds", JSONArray().put(NostrEvent.KIND_GEOHASH_MESSAGE).put(NostrEvent.KIND_GEOHASH_PRESENCE))
             .put("#g", JSONArray().put(geohash))
             .put("since", System.currentTimeMillis() / 1000 - 3600)
             .put("limit", 200)
-        pool.subscribe(subId(geohash), relays, filter)
-        if (!teleported) heartbeat(geohash)
+        pool.subscribe(subId(geohash), primary, filter, fallbackRelays = fallbacks)
+    }
+
+    /** Re-evaluates primary and backup relays for active subscriptions after a directory refresh. */
+    fun onDirectoryUpdated() {
+        joined.forEach { (g, old) ->
+            val candidates = directory.closest(g, CANDIDATE_RELAYS)
+            val primary = candidates.take(PRIMARY_RELAYS)
+            if (primary.isNotEmpty() && primary != old.relays) {
+                joined[g] = Joined(primary, old.teleported, old.key)
+                subscribeChannel(g, primary, candidates.drop(PRIMARY_RELAYS))
+            }
+        }
+        val cell = notesCell
+        if (cell != null) {
+            val candidates = directory.closest(cell, CANDIDATE_RELAYS)
+            val primary = candidates.take(PRIMARY_RELAYS)
+            if (primary.isNotEmpty()) {
+                val cells = listOf(cell) + Geohash.neighbors(cell)
+                val filter = JSONObject()
+                    .put("kinds", JSONArray().put(NostrEvent.KIND_TEXT_NOTE))
+                    .put("#g", JSONArray(cells))
+                    .put("limit", 200)
+                pool.subscribe(NOTES_SUB, primary, filter, fallbackRelays = candidates.drop(PRIMARY_RELAYS))
+            }
+        }
         publishStatus()
     }
 
@@ -75,7 +106,8 @@ class GeoChannels(
         ChatRepository.add(ChatMessage(localId, Conversation.Geo(geohash).key, name, j.key.publicKeyHex, text, now, mine = true, state = DeliveryState.SENDING))
         sender.execute {
             val ev = NostrEvent.geohashMessage(j.key, geohash, name, text, j.teleported, mine = true)
-            pool.publish(j.relays, ev)
+            val targetRelays = pool.activeRelays(subId(geohash)).ifEmpty { j.relays }
+            pool.publish(targetRelays, ev)
             // No relay reachable: a gateway phone on the mesh can publish it for us.
             if (!online) onOfflineSend?.invoke(ev, geohash)
             ChatRepository.replaceId(Conversation.Geo(geohash).key, localId, ev.id, DeliveryState.SENT)
@@ -94,18 +126,22 @@ class GeoChannels(
         notes.clear()
         notesCell = cell
         if (cell != null) {
-            val cells = listOf(cell) + Geohash.neighbors(cell)
-            val filter = JSONObject()
-                .put("kinds", JSONArray().put(NostrEvent.KIND_TEXT_NOTE))
-                .put("#g", JSONArray(cells))
-                .put("limit", 200)
-            pool.subscribe(NOTES_SUB, directory.closest(cell, 5), filter)
+            val candidates = directory.closest(cell, CANDIDATE_RELAYS)
+            val primary = candidates.take(PRIMARY_RELAYS)
+            if (primary.isNotEmpty()) {
+                val cells = listOf(cell) + Geohash.neighbors(cell)
+                val filter = JSONObject()
+                    .put("kinds", JSONArray().put(NostrEvent.KIND_TEXT_NOTE))
+                    .put("#g", JSONArray(cells))
+                    .put("limit", 200)
+                pool.subscribe(NOTES_SUB, primary, filter, fallbackRelays = candidates.drop(PRIMARY_RELAYS))
+            }
         }
         publishNotes()
     }
 
     fun dropNote(cell: String, text: String) {
-        val relays = directory.closest(cell, 5)
+        val relays = pool.activeRelays(NOTES_SUB).ifEmpty { directory.closest(cell, PRIMARY_RELAYS) }
         if (relays.isEmpty()) return
         val key = NostrKey.forGeohash(seed, cell)
         val ev = NostrEvent.locationNote(key, cell, nickname(), text, System.currentTimeMillis() / 1000)
@@ -136,7 +172,8 @@ class GeoChannels(
 
     private fun heartbeat(geohash: String) {
         val j = joined[geohash] ?: return
-        pool.publish(j.relays, NostrEvent.geohashPresence(j.key, geohash))
+        val targetRelays = pool.activeRelays(subId(geohash)).ifEmpty { j.relays }
+        pool.publish(targetRelays, NostrEvent.geohashPresence(j.key, geohash))
     }
 
     /** Panic wipe: forget every channel and switch to the new seed. */
@@ -149,11 +186,19 @@ class GeoChannels(
         publishStatus()
     }
 
-    fun close() = pool.closeAll()
+    fun close() {
+        sender.shutdownNow()
+        pool.shutdown()
+    }
 
     private fun subId(geohash: String) = "geo-$geohash"
 
-    private companion object { const val NOTES_SUB = "notes"; const val CARRIED = "mesh" }
+    private companion object {
+        const val NOTES_SUB = "notes"
+        const val CARRIED = "mesh"
+        const val PRIMARY_RELAYS = 5
+        const val CANDIDATE_RELAYS = 15
+    }
 
     private fun onEvent(relay: String, ev: NostrEvent) {
         if (ev.kind == NostrEvent.KIND_TEXT_NOTE) return onNote(ev)
@@ -187,10 +232,13 @@ class GeoChannels(
 
     private fun publishStatus() {
         val cutoff = System.currentTimeMillis() / 1000 - 300
+        val joinedSnapshot = joined.keys.toSet()
+        val connectedSubs = joinedSnapshot.filterTo(HashSet()) { pool.isSubConnected(subId(it)) }
         ChatRepository.updateGeo { s ->
             s.copy(
                 relaysConnected = pool.connectedCount,
-                joined = joined.keys.toSet(),
+                connectedChannels = connectedSubs,
+                joined = joinedSnapshot,
                 participants = presence.mapValues { (_, m) -> m.values.count { it >= cutoff } },
             )
         }

@@ -1,5 +1,86 @@
 # Changelog
 
+## Android v0.7.14 (preview) — 2026-11-20
+
+Grain-free progressive top blur and iOS 27 Liquid Glass optical upgrade with
+minimalist unified chrome, Tor `LocalBinder` readiness / local-proxy pass-through
+and Nostr relay deduplication + failover for reliable location channels, and six
+UX clarity & parity upgrades (message long-press actions, 6-state DM security
+telemetry, Nearby send-scope toggle, encrypted location bookmarks + fine-cell
+OpSec clarity, regional Notice Board filtering, and memory-only daily encounter
+counts). No wire-format change. 223 unit tests. ~9.6 MB.
+
+### Added
+
+- **Message long-press action sheet (`ChatPane`, `MessageActionSheet`).**
+  - Long-pressing any public or private message opens a borderless bottom sheet
+    with **Copy**, **`@Mention`** (appends `@label ` to the composer draft and
+    focuses the input via `appendMentionDraft`), **Direct Message** (`dm:<peer>`
+    on mesh or anonymous `gdm:<geohash>:<pub>` in location rooms), **Profile /
+    Verify**, and **Block**.
+- **6-state DM encryption & link telemetry (`PrivateChats`, `People`).**
+  - Unified `resolveDmSecurityState` and `DmSecurityBadgeRow` across both the
+    `PrivateChatScreen` header and `PersonSheet` so direct vs multi-hop Noise XX
+    sessions, pending BLE handshakes, mutual Nostr NIP-17 links, Noise X courier
+    sealing, and missing-key states are stated plainly and identically.
+- **Nearby send-scope micro-capsule (`ChatPane`, `ChatRepository`, `MeshService`).**
+  - When global Mesh Bridge is enabled, the `Nearby` composer surfaces a
+    one-tap pill toggling between `Nearby + Bridge` and `Bluetooth Direct Only`
+    (`nearbyLocalOnlySend`) with a 3.5-second explanatory hint.
+- **Encrypted location bookmarks, fine-cell presence clarity & OpSec warning (`LocationPresets`, `LocationScreens`, `MeshService`).**
+  - Added `☆ / ★` header bookmarking in `GeoChatScreen`, long-press bookmarking
+    on preset tiles, and a top **Bookmarks** chip row on the Location tab,
+    persisted in `SealedFile` (`geo-bookmarks.bin`) and wiped on panic.
+  - High-precision rooms (`>= 6` geohash chars) now show `Connected · count
+    hidden at block level` instead of a misleading `0` when connected with no
+    recent speakers, plus a fine-cell screenshot/location OpSec banner.
+- **Regional Notice Board filter & memory-only daily passed-devices count (`BoardScreen`, `MeshEngine`, `MeshService`, `MeshVisuals`).**
+  - `BoardScreen` adds `All / Nearby Bluetooth / Regional` filter chips and a
+    composer target selector (`Nearby Bluetooth` vs active `Region #xxxx` via
+    `BoardPost.geohash`).
+  - `NobodyNearby` displays a memory-only UTC-day unique peer counter
+    (`DailyEncounterCounter`, cleared on process exit or panic wipe) when peers
+    were heard earlier today.
+  - Localized all 29 new strings across all 18 languages.
+
+### Changed
+
+- **Minimalist chrome, grain-free progressive top blur & iOS 27 Liquid Glass (`FluidGlass`, `Theme`, `MainScreen`, `ChatPane`, `PrivateChats`, `LocationScreens`, `BoardScreen`, `GuideScreen`, `WalkieTalkieDrawer`).**
+  - Added a 3-octave hardware separable Gaussian `ProgressiveBlurTopBar`
+    (`22dp / 13dp / 5.5dp` masked offscreen layers with zero grain) across main
+    tabs and secondary screens so content scrolling behind the header and status
+    capsule blurs smoothly while chat bubbles remain sharp.
+  - Tuned `FluidGlassDefaults` and `FLUID_GLASS_AGSL` to iOS 27 optical crystal
+    parameters (`ClarityBlur = 4.2.dp`, `Refraction = 12.5.dp`, `1.44x / 1.48x`
+    chroma vibrancy, crease-free $C^1$ 3D pillow normal + Schlick Fresnel +
+    `135°` Blinn-Phong specular glints, dual-pole rim, and raised convex
+    `fluidGlassDroplet` active tab pills).
+  - Grouped scattered top-right header pills into `GlassHeaderActionCluster`,
+    merged the composer `+` / input / `Mic` / `Send` into a single `24dp`
+    stadium bar, unified selected bottom tab icons + labels in `#FF551A` Signal
+    orange, made the resting Walkie-Talkie PTT disc neutral monochrome, switched
+    to pure `#F6F6F7` / `#000000` architectural canvases without neon radial
+    blobs, and fixed `NobodyNearby` radar top clipping.
+
+### Fixed
+
+- **Tor startup readiness, system-proxy pass-through & Nostr relay resilience (`Tor`, `NetRoute`, `Nostr`, `RelayPool`, `GeoChannels`, `RelayDirectoryUpdater`, `MainActivity`).**
+  - Fixed `Tor` getting stuck on `"Starting…"` (`banner_starting`): cleaned
+    stale `data/ControlSocket` files before `TorService` bind, captured
+    `TorService.LocalBinder` to query `status/circuit-established` and live
+    `0–100%` `status/bootstrap-phase` off-thread (bypassing `tor-android`
+    `0.4.8.16`'s 10s `FileObserver` missed-`CIRC BUILT` race), auto-configured
+    `HTTPSProxy` / `Socks5Proxy` when Android reports a local proxy, added a 20s
+    `TorStalledBanner` with one-tap fallback to direct connection, and restarted
+    `MeshService` in `MainActivity.onResume` if stopped while backgrounded.
+  - Stripped default `:443` ports and deduplicated `georelays.csv` (`441` rows
+    to `326` unique hosts) with deterministic `(distance, host)` tie-breaking
+    matching upstream bitchat; added automatic backup-relay failover (`#6–#15`)
+    on connection failure or 6s event starvation, raised Tor WebSocket connect
+    timeout to `25s`, tracked per-channel `connectedChannels`, and added
+    fail-closed 24h background refresh of `online_relays_gps.csv` into
+    `cacheDir/georelays_cache_v1.csv` (wiped on panic).
+
 ## Android v0.7.13 (preview) — 2026-11-19
 
 Interactive full-screen Bluetooth mesh topology view, zero-permission local

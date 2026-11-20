@@ -62,4 +62,26 @@ class LocationPresetsTest {
         val corrupted = "DR,1\nwt,0\nbad!!,1\nx,0\n9q\n".toByteArray(Charsets.UTF_8)
         assertEquals(mapOf("dr" to true, "wt" to false, "9q" to true), LocationPresets.parseJoined(corrupted))
     }
+
+    @Test
+    fun bookmarksPersistenceRoundTripsAndDeduplicates() {
+        val raw = LocationPresets.serializeBookmarks(linkedSetOf("DR", "9q8yy", "dr", "x", "bad!"))
+        assertEquals(linkedSetOf("dr", "9q8yy"), LocationPresets.parseBookmarks(raw))
+    }
+
+    @Test
+    fun dailyEncounterCounterDeduplicatesExcludesSelfAndResetsAtUtcMidnight() {
+        val counter = DailyEncounterCounter()
+        val day0 = 100L * 86_400_000L + 12_000L
+        assertEquals(2, counter.record("self0000", listOf("self0000", "aaaa1111", "bbbb2222", "aaaa1111"), day0))
+        assertEquals(3, counter.record("self0000", listOf("cccc3333"), day0 + 3_600_000L))
+        assertEquals(3, counter.currentCount(day0 + 7_200_000L))
+
+        // Next UTC day rolls over cleanly
+        val day1 = 101L * 86_400_000L + 500L
+        assertEquals(0, counter.currentCount(day1))
+        assertEquals(1, counter.record("self0000", listOf("dddd4444"), day1))
+        counter.clear()
+        assertEquals(0, counter.currentCount(day1))
+    }
 }

@@ -133,6 +133,9 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         org.openchat.android.app.ChatRepository.foreground = true
         refreshPermissionState()
+        if (onboarded.value && !missingPermissions.value && org.openchat.android.app.ChatRepository.controller == null) {
+            MeshService.start(this)
+        }
         org.openchat.android.app.AppUpdater.onHostResume(this)
     }
 

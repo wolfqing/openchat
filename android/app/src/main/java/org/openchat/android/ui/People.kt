@@ -184,6 +184,8 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                         val fav = fp?.let { social.favorites[it] }
                         val mine = fav?.mine == true
 
+                        DmSecurityBadgeRow(peerHex = person.peerHex, centerAlign = true)
+
                         if (!blocked) {
                             Button(
                                 onClick = { onDismiss(); onMessage(person.peerHex) },
@@ -579,14 +581,22 @@ fun TorSection() {
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(stringResource(R.string.tor_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+            val statusText = when {
+                geo.tor == TorState.ON -> stringResource(R.string.tor_on)
+                geo.tor == TorState.OFF -> stringResource(R.string.tor_off)
+                geo.torStalled -> stringResource(R.string.tor_stalled_body)
+                geo.torProgress > 0 -> stringResource(R.string.tor_starting_pct, geo.torProgress) + " " + stringResource(R.string.tor_starting)
+                else -> stringResource(R.string.tor_starting)
+            }
             Text(
-                stringResource(when (geo.tor) { TorState.ON -> R.string.tor_on; TorState.STARTING -> R.string.tor_starting; TorState.OFF -> R.string.tor_off }),
+                statusText,
                 fontSize = 13.sp,
                 lineHeight = 18.5.sp,
-                color = when (geo.tor) {
-                    TorState.OFF -> MaterialTheme.colorScheme.error
-                    TorState.ON -> OpenChatPalette.Online
-                    TorState.STARTING -> MaterialTheme.colorScheme.onSurfaceVariant
+                color = when {
+                    geo.tor == TorState.OFF -> MaterialTheme.colorScheme.error
+                    geo.tor == TorState.ON -> OpenChatPalette.Online
+                    geo.torStalled -> OpenChatPalette.Signal
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
                 },
             )
         }

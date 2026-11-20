@@ -78,92 +78,131 @@ const val BOARD = "board"
 @Composable
 fun BoardScreen(onBack: () -> Unit, onPanic: () -> Unit) {
     val posts by ChatRepository.board.collectAsState()
+    val geo by ChatRepository.geo.collectAsState()
     var composing by rememberSaveable { mutableStateOf(false) }
+    var filterMode by rememberSaveable { mutableIntStateOf(0) } // 0 = all, 1 = mesh, 2 = regional
+    val activeRegionCell = geo.locationGeohash?.take(4) ?: geo.joined.sorted().firstOrNull()?.take(4)
+    val hasRegionalPosts = posts.any { it.geohash.isNotEmpty() }
+    val filteredPosts = when (filterMode) {
+        1 -> posts.filter { it.geohash.isEmpty() }
+        2 -> posts.filter { it.geohash.isNotEmpty() }
+        else -> posts
+    }
     BackHandler(onBack = onBack)
     DisposableEffect(Unit) {
         ChatRepository.clearBoardUnseen()
         onDispose { ChatRepository.clearBoardUnseen() }
     }
     if (composing) {
-        BoardComposerSheet(onDismiss = { composing = false })
+        BoardComposerSheet(activeRegionCell = activeRegionCell, onDismiss = { composing = false })
     }
-    BoxWithConstraints(Modifier.fillMaxSize().openChatCanvas()) {
-        val compactBar = maxWidth < 360.dp
-        Scaffold(
-            containerColor = Color.Transparent,
-            contentColor = OpenChatPalette.Ink,
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            topBar = {
-                TopAppBar(
-                    colors = chromeTopBarColors(),
-                    navigationIcon = { GlassBackButton(onBack) },
-                    title = {
+    FluidGlassHost {
+        Box(Modifier.fillMaxSize().openChatCanvas()) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentColor = OpenChatPalette.Ink,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                topBar = {
+                    ProgressiveBlurTopBar {
                         Column {
-                            PanicTitle(stringResource(R.string.board_title), onPanic)
-                            Text(
-                                stringResource(R.string.board_subtitle),
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                            TopAppBar(
+                                colors = chromeTopBarColors(),
+                                navigationIcon = { GlassBackButton(onBack) },
+                                title = {
+                                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                                        PanicTitle(stringResource(R.string.board_title), onPanic)
+                                        Text(
+                                            stringResource(R.string.board_subtitle),
+                                            fontSize = 11.5.sp,
+                                            lineHeight = 15.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                },
+                                actions = {
+                                    GlassHeaderActionCluster(
+                                        modifier = Modifier.padding(end = 12.dp),
+                                        items = listOf(
+                                            GlassActionItem(
+                                                icon = Icons.Outlined.Edit,
+                                                contentDescription = stringResource(R.string.board_post),
+                                                onClick = { composing = true },
+                                            ),
+                                        ),
+                                    )
+                                },
                             )
-                        }
-                    },
-                    actions = { AudiencePill(encrypted = false, compact = compactBar, modifier = Modifier.padding(end = 12.dp)) },
-                )
-            },
-            floatingActionButton = {
-                if (posts.isNotEmpty()) {
-                    ExtendedFloatingActionButton(
-                        onClick = { composing = true },
-                        containerColor = OpenChatPalette.Signal,
-                        contentColor = Color.White,
-                        icon = { Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                        text = { Text(stringResource(R.string.board_post), fontWeight = FontWeight.SemiBold) },
-                    )
-                }
-            },
-        ) { padding ->
-            val topClearance = padding.calculateTopPadding()
-            Box(Modifier.fillMaxSize().openChatCanvas()) {
-                if (posts.isEmpty()) {
-                    Column(
-                        Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(start = 28.dp, end = 28.dp, top = 20.dp + topClearance, bottom = 28.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = OpenChatPalette.SignalSoft,
-                            modifier = Modifier.size(52.dp),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Outlined.PushPin, contentDescription = null, tint = OpenChatPalette.Signal, modifier = Modifier.size(24.dp))
+                            if (hasRegionalPosts || activeRegionCell != null) {
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState())
+                                        .padding(horizontal = 14.dp, vertical = 2.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    listOf(
+                                        0 to stringResource(R.string.board_filter_all),
+                                        1 to stringResource(R.string.board_filter_mesh),
+                                        2 to stringResource(R.string.board_filter_region),
+                                    ).forEach { (mode, label) ->
+                                        FilterChip(
+                                            selected = filterMode == mode,
+                                            onClick = { filterMode = mode },
+                                            label = { Text(label, fontSize = 12.5.sp, maxLines = 1) },
+                                        )
+                                    }
+                                }
                             }
                         }
-                        Text(
-                            stringResource(R.string.board_empty),
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 14.5.sp,
-                            lineHeight = 22.sp,
-                        )
-                        Button(onClick = { composing = true }, shape = RoundedCornerShape(12.dp)) {
-                            Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.board_post))
-                        }
                     }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 8.dp + topClearance, bottom = 88.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        items(posts, key = { it.idHex }) { BoardCard(it) }
+                },
+            ) { padding ->
+                val topClearance = padding.calculateTopPadding()
+                FluidGlassSource {
+                    Box(Modifier.fillMaxSize().openChatCanvas().fluidGlassSource()) {
+                        if (filteredPosts.isEmpty()) {
+                            Column(
+                                Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(start = 28.dp, end = 28.dp, top = 20.dp + topClearance, bottom = 28.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = OpenChatPalette.Card,
+                                    modifier = Modifier.size(52.dp),
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Outlined.PushPin, contentDescription = null, tint = OpenChatPalette.Ink, modifier = Modifier.size(22.dp))
+                                    }
+                                }
+                                Text(
+                                    stringResource(R.string.board_empty),
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 14.5.sp,
+                                    lineHeight = 22.sp,
+                                )
+                                TonalActionButton(onClick = { composing = true }) {
+                                    Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(stringResource(R.string.board_post))
+                                }
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 8.dp + topClearance, bottom = 48.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                items(filteredPosts, key = { it.idHex }) { BoardCard(it) }
+                            }
+                        }
                     }
                 }
             }
@@ -234,14 +273,16 @@ private fun BoardCard(p: BoardItem) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BoardComposerSheet(onDismiss: () -> Unit) {
+private fun BoardComposerSheet(activeRegionCell: String?, onDismiss: () -> Unit) {
     var text by rememberSaveable { mutableStateOf("") }
     var urgent by rememberSaveable { mutableStateOf(false) }
     var days by rememberSaveable { mutableIntStateOf(3) }
+    var useRegion by rememberSaveable { mutableStateOf(false) }
+    val targetGeohash = if (useRegion && activeRegionCell != null) activeRegionCell else ""
     val fits = text.trim().toByteArray(Charsets.UTF_8).size in 1..Board.MAX_CONTENT
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val submit = {
-        if (ChatRepository.controller?.postToBoard(text, urgent, days) == true) {
+        if (ChatRepository.controller?.postToBoard(text, urgent, days, targetGeohash) == true) {
             text = ""
             urgent = false
             onDismiss()
@@ -313,6 +354,26 @@ private fun BoardComposerSheet(onDismiss: () -> Unit) {
                         minLines = if (compactHeight) 2 else 3,
                         maxLines = 5,
                     )
+                    if (activeRegionCell != null) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            FilterChip(
+                                selected = !useRegion,
+                                onClick = { useRegion = false },
+                                label = { Text(stringResource(R.string.board_filter_mesh), maxLines = 1) },
+                            )
+                            FilterChip(
+                                selected = useRegion,
+                                onClick = { useRegion = true },
+                                label = { Text(stringResource(R.string.board_scope_region, activeRegionCell), maxLines = 1) },
+                            )
+                        }
+                    }
                     if (narrowWidth) {
                         Row(
                             Modifier

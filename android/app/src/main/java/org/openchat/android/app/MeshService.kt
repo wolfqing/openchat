@@ -85,6 +85,9 @@ class MeshService : Service(), ChatController {
     @Volatile private var pttFocusRequest: AudioFocusRequest? = null
     private lateinit var nostrSeenStore: SealedFile
     private lateinit var geoJoinedStore: SealedFile
+    private lateinit var geoBookmarksStore: SealedFile
+    private val geoBookmarks = LinkedHashSet<String>()
+    private val dailyEncounters = DailyEncounterCounter()
     private val publicLimiter = RateLimiter()
     private val nostrSeen = LinkedHashSet<String>() // message IDs already shown from Nostr, kept across restarts
     // Noise static keys by peer ID, readable from the UI thread (the engine's maps are not).
@@ -94,6 +97,7 @@ class MeshService : Service(), ChatController {
     private lateinit var engine: MeshEngine
     private lateinit var ble: BleTransport
     private lateinit var geo: GeoChannels
+    private var directoryUpdater: RelayDirectoryUpdater? = null
     private var bleStarted = false
     // Set when onCreate could not bring the service up (permission gone, identity locked): every later callback is a no-op.
     private var disabled = false
@@ -142,7 +146,9 @@ class MeshService : Service(), ChatController {
         stateStore.load()?.let { s -> engine.importState(s); s.known.forEach { (hex, k) -> noiseKeys[hex] = k.noiseKey } }
         publishBoard()
         // Route relay traffic before any relay socket opens (§19).
-        tor = Tor(this) { s -> ChatRepository.updateGeo { it.copy(tor = s) } }
+        tor = Tor(this) { s, pct, stalled ->
+            ChatRepository.updateGeo { it.copy(tor = s, torProgress = pct, torStalled = stalled) }
+        }
         tor.apply()
         socialStore = SealedFile(this, "social.bin")
         socialStore.readOrNull()?.let { Social.deserialize(it) }?.let { Social.load(it) }
@@ -160,15 +166,23 @@ class MeshService : Service(), ChatController {
         // Installed only now that everything it touches exists.
         Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)); nostr.setExtraRelays(s.relays); vouching.attemptAll() } }
         ble = BleTransport(this, handler) { engine }
-        val directory = RelayDirectory.parse(assets.open("relays.csv").bufferedReader().readText())
+        val bundledRelaysCsv = assets.open("relays.csv").bufferedReader().use { it.readText() }
+        val (directory, baselineRelays) = RelayDirectoryUpdater.loadInitial(this, bundledRelaysCsv)
         bridge = Bridge(this, directory, { engine }, { geo }, { task -> handler.post(task) }) { s -> ChatRepository.setBridge(s) }
         geo = GeoChannels(directory, identity.nostrSeed, { engine.identity.nickname }) { from, text ->
             notifyMention(from, text)
         }
+        directory.onUpdated = { handler.post { geo.onDirectoryUpdated(); bridge.tick() } }
+        directoryUpdater = RelayDirectoryUpdater(this, directory, baselineRelays).also { it.start() }
         geoJoinedStore = SealedFile(this, "geo-joined.bin")
         geoJoinedStore.readOrNull()?.let { LocationPresets.parseJoined(it) }?.forEach { (g, tp) ->
             geo.join(g, tp)
             nostr.addInbox(g, NostrKey.forGeohash(identity.nostrSeed, g))
+        }
+        geoBookmarksStore = SealedFile(this, "geo-bookmarks.bin")
+        geoBookmarksStore.readOrNull()?.let { LocationPresets.parseBookmarks(it) }?.let { saved ->
+            synchronized(geoBookmarks) { geoBookmarks.addAll(saved) }
+            ChatRepository.updateGeo { it.copy(bookmarks = saved) }
         }
         liveVoice = LiveVoice(this, handler) { conv -> abortLocalPttOnPreempt(conv) }
         geo.onLive = { ev, g -> handler.post { bridge.onChannelEvent(ev, g) } }
@@ -210,10 +224,12 @@ class MeshService : Service(), ChatController {
             ble.stop()
             thread.quitSafely()
         }
+        directoryUpdater?.stop()
+        directoryUpdater = null
         geo.close()
         nostr.close()
         bridge.close()
-        tor.stop()
+        tor.destroy()
         ChatRepository.updateMesh { it.copy(running = false, links = 0) }
         super.onDestroy()
     }
@@ -238,11 +254,21 @@ class MeshService : Service(), ChatController {
     private var lastHeartbeat = 0L
     private fun publishStatus() {
         val id = engine.identity
+        val now = System.currentTimeMillis()
+        val passedToday = dailyEncounters.currentCount(now)
         ChatRepository.setSessionPeers(engine.establishedSessionPeers())
         ChatRepository.updateMesh {
-            it.copy(bluetoothOn = ble.isEnabled, running = bleStarted, links = engine.linkCount, myNickname = id.nickname, myPeerHex = id.peerIdHex, fingerprint = id.fingerprint, carriedCount = engine.carriedCount)
+            it.copy(
+                bluetoothOn = ble.isEnabled,
+                running = bleStarted,
+                links = engine.linkCount,
+                myNickname = id.nickname,
+                myPeerHex = id.peerIdHex,
+                fingerprint = id.fingerprint,
+                carriedCount = engine.carriedCount,
+                passedTodayCount = passedToday,
+            )
         }
-        val now = System.currentTimeMillis()
         if (now - lastHeartbeat > 5 * 60_000) { lastHeartbeat = now; geo.heartbeatAll() }
     }
 
@@ -262,8 +288,13 @@ class MeshService : Service(), ChatController {
     private val listener = object : MeshListener {
         override fun onPeersChanged(peers: List<MeshPeer>) {
             peers.forEach { noiseKeys[it.peerIdHex] = it.noisePublicKey }
+            val passedToday = dailyEncounters.record(
+                myPeerHex = engine.identity.peerIdHex,
+                peerHexes = peers.map { it.peerIdHex },
+                nowMs = System.currentTimeMillis(),
+            )
             ChatRepository.setPeers(peers)
-            ChatRepository.updateMesh { it.copy(links = engine.linkCount) }
+            ChatRepository.updateMesh { it.copy(links = engine.linkCount, passedTodayCount = passedToday) }
             vouching.attemptAll() // a capability-bearing announce can land after the session
         }
 
@@ -437,8 +468,12 @@ class MeshService : Service(), ChatController {
     override fun sendPublic(text: String) {
         val id = engine.identity
         val now = System.currentTimeMillis()
+        val allowBridge = ChatRepository.nearbyAllowBridge.value
         ChatRepository.add(ChatMessage("${id.peerIdHex}-$now", Conversation.Mesh.key, id.nickname, id.peerIdHex, text, now, mine = true))
-        handler.post { engine.sendPublic(text).takeIf { it > 0 }?.let { bridge.outgoing(text, it) } }
+        handler.post {
+            val ts = engine.sendPublic(text)
+            if (ts > 0 && allowBridge) bridge.outgoing(text, ts)
+        }
     }
 
     override fun sendPrivate(peerHex: String, text: String) {
@@ -536,6 +571,20 @@ class MeshService : Service(), ChatController {
         geo.leave(geohash)
         nostr.removeInbox(geohash)
         persistGeoJoined()
+    }
+
+    override fun toggleGeoBookmark(geohash: String) {
+        val g = geohash.trim().lowercase(java.util.Locale.ROOT)
+        if (!Geohash.isValid(g) || g.length < 2) return
+        val snapshot: Set<String> = synchronized(geoBookmarks) {
+            if (!geoBookmarks.remove(g)) geoBookmarks.add(g)
+            LinkedHashSet(geoBookmarks)
+        }
+        ChatRepository.updateGeo { it.copy(bookmarks = snapshot) }
+        handler.post {
+            if (snapshot.isEmpty()) geoBookmarksStore.delete()
+            else geoBookmarksStore.write(LocationPresets.serializeBookmarks(snapshot))
+        }
     }
 
     private fun persistGeoJoined() {
@@ -746,8 +795,8 @@ class MeshService : Service(), ChatController {
     /** The UI thread asks, the mesh thread answers; never an open-ended wait (see [askMesh]). */
     private fun <T> ask(fallback: T, block: () -> T): T = askMesh({ handler.post(it) }, MESH_ANSWER_MS, fallback, block)
 
-    override fun postToBoard(text: String, urgent: Boolean, days: Int): Boolean =
-        ask(false) { engine.postToBoard(text, urgent, days) }
+    override fun postToBoard(text: String, urgent: Boolean, days: Int, geohash: String): Boolean =
+        ask(false) { engine.postToBoard(text, urgent, days, geohash) }
     override fun deleteBoardPost(idHex: String) { handler.post { engine.deleteBoardPost(idHex) } }
 
     /** The board as the UI shows it: urgent first, then newest. Runs on the mesh thread. */
@@ -838,6 +887,9 @@ class MeshService : Service(), ChatController {
             engine.resetIdentity(fresh)
             geo.reset(fresh.nostrSeed)
             geoJoinedStore.delete()
+            synchronized(geoBookmarks) { geoBookmarks.clear() }
+            geoBookmarksStore.delete()
+            dailyEncounters.clear()
             nostr.reset(fresh.nostrSeed)
             nostrSeen.clear(); nostrSeenStore.delete()
             cacheDir.listFiles()?.forEach { it.deleteRecursively() }
@@ -895,5 +947,43 @@ class MeshService : Service(), ChatController {
     private fun builder(channel: String): Notification.Builder {
         val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, channel) else @Suppress("DEPRECATION") Notification.Builder(this)
         return b.setSmallIcon(R.drawable.ic_stat_mesh).setContentIntent(openAppIntent())
+    }
+}
+
+/**
+ * Memory-only UTC-day unique peer encounter counter for the empty-nearby radar.
+ * Rolls over automatically at UTC midnight and wipes completely on panic.
+ */
+internal class DailyEncounterCounter {
+    private var currentUtcDay: Long = Long.MIN_VALUE
+    private val seenPeerHexes = HashSet<String>()
+
+    @Synchronized
+    fun record(myPeerHex: String, peerHexes: Iterable<String>, nowMs: Long): Int {
+        rollOverIfNeeded(nowMs)
+        for (p in peerHexes) {
+            if (p.isNotEmpty() && p != myPeerHex) seenPeerHexes.add(p)
+        }
+        return seenPeerHexes.size
+    }
+
+    @Synchronized
+    fun currentCount(nowMs: Long): Int {
+        rollOverIfNeeded(nowMs)
+        return seenPeerHexes.size
+    }
+
+    @Synchronized
+    fun clear() {
+        seenPeerHexes.clear()
+        currentUtcDay = Long.MIN_VALUE
+    }
+
+    private fun rollOverIfNeeded(nowMs: Long) {
+        val day = Math.floorDiv(nowMs, 86_400_000L)
+        if (day != currentUtcDay) {
+            currentUtcDay = day
+            seenPeerHexes.clear()
+        }
     }
 }

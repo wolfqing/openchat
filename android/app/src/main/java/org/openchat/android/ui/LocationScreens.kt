@@ -2,7 +2,9 @@ package org.openchat.android.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,11 +32,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -125,6 +130,63 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
                 lineHeight = 20.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            if (geo.tor == org.openchat.android.app.TorState.STARTING && geo.torStalled) {
+                TorStalledBanner(onConnectDirect = { ChatRepository.controller?.setTor(false) })
+            }
+
+            // 0. Bookmarked Channels (persisted even after leaving a channel)
+            if (geo.bookmarks.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.geo_bookmarks),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Row(
+                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        geo.bookmarks.forEach { g ->
+                            val count = unread[Conversation.Geo(g).key] ?: 0
+                            val online = geo.participants[g] ?: 0
+                            val preset = LocationPresets.presetFor(g)
+                            FluidGlassPillButton(
+                                onClick = { openCell(g) },
+                                borderAccent = if (count > 0) OpenChatPalette.Signal else null,
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
+                            ) {
+                                Icon(
+                                    Icons.Filled.Star,
+                                    contentDescription = null,
+                                    tint = OpenChatPalette.Signal,
+                                    modifier = Modifier.size(13.dp),
+                                )
+                                Text(
+                                    "#$g",
+                                    style = TabularMonoStyle,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.5.sp,
+                                    color = OpenChatPalette.Ink,
+                                )
+                                if (preset != null) {
+                                    Text(
+                                        stringResource(preset.labelRes),
+                                        fontSize = 12.5.sp,
+                                        color = OpenChatPalette.Muted,
+                                        maxLines = 1,
+                                    )
+                                }
+                                if (online > 0) {
+                                    Text("· $online", style = TabularMonoStyle, fontSize = 12.sp, color = OpenChatPalette.Online)
+                                }
+                                UnreadBadge(count)
+                            }
+                        }
+                    }
+                }
+            }
 
             // 1. Joined Channels Quick-Switch Chips (kept at the top for 1-tap switching)
             if (geo.joined.isNotEmpty()) {
@@ -342,12 +404,15 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
                     ) {
                         pair.forEach { preset ->
                             val isJoined = preset.geohash in geo.joined
+                            val isBookmarked = preset.geohash in geo.bookmarks
                             val online = geo.participants[preset.geohash] ?: 0
                             QuickJoinTile(
                                 preset = preset,
                                 joined = isJoined,
+                                bookmarked = isBookmarked,
                                 online = online,
                                 onClick = { openCell(preset.geohash) },
+                                onLongClick = { ChatRepository.controller?.toggleGeoBookmark(preset.geohash) },
                                 modifier = Modifier.weight(1f),
                             )
                         }
@@ -437,12 +502,15 @@ private fun OnlineCountPill(count: Int) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun QuickJoinTile(
     preset: LocationPresets.GeoPreset,
     joined: Boolean,
+    bookmarked: Boolean,
     online: Int,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -453,7 +521,7 @@ private fun QuickJoinTile(
         modifier = modifier
             .pressScale(0.97f)
             .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {
         Column(
             Modifier.padding(horizontal = 13.dp, vertical = 11.dp),
@@ -472,20 +540,33 @@ private fun QuickJoinTile(
                     color = if (joined) OpenChatPalette.Signal else OpenChatPalette.Ink,
                     maxLines = 1,
                 )
-                when {
-                    online > 0 -> Text(
-                        "· $online",
-                        style = TabularMonoStyle,
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = OpenChatPalette.Online,
-                    )
-                    joined -> Icon(
-                        Icons.Filled.Check,
-                        contentDescription = null,
-                        tint = OpenChatPalette.Signal,
-                        modifier = Modifier.size(14.dp),
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    if (bookmarked) {
+                        Icon(
+                            Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = OpenChatPalette.Signal,
+                            modifier = Modifier.size(13.dp),
+                        )
+                    }
+                    when {
+                        online > 0 -> Text(
+                            "· $online",
+                            style = TabularMonoStyle,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OpenChatPalette.Online,
+                        )
+                        joined -> Icon(
+                            Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = OpenChatPalette.Signal,
+                            modifier = Modifier.size(14.dp),
+                        )
+                    }
                 }
             }
             Text(
@@ -604,10 +685,28 @@ private fun levelLabel(level: Geohash.Level): Int = when (level) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
+    val ctx = LocalContext.current
+    val resources = LocalResources.current
     val geo by ChatRepository.geo.collectAsState()
     var person by remember { mutableStateOf<PersonRef?>(null) }
+    var confirmShare by remember { mutableStateOf(false) }
     BackHandler(onBack = onBack)
     person?.let { PersonSheet(it, onDismiss = { person = null }, onMessage = { key -> ChatRepository.requestOpen(key) }) }
+    fun shareChannel() {
+        val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+            .putExtra(android.content.Intent.EXTRA_TEXT, resources.getString(R.string.share_channel_text, geohash))
+        ctx.startActivity(android.content.Intent.createChooser(send, null))
+    }
+    if (confirmShare) {
+        AlertDialog(
+            onDismissRequest = { confirmShare = false },
+            containerColor = OpenChatPalette.Surface,
+            title = { Text(stringResource(R.string.share_channel_warn_title)) },
+            text = { Text(stringResource(R.string.share_channel_warn_body, geohash)) },
+            confirmButton = { TextButton(onClick = { confirmShare = false; shareChannel() }) { Text(stringResource(R.string.share_anyway)) } },
+            dismissButton = { TextButton(onClick = { confirmShare = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
     FluidGlassHost {
         Box(Modifier.fillMaxSize().openChatCanvas()) {
             Scaffold(
@@ -615,31 +714,73 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
                 contentColor = OpenChatPalette.Ink,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 topBar = {
-                    TopAppBar(
-                        colors = chromeTopBarColors(),
-                        navigationIcon = { GlassBackButton(onBack) },
-                        title = {
-                            val preset = remember(geohash) { LocationPresets.presetFor(geohash) }
-                            val titleText = if (preset != null) "#$geohash · ${stringResource(preset.labelRes)}" else "#$geohash"
-                            Column {
-                                PanicTitle(titleText, onPanic)
-                                val n = geo.participants[geohash] ?: 0
-                                Text(
-                                    if (geo.relaysConnected == 0) stringResource(R.string.geo_connecting) else plural(R.plurals.geo_recent, n),
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
+                    ProgressiveBlurTopBar {
+                        Column {
+                            TopAppBar(
+                                colors = chromeTopBarColors(),
+                                navigationIcon = { GlassBackButton(onBack) },
+                                title = {
+                                    val preset = remember(geohash) { LocationPresets.presetFor(geohash) }
+                                    val titleText = if (preset != null) "#$geohash · ${stringResource(preset.labelRes)}" else "#$geohash"
+                                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                                        PanicTitle(titleText, onPanic)
+                                        val n = geo.participants[geohash] ?: 0
+                                        val channelOnline = geohash in geo.connectedChannels || (geo.relaysConnected > 0 && geohash !in geo.joined)
+                                        val torStalled = !channelOnline && geo.tor == org.openchat.android.app.TorState.STARTING && geo.torStalled
+                                        val statusLine = when {
+                                            channelOnline && geohash.length >= 6 && n == 0 -> stringResource(R.string.geo_count_hidden)
+                                            channelOnline -> plural(R.plurals.geo_recent, n)
+                                            torStalled -> stringResource(R.string.tor_stalled_title)
+                                            geo.tor == org.openchat.android.app.TorState.STARTING && geo.torProgress > 0 ->
+                                                stringResource(R.string.tor_starting_pct, geo.torProgress)
+                                            geo.tor == org.openchat.android.app.TorState.STARTING -> stringResource(R.string.tor_starting)
+                                            else -> stringResource(R.string.geo_connecting)
+                                        }
+                                        Text(
+                                            statusLine,
+                                            fontSize = 11.5.sp,
+                                            lineHeight = 15.sp,
+                                            color = if (torStalled) OpenChatPalette.Signal else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                },
+                                actions = {
+                                    val isBookmarked = geohash in geo.bookmarks
+                                    GlassHeaderActionCluster(
+                                        modifier = Modifier.padding(end = 12.dp),
+                                        items = listOf(
+                                            GlassActionItem(
+                                                icon = if (isBookmarked) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                                                contentDescription = stringResource(
+                                                    if (isBookmarked) R.string.geo_bookmark_remove else R.string.geo_bookmark_add,
+                                                ),
+                                                onClick = { ChatRepository.controller?.toggleGeoBookmark(geohash) },
+                                                iconTint = if (isBookmarked) OpenChatPalette.Signal else null,
+                                            ),
+                                            GlassActionItem(
+                                                icon = Icons.Outlined.Share,
+                                                contentDescription = stringResource(R.string.share_channel),
+                                                onClick = { if (geohash.length >= 6) confirmShare = true else shareChannel() },
+                                            ),
+                                            GlassActionItem(
+                                                icon = Icons.AutoMirrored.Outlined.Logout,
+                                                contentDescription = stringResource(R.string.geo_leave),
+                                                onClick = { ChatRepository.controller?.leaveGeo(geohash); onBack() },
+                                            ),
+                                        ),
+                                    )
+                                },
+                            )
+                            val channelOnline = geohash in geo.connectedChannels || (geo.relaysConnected > 0 && geohash !in geo.joined)
+                            if (!channelOnline && geo.tor == org.openchat.android.app.TorState.STARTING && geo.torStalled) {
+                                Box(Modifier.padding(horizontal = 14.dp, vertical = 4.dp)) {
+                                    TorStalledBanner(onConnectDirect = { ChatRepository.controller?.setTor(false) })
+                                }
                             }
-                        },
-                        actions = {
-                            ShareChannelButton(geohash)
-                            TextButton(onClick = { ChatRepository.controller?.leaveGeo(geohash); onBack() }) {
-                                Text(stringResource(R.string.geo_leave), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        },
-                    )
+                        }
+                    }
                 },
             ) { padding ->
                 Box(
@@ -647,15 +788,66 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
                         .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal))
                         .fillMaxSize(),
                 ) {
+                    val roomEmptyText = if (geohash.length >= 6) {
+                        stringResource(R.string.geo_empty, geohash) + "\n\n" + stringResource(R.string.geo_opsec_fine, geohash)
+                    } else {
+                        stringResource(R.string.geo_empty, geohash)
+                    }
                     ChatPane(
                         conversation = Conversation.Geo(geohash).key,
-                        emptyText = stringResource(R.string.geo_empty, geohash),
+                        emptyText = roomEmptyText,
                         placeholder = stringResource(R.string.geo_placeholder, geohash),
                         onSend = { ChatRepository.controller?.sendGeo(geohash, it) },
                         onSenderClick = { m -> person = PersonRef.Geo(m.senderKey, m.senderName, geohash) },
                         topClearance = padding.calculateTopPadding(),
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TorStalledBanner(onConnectDirect: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = OpenChatPalette.CardSurface,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    stringResource(R.string.tor_stalled_title),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.5.sp,
+                    color = OpenChatPalette.Signal,
+                )
+                Text(
+                    stringResource(R.string.tor_stalled_body),
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            FilledTonalButton(
+                onClick = onConnectDirect,
+                shape = RoundedCornerShape(10.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+                Text(
+                    stringResource(R.string.tor_use_direct),
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                )
             }
         }
     }

@@ -197,24 +197,145 @@ data class NostrEvent(
     }
 }
 
-/** Public relay directory; picks the relays nearest a geohash cell (§9). */
-class RelayDirectory(private val relays: List<Triple<String, Double, Double>>) {
+/**
+ * Public relay directory; picks the relays nearest a geohash cell (§9).
+ * Strips default `:443` ports, deduplicates hosts, and breaks distance ties
+ * lexicographically by host so clients with the same directory converge on
+ * identical relay sets.
+ */
+class RelayDirectory(initialEntries: List<Entry>) {
+    data class Entry(val host: String, val lat: Double, val lon: Double)
+
+    @Volatile private var entries: List<Entry> = initialEntries
+    @Volatile var onUpdated: () -> Unit = {}
+
+    val size: Int get() = entries.size
+
+    fun entriesSnapshot(): List<Entry> = entries
+
+    fun updateEntries(next: List<Entry>) {
+        if (next.isEmpty() || next == entries) return
+        entries = next
+        onUpdated()
+    }
+
     fun closest(geohash: String, count: Int = 5): List<String> {
         val (lat, lon) = Geohash.center(geohash) ?: return emptyList()
-        return relays.sortedBy { haversine(lat, lon, it.second, it.third) }.take(count).map { "wss://${it.first}" }
+        val snapshot = entries
+        if (snapshot.isEmpty() || count <= 0) return emptyList()
+        return snapshot
+            .map { it to haversine(lat, lon, it.lat, it.lon) }
+            .sortedWith(Comparator { a, b ->
+                val d = a.second.compareTo(b.second)
+                if (d != 0) d else a.first.host.compareTo(b.first.host)
+            })
+            .take(count)
+            .map { "wss://${it.first.host}" }
     }
 
     companion object {
-        fun parse(csv: String): RelayDirectory = RelayDirectory(
-            csv.lineSequence().drop(1).mapNotNull { line ->
-                val parts = line.trim().split(",")
-                if (parts.size < 3) null else {
-                    val lat = parts[1].toDoubleOrNull(); val lon = parts[2].toDoubleOrNull()
-                    if (lat == null || lon == null || parts[0].isBlank()) null
-                    else Triple(parts[0].removePrefix("wss://").removePrefix("ws://").trimEnd('/'), lat, lon)
-                }
-            }.toList(),
+        private val ENTRY_COMPARATOR = compareBy<Entry>({ it.host }, { it.lat }, { it.lon })
+        private val SUPPORTED_HEADERS = setOf(
+            listOf("relay url", "latitude", "longitude"),
+            listOf("relay url", "lat", "lon"),
         )
+
+        fun parse(csv: String): RelayDirectory {
+            val byHost = LinkedHashMap<String, Entry>()
+            csv.lineSequence().drop(1).forEach { line ->
+                val parts = line.trim().split(",")
+                if (parts.size >= 3) {
+                    val host = normalizeAddress(parts[0])
+                    val lat = parts[1].trim().toDoubleOrNull()
+                    val lon = parts[2].trim().toDoubleOrNull()
+                    if (host != null && lat != null && lon != null && lat.isFinite() && lon.isFinite() && lat in -90.0..90.0 && lon in -180.0..180.0) {
+                        byHost[host] = Entry(host, lat, lon)
+                    }
+                }
+            }
+            return RelayDirectory(byHost.values.sortedWith(ENTRY_COMPARATOR))
+        }
+
+        /**
+         * Strict all-or-nothing validation for cached or remote directory refreshes:
+         * rejects malformed rows, conflicting coordinates for the same host, undersized
+         * snapshots, or snapshots that retain fewer than 50% of [baseline] hosts.
+         */
+        fun parseValidatedEntries(
+            csv: String,
+            minimumEntries: Int = 50,
+            baseline: List<Entry>? = null,
+            maxBytes: Int = 512 * 1024,
+            maxRows: Int = 5_000,
+        ): List<Entry>? {
+            if (csv.isEmpty() || csv.startsWith("\uFEFF")) return null
+            if (csv.toByteArray(Charsets.UTF_8).size > maxBytes) return null
+            val lines = csv.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
+            if (lines.isEmpty() || lines.size - 1 > maxRows) return null
+            val header = lines.first().split(",").map { it.trim().lowercase(java.util.Locale.ROOT) }
+            if (header !in SUPPORTED_HEADERS) return null
+
+            val byHost = LinkedHashMap<String, Entry>()
+            for (line in lines.drop(1)) {
+                val parts = line.split(",").map { it.trim() }
+                if (parts.size != 3) return null
+                val host = normalizeAddress(parts[0]) ?: return null
+                val lat = parts[1].toDoubleOrNull()?.takeIf { it.isFinite() && it in -90.0..90.0 } ?: return null
+                val lon = parts[2].toDoubleOrNull()?.takeIf { it.isFinite() && it in -180.0..180.0 } ?: return null
+                val entry = Entry(host, lat, lon)
+                val existing = byHost[host]
+                if (existing != null && existing != entry) return null
+                byHost[host] = entry
+                if (byHost.size > maxRows) return null
+            }
+
+            if (byHost.size < minimumEntries) return null
+            if (!baseline.isNullOrEmpty()) {
+                val baseHosts = baseline.mapTo(HashSet()) { it.host }
+                val requiredOverlap = kotlin.math.ceil(baseHosts.size * 0.5).toInt()
+                val overlap = byHost.keys.count { it in baseHosts }
+                if (overlap < requiredOverlap) return null
+            }
+            return byHost.values.sortedWith(ENTRY_COMPARATOR)
+        }
+
+        internal fun normalizeAddress(raw: String): String? {
+            val v = raw.trim()
+            if (v.isEmpty() || v.any { it.code <= 0x20 || it.code >= 0x7F }) return null
+            val rest = when {
+                v.startsWith("wss://", ignoreCase = true) -> v.substring(6)
+                v.startsWith("https://", ignoreCase = true) -> v.substring(8)
+                "://" in v -> return null
+                else -> v
+            }
+            val authority = if (rest.endsWith('/')) rest.dropLast(1) else rest
+            if (authority.isEmpty() || authority.any { it == '/' || it == '?' || it == '#' || it == '@' }) return null
+
+            val colonIdx = authority.lastIndexOf(':')
+            val rawHost: String
+            val port: Int?
+            if (colonIdx >= 0) {
+                if (authority.indexOf(':') != colonIdx) return null
+                rawHost = authority.substring(0, colonIdx)
+                val p = authority.substring(colonIdx + 1).toIntOrNull() ?: return null
+                if (p !in 1..65_535) return null
+                port = p
+            } else {
+                rawHost = authority
+                port = null
+            }
+
+            val host = rawHost.lowercase(java.util.Locale.ROOT)
+            if (host.isEmpty() || host.length > 253 || host.endsWith('.')) return null
+            if (host == "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal")) return null
+            val labels = host.split('.')
+            if (labels.size < 2 || labels.all { lbl -> lbl.isNotEmpty() && lbl.all { it in '0'..'9' } }) return null
+            for (lbl in labels) {
+                if (lbl.length !in 1..63 || lbl.first() == '-' || lbl.last() == '-') return null
+                if (!lbl.all { it in 'a'..'z' || it in '0'..'9' || it == '-' }) return null
+            }
+            return if (port != null && port != 443) "$host:$port" else host
+        }
 
         private fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
             val r = Math.toRadians(1.0)

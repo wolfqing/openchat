@@ -31,11 +31,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -84,6 +87,98 @@ import org.openchat.android.app.DeliveryState
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.app.Social
 
+enum class DmSecurityKind {
+    BLOCKED,
+    LIVE_DIRECT,
+    LIVE_RELAYED,
+    NEARBY_NEEDS_HANDSHAKE,
+    INTERNET_MUTUAL,
+    OFFLINE_COURIER_SEALED,
+    OFFLINE_AWAITING_KEY,
+}
+
+internal fun resolveDmSecurityState(
+    blocked: Boolean,
+    inMeshRange: Boolean,
+    directOrSingleHop: Boolean,
+    hops: Int?,
+    hasLiveSession: Boolean,
+    isMutualNostr: Boolean,
+    knownNoiseKey: Boolean,
+): Pair<DmSecurityKind, Int> = when {
+    blocked -> DmSecurityKind.BLOCKED to 0
+    inMeshRange && hasLiveSession && (directOrSingleHop || hops == null || hops <= 1) -> DmSecurityKind.LIVE_DIRECT to 1
+    inMeshRange && hasLiveSession -> DmSecurityKind.LIVE_RELAYED to (hops ?: 2)
+    inMeshRange -> DmSecurityKind.NEARBY_NEEDS_HANDSHAKE to (hops ?: 1)
+    isMutualNostr -> DmSecurityKind.INTERNET_MUTUAL to 0
+    knownNoiseKey -> DmSecurityKind.OFFLINE_COURIER_SEALED to 0
+    else -> DmSecurityKind.OFFLINE_AWAITING_KEY to 0
+}
+
+@Composable
+internal fun DmSecurityBadgeRow(
+    peerHex: String,
+    centerAlign: Boolean = false,
+) {
+    val peers by ChatRepository.peers.collectAsState()
+    val sessionPeers by ChatRepository.sessionPeers.collectAsState()
+    val social by Social.state.collectAsState()
+    val peer = peers.firstOrNull { it.peerIdHex == peerHex }
+    val hops = peer?.hops
+    val fp = meshFingerprint(peerHex)
+    val isMutual = social.favoriteOf(peerHex)?.let { it.mine && it.theyFavorited && it.theirNpub != null } == true
+    val (kind, hopCount) = resolveDmSecurityState(
+        blocked = social.isBlockedPeer(peerHex),
+        inMeshRange = peer != null,
+        directOrSingleHop = peer?.direct == true || hops == 1,
+        hops = hops,
+        hasLiveSession = peerHex in sessionPeers,
+        isMutualNostr = isMutual,
+        knownNoiseKey = fp != null,
+    )
+    val icon = when (kind) {
+        DmSecurityKind.BLOCKED -> Icons.Outlined.Block
+        DmSecurityKind.LIVE_DIRECT, DmSecurityKind.LIVE_RELAYED, DmSecurityKind.INTERNET_MUTUAL -> Icons.Filled.Lock
+        DmSecurityKind.NEARBY_NEEDS_HANDSHAKE -> Icons.Outlined.LockOpen
+        DmSecurityKind.OFFLINE_COURIER_SEALED -> Icons.Outlined.Lock
+        DmSecurityKind.OFFLINE_AWAITING_KEY -> Icons.Outlined.Schedule
+    }
+    val iconTint = when (kind) {
+        DmSecurityKind.LIVE_DIRECT, DmSecurityKind.LIVE_RELAYED, DmSecurityKind.INTERNET_MUTUAL -> OpenChatPalette.Lock
+        DmSecurityKind.NEARBY_NEEDS_HANDSHAKE -> OpenChatPalette.Signal
+        DmSecurityKind.BLOCKED -> MaterialTheme.colorScheme.error
+        else -> OpenChatPalette.Muted
+    }
+    val text = when (kind) {
+        DmSecurityKind.BLOCKED -> stringResource(R.string.peer_blocked_short)
+        DmSecurityKind.LIVE_DIRECT -> stringResource(R.string.dm_enc_live_direct)
+        DmSecurityKind.LIVE_RELAYED -> stringResource(R.string.dm_enc_live_relayed, hopCount)
+        DmSecurityKind.NEARBY_NEEDS_HANDSHAKE -> stringResource(R.string.dm_enc_nearby_handshake)
+        DmSecurityKind.INTERNET_MUTUAL -> stringResource(R.string.dm_enc_internet)
+        DmSecurityKind.OFFLINE_COURIER_SEALED -> stringResource(R.string.dm_enc_courier)
+        DmSecurityKind.OFFLINE_AWAITING_KEY -> stringResource(R.string.dm_enc_awaiting_key)
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp, if (centerAlign) Alignment.CenterHorizontally else Alignment.Start),
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(11.5.dp),
+        )
+        Text(
+            text,
+            fontSize = 11.5.sp,
+            lineHeight = 15.sp,
+            color = if (kind == DmSecurityKind.LIVE_DIRECT || kind == DmSecurityKind.LIVE_RELAYED) OpenChatPalette.Lock else MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) {
@@ -108,110 +203,86 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
     if (sheet) PersonSheet(PersonRef.Mesh(peerHex, peer?.nickname ?: names[peerHex]), onDismiss = { sheet = false }, onMessage = {})
 
     FluidGlassHost {
-        BoxWithConstraints(Modifier.fillMaxSize().openChatCanvas()) {
-            val compactBar = maxWidth < 400.dp
-            val ultraNarrowBar = maxWidth < 340.dp
+        Box(Modifier.fillMaxSize().openChatCanvas()) {
             val pttAccent = if (dmSpeaker != null) OpenChatPalette.Signal else OpenChatPalette.Lock
-            val showTopBand = peer != null || dmSpeaker != null
-            val mesh by ChatRepository.mesh.collectAsState()
             Scaffold(
                 containerColor = Color.Transparent,
                 contentColor = OpenChatPalette.Ink,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 topBar = {
-                    Column(
-                        Modifier.windowInsetsPadding(
-                            WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
-                        ),
-                    ) {
-                        TopAppBar(
-                            colors = chromeTopBarColors(),
-                            navigationIcon = { GlassBackButton(onBack) },
-                            title = {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                ) {
-                                    Box(Modifier.clip(RoundedCornerShape(10.dp)).clickable { sheet = true }) {
-                                        EmblemView(peerHex, 32.dp)
-                                    }
-                                    Column(Modifier.weight(1f, fill = false)) {
-                                        PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex), vouched = social.isVouchedPeer(peerHex)), onPanic)
-                                        val hops = peer?.hops
-                                        Text(
-                                            when {
-                                                social.isBlockedPeer(peerHex) -> stringResource(R.string.peer_blocked_short)
-                                                peer != null && (peer.direct || hops == 1) -> stringResource(R.string.dm_status_direct)
-                                                peer != null && hops != null -> plural(R.plurals.dm_status_relayed, hops - 1)
-                                                peer != null -> stringResource(R.string.dm_status_here)
-                                                social.favoriteOf(peerHex)?.let { it.mine && it.theyFavorited && it.theirNpub != null } == true -> stringResource(R.string.dm_status_internet)
-                                                else -> stringResource(R.string.dm_status_away)
-                                            },
-                                            fontSize = 12.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                        )
-                                    }
-                                }
-                            },
-                            actions = {
-                                AudiencePill(encrypted = true, compact = compactBar)
-                                if (ultraNarrowBar) {
-                                    FluidGlassCircleButton(
-                                        icon = WalkieTalkieIcon,
-                                        contentDescription = stringResource(R.string.ptt_button),
-                                        onClick = { ChatRepository.togglePttOpen(convKey) },
-                                        modifier = Modifier.padding(start = 6.dp),
-                                        size = 32.dp,
-                                        iconSize = 15.dp,
-                                        iconTint = if (pttOpen) Color.White else pttAccent,
-                                        tintColor = when {
-                                            pttOpen -> pttAccent
-                                            dmSpeaker != null -> OpenChatPalette.SignalSoft
-                                            else -> null
-                                        },
-                                        borderAccent = if (pttOpen || dmSpeaker != null) pttAccent else null,
-                                    )
-                                } else {
-                                    FluidGlassPillButton(
-                                        onClick = { ChatRepository.togglePttOpen(convKey) },
-                                        modifier = Modifier.padding(start = 6.dp),
-                                        tintColor = when {
-                                            pttOpen -> pttAccent
-                                            dmSpeaker != null -> OpenChatPalette.SignalSoft
-                                            else -> null
-                                        },
-                                        borderAccent = if (pttOpen || dmSpeaker != null) pttAccent else null,
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
+                    ProgressiveBlurTopBar {
+                        Column(
+                            Modifier.windowInsetsPadding(
+                                WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
+                            ),
+                        ) {
+                            TopAppBar(
+                                colors = chromeTopBarColors(),
+                                navigationIcon = { GlassBackButton(onBack) },
+                                title = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                                     ) {
-                                        Icon(
-                                            imageVector = WalkieTalkieIcon,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(14.dp),
-                                            tint = if (pttOpen) Color.White else pttAccent,
-                                        )
-                                        Text(
-                                            stringResource(R.string.ptt_button),
-                                            fontSize = 12.sp,
-                                            lineHeight = 16.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = if (pttOpen) Color.White else OpenChatPalette.Ink,
-                                            maxLines = 1,
-                                        )
+                                        Box(Modifier.clip(RoundedCornerShape(10.dp)).clickable { sheet = true }) {
+                                            EmblemView(peerHex, 30.dp)
+                                        }
+                                        Column(
+                                            Modifier.weight(1f, fill = false),
+                                            verticalArrangement = Arrangement.spacedBy(1.dp),
+                                        ) {
+                                            PanicTitle(labelText(label, verified = social.isVerifiedPeer(peerHex), vouched = social.isVouchedPeer(peerHex)), onPanic)
+                                            if (dmSpeaker != null) {
+                                                Row(
+                                                    Modifier
+                                                        .clip(RoundedCornerShape(6.dp))
+                                                        .clickable { ChatRepository.setPttOpen(convKey, true) }
+                                                        .padding(vertical = 1.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                                ) {
+                                                    LiveEqualizerBars(
+                                                        active = true,
+                                                        color = OpenChatPalette.Signal,
+                                                        modifier = Modifier.size(width = 13.dp, height = 11.dp),
+                                                    )
+                                                    Text(
+                                                        stringResource(R.string.live_ptt_speaking, dmSpeaker),
+                                                        style = TabularMonoStyle,
+                                                        fontSize = 11.5.sp,
+                                                        lineHeight = 15.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = OpenChatPalette.Signal,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                    )
+                                                }
+                                            } else {
+                                                DmSecurityBadgeRow(peerHex = peerHex)
+                                            }
+                                        }
                                     }
-                                }
-                                IconButton(onClick = { sheet = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.peer_more)) }
-                            },
-                        )
-                        if (showTopBand) {
-                            RouteBand(
-                                name = name,
-                                hops = if (peer?.direct == true) 1 else peer?.hops,
-                                direct = peers.count { it.direct && it.peerIdHex != mesh.myPeerHex },
-                                lastHeard = peer?.lastSeen ?: System.currentTimeMillis(),
-                                liveSpeakerLabel = dmSpeaker,
-                                onSpeakerClick = { ChatRepository.setPttOpen(convKey, true) },
+                                },
+                                actions = {
+                                    GlassHeaderActionCluster(
+                                        modifier = Modifier.padding(end = 12.dp),
+                                        items = listOf(
+                                            GlassActionItem(
+                                                icon = WalkieTalkieIcon,
+                                                contentDescription = stringResource(R.string.ptt_button),
+                                                onClick = { ChatRepository.togglePttOpen(convKey) },
+                                                active = pttOpen,
+                                                activeTint = pttAccent,
+                                                iconTint = if (!pttOpen && dmSpeaker != null) OpenChatPalette.Signal else null,
+                                            ),
+                                            GlassActionItem(
+                                                icon = Icons.Filled.MoreHoriz,
+                                                contentDescription = stringResource(R.string.peer_more),
+                                                onClick = { sheet = true },
+                                            ),
+                                        ),
+                                    )
+                                },
                             )
                         }
                     }
@@ -283,47 +354,54 @@ fun GroupChatScreen(idHex: String, onBack: () -> Unit, onPanic: () -> Unit) {
     if (members) GroupMembersSheet(g, onDismiss = { members = false }, onLeave = { members = false; ChatRepository.controller?.groupLeave(idHex); onBack() })
     person?.let { p -> PersonSheet(p, onDismiss = { person = null }, onMessage = { key -> ChatRepository.requestOpen(Conversation.Private(key).key) }) }
     FluidGlassHost {
-        BoxWithConstraints(Modifier.fillMaxSize().openChatCanvas()) {
-            val compactBar = maxWidth < 390.dp
+        Box(Modifier.fillMaxSize().openChatCanvas()) {
             Scaffold(
                 containerColor = Color.Transparent,
                 contentColor = OpenChatPalette.Ink,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 topBar = {
-                    TopAppBar(
-                        colors = chromeTopBarColors(),
-                        navigationIcon = { GlassBackButton(onBack) },
-                        title = {
-                            Column {
-                                PanicTitle("#" + g.name, onPanic)
-                                Text(
-                                    stringResource(R.string.group_status, plural(R.plurals.group_members, g.members.size)),
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
+                    ProgressiveBlurTopBar {
+                        TopAppBar(
+                            colors = chromeTopBarColors(),
+                            navigationIcon = { GlassBackButton(onBack) },
+                            title = {
+                                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                                    PanicTitle("#" + g.name, onPanic)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Outlined.Lock,
+                                            contentDescription = stringResource(R.string.chip_encrypted),
+                                            tint = OpenChatPalette.Muted,
+                                            modifier = Modifier.size(11.dp),
+                                        )
+                                        Text(
+                                            stringResource(R.string.group_status, plural(R.plurals.group_members, g.members.size)),
+                                            fontSize = 11.5.sp,
+                                            lineHeight = 15.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                }
+                            },
+                            actions = {
+                                GlassHeaderActionCluster(
+                                    modifier = Modifier.padding(end = 12.dp),
+                                    items = listOf(
+                                        GlassActionItem(
+                                            icon = Icons.Outlined.Group,
+                                            contentDescription = stringResource(R.string.group_members_title),
+                                            onClick = { members = true },
+                                        ),
+                                    ),
                                 )
-                            }
-                        },
-                        actions = {
-                            AudiencePill(encrypted = true, compact = compactBar, modifier = Modifier.padding(end = 6.dp))
-                            FluidGlassPillButton(
-                                onClick = { members = true },
-                                modifier = Modifier.padding(end = 10.dp),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                            ) {
-                                Text(
-                                    stringResource(R.string.group_members_title),
-                                    fontSize = 13.sp,
-                                    lineHeight = 18.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = OpenChatPalette.Ink,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        },
-                    )
+                            },
+                        )
+                    }
                 },
             ) { padding ->
                 Box(
@@ -500,38 +578,62 @@ fun GeoPrivateChatScreen(c: Conversation.GeoPrivate, onBack: () -> Unit, onPanic
     LaunchedEffect(c) { ChatRepository.controller?.joinGeo(c.geohash, teleported = ChatRepository.geo.value.locationGeohash?.startsWith(c.geohash) != true) }
     if (sheet) PersonSheet(PersonRef.Geo(c.pubkey, names[c.pubkey], c.geohash), onDismiss = { sheet = false }, onMessage = {})
     FluidGlassHost {
-        BoxWithConstraints(Modifier.fillMaxSize().openChatCanvas()) {
-            val compactBar = maxWidth < 380.dp
+        Box(Modifier.fillMaxSize().openChatCanvas()) {
             Scaffold(
                 containerColor = Color.Transparent,
                 contentColor = OpenChatPalette.Ink,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 topBar = {
-                    TopAppBar(
-                        colors = chromeTopBarColors(),
-                        navigationIcon = { GlassBackButton(onBack) },
-                        title = {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Box(Modifier.clip(RoundedCornerShape(10.dp)).clickable { sheet = true }) {
-                                    EmblemView(c.pubkey, 32.dp)
+                    ProgressiveBlurTopBar {
+                        TopAppBar(
+                            colors = chromeTopBarColors(),
+                            navigationIcon = { GlassBackButton(onBack) },
+                            title = {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Box(Modifier.clip(RoundedCornerShape(10.dp)).clickable { sheet = true }) {
+                                        EmblemView(c.pubkey, 30.dp)
+                                    }
+                                    Column(
+                                        Modifier.weight(1f, fill = false),
+                                        verticalArrangement = Arrangement.spacedBy(1.dp),
+                                    ) {
+                                        PanicTitle(labelText(label), onPanic)
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        ) {
+                                            Icon(
+                                                Icons.Outlined.Lock,
+                                                contentDescription = stringResource(R.string.chip_encrypted),
+                                                tint = OpenChatPalette.Muted,
+                                                modifier = Modifier.size(11.dp),
+                                            )
+                                            Text(
+                                                stringResource(R.string.geo_dm_status, c.geohash),
+                                                fontSize = 11.5.sp,
+                                                lineHeight = 15.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                        }
+                                    }
                                 }
-                                Column(Modifier.weight(1f, fill = false)) {
-                                    PanicTitle(labelText(label), onPanic)
-                                    Text(
-                                        stringResource(R.string.geo_dm_status, c.geohash),
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
-                            }
-                        },
-                        actions = {
-                            AudiencePill(encrypted = true, compact = compactBar)
-                            IconButton(onClick = { sheet = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.peer_more)) }
-                        },
-                    )
+                            },
+                            actions = {
+                                GlassHeaderActionCluster(
+                                    modifier = Modifier.padding(end = 12.dp),
+                                    items = listOf(
+                                        GlassActionItem(
+                                            icon = Icons.Filled.MoreHoriz,
+                                            contentDescription = stringResource(R.string.peer_more),
+                                            onClick = { sheet = true },
+                                        ),
+                                    ),
+                                )
+                            },
+                        )
+                    }
                 },
             ) { padding ->
                 Box(
@@ -672,7 +774,7 @@ internal fun PrivateList(onOpen: (String) -> Unit, onNewGroup: () -> Unit = {}, 
                     onClick = onNewGroup,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 9.dp),
                 ) {
-                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = OpenChatPalette.Signal)
+                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = OpenChatPalette.Ink)
                     Text(stringResource(R.string.group_new), fontWeight = FontWeight.SemiBold, color = OpenChatPalette.Ink)
                 }
             }

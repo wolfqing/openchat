@@ -35,8 +35,6 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -89,19 +87,19 @@ internal val DarkOpenChatColors = OpenChatColors(
 
 internal val LightOpenChatColors = OpenChatColors(
     isLight = true,
-    screen = Color(0xFFF5F6F8),
+    screen = Color(0xFFF6F6F7),
     surface = Color(0xFFFFFFFF),
-    card = Color(0xFFF1F1F3),
-    cardRaised = Color(0xFFE9E9ED),
+    card = Color(0xFFEEEEF1),
+    cardRaised = Color(0xFFE5E6EB),
     ink = Color(0xFF111214),
-    muted = Color(0xFF5F636B),
-    line = Color(0xFFE5E6EA),
-    outline = Color(0xFFC7C9D1),
-    signal = Color(0xFFFF5A1F),
-    signalSoft = Color(0xFFFFEBE2),
+    muted = Color(0xFF686C75),
+    line = Color(0xFFE4E5E9),
+    outline = Color(0xFFC8CAD2),
+    signal = Color(0xFFFF551A),
+    signalSoft = Color(0xFFFFEDE5),
     onSignal = Color(0xFFFFFFFF),
     lock = Color(0xFF1A6BFF),
-    lockSoft = Color(0xFFDCEBFF),
+    lockSoft = Color(0xFFE6F0FF),
     online = Color(0xFF129A5A),
 )
 
@@ -290,55 +288,16 @@ internal fun Modifier.pressScale(pressedScale: Float = 0.94f): Modifier = compos
 }
 
 /**
- * Atmospheric canvas background:
- * - Radiant Light: luminous `#FFFFFF -> #F6F7FA -> #EFF1F5` daylight gradient with subtle
- *   warm Signal-orange top-left and cool Lock-blue bottom-right ambient radial glows.
- * - OLED Dark: pure `#000000` canvas with ultra-subtle top-left warm and bottom-right cool glows.
+ * Pure architectural canvas ground (zero neon radial corner glows):
+ * - Radiant Light: calm gallery-grade alabaster paper (`#F6F6F7`) so pure-white bubbles and
+ *   Liquid Glass controls stand out through clean luminance contrast.
+ * - OLED Dark: pure `#000000` obsidian canvas for blackout battery saving.
  */
 internal fun Modifier.openChatCanvas(): Modifier = composed {
-    val isLight = OpenChatPalette.isLight
+    val bg = OpenChatPalette.Screen
     this.drawWithCache {
-        val w = size.width.coerceAtLeast(1f)
-        val h = size.height.coerceAtLeast(1f)
-        val topGlowRadius = maxOf(w * 0.90f, h * 0.38f).coerceAtLeast(2f)
-        val bottomGlowRadius = maxOf(w * 0.86f, h * 0.42f).coerceAtLeast(2f)
-        if (isLight) {
-            val baseBrush = Brush.verticalGradient(
-                0.00f to Color(0xFFFFFFFF),
-                0.52f to Color(0xFFF6F7FA),
-                1.00f to Color(0xFFEFF1F5),
-            )
-            val topGlow = Brush.radialGradient(
-                colors = listOf(Color(0xFFFF6A30).copy(alpha = 0.095f), Color.Transparent),
-                center = Offset(w * 0.18f, h * 0.08f),
-                radius = topGlowRadius,
-            )
-            val bottomGlow = Brush.radialGradient(
-                colors = listOf(Color(0xFF247AFF).copy(alpha = 0.085f), Color.Transparent),
-                center = Offset(w * 0.88f, h * 0.92f),
-                radius = bottomGlowRadius,
-            )
-            onDrawBehind {
-                drawRect(brush = baseBrush)
-                drawRect(brush = topGlow)
-                drawRect(brush = bottomGlow)
-            }
-        } else {
-            val topGlow = Brush.radialGradient(
-                colors = listOf(Color(0xFFFF7840).copy(alpha = 0.085f), Color.Transparent),
-                center = Offset(w * 0.20f, h * 0.06f),
-                radius = topGlowRadius,
-            )
-            val bottomGlow = Brush.radialGradient(
-                colors = listOf(Color(0xFF5298F2).copy(alpha = 0.075f), Color.Transparent),
-                center = Offset(w * 0.85f, h * 0.94f),
-                radius = bottomGlowRadius,
-            )
-            onDrawBehind {
-                drawRect(color = Color.Black)
-                drawRect(brush = topGlow)
-                drawRect(brush = bottomGlow)
-            }
+        onDrawBehind {
+            drawRect(color = bg)
         }
     }
 }

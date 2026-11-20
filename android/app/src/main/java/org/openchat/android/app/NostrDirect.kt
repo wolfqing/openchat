@@ -81,7 +81,7 @@ class NostrDirect(
         start()
     }
 
-    fun close() { synchronized(this) { pacer.shutdownNow() }; pool.closeAll() }
+    fun close() { synchronized(this) { pacer.shutdownNow() }; pool.shutdown() }
 
     private fun onEvent(relay: String, ev: NostrEvent) {
         val p = ev.tag("p") ?: return

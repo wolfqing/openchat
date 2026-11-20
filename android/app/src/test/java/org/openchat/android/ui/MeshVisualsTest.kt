@@ -181,4 +181,64 @@ class MeshVisualsTest {
         assertEquals(listOf("self0000", "dir2", "hop2b"), shortestTopologyPath(graph, "hop2b"))
         assertEquals(null, shortestTopologyPath(graph, "orphan"))
     }
+
+    @Test
+    fun progressiveBlurCurveIsMaxAtTopRemainsBlurredBehindCapsuleAndClearsDialogue() {
+        assertEquals(1f, progressiveBlurWeight(0f), 1e-5f)
+        assertEquals(1f, progressiveBlurWeight(0.30f), 1e-5f)
+        // Behind the header subtitle & right Liquid Glass action capsule (~0.65), still meaningfully blurred
+        val mid = progressiveBlurWeight(0.65f)
+        assertTrue("expected blurred weight behind header capsule, got $mid", mid in 0.50f..0.70f)
+        // Monotonically decreasing from top to bottom
+        var prev = 1f
+        for (step in 1..20) {
+            val cur = progressiveBlurWeight(step / 20f)
+            assertTrue(cur <= prev + 1e-5f)
+            prev = cur
+        }
+        // Zero blur at the bottom edge of the feather zone so chat dialogue stays 100% sharp
+        assertEquals(0f, progressiveBlurWeight(0.98f), 1e-5f)
+        assertEquals(0f, progressiveBlurWeight(1.0f), 1e-5f)
+    }
+
+    @Test
+    fun appendMentionDraftInsertsAndDeduplicatesCleanly() {
+        assertEquals("@curie ", appendMentionDraft("", "curie"))
+        assertEquals("@curie#e887 ", appendMentionDraft("   ", "@curie#e887"))
+        assertEquals("hello @curie ", appendMentionDraft("hello", "curie"))
+        // Tapping mention twice for the same trailing name does not duplicate it
+        assertEquals("hello @curie ", appendMentionDraft("hello @curie ", "curie"))
+    }
+
+    @Test
+    fun resolveDmSecurityStateMatchesHandshakeReality() {
+        assertEquals(
+            DmSecurityKind.BLOCKED to 0,
+            resolveDmSecurityState(true, true, true, 1, true, true, true),
+        )
+        assertEquals(
+            DmSecurityKind.NEARBY_NEEDS_HANDSHAKE to 1,
+            resolveDmSecurityState(false, true, true, 1, hasLiveSession = false, isMutualNostr = false, knownNoiseKey = true),
+        )
+        assertEquals(
+            DmSecurityKind.LIVE_DIRECT to 1,
+            resolveDmSecurityState(false, true, true, 1, hasLiveSession = true, isMutualNostr = false, knownNoiseKey = true),
+        )
+        assertEquals(
+            DmSecurityKind.LIVE_RELAYED to 3,
+            resolveDmSecurityState(false, true, false, 3, hasLiveSession = true, isMutualNostr = false, knownNoiseKey = true),
+        )
+        assertEquals(
+            DmSecurityKind.INTERNET_MUTUAL to 0,
+            resolveDmSecurityState(false, false, false, null, hasLiveSession = false, isMutualNostr = true, knownNoiseKey = true),
+        )
+        assertEquals(
+            DmSecurityKind.OFFLINE_COURIER_SEALED to 0,
+            resolveDmSecurityState(false, false, false, null, hasLiveSession = false, isMutualNostr = false, knownNoiseKey = true),
+        )
+        assertEquals(
+            DmSecurityKind.OFFLINE_AWAITING_KEY to 0,
+            resolveDmSecurityState(false, false, false, null, hasLiveSession = false, isMutualNostr = false, knownNoiseKey = false),
+        )
+    }
 }

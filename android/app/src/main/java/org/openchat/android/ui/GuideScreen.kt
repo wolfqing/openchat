@@ -87,40 +87,45 @@ fun GuideScreen(onBack: () -> Unit, onPanic: () -> Unit) {
     val danger = MaterialTheme.colorScheme.error
     val dangerSoft = danger.copy(alpha = if (isLight) 0.12f else 0.20f)
 
-    Box(Modifier.fillMaxSize().openChatCanvas()) {
-        Scaffold(
-            containerColor = Color.Transparent,
-            contentColor = OpenChatPalette.Ink,
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            topBar = {
-                Column(Modifier.windowInsetsPadding(horizontalSafe)) {
-                    TopAppBar(
-                        colors = chromeTopBarColors(),
-                        navigationIcon = { GlassBackButton(onBack) },
-                        title = {
-                            PanicTitle(stringResource(R.string.guide_title), onPanic)
-                        },
-                    )
-                }
-            },
-        ) { padding ->
-            val topClearance = padding.calculateTopPadding()
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .windowInsetsPadding(horizontalSafe)
-                    .verticalScroll(rememberScrollState())
-                    .navigationBarsPadding()
-                    .padding(
-                        PaddingValues(
-                            start = 16.dp,
-                            end = 16.dp,
-                            top = 8.dp + topClearance,
-                            bottom = 28.dp,
-                        ),
-                    ),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
+    FluidGlassHost {
+        Box(Modifier.fillMaxSize().openChatCanvas()) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentColor = OpenChatPalette.Ink,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                topBar = {
+                    ProgressiveBlurTopBar {
+                        Column(Modifier.windowInsetsPadding(horizontalSafe)) {
+                            TopAppBar(
+                                colors = chromeTopBarColors(),
+                                navigationIcon = { GlassBackButton(onBack) },
+                                title = {
+                                    PanicTitle(stringResource(R.string.guide_title), onPanic)
+                                },
+                            )
+                        }
+                    }
+                },
+            ) { padding ->
+                val topClearance = padding.calculateTopPadding()
+                FluidGlassSource {
+                    Box(Modifier.fillMaxSize().openChatCanvas().fluidGlassSource()) {
+                        Column(
+                            Modifier
+                                .fillMaxSize()
+                                .windowInsetsPadding(horizontalSafe)
+                                .verticalScroll(rememberScrollState())
+                                .navigationBarsPadding()
+                                .padding(
+                                    PaddingValues(
+                                        start = 16.dp,
+                                        end = 16.dp,
+                                        top = 8.dp + topClearance,
+                                        bottom = 28.dp,
+                                    ),
+                                ),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                        ) {
                 // Hero card with OpenChat vector wordmark logo & overview
                 FlatGuideCard {
                     Row(
@@ -304,10 +309,13 @@ fun GuideScreen(onBack: () -> Unit, onPanic: () -> Unit) {
                                 )
                             }
                         }
+                            }
+                        }
                     }
                 }
             }
         }
+    }
     }
 }
 

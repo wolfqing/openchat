@@ -50,6 +50,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -87,6 +88,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import org.openchat.android.R
 import org.openchat.android.app.ChatMessage
+import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.DeliveryState
 import org.openchat.android.core.sha256
 import java.util.Locale
@@ -369,6 +371,152 @@ internal fun LiveEqualizerBars(
 }
 
 private val STATUS_CAPSULE_MIN_HEIGHT = 32.dp
+
+/**
+ * Compact Option-B inline mesh status subtitle rendered directly beneath the screen title inside
+ * `TopAppBar`: displays active live PTT speaker (tappable to open the Walkie-Talkie drawer) or
+ * calm tabular-mono Direct / Reach / Scanning telemetry (tappable to open `NearbyPeersSheet`).
+ */
+@Composable
+internal fun InlineMeshStatusSubtitle(
+    direct: Int,
+    reach: Int,
+    lastHeard: Long?,
+    scanningSince: Long?,
+    liveSpeakerLabel: String?,
+    onSpeakerClick: (() -> Unit)? = null,
+    onPeersClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    val now = rememberNow()
+    val locale = appLocale()
+    val signal = OpenChatPalette.Signal
+    val ink = OpenChatPalette.Ink
+    val muted = OpenChatPalette.Muted
+    val openPeersDesc = stringResource(R.string.nearby_peers_open)
+    val clickMod = when {
+        liveSpeakerLabel != null && onSpeakerClick != null ->
+            Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .clickable(role = Role.Button, onClick = onSpeakerClick)
+        liveSpeakerLabel == null && onPeersClick != null ->
+            Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .semantics { contentDescription = openPeersDesc }
+                .clickable(role = Role.Button, onClick = onPeersClick)
+        else -> Modifier
+    }
+
+    AnimatedContent(
+        targetState = liveSpeakerLabel,
+        transitionSpec = { fadeIn(tween(140)) togetherWith fadeOut(tween(110)) },
+        modifier = modifier.then(clickMod).padding(vertical = 1.dp),
+        label = "inline-mesh-subtitle",
+    ) { speaker ->
+        if (speaker != null) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                LiveEqualizerBars(
+                    active = true,
+                    color = signal,
+                    modifier = Modifier.size(width = 13.dp, height = 11.dp),
+                )
+                Text(
+                    stringResource(R.string.live_ptt_speaking, speaker),
+                    style = TabularMonoStyle,
+                    fontSize = 11.5.sp,
+                    lineHeight = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = signal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        } else if (scanningSince != null) {
+            val secs = ((now - scanningSince) / 1000).coerceAtLeast(0)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Box(Modifier.size(5.5.dp).background(OpenChatPalette.Outline, CircleShape))
+                Text(
+                    stringResource(R.string.band_scanning),
+                    style = TabularMonoStyle,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = muted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Text("·", color = muted.copy(alpha = 0.55f), style = TabularMonoStyle, fontSize = 11.sp, lineHeight = 15.sp)
+                Text(
+                    stringResource(R.string.band_for, String.format(locale, "%d:%02d", secs / 60, secs % 60)),
+                    style = TabularMonoStyle,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp,
+                    color = muted,
+                    maxLines = 1,
+                )
+                if (onPeersClick != null) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = muted.copy(alpha = 0.75f),
+                        modifier = Modifier.size(13.dp),
+                    )
+                }
+            }
+        } else {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Box(Modifier.size(6.dp).background(signal, CircleShape))
+                Text(
+                    "$direct ${stringResource(R.string.band_direct).lowercase(locale)}",
+                    style = TabularMonoStyle,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp,
+                    color = muted,
+                    maxLines = 1,
+                )
+                Text("·", color = muted.copy(alpha = 0.55f), style = TabularMonoStyle, fontSize = 11.sp, lineHeight = 15.sp)
+                Text(
+                    "$reach ${stringResource(R.string.band_reach).lowercase(locale)}",
+                    style = TabularMonoStyle,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = ink,
+                    maxLines = 1,
+                )
+                lastHeard?.let {
+                    Text("·", color = muted.copy(alpha = 0.55f), style = TabularMonoStyle, fontSize = 11.sp, lineHeight = 15.sp)
+                    Text(
+                        agoText(it, now, locale),
+                        color = muted,
+                        style = TabularMonoStyle,
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp,
+                        maxLines = 1,
+                    )
+                }
+                if (onPeersClick != null) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = muted.copy(alpha = 0.75f),
+                        modifier = Modifier.size(13.dp),
+                    )
+                }
+            }
+        }
+    }
+}
 
 /**
  * Floating signal & Live Walkie-Talkie status row on the main tabs:
@@ -775,10 +923,12 @@ fun NobodyNearby(
     onShareApp: (() -> Unit)?,
     onShowHistory: (() -> Unit)? = null,
     onOpenGuide: (() -> Unit)? = null,
+    topClearance: Dp = 0.dp,
     bottomClearance: Dp = 0.dp,
 ) {
+    val mesh by ChatRepository.mesh.collectAsState()
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val availHeight = (maxHeight - bottomClearance).coerceAtLeast(160.dp)
+        val availHeight = (maxHeight - topClearance - bottomClearance).coerceAtLeast(160.dp)
         val compact = availHeight < 440.dp
         val radarMax = if (compact) {
             minOf(236.dp, maxWidth * 0.70f)
@@ -792,7 +942,7 @@ fun NobodyNearby(
                 .padding(
                     start = 20.dp,
                     end = 20.dp,
-                    top = if (compact) 6.dp else 10.dp,
+                    top = topClearance + (if (compact) 6.dp else 10.dp),
                     bottom = 16.dp + bottomClearance,
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -815,6 +965,24 @@ fun NobodyNearby(
                 lineHeight = 20.sp,
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
+            if (mesh.passedTodayCount > 0) {
+                Surface(
+                    shape = CircleShape,
+                    color = OpenChatPalette.CardSurface,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp,
+                ) {
+                    Text(
+                        stringResource(R.string.radar_passed_today, mesh.passedTodayCount),
+                        style = TabularMonoStyle,
+                        fontSize = 11.5.sp,
+                        color = OpenChatPalette.Muted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                    )
+                }
+            }
             if (onShowHistory != null || onOpenGuide != null) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),

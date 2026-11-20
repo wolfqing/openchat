@@ -113,6 +113,28 @@ object LocationPresets {
     }
 
     private const val MAX_SAVED_CHANNELS = 20
+    private const val MAX_BOOKMARKS = 30
+
+    /** Serializes persisted starred location bookmarks (one lowercase geohash per line). */
+    fun serializeBookmarks(bookmarks: Set<String>): ByteArray =
+        bookmarks.asSequence()
+            .map { it.trim().lowercase(Locale.ROOT) }
+            .filter { Geohash.isValid(it) && it.length >= 2 }
+            .distinct()
+            .take(MAX_BOOKMARKS)
+            .joinToString("\n")
+            .toByteArray(Charsets.UTF_8)
+
+    /** Parses persisted starred location bookmarks; invalid lines are silently ignored. */
+    fun parseBookmarks(bytes: ByteArray): Set<String> {
+        val out = LinkedHashSet<String>()
+        for (line in String(bytes, Charsets.UTF_8).lineSequence()) {
+            if (out.size >= MAX_BOOKMARKS) break
+            val g = line.trim().lowercase(Locale.ROOT)
+            if (Geohash.isValid(g) && g.length >= 2) out.add(g)
+        }
+        return out
+    }
 
     private val US_WEST_TZS = setOf(
         "America/Los_Angeles", "America/Vancouver", "America/Phoenix", "America/Denver",

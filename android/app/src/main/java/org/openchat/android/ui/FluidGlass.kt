@@ -6,6 +6,7 @@ import android.graphics.Shader
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -15,8 +16,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -49,8 +55,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -61,11 +69,13 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.openchat.android.R
@@ -76,10 +86,27 @@ import org.openchat.android.R
  * silky frosted optical blur, and luminous refractive interiors.
  */
 object FluidGlassDefaults {
-    val Refraction: Dp = 15.dp
-    val Dispersion: Dp = 6.dp
-    val ClarityBlur: Dp = 7.5.dp
-    val MeniscusBevel: Dp = 16.dp
+    val Refraction: Dp = 12.5.dp
+    val Dispersion: Dp = 2.0.dp
+    val ClarityBlur: Dp = 4.2.dp
+    val MeniscusBevel: Dp = 15.dp
+    val TopProgressiveMaxBlur: Dp = 19.dp
+}
+
+/**
+ * Normalized progressive top-blur weight across vertical position `v` (`0f` = screen top edge,
+ * `1f` = bottom of the feather zone right above the active dialogue viewport):
+ * - `v = 0.00f`: `1.0f` (maximum blur at status bar top)
+ * - `v = 0.65f`: `~0.61f` (remains softly blurred directly behind the header title & action capsule)
+ * - `v >= 0.98f`: `0.0f` (completely sharp and clear in the chat conversation area below)
+ */
+internal fun progressiveBlurWeight(v: Float): Float {
+    val clamped = v.coerceIn(0f, 1f)
+    if (clamped <= 0.36f) return 1f
+    if (clamped >= 0.98f) return 0f
+    val t = ((clamped - 0.36f) / (0.98f - 0.36f)).coerceIn(0f, 1f)
+    val smooth = t * t * (3f - 2f * t)
+    return 1f - smooth
 }
 
 internal class RecordedBackdropSource(val layer: GraphicsLayer) {
@@ -209,22 +236,29 @@ private const val FLUID_GLASS_AGSL = """
 
         float bevel = max(uBevel, 1.0);
         float t = clamp((d + bevel) / bevel, 0.0, 1.0);
-        float lens = t * t * (3.0 - 2.0 * t);
 
+        // Crease-free C1-continuous 2D boundary gradient
         float2 q = abs(p) - (halfSize - float2(r));
         float2 signP = float2(p.x >= 0.0 ? 1.0 : -1.0, p.y >= 0.0 ? 1.0 : -1.0);
+        float2 outsideQ = max(q, float2(0.0));
+        float outLen = length(outsideQ);
         float2 grad;
-        if (q.x > 0.0 && q.y > 0.0) {
-            float lenQ = max(length(q), 0.0001);
-            grad = (q / lenQ) * signP;
-        } else if (q.x > q.y) {
-            grad = float2(signP.x, 0.0);
+        if (outLen > 0.0001) {
+            grad = (outsideQ / outLen) * signP;
         } else {
-            grad = float2(0.0, signP.y);
+            float2 w = exp(clamp(q * 0.35, float2(-12.0), float2(0.0)));
+            grad = normalize(w + float2(0.0001)) * signP;
         }
 
-        float2 baseShift = -grad * (lens * uRefract);
-        float2 dispShift = grad * (lens * uDisperse * 0.42);
+        // 3D curved pillow meniscus normal N = (nx, ny, nz)
+        float sinTheta = pow(t, 1.55) * 0.88;
+        float cosTheta = sqrt(max(1.0 - sinTheta * sinTheta, 0.03));
+        float3 normal = float3(grad.x * sinTheta, grad.y * sinTheta, cosTheta);
+
+        // Snell lens refraction + subtle chromatic dispersion at grazing bevel
+        float lens = t * t * (3.0 - 2.0 * t);
+        float2 baseShift = -normal.xy * (uRefract * (0.35 + 0.65 * lens));
+        float2 dispShift = normal.xy * (lens * uDisperse * 0.45);
 
         float2 minBound = float2(0.5);
         float2 maxBound = max(uSize - float2(0.5), minBound);
@@ -237,22 +271,27 @@ private const val FLUID_GLASS_AGSL = """
         half4 cG = content.eval(uvG);
         half4 cB = content.eval(uvB);
 
+        // iOS 27 optical vibrancy boost (compensates Gaussian desaturation so colors stay crisp)
         half3 rgb = half3(cR.r, cG.g, cB.b);
         half luma = dot(rgb, half3(0.2126, 0.7152, 0.0722));
-        rgb = clamp(mix(half3(luma), rgb, half(1.22)), half3(0.0), half3(1.0));
+        half satBoost = uLightMode > 0.5 ? half(1.44) : half(1.48);
+        rgb = clamp(mix(half3(luma), rgb, satBoost), half3(0.0), half3(1.0));
 
-        float edgeGlow = t * t * t;
-        float vert = abs(grad.y);
+        // Schlick's Fresnel reflection + 135-deg top-left primary glint + bottom-right counter glint
+        float fresnel = pow(clamp(1.0 - normal.z, 0.0, 1.0), 3.6);
+        float3 halfVecPrimary = normalize(float3(-0.38, -0.68, 1.18));
+        float3 halfVecCounter = normalize(float3(0.36, 0.64, 1.22));
+        float specPrimary = pow(max(dot(normal, halfVecPrimary), 0.0), 18.0) * lens;
+        float specCounter = pow(max(dot(normal, halfVecCounter), 0.0), 14.0) * lens;
         float horiz = abs(grad.x);
+
         if (uLightMode > 0.5) {
-            // Anisotropic crystal glass in daylight: crisp bright specular along top/bottom,
-            // thin dark refractive absorption on left/right lateral edges.
-            float specTB = vert * edgeGlow * 0.28;
-            float absorbLR = horiz * edgeGlow;
-            rgb = rgb + half3(specTB) - half3(absorbLR * 0.11, absorbLR * 0.085, absorbLR * 0.05);
+            float glint = specPrimary * 0.38 + specCounter * 0.18 + fresnel * 0.22;
+            float absorbLR = horiz * fresnel * 0.14;
+            rgb = rgb + half3(glint) - half3(absorbLR, absorbLR * 0.88, absorbLR * 0.72);
         } else {
-            float specTB = vert * edgeGlow * 0.22;
-            rgb = rgb + half3(specTB);
+            float glint = specPrimary * 0.30 + specCounter * 0.14 + fresnel * 0.16;
+            rgb = rgb + half3(glint);
         }
         rgb = clamp(rgb, half3(0.0), half3(1.0));
 
@@ -293,6 +332,190 @@ private fun buildBlurFallbackEffect(blurPx: Float): androidx.compose.ui.graphics
     val r = blurPx.coerceAtLeast(1f)
     RenderEffect.createBlurEffect(r, r, Shader.TileMode.CLAMP).asComposeRenderEffect()
 }.getOrNull()
+
+/**
+ * Wraps a `Scaffold` `topBar` with a non-interactive, grain-free 3-octave hardware Gaussian
+ * progressive blur veil (`22dp -> 13dp -> 5.5dp -> 0dp`):
+ * - Maximum continuous Gaussian blur at the very top edge (`y = 0`),
+ * - Remains softly blurred directly behind the header title, subtitle, and top-right Liquid Glass
+ *   action capsule,
+ * - Smoothly feathers to `0` blur and `0` opacity over [feather] below the bar without inflating
+ *   the bar's measured layout height, keeping the entire dialogue area below 100% razor-sharp.
+ */
+@Composable
+fun ProgressiveBlurTopBar(
+    modifier: Modifier = Modifier,
+    feather: Dp = 18.dp,
+    content: @Composable () -> Unit,
+) {
+    val density = LocalDensity.current
+    val featherPx = with(density) { feather.roundToPx() }.coerceAtLeast(0)
+    Layout(
+        modifier = modifier.fillMaxWidth(),
+        content = {
+            TopProgressiveBlurSurface()
+            Box(Modifier.fillMaxWidth()) { content() }
+        },
+    ) { measurables, constraints ->
+        val fgPlaceable = measurables[1].measure(constraints.copy(minHeight = 0))
+        val blurHeight = (fgPlaceable.height + featherPx).coerceAtLeast(1)
+        val blurPlaceable = measurables[0].measure(Constraints.fixed(fgPlaceable.width.coerceAtLeast(1), blurHeight))
+        layout(fgPlaceable.width, fgPlaceable.height) {
+            blurPlaceable.place(0, 0)
+            fgPlaceable.place(0, 0)
+        }
+    }
+}
+
+@Composable
+private fun GaussianBlurOctave(
+    host: FluidGlassHostState,
+    elemOffset: Offset,
+    veilColor: Color,
+    blurEffect: androidx.compose.ui.graphics.RenderEffect,
+    maskBrush: Brush,
+) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+            .drawWithContent {
+                drawContent()
+                drawRect(brush = maskBrush, blendMode = BlendMode.DstIn)
+            },
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    clip = true
+                    renderEffect = blurEffect
+                }
+                .drawBehind {
+                    drawRect(veilColor)
+                    val src = host.activeSource
+                    if (host.recordingDepth == 0 && src != null && src.hasRecorded) {
+                        val relX = elemOffset.x - host.sourceOffset.x
+                        val relY = elemOffset.y - host.sourceOffset.y
+                        translate(left = -relX, top = -relY) {
+                            drawLayer(src.layer)
+                        }
+                    }
+                },
+        )
+    }
+}
+
+@Composable
+private fun TopProgressiveBlurSurface() {
+    val insideSource = LocalInsideFluidGlassSource.current
+    val host = if (insideSource) null else LocalFluidGlassHost.current
+    val isLight = OpenChatPalette.isLight
+    val veilColor = OpenChatPalette.Screen
+    val density = LocalDensity.current
+
+    val softBlurPx = with(density) { 5.5.dp.toPx() }
+    val midBlurPx = with(density) { 13.dp.toPx() }
+    val deepBlurPx = with(density) { 22.dp.toPx() }
+
+    var elemOffset by remember { mutableStateOf(Offset.Zero) }
+    var elemSize by remember { mutableStateOf(Size.Zero) }
+
+    val overlapsSource by remember(host) {
+        derivedStateOf {
+            val h = host
+            val src = h?.activeSource
+            h != null &&
+                h.hasSource &&
+                src != null &&
+                elemSize.width > 2f &&
+                elemSize.height > 2f &&
+                elemOffset.x + elemSize.width > h.sourceOffset.x + 1f &&
+                elemOffset.y + elemSize.height > h.sourceOffset.y + 1f &&
+                elemOffset.x < h.sourceOffset.x + h.sourceSize.width - 1f &&
+                elemOffset.y < h.sourceOffset.y + h.sourceSize.height - 1f
+        }
+    }
+
+    val blurOctaves = remember(overlapsSource, softBlurPx, midBlurPx, deepBlurPx) {
+        if (overlapsSource && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val soft = buildBlurFallbackEffect(softBlurPx)
+            val mid = buildBlurFallbackEffect(midBlurPx)
+            val deep = buildBlurFallbackEffect(deepBlurPx)
+            if (soft != null && mid != null && deep != null) Triple(soft, mid, deep) else null
+        } else null
+    }
+
+    val softMask = remember {
+        Brush.verticalGradient(
+            0.00f to Color.Black,
+            0.60f to Color.Black,
+            0.84f to Color.Black.copy(alpha = 0.50f),
+            1.00f to Color.Transparent,
+        )
+    }
+    val midMask = remember {
+        Brush.verticalGradient(
+            0.00f to Color.Black,
+            0.44f to Color.Black,
+            0.70f to Color.Black.copy(alpha = 0.78f),
+            0.91f to Color.Transparent,
+        )
+    }
+    val deepMask = remember {
+        Brush.verticalGradient(
+            0.00f to Color.Black,
+            0.25f to Color.Black.copy(alpha = 0.92f),
+            0.60f to Color.Transparent,
+        )
+    }
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .let {
+                if (host != null) {
+                    it.onGloballyPositioned { coords ->
+                        elemOffset = coords.positionInRoot()
+                        elemSize = Size(coords.size.width.toFloat(), coords.size.height.toFloat())
+                    }
+                } else it
+            },
+    ) {
+        if (host != null && overlapsSource && blurOctaves != null) {
+            val (softEffect, midEffect, deepEffect) = blurOctaves
+            // 3-tier separable hardware Gaussian stack: silky continuous blur with zero grain
+            GaussianBlurOctave(host, elemOffset, veilColor, softEffect, softMask)
+            GaussianBlurOctave(host, elemOffset, veilColor, midEffect, midMask)
+            GaussianBlurOctave(host, elemOffset, veilColor, deepEffect, deepMask)
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            0.00f to veilColor.copy(alpha = if (isLight) 0.78f else 0.74f),
+                            0.56f to veilColor.copy(alpha = if (isLight) 0.42f else 0.40f),
+                            0.82f to veilColor.copy(alpha = if (isLight) 0.14f else 0.12f),
+                            1.00f to Color.Transparent,
+                        ),
+                    ),
+            )
+        } else {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            0.00f to veilColor.copy(alpha = if (isLight) 0.95f else 0.92f),
+                            0.62f to veilColor.copy(alpha = if (isLight) 0.78f else 0.74f),
+                            0.85f to veilColor.copy(alpha = if (isLight) 0.34f else 0.30f),
+                            1.00f to Color.Transparent,
+                        ),
+                    ),
+            )
+        }
+    }
+}
 
 /**
  * Core optical-refraction Liquid Glass surface.
@@ -472,74 +695,80 @@ private fun Modifier.drawFluidGlassOpticalBody(
     }
     val outerCorner = CornerRadius(r, r)
 
-    // 1. Interior crystal fill + subtle bottom caustic glow (zero milky surface fog)
+    // 1. Interior crystal fill + directional top-left sheen & bottom caustic (low-fog iOS 27 clarity)
     val baseFillBrush: Brush = when {
         tintColor != null -> {
-            val caustic = (borderAccent ?: tintColor).copy(alpha = if (isLight) 0.30f else 0.34f)
-            Brush.verticalGradient(
-                0.00f to tintColor,
-                0.72f to tintColor,
+            val caustic = (borderAccent ?: tintColor).copy(alpha = if (isLight) 0.34f else 0.38f)
+            Brush.linearGradient(
+                0.00f to lerp(tintColor, Color.White, if (isLight) 0.22f else 0.14f),
+                0.62f to tintColor,
                 1.00f to lerp(tintColor, caustic, 0.48f),
+                start = Offset.Zero,
+                end = Offset(w * 0.45f, h),
             )
         }
         isLight && refractingLive -> {
-            Brush.verticalGradient(
-                0.00f to Color.White.copy(alpha = 0.30f),
-                0.65f to Color.White.copy(alpha = 0.18f),
-                1.00f to Color.White.copy(alpha = 0.10f),
+            Brush.linearGradient(
+                0.00f to Color.White.copy(alpha = 0.44f),
+                0.48f to Color.White.copy(alpha = 0.14f),
+                1.00f to Color.White.copy(alpha = 0.24f),
+                start = Offset(w * 0.12f, 0f),
+                end = Offset(w * 0.88f, h),
             )
         }
         isLight -> {
             Brush.verticalGradient(
-                0.00f to Color.White.copy(alpha = 0.88f),
+                0.00f to Color.White.copy(alpha = 0.90f),
                 0.55f to Color(0xFFF8F8FA).copy(alpha = 0.80f),
-                1.00f to Color(0xFFF0F1F4).copy(alpha = 0.84f),
+                1.00f to Color(0xFFF1F2F5).copy(alpha = 0.86f),
             )
         }
         refractingLive -> {
-            Brush.verticalGradient(
-                0.00f to Color(0xFF1A1B1F).copy(alpha = 0.40f),
-                0.70f to Color(0xFF121316).copy(alpha = 0.30f),
-                1.00f to Color.White.copy(alpha = 0.06f),
+            Brush.linearGradient(
+                0.00f to Color.White.copy(alpha = 0.13f),
+                0.48f to Color(0xFF141519).copy(alpha = 0.30f),
+                1.00f to Color.White.copy(alpha = 0.07f),
+                start = Offset(w * 0.12f, 0f),
+                end = Offset(w * 0.88f, h),
             )
         }
         else -> {
             Brush.verticalGradient(
-                0.00f to Color(0xFF1B1C20).copy(alpha = 0.84f),
-                1.00f to Color(0xFF121316).copy(alpha = 0.86f),
+                0.00f to Color(0xFF1E2025).copy(alpha = 0.86f),
+                1.00f to Color(0xFF121316).copy(alpha = 0.88f),
             )
         }
     }
 
-    // 2. Anisotropic perimeter rim parameterized by circular-arc cosine projection:
-    //    - 0..30 deg on left/right curved flanks: thin dark refractive glass edge
-    //    - 45 deg corner: smooth mid-tone transition
-    //    - 65..115 deg across top & bottom rails: thin bright pure-white specular catchlight
+    // 2. iOS 27 high-contrast dual-pole specular rim + lateral refractive flanks:
+    //    - Top-left & top rail: crisp pure-white specular lip
+    //    - Left & right curved flanks: subtle dark refractive edge definition
+    //    - Bottom-right & bottom rail: secondary caustic bounce highlight
     val capRatio = (r / w).coerceIn(0.05f, 0.50f)
     val darkHoldStop = (capRatio * 0.14f).coerceIn(0.012f, 0.08f)
     val diagStop = (capRatio * 0.30f).coerceIn(0.028f, 0.16f)
-    val brightStop = (capRatio * 0.58f).coerceIn(0.055f, 0.30f)
+    val brightStop = (capRatio * 0.56f).coerceIn(0.055f, 0.30f)
 
-    val rimStrokePx = 1.18.dp.toPx()
+    val rimStrokePx = 1.15.dp.toPx()
     val outerHairPx = 0.60.dp.toPx()
-    val rimInset = rimStrokePx * 0.5f + (if (isLight) outerHairPx * 0.85f else 0f)
+    val rimInset = rimStrokePx * 0.5f + outerHairPx * 0.65f
     val rimCorner = CornerRadius((r - rimInset).coerceAtLeast(1f), (r - rimInset).coerceAtLeast(1f))
 
     val rimBrush = if (isLight) {
         val darkPole = if (borderAccent != null) {
-            lerp(borderAccent, Color(0xFF14161A), 0.48f).copy(alpha = 0.20f)
+            lerp(borderAccent, Color(0xFF12151C), 0.45f).copy(alpha = 0.26f)
         } else {
-            Color(0xFF14161A).copy(alpha = 0.13f)
+            Color(0xFF12151C).copy(alpha = 0.18f)
         }
         val midCap = if (borderAccent != null) {
-            borderAccent.copy(alpha = 0.15f)
+            borderAccent.copy(alpha = 0.22f)
         } else {
-            Color(0xFF636873).copy(alpha = 0.08f)
+            Color.White.copy(alpha = 0.42f)
         }
         val brightTopBottom = if (borderAccent != null) {
-            lerp(borderAccent, Color.White, 0.80f).copy(alpha = 0.48f)
+            lerp(borderAccent, Color.White, 0.82f).copy(alpha = 0.78f)
         } else {
-            Color.White.copy(alpha = 0.56f)
+            Color.White.copy(alpha = 0.92f)
         }
         Brush.horizontalGradient(
             0.00f to darkPole,
@@ -553,19 +782,19 @@ private fun Modifier.drawFluidGlassOpticalBody(
         )
     } else {
         val darkPole = if (borderAccent != null) {
-            borderAccent.copy(alpha = 0.14f)
+            borderAccent.copy(alpha = 0.22f)
         } else {
-            Color.White.copy(alpha = 0.05f)
+            Color.White.copy(alpha = 0.11f)
         }
         val midCap = if (borderAccent != null) {
-            borderAccent.copy(alpha = 0.18f)
+            borderAccent.copy(alpha = 0.28f)
         } else {
-            Color.White.copy(alpha = 0.07f)
+            Color.White.copy(alpha = 0.20f)
         }
         val brightTopBottom = if (borderAccent != null) {
-            lerp(borderAccent, Color.White, 0.58f).copy(alpha = 0.24f)
+            lerp(borderAccent, Color.White, 0.65f).copy(alpha = 0.52f)
         } else {
-            Color.White.copy(alpha = 0.16f)
+            Color.White.copy(alpha = 0.46f)
         }
         Brush.horizontalGradient(
             0.00f to darkPole,
@@ -579,26 +808,28 @@ private fun Modifier.drawFluidGlassOpticalBody(
         )
     }
 
-    // 3. Subtle top & bottom inner specular sheen
-    val innerSpecStrokePx = 0.75.dp.toPx()
-    val innerInset = rimInset + 0.75.dp.toPx()
+    // 3. Diagonal 135-deg specular lip + bottom caustic rim
+    val innerSpecStrokePx = 0.85.dp.toPx()
+    val innerInset = rimInset + 0.65.dp.toPx()
     val innerCorner = CornerRadius((r - innerInset).coerceAtLeast(1f), (r - innerInset).coerceAtLeast(1f))
-    val innerSpecBrush = Brush.verticalGradient(
-        0.00f to Color.White.copy(alpha = if (isLight) 0.42f else 0.12f),
-        0.18f to Color.Transparent,
-        0.82f to Color.Transparent,
-        1.00f to Color.White.copy(alpha = if (isLight) 0.25f else 0.06f),
+    val innerSpecBrush = Brush.linearGradient(
+        0.00f to Color.White.copy(alpha = if (isLight) 0.82f else 0.36f),
+        0.36f to Color.Transparent,
+        0.70f to Color.Transparent,
+        1.00f to Color.White.copy(alpha = if (isLight) 0.46f else 0.18f),
+        start = Offset(w * 0.08f, 0f),
+        end = Offset(w * 0.92f, h),
     )
 
     val outerHairColor = if (isLight) {
-        (borderAccent?.let { lerp(it, Color(0xFF14161A), 0.55f) } ?: Color(0xFF14161A)).copy(alpha = 0.06f)
+        (borderAccent?.let { lerp(it, Color(0xFF12151C), 0.55f) } ?: Color(0xFF12151C)).copy(alpha = 0.09f)
     } else {
-        Color.Transparent
+        (borderAccent ?: Color.White).copy(alpha = 0.13f)
     }
 
     onDrawBehind {
         drawRoundRect(brush = baseFillBrush, cornerRadius = outerCorner)
-        if (isLight && size.width > 4f && size.height > 4f) {
+        if (size.width > 4f && size.height > 4f) {
             val hi = outerHairPx * 0.5f
             drawRoundRect(
                 color = outerHairColor,
@@ -630,28 +861,64 @@ private fun Modifier.drawFluidGlassOpticalBody(
 }
 
 /**
- * Soft active pill indicator used inside [CapsuleNavigationBar]: subtle tonal sheen with zero
- * wireframe stroke.
+ * iOS 27 convex crystal lens indicator used inside [CapsuleNavigationBar]:
+ * luminous raised glass cushion with a 155-deg top-left specular lip and subtle contact contour
+ * so the active orange icon and label sit on a crisp 3D lens rather than a flat grey tint.
  */
 internal fun Modifier.fluidGlassDroplet(isLight: Boolean): Modifier = drawWithCache {
     val w = size.width.coerceAtLeast(2f)
     val h = size.height.coerceAtLeast(2f)
     val r = minOf(w, h) * 0.5f
     val corner = CornerRadius(r, r)
+    val rimPx = 0.90.dp.toPx()
+    val inset = rimPx * 0.5f
+    val innerCorner = CornerRadius((r - inset).coerceAtLeast(1f), (r - inset).coerceAtLeast(1f))
 
     val fillBrush = if (isLight) {
-        Brush.verticalGradient(
-            0.00f to Color(0xFF111214).copy(alpha = 0.075f),
-            1.00f to Color(0xFF111214).copy(alpha = 0.055f),
+        Brush.linearGradient(
+            0.00f to Color.White.copy(alpha = 0.94f),
+            0.56f to Color.White.copy(alpha = 0.72f),
+            1.00f to Color.White.copy(alpha = 0.84f),
+            start = Offset(w * 0.15f, 0f),
+            end = Offset(w * 0.85f, h),
         )
     } else {
-        Brush.verticalGradient(
-            0.00f to Color.White.copy(alpha = 0.15f),
-            1.00f to Color.White.copy(alpha = 0.09f),
+        Brush.linearGradient(
+            0.00f to Color.White.copy(alpha = 0.22f),
+            0.58f to Color.White.copy(alpha = 0.09f),
+            1.00f to Color.White.copy(alpha = 0.14f),
+            start = Offset(w * 0.15f, 0f),
+            end = Offset(w * 0.85f, h),
+        )
+    }
+    val rimBrush = if (isLight) {
+        Brush.linearGradient(
+            0.00f to Color.White,
+            0.45f to Color(0xFF12151C).copy(alpha = 0.06f),
+            1.00f to Color.White.copy(alpha = 0.78f),
+            start = Offset(w * 0.10f, 0f),
+            end = Offset(w * 0.90f, h),
+        )
+    } else {
+        Brush.linearGradient(
+            0.00f to Color.White.copy(alpha = 0.44f),
+            0.48f to Color.White.copy(alpha = 0.08f),
+            1.00f to Color.White.copy(alpha = 0.22f),
+            start = Offset(w * 0.10f, 0f),
+            end = Offset(w * 0.90f, h),
         )
     }
     onDrawBehind {
         drawRoundRect(brush = fillBrush, cornerRadius = corner)
+        if (w > inset * 2f + 2f && h > inset * 2f + 2f) {
+            drawRoundRect(
+                brush = rimBrush,
+                topLeft = Offset(inset, inset),
+                size = Size(w - inset * 2f, h - inset * 2f),
+                cornerRadius = innerCorner,
+                style = Stroke(width = rimPx),
+            )
+        }
     }
 }
 
@@ -681,8 +948,8 @@ internal fun GlassBackButton(onClick: () -> Unit) {
 }
 
 /**
- * Stadium-shaped Liquid Glass capsule reserved exclusively for the bottom navigation bar
- * ([CapsuleNavigationBar]).
+ * Stadium-shaped Liquid Glass capsule used by the bottom navigation bar ([CapsuleNavigationBar])
+ * and top-right header action clusters ([GlassHeaderActionCluster]).
  */
 @Composable
 fun FluidGlassCapsule(
@@ -690,7 +957,7 @@ fun FluidGlassCapsule(
     tintColor: Color? = null,
     borderAccent: Color? = null,
     clarityBlur: Dp = FluidGlassDefaults.ClarityBlur,
-    shadowElevation: Dp = 10.dp,
+    shadowElevation: Dp = 8.dp,
     contentAlignment: Alignment = Alignment.Center,
     content: @Composable BoxScope.() -> Unit,
 ) {
@@ -705,6 +972,158 @@ fun FluidGlassCapsule(
         contentAlignment = contentAlignment,
         content = content,
     )
+}
+
+/** Single action descriptor inside a top-right [GlassHeaderActionCluster]. */
+data class GlassActionItem(
+    val icon: ImageVector,
+    val contentDescription: String,
+    val onClick: () -> Unit,
+    val active: Boolean = false,
+    val activeTint: Color? = null,
+    val badgeDot: Boolean = false,
+    val iconTint: Color? = null,
+)
+
+/**
+ * Top-right Liquid Glass header capsule sharing the exact optical refraction, frosted clarity blur,
+ * anisotropic glass rim, and water-droplet active state as the bottom [CapsuleNavigationBar].
+ */
+@Composable
+fun GlassHeaderActionCluster(
+    items: List<GlassActionItem>,
+    modifier: Modifier = Modifier,
+) {
+    if (items.isEmpty()) return
+    val isLight = OpenChatPalette.isLight
+    val ink = OpenChatPalette.Ink
+    val signal = OpenChatPalette.Signal
+    if (items.size == 1) {
+        val item = items[0]
+        FluidGlassCapsule(
+            modifier = modifier
+                .size(36.dp)
+                .pressScale(0.93f),
+            tintColor = if (item.active) (item.activeTint ?: signal) else null,
+            borderAccent = if (item.active) (item.activeTint ?: signal) else null,
+            shadowElevation = 5.dp,
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button, onClick = item.onClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = item.icon,
+                    contentDescription = item.contentDescription,
+                    tint = when {
+                        item.active -> Color.White
+                        item.iconTint != null -> item.iconTint
+                        else -> ink
+                    },
+                    modifier = Modifier.size(17.dp),
+                )
+                if (item.badgeDot) {
+                    Box(
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 7.dp, end = 7.dp)
+                            .size(6.5.dp)
+                            .background(signal, CircleShape),
+                    )
+                }
+            }
+        }
+        return
+    }
+
+    FluidGlassCapsule(
+        modifier = modifier.height(36.dp),
+        shadowElevation = 5.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(horizontal = 4.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            items.forEachIndexed { idx, item ->
+                if (idx > 0) {
+                    Box(
+                        Modifier
+                            .padding(horizontal = 1.dp)
+                            .width(0.75.dp)
+                            .height(14.dp)
+                            .background(ink.copy(alpha = if (isLight) 0.11f else 0.14f)),
+                    )
+                }
+                val accent = item.activeTint ?: signal
+                Box(
+                    modifier = Modifier
+                        .size(width = 36.dp, height = 30.dp)
+                        .pressScale(0.93f)
+                        .clip(CircleShape)
+                        .let { m ->
+                            if (item.active) {
+                                m.drawWithCache {
+                                    val r = minOf(size.width, size.height) * 0.5f
+                                    val c = CornerRadius(r, r)
+                                    val stroke = 0.85.dp.toPx()
+                                    val fill = Brush.linearGradient(
+                                        0.00f to lerp(accent, Color.White, 0.22f),
+                                        0.60f to accent,
+                                        1.00f to lerp(accent, Color.Black, 0.10f),
+                                        start = Offset.Zero,
+                                        end = Offset(size.width, size.height),
+                                    )
+                                    val spec = Brush.linearGradient(
+                                        0.00f to Color.White.copy(alpha = 0.65f),
+                                        0.50f to Color.Transparent,
+                                        1.00f to Color.White.copy(alpha = 0.25f),
+                                        start = Offset.Zero,
+                                        end = Offset(size.width, size.height),
+                                    )
+                                    onDrawBehind {
+                                        drawRoundRect(brush = fill, cornerRadius = c)
+                                        drawRoundRect(
+                                            brush = spec,
+                                            topLeft = Offset(stroke * 0.5f, stroke * 0.5f),
+                                            size = Size(size.width - stroke, size.height - stroke),
+                                            cornerRadius = c,
+                                            style = Stroke(width = stroke),
+                                        )
+                                    }
+                                }
+                            } else m
+                        }
+                        .clickable(role = Role.Button, onClick = item.onClick),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.contentDescription,
+                        tint = when {
+                            item.active -> Color.White
+                            item.iconTint != null -> item.iconTint
+                            else -> ink
+                        },
+                        modifier = Modifier.size(16.dp),
+                    )
+                    if (item.badgeDot && !item.active) {
+                        Box(
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(top = 4.dp, end = 5.dp)
+                                .size(6.5.dp)
+                                .background(signal, CircleShape),
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 /**

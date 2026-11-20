@@ -96,10 +96,16 @@ class Bridge(
             subscribed = if (next == null) emptySet() else (listOf(next) + Geohash.neighbors(next)).toSet()
             if (next != null) {
                 // Both sides subscribe to their own cell and its ring, so islands across a cell edge still meet.
-                pool.subscribe(SUB, directory.closest(next, 5), JSONObject()
-                    .put("kinds", JSONArray().put(NostrEvent.KIND_GEOHASH_MESSAGE).put(NostrEvent.KIND_GEOHASH_PRESENCE))
-                    .put("#r", JSONArray(subscribed.toList()))
-                    .put("since", System.currentTimeMillis() / 1000 - MAX_AGE_S))
+                val candidates = directory.closest(next, 15)
+                pool.subscribe(
+                    SUB,
+                    candidates.take(5),
+                    JSONObject()
+                        .put("kinds", JSONArray().put(NostrEvent.KIND_GEOHASH_MESSAGE).put(NostrEvent.KIND_GEOHASH_PRESENCE))
+                        .put("#r", JSONArray(subscribed.toList()))
+                        .put("since", System.currentTimeMillis() / 1000 - MAX_AGE_S),
+                    fallbackRelays = candidates.drop(5),
+                )
             }
         }
         // Advertise only while able to serve: a mesh-only phone must not attract deposits.
@@ -381,7 +387,7 @@ class Bridge(
         publishStatus()
     }
 
-    fun close() = pool.closeAll()
+    fun close() = pool.shutdown()
 
     companion object {
         private const val KEY = "bridge"

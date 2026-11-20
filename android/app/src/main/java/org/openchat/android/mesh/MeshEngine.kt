@@ -854,8 +854,8 @@ class MeshEngine(
     fun boardPosts(): List<BoardPost> = board.posts()
 
     /** Posts on the mesh board; false if the text is empty or over 512 bytes. */
-    fun postToBoard(content: String, urgent: Boolean, days: Int): Boolean {
-        val post = Board.newPost(content, "", identity.nickname, identity.signing, scheduler.now(), days, urgent) ?: return false
+    fun postToBoard(content: String, urgent: Boolean, days: Int, geohash: String = ""): Boolean {
+        val post = Board.newPost(content, geohash, identity.nickname, identity.signing, scheduler.now(), days, urgent) ?: return false
         publishBoard(post, Board.encode(post))
         listener.onBoardChanged(null, live = true)
         return true

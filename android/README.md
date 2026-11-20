@@ -1,6 +1,6 @@
 # openchat for Android
 
-Status: **v0.7.13 preview.** Builds and passes its 214 unit tests. v0.7.6 ran
+Status: **v0.7.14 preview.** Builds and passes its 223 unit tests. v0.7.6 ran
 on an Android 14 (`API 34`) emulator before publishing and previews up to
 v0.7.2 ran on an Android 15 emulator (see [CHANGELOG.md](../CHANGELOG.md) per
 release); the mesh has not been tried between real phones, and it is not yet
@@ -89,7 +89,7 @@ published from `./gradlew :app:assembleRelease` (R8-shrunk, ARM only, about
 | `GroupsTest`, `BoardTest`, `BridgeWireTest`, `PrekeysTest`, `VouchTest`, `CashuTest`, `VoiceBurstTest` | the v0.6 formats: roster and key signing, post lifetimes and takedowns, bridge envelopes, prekey publish and consume, vouch attestations and batches, token parsing, voice burst framing against bitchat's layout |
 | `RateLimiterTest`, `ScanDutyCycleTest`, `PowTest`, `NostrSendersTest`, `PeerLabelTest`, `RelayUrlTest` | flood limits, scan timing, NIP-13 difficulty, Nostr sender binding, name and suffix labels, relay URL checks |
 | `ChatRepositoryTest`, `PanicTest`, `SaveScheduleTest`, `AppUpdaterTest` | delivery states (a late receipt replaces "not delivered", giving up never hides a receipt), a wipe leaves nothing in memory, the sealed-file directory is emptied whatever is in it, the save debounce has a ceiling, questions to the mesh thread time out, release parsing, SHA-256 sums and URL host checks |
-| `MeshVisualsTest`, `GlobeTest`, `AppThemeTest`, `RandomNicknamesTest`, `PttFloorCoordinatorTest` | emblem derivation and colours, delivery dots only move forward, day markers and speaker grouping; globe projection and inverse, settled-level framing, precision from zoom, drag clamping at the poles, bundled map data parses; theme persistence/resolution and PCM live-mic level normalisation; random callsign formatting; half-duplex PTT floor lock, collision tie-breaking, idle timeout and live-burst note deduplication |
+| `MeshVisualsTest`, `LocationPresetsTest`, `GlobeTest`, `AppThemeTest`, `RandomNicknamesTest`, `PttFloorCoordinatorTest` | emblem derivation and colours, delivery dots only move forward, day markers, speaker grouping, `@mention` draft insertion and 6-state DM security badges; offline local-region and bookmark helpers; globe projection and inverse, settled-level framing, precision from zoom, drag clamping at the poles, bundled map data parses; theme persistence/resolution and PCM live-mic level normalisation; random callsign formatting; half-duplex PTT floor lock, collision tie-breaking, idle timeout and live-burst note deduplication |
 
 ## Known risks
 

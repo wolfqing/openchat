@@ -32,7 +32,7 @@ object NetRoute {
         // OkHttp hands SOCKS proxies an unresolved host name, so Tor resolves DNS too.
         val c = direct.newBuilder()
             .proxy(Proxy(Proxy.Type.SOCKS, InetSocketAddress("127.0.0.1", port)))
-            .connectTimeout(60, TimeUnit.SECONDS).pingInterval(60, TimeUnit.SECONDS)
+            .connectTimeout(25, TimeUnit.SECONDS).pingInterval(45, TimeUnit.SECONDS)
             .build()
         viaTor = port to c
         return c
@@ -47,4 +47,5 @@ object NetRoute {
     }
 
     fun onChange(f: () -> Unit) { listeners.add(f) }
+    fun removeOnChange(f: () -> Unit) { listeners.remove(f) }
 }

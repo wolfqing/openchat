@@ -25,4 +25,36 @@ class NetRouteTest {
         assertEquals(3, changes)
         NetRoute.set(torWanted = true, socksPort = 0)
     }
+
+    @Test
+    fun torReadinessRecoversWhenControlSocketMissedCircBuiltEvent() {
+        // Even if TorService.currentStatus stayed at STARTING due to FileObserver race,
+        // status/circuit-established == 1 or PROGRESS=100 unlocks the SOCKS port immediately.
+        assertEquals(
+            0 to 45,
+            org.openchat.android.app.computeTorReadiness(
+                statusOn = false,
+                circuitEstablished = "0",
+                bootstrapPhase = "NOTICE BOOTSTRAP PROGRESS=45 TAG=loading_descriptors SUMMARY=\"Loading relay descriptors\"",
+                rawSocksPort = 9050,
+            ),
+        )
+        assertEquals(
+            9050 to 100,
+            org.openchat.android.app.computeTorReadiness(
+                statusOn = false,
+                circuitEstablished = "1\n",
+                bootstrapPhase = "NOTICE BOOTSTRAP PROGRESS=100 TAG=done SUMMARY=\"Done\"",
+                rawSocksPort = 9050,
+            ),
+        )
+        assertEquals(
+            null,
+            org.openchat.android.app.formatAutoProxyTorrc("127.0.0.1", 9050, null, null),
+        )
+        assertEquals(
+            "# openchat-auto-proxy\nHTTPSProxy 127.0.0.1:7890\n",
+            org.openchat.android.app.formatAutoProxyTorrc("127.0.0.1", 7890, null, null),
+        )
+    }
 }

@@ -333,14 +333,13 @@ fun WalkieTalkieDrawer(
             val discFill = when {
                 floorState is PttFloorState.Transmitting -> accent
                 floorState is PttFloorState.Receiving -> BusyAmber.copy(alpha = if (isLight) 0.12f else 0.16f)
-                unavailable != null -> OpenChatPalette.Well
-                else -> accentSoft
+                else -> OpenChatPalette.Well
             }
             val discBorder = when {
                 floorState is PttFloorState.Transmitting -> accent
                 floorState is PttFloorState.Receiving -> BusyAmber.copy(alpha = 0.75f)
                 unavailable != null -> OpenChatPalette.Line
-                else -> accent.copy(alpha = if (isLight) 0.55f else 0.70f)
+                else -> OpenChatPalette.Outline.copy(alpha = if (isLight) 0.45f else 0.38f)
             }
             val discDesc = stringResource(R.string.ptt_hold_to_talk)
 
@@ -535,9 +534,6 @@ fun WalkieTalkieDrawer(
                                     )
                                 }
                             } else {
-                                val iconTint = if (isLight) {
-                                    if (encrypted) Color(0xFF0E56D8) else Color(0xFFD93F07)
-                                } else accent
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(5.dp),
@@ -546,13 +542,13 @@ fun WalkieTalkieDrawer(
                                     Icon(
                                         WalkieTalkieIcon,
                                         contentDescription = null,
-                                        tint = iconTint,
-                                        modifier = Modifier.size(28.dp),
+                                        tint = OpenChatPalette.Ink,
+                                        modifier = Modifier.size(27.dp),
                                     )
                                     Text(
                                         stringResource(R.string.ptt_hold_to_talk),
                                         fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         color = OpenChatPalette.Ink,
                                         textAlign = TextAlign.Center,
                                         maxLines = 1,

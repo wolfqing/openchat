@@ -89,14 +89,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -333,113 +335,93 @@ private fun ShellScaffold(
                     contentColor = OpenChatPalette.Ink,
                     contentWindowInsets = WindowInsets(0, 0, 0, 0),
                     topBar = {
-                        Column(
-                            Modifier.windowInsetsPadding(
-                                WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
-                            ),
-                        ) {
-                            TopAppBar(
-                                colors = chromeTopBarColors(),
-                                navigationIcon = { PanicLogo(onPanic) },
-                                title = {
-                                    PanicTitle(stringResource(tab.label), onPanic)
-                                },
-                                actions = {
-                                    if (tab == Tab.NEARBY) {
-                                        val unseen by ChatRepository.boardUnseen.collectAsState()
-                                        BadgedBox(
-                                            badge = { UnreadBadge(unseen) },
-                                            modifier = Modifier.padding(end = 12.dp),
-                                        ) {
-                                            FluidGlassPillButton(
-                                                onClick = onOpenBoard,
-                                                contentPadding = PaddingValues(horizontal = 13.dp, vertical = 6.dp),
-                                            ) {
-                                                Icon(
-                                                    Icons.Outlined.PushPin,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(14.dp),
-                                                    tint = OpenChatPalette.Signal,
-                                                )
-                                                Text(
-                                                    stringResource(R.string.board_title),
-                                                    fontSize = 13.sp,
-                                                    lineHeight = 18.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    color = OpenChatPalette.Ink,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis,
+                        ProgressiveBlurTopBar {
+                            Column(
+                                Modifier.windowInsetsPadding(
+                                    WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
+                                ),
+                            ) {
+                                TopAppBar(
+                                    colors = chromeTopBarColors(),
+                                    navigationIcon = { PanicLogo(onPanic) },
+                                    title = {
+                                        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                                            PanicTitle(stringResource(tab.label), onPanic)
+                                            if (!hasProblem && tab != Tab.ME) {
+                                                InlineMeshStatusSubtitle(
+                                                    direct = otherPeers.count { it.direct },
+                                                    reach = otherPeers.size,
+                                                    lastHeard = otherPeers.maxOfOrNull { it.lastSeen },
+                                                    scanningSince = if (alone) aloneSince else null,
+                                                    liveSpeakerLabel = if (tab == Tab.NEARBY) nearbySpeaker else null,
+                                                    onSpeakerClick = if (tab == Tab.NEARBY) ({ ChatRepository.setPttOpen(Conversation.Mesh.key, true) }) else null,
+                                                    onPeersClick = onShowNearbyPeers,
                                                 )
                                             }
                                         }
-                                    } else if (tab == Tab.PRIVATE) {
-                                        FluidGlassPillButton(
-                                            onClick = onNewGroup,
-                                            modifier = Modifier.padding(end = 12.dp),
-                                            contentPadding = PaddingValues(horizontal = 13.dp, vertical = 6.dp),
-                                        ) {
-                                            Icon(
-                                                Icons.Filled.Add,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(15.dp),
-                                                tint = OpenChatPalette.Signal,
-                                            )
-                                            Text(
-                                                stringResource(R.string.group_new),
-                                                fontSize = 13.sp,
-                                                lineHeight = 18.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = OpenChatPalette.Ink,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                            )
+                                    },
+                                    actions = {
+                                        when (tab) {
+                                            Tab.NEARBY -> {
+                                                val unseen by ChatRepository.boardUnseen.collectAsState()
+                                                GlassHeaderActionCluster(
+                                                    modifier = Modifier.padding(end = 12.dp),
+                                                    items = listOf(
+                                                        GlassActionItem(
+                                                            icon = WalkieTalkieIcon,
+                                                            contentDescription = stringResource(R.string.ptt_button),
+                                                            onClick = { ChatRepository.togglePttOpen(Conversation.Mesh.key) },
+                                                            active = nearbyPttOpen,
+                                                            activeTint = OpenChatPalette.Signal,
+                                                            iconTint = if (!nearbyPttOpen && nearbySpeaker != null) OpenChatPalette.Signal else null,
+                                                        ),
+                                                        GlassActionItem(
+                                                            icon = Icons.Outlined.PushPin,
+                                                            contentDescription = stringResource(R.string.board_title),
+                                                            onClick = onOpenBoard,
+                                                            badgeDot = unseen > 0,
+                                                        ),
+                                                    ),
+                                                )
+                                            }
+                                            Tab.PRIVATE -> {
+                                                GlassHeaderActionCluster(
+                                                    modifier = Modifier.padding(end = 12.dp),
+                                                    items = listOf(
+                                                        GlassActionItem(
+                                                            icon = Icons.Filled.Add,
+                                                            contentDescription = stringResource(R.string.group_new),
+                                                            onClick = onNewGroup,
+                                                        ),
+                                                    ),
+                                                )
+                                            }
+                                            Tab.ME -> {
+                                                GlassHeaderActionCluster(
+                                                    modifier = Modifier.padding(end = 12.dp),
+                                                    items = listOf(
+                                                        GlassActionItem(
+                                                            icon = Icons.AutoMirrored.Outlined.HelpOutline,
+                                                            contentDescription = stringResource(R.string.guide_button),
+                                                            onClick = onOpenGuide,
+                                                        ),
+                                                    ),
+                                                )
+                                            }
+                                            Tab.LOCATION -> Unit
                                         }
-                                    } else if (tab == Tab.ME) {
-                                        FluidGlassPillButton(
-                                            onClick = onOpenGuide,
-                                            modifier = Modifier.padding(end = 12.dp),
-                                            contentPadding = PaddingValues(horizontal = 13.dp, vertical = 6.dp),
-                                        ) {
-                                            Icon(
-                                                Icons.AutoMirrored.Outlined.HelpOutline,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(15.dp),
-                                                tint = OpenChatPalette.Signal,
-                                            )
-                                            Text(
-                                                stringResource(R.string.guide_button),
-                                                fontSize = 13.sp,
-                                                lineHeight = 18.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = OpenChatPalette.Ink,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                            )
-                                        }
-                                    }
-                                },
-                            )
-                            if (hasProblem) {
-                                ProblemBanner(
-                                    missing = missingPermissions,
-                                    locked = mesh.storageLocked,
-                                    btOn = mesh.bluetoothOn,
-                                    running = mesh.running,
-                                    onGrant = onGrantPermissions,
-                                    onEnable = onEnableBluetooth,
+                                    },
                                 )
-                            } else if (tab != Tab.ME) {
-                                NearbyStatusCapsuleRow(
-                                    direct = otherPeers.count { it.direct },
-                                    reach = otherPeers.size,
-                                    lastHeard = otherPeers.maxOfOrNull { it.lastSeen },
-                                    scanningSince = if (alone) aloneSince else null,
-                                    liveSpeakerLabel = if (tab == Tab.NEARBY) nearbySpeaker else null,
-                                    pttOpen = tab == Tab.NEARBY && nearbyPttOpen,
-                                    onTogglePtt = if (tab == Tab.NEARBY) ({ ChatRepository.togglePttOpen(Conversation.Mesh.key) }) else null,
-                                    onSpeakerClick = if (tab == Tab.NEARBY) ({ ChatRepository.setPttOpen(Conversation.Mesh.key, true) }) else null,
-                                    onPeersClick = onShowNearbyPeers,
-                                )
+                                if (hasProblem) {
+                                    ProblemBanner(
+                                        missing = missingPermissions,
+                                        locked = mesh.storageLocked,
+                                        btOn = mesh.bluetoothOn,
+                                        running = mesh.running,
+                                        onGrant = onGrantPermissions,
+                                        onEnable = onEnableBluetooth,
+                                    )
+                                }
                             }
                         }
                     },
@@ -468,7 +450,7 @@ private fun ShellScaffold(
                                     onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) onSelectPerson(PersonRef.Mesh(m.senderKey, m.senderName)) },
                                     empty = if (otherPeers.isEmpty() && mesh.running) {
                                         val extraClearance = if (nearbyPttOpen) WALKIE_TALKIE_DRAWER_HEIGHT + 10.dp else 58.dp
-                                        { onShowHistory -> NobodyNearby(onShareApp, onShowHistory, onOpenGuide = onOpenGuide, bottomClearance = bottomClearance + extraClearance) }
+                                        { onShowHistory -> NobodyNearby(onShareApp, onShowHistory, onOpenGuide = onOpenGuide, topClearance = topClearance, bottomClearance = bottomClearance + extraClearance) }
                                     } else null,
                                     cover = otherPeers.isEmpty() && mesh.running,
                                     topClearance = topClearance,
@@ -570,7 +552,7 @@ private fun CapsuleNavigationBar(
                         Tab.LOCATION -> unread.filterKeys { it.startsWith("geo:") }.values.sum()
                         Tab.ME -> 0
                     }
-                    val fg = if (isSelected) OpenChatPalette.Ink else OpenChatPalette.Muted
+                    val fg = if (isSelected) OpenChatPalette.Signal else OpenChatPalette.Muted
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -714,33 +696,57 @@ fun PanicTitle(text: AnnotatedString, onPanic: () -> Unit) {
     Text(
         text,
         inlineContent = inlineIcons,
-        fontSize = 19.sp,
-        fontWeight = FontWeight.Bold,
+        fontSize = 17.5.sp,
+        lineHeight = 22.sp,
+        fontWeight = FontWeight.SemiBold,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = tap),
     )
 }
 
-/** The app mark in the top-left corner: borderless OpenChat vector wordmark inside a 48dp triple-tap target. */
+/**
+ * Minimalist geometric radio-node mark in the top-left corner (`46dp` triple-tap panic target):
+ * calm monochrome concentric wave arcs around a single 6dp Signal-orange core dot.
+ */
 @Composable
 fun PanicLogo(onPanic: () -> Unit) {
     val tap = rememberPanicTaps(onPanic)
     val desc = stringResource(R.string.panic_logo)
+    val ink = OpenChatPalette.Ink
+    val signal = OpenChatPalette.Signal
     Box(
         modifier = Modifier
-            .size(48.dp)
-            .clipToBounds()
+            .size(46.dp)
             .semantics { contentDescription = desc }
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = tap),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_launcher_foreground),
-            contentDescription = null,
-            tint = OpenChatPalette.Signal,
-            modifier = Modifier.size(38.dp).scale(1.42f),
-        )
+        Canvas(Modifier.size(20.dp)) {
+            val strokePx = 1.75.dp.toPx()
+            val r = 7.4.dp.toPx()
+            val arcTopLeft = Offset(center.x - r, center.y - r)
+            val arcSize = Size(r * 2f, r * 2f)
+            drawArc(
+                color = ink.copy(alpha = 0.85f),
+                startAngle = -46f,
+                sweepAngle = 92f,
+                useCenter = false,
+                topLeft = arcTopLeft,
+                size = arcSize,
+                style = Stroke(width = strokePx, cap = StrokeCap.Round),
+            )
+            drawArc(
+                color = ink.copy(alpha = 0.85f),
+                startAngle = 134f,
+                sweepAngle = 92f,
+                useCenter = false,
+                topLeft = arcTopLeft,
+                size = arcSize,
+                style = Stroke(width = strokePx, cap = StrokeCap.Round),
+            )
+            drawCircle(color = signal, radius = 2.8.dp.toPx(), center = center)
+        }
     }
 }
 
@@ -758,7 +764,7 @@ private fun ProblemBanner(
         locked -> stringResource(R.string.banner_storage_locked) to { MeshService.start(ctx) }
         missing -> stringResource(R.string.banner_need_permission) to onGrant
         !btOn -> stringResource(R.string.banner_bt_off) to onEnable
-        !running -> stringResource(R.string.banner_starting) to null
+        !running -> stringResource(R.string.banner_starting) to { MeshService.start(ctx) }
         else -> return
     }
     val warn = missing || locked || !btOn
@@ -768,7 +774,7 @@ private fun ProblemBanner(
             Modifier
                 .fillMaxWidth()
                 .background(if (warn) MaterialTheme.colorScheme.errorContainer else OpenChatPalette.Surface)
-                .let { if (action != null) it.clickable { action() } else it }
+                .clickable { action() }
                 .padding(horizontal = 16.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -789,14 +795,12 @@ private fun ProblemBanner(
                     )
                 }
             }
-            if (action != null) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = if (warn) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = if (warn) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
         }
         Hairline()
     }

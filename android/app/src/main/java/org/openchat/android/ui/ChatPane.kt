@@ -14,12 +14,15 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,20 +57,32 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.outlined.AlternateEmail
+import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Sensors
 import androidx.compose.material.icons.outlined.Stop
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -83,6 +98,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -108,11 +125,13 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -176,6 +195,9 @@ fun ChatPane(
 
     val density = LocalDensity.current
     val focusManager = LocalFocusManager.current
+    val haptic = LocalHapticFeedback.current
+    var actionMessage by remember(conversation) { mutableStateOf<ChatMessage?>(null) }
+    var pendingMention by remember(conversation) { mutableStateOf<String?>(null) }
     val pttOpenSet by ChatRepository.pttOpen.collectAsState()
     val supportsWalkieTalkie = conversation == Conversation.Mesh.key || conversation.startsWith("dm:")
     val walkieTalkieOpen = supportsWalkieTalkie && conversation in pttOpenSet
@@ -234,7 +256,7 @@ fun ChatPane(
                     .fluidGlassSource(),
             ) {
                 if (covered) {
-                    Box(Modifier.fillMaxSize().padding(top = topClearance)) {
+                    Box(Modifier.fillMaxSize()) {
                         empty(if (list.isEmpty()) null else ({ showHistory = true }))
                     }
                 } else if (list.isEmpty()) {
@@ -282,9 +304,20 @@ fun ChatPane(
                                             myNickname = mesh.myNickname,
                                             myPeerHex = mesh.myPeerHex,
                                             onSenderClick = onSenderClick,
+                                            onLongPress = { m ->
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                actionMessage = m
+                                            },
                                         )
                                     } else {
-                                        EncryptedBubbleRow(r, onSenderClick = onSenderClick)
+                                        EncryptedBubbleRow(
+                                            row = r,
+                                            onSenderClick = onSenderClick,
+                                            onLongPress = { m ->
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                actionMessage = m
+                                            },
+                                        )
                                     }
                                 }
                             }
@@ -302,6 +335,21 @@ fun ChatPane(
         val dmPeer = conversation.takeIf { it.startsWith("dm:") }?.removePrefix("dm:")?.let { Commands.Person(PeerLabel.mesh(names[it], it), it) }
         val ctx = LocalContext.current
 
+        actionMessage?.let { selectedMsg ->
+            MessageActionSheet(
+                message = selectedMsg,
+                conversation = conversation,
+                isPrivate1v1 = private,
+                people = persons.map { it.label },
+                onSenderClick = onSenderClick,
+                onInsertMention = { token ->
+                    ChatRepository.setPttOpen(conversation, false)
+                    pendingMention = token
+                },
+                onDismiss = { actionMessage = null },
+            )
+        }
+
         // Flat bottom composer bar or docked half-duplex Walkie-Talkie drawer
         Box(
             Modifier
@@ -315,7 +363,13 @@ fun ChatPane(
                     onCloseToKeyboard = { ChatRepository.setPttOpen(conversation, false) },
                 )
             } else {
-                Composer(conversation, placeholder, persons.map { it.label }) { text ->
+                Composer(
+                    conversation = conversation,
+                    placeholder = placeholder,
+                    people = persons.map { it.label },
+                    pendingMention = pendingMention,
+                    onConsumeMention = { pendingMention = null },
+                ) { text ->
                     if (!Commands.isCommand(text)) onSend(text)
                     else applyCommand(ctx, Commands.run(text, conversation, mesh.myNickname, persons, dmPeer), conversation, onSend)
                 }
@@ -348,6 +402,7 @@ private fun SystemNoticeRow(text: String) {
  * - Peer messages align to the left with their avatar on the left and hop/time badges.
  * - Own messages ([ChatMessage.mine]) align to the right with a flat matte bubble and own avatar on the right.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PublicPostRow(
     row: TimelineRow.Message,
@@ -355,6 +410,7 @@ private fun PublicPostRow(
     myNickname: String,
     myPeerHex: String,
     onSenderClick: ((ChatMessage) -> Unit)?,
+    onLongPress: ((ChatMessage) -> Unit)? = null,
 ) {
     val m = row.m
     val isLight = OpenChatPalette.isLight
@@ -420,10 +476,22 @@ private fun PublicPostRow(
 
                 Surface(
                     shape = bubbleShape,
-                    color = if (isLight) OpenChatPalette.Card else Color(0xFF1D1F24),
+                    color = if (isLight) Color(0xFFE7E8ED) else Color(0xFF22242A),
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp,
-                    modifier = Modifier.widthIn(max = 296.dp),
+                    modifier = Modifier
+                        .widthIn(max = 296.dp)
+                        .clip(bubbleShape)
+                        .let { mod ->
+                            if (onLongPress != null) {
+                                mod.combinedClickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = {},
+                                    onLongClick = { onLongPress(m) },
+                                )
+                            } else mod
+                        },
                 ) {
                     MessageContent(m, inBubble = true)
                 }
@@ -460,7 +528,13 @@ private fun PublicPostRow(
 
     val peerTint = Emblem.uiColor(senderKey.ifEmpty { "self" })
     val hops = m.hops?.takeIf { !m.bridged && m.conversation == Conversation.Mesh.key }
-    val mentionCardBg = if (isLight) Color(0xFFFFF1EA) else Color(0xFF22120B)
+    val mentionCardBg = if (isLight) Color(0xFFFFF2EC) else Color(0xFF22130C)
+    val peerBubbleShape = RoundedCornerShape(
+        topStart = if (row.groupStart) 5.dp else 8.dp,
+        bottomStart = if (row.groupEnd) 16.dp else 8.dp,
+        topEnd = 16.dp,
+        bottomEnd = 16.dp,
+    )
 
     Column(
         Modifier
@@ -475,9 +549,6 @@ private fun PublicPostRow(
                 }
             },
     ) {
-        if (row.groupStart && showTopDivider && !m.mentionsMe) {
-            Hairline(Modifier.padding(start = 58.dp, end = 16.dp))
-        }
         val sidePad = if (m.mentionsMe) 8.dp else 16.dp
         Row(
             Modifier
@@ -485,8 +556,8 @@ private fun PublicPostRow(
                 .padding(
                     start = sidePad,
                     end = sidePad,
-                    top = if (row.groupStart) 10.dp else 2.dp,
-                    bottom = if (row.groupEnd) 10.dp else 3.dp,
+                    top = if (row.groupStart) 8.dp else 2.dp,
+                    bottom = if (row.groupEnd) 6.dp else 2.dp,
                 ),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
@@ -497,10 +568,10 @@ private fun PublicPostRow(
                         .let { if (onSenderClick != null && !m.bridged) it.clickable { onSenderClick(m) } else it }
                         .clearAndSetSemantics { },
                 ) {
-                    EmblemView(senderKey.ifEmpty { "self" }, 32.dp)
+                    EmblemView(senderKey.ifEmpty { "self" }, 30.dp)
                 }
             } else {
-                Spacer(Modifier.width(32.dp))
+                Spacer(Modifier.width(30.dp))
             }
 
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -528,38 +599,20 @@ private fun PublicPostRow(
                                 }
                             },
                             inlineContent = inlineIcons,
-                            fontSize = 13.5.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(1f, fill = false)
                                 .let {
                                     if (onSenderClick != null && !m.bridged) it.clickable(role = Role.Button) { onSenderClick(m) }
                                     else it
                                 },
                         )
-                        if (hops != null) {
-                            Box(
-                                Modifier
-                                    .background(
-                                        if (isLight) Color(0xFFFFEBE2) else Color(0x2EFF7840),
-                                        RoundedCornerShape(6.dp),
-                                    )
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                            ) {
-                                Text(
-                                    hopsText(hops),
-                                    fontSize = 10.5.sp,
-                                    style = TabularMonoStyle,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (isLight) Color(0xFFDC430B) else Color(0xFFFF8F62),
-                                    maxLines = 1,
-                                )
-                            }
-                        }
+                        val meta = if (hops != null) "${hopsText(hops)} · $time" else time
                         Text(
-                            time,
+                            meta,
                             fontSize = 11.sp,
                             style = TabularMonoStyle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -568,7 +621,28 @@ private fun PublicPostRow(
                     }
                 }
 
-                MessageContent(m, inBubble = false)
+                Surface(
+                    shape = peerBubbleShape,
+                    color = if (isLight) Color.White else Color(0xFF16171B),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp,
+                    border = if (m.mentionsMe) BorderStroke(0.75.dp, OpenChatPalette.Signal.copy(alpha = 0.5f)) else null,
+                    modifier = Modifier
+                        .widthIn(max = 296.dp)
+                        .clip(peerBubbleShape)
+                        .let { mod ->
+                            if (onLongPress != null) {
+                                mod.combinedClickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = {},
+                                    onLongClick = { onLongPress(m) },
+                                )
+                            } else mod
+                        },
+                ) {
+                    MessageContent(m, inBubble = true)
+                }
 
                 if (!row.groupStart && (row.groupEnd || hops != null)) {
                     val parts = buildList {
@@ -581,6 +655,7 @@ private fun PublicPostRow(
                             fontSize = 11.sp,
                             style = TabularMonoStyle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 2.dp),
                         )
                     }
                 }
@@ -593,10 +668,12 @@ private fun PublicPostRow(
  * Private & group chat row: crisp, flat, matte grouped bubbles with zero drop-shadows or glossy
  * bevels, keeping message text maximally legible while floating chrome handles optical refraction.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun EncryptedBubbleRow(
     row: TimelineRow.Message,
     onSenderClick: ((ChatMessage) -> Unit)?,
+    onLongPress: ((ChatMessage) -> Unit)? = null,
 ) {
     val m = row.m
     val locale = appLocale()
@@ -681,7 +758,19 @@ private fun EncryptedBubbleRow(
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
                 border = if (m.mentionsMe) BorderStroke(1.dp, OpenChatPalette.Signal) else null,
-                modifier = Modifier.widthIn(max = 304.dp),
+                modifier = Modifier
+                    .widthIn(max = 304.dp)
+                    .clip(shape)
+                    .let { mod ->
+                        if (onLongPress != null) {
+                            mod.combinedClickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {},
+                                onLongClick = { onLongPress(m) },
+                            )
+                        } else mod
+                    },
             ) {
                 MessageContent(m, inBubble = true)
             }
@@ -1097,21 +1186,207 @@ internal fun stampText(ts: Long, locale: Locale): String {
 /** Unsent text per conversation, kept while the user switches tabs. Cleared by the panic wipe. */
 internal val drafts = HashMap<String, String>()
 
+/** Appends a `@mention` token into [existing] composer draft without auto-sending or duplicating. */
+internal fun appendMentionDraft(existing: String, rawToken: String): String {
+    val token = rawToken.trim().removePrefix("@")
+    if (token.isEmpty()) return existing
+    val mention = "@$token"
+    val trimmed = existing.trimEnd()
+    return when {
+        trimmed.isEmpty() -> "$mention "
+        trimmed.endsWith(mention) -> "$trimmed "
+        else -> "$trimmed $mention "
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MessageActionSheet(
+    message: ChatMessage,
+    conversation: String,
+    isPrivate1v1: Boolean,
+    people: List<PeerLabel>,
+    onSenderClick: ((ChatMessage) -> Unit)?,
+    onInsertMention: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val ctx = LocalContext.current
+    val resources = LocalResources.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val label = PeerLabel.of(message)
+    val inlineIcons = rememberLabelInlineIcons()
+    val canCopy = message.text.isNotBlank()
+    val canMention = !message.mine && !isPrivate1v1
+    val canDm = !message.mine && !message.bridged && !isPrivate1v1 && message.senderKey.isNotEmpty()
+    val canInspect = onSenderClick != null && !message.mine && !message.bridged
+    val canBlock = !message.mine && !message.bridged && message.senderKey.isNotEmpty()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = OpenChatPalette.Surface,
+        contentColor = OpenChatPalette.Ink,
+    ) {
+        CompositionLocalProvider(LocalOnElevatedSurface provides true) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 18.dp, end = 18.dp, bottom = 22.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    EmblemView(message.senderKey.ifEmpty { "self" }, 28.dp)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Text(
+                            labelText(label, teleported = message.teleported),
+                            inlineContent = inlineIcons,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (canCopy) {
+                            Text(
+                                message.text.replace('\n', ' '),
+                                fontSize = 12.5.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = OpenChatPalette.CardSurface,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(Modifier.fillMaxWidth()) {
+                        var hasRows = false
+                        @Composable
+                        fun ActionRow(
+                            icon: androidx.compose.ui.graphics.vector.ImageVector,
+                            title: String,
+                            destructive: Boolean = false,
+                            onClick: () -> Unit,
+                        ) {
+                            if (hasRows) Hairline(Modifier.padding(start = 46.dp))
+                            hasRows = true
+                            val tint = if (destructive) MaterialTheme.colorScheme.error else OpenChatPalette.Ink
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable(role = Role.Button) {
+                                        onDismiss()
+                                        onClick()
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 13.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(19.dp))
+                                Text(
+                                    title,
+                                    fontSize = 14.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = tint,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+
+                        if (canCopy) {
+                            ActionRow(Icons.Outlined.ContentCopy, stringResource(R.string.msg_action_copy)) {
+                                val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
+                                cm.setPrimaryClip(android.content.ClipData.newPlainText("message", message.text))
+                                android.widget.Toast.makeText(ctx, R.string.msg_copied, android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        if (canMention) {
+                            val token = if (people.count { it.name.equals(label.name, ignoreCase = true) } > 1) {
+                                label.toString()
+                            } else {
+                                label.name
+                            }
+                            ActionRow(Icons.Outlined.AlternateEmail, stringResource(R.string.msg_action_mention, token)) {
+                                onInsertMention(token)
+                            }
+                        }
+                        if (canDm) {
+                            ActionRow(Icons.Outlined.ChatBubbleOutline, stringResource(R.string.msg_action_dm)) {
+                                val targetKey = if (conversation.startsWith("geo:")) {
+                                    Conversation.GeoPrivate(conversation.removePrefix("geo:"), message.senderKey).key
+                                } else {
+                                    Conversation.Private(message.senderKey).key
+                                }
+                                ChatRepository.requestOpen(targetKey)
+                            }
+                        }
+                        if (canInspect) {
+                            ActionRow(Icons.Outlined.PersonOutline, stringResource(R.string.msg_action_profile)) {
+                                onSenderClick(message)
+                            }
+                        }
+                        if (canBlock) {
+                            ActionRow(Icons.Outlined.Block, stringResource(R.string.peer_block), destructive = true) {
+                                if (conversation.startsWith("geo:") || conversation.startsWith("gdm:")) {
+                                    Social.blockGeo(message.senderKey, label.name)
+                                } else {
+                                    meshFingerprint(message.senderKey)?.let { Social.block(it, label.name) }
+                                }
+                                ChatRepository.addLocal(conversation, resources.getString(R.string.cmd_blocked, label.toString()))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 /**
- * Flat 3-piece composer bar:
- * `[ + 44dp Flat Circle ]` `[ Flat Capsule Text Input ]` `[ Mic / Send 44dp Flat Circle ]`.
- * Tapping Mic enters recording with `[ X Cancel ] [ Recording 0:04 ] [ ■ Stop ] [ ➤ Send ]`;
- * tapping Stop lets the user preview/listen to the voice note or delete it before sending.
+ * Unified 1-piece composer bar with slash/@mention autocomplete and optional Nearby send-scope pill.
  */
 @Composable
-private fun Composer(conversation: String, placeholder: String, people: List<PeerLabel>, onSend: (String) -> Unit) {
+private fun Composer(
+    conversation: String,
+    placeholder: String,
+    people: List<PeerLabel>,
+    pendingMention: String? = null,
+    onConsumeMention: () -> Unit = {},
+    onSend: (String) -> Unit,
+) {
     val ctx = LocalContext.current
     val resources = LocalResources.current
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
-    var text by remember(conversation) { mutableStateOf(drafts[conversation].orEmpty()) }
+    val focusRequester = remember { FocusRequester() }
+    var fieldValue by remember(conversation) {
+        val initial = drafts[conversation].orEmpty()
+        mutableStateOf(TextFieldValue(initial, TextRange(initial.length)))
+    }
+    val text = fieldValue.text
     var focused by remember { mutableStateOf(false) }
-    fun set(t: String) { text = t; if (t.isEmpty()) drafts.remove(conversation) else drafts[conversation] = t }
+    fun set(t: String) {
+        fieldValue = TextFieldValue(t, TextRange(t.length))
+        if (t.isEmpty()) drafts.remove(conversation) else drafts[conversation] = t
+    }
+    LaunchedEffect(pendingMention) {
+        val mToken = pendingMention ?: return@LaunchedEffect
+        val next = appendMentionDraft(fieldValue.text, mToken)
+        fieldValue = TextFieldValue(next, TextRange(next.length))
+        drafts[conversation] = next
+        onConsumeMention()
+        runCatching { focusRequester.requestFocus() }
+    }
     val send = { val t = text.trim(); if (t.isNotEmpty()) { onSend(t); set("") } }
 
     val supportsMedia = !conversation.startsWith("geo:") && !conversation.startsWith("gdm:") && !conversation.startsWith("grp:")
@@ -1345,23 +1620,19 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
             return
         }
 
-        val inputFill = when {
-            isLight -> Color.White
-            focused || text.isNotEmpty() -> OpenChatPalette.CardRaised
-            else -> OpenChatPalette.Card
-        }
-        val inputBorder = when {
-            focused && encrypted -> OpenChatPalette.Lock.copy(alpha = 0.45f)
-            focused -> OpenChatPalette.Outline.copy(alpha = 0.55f)
-            else -> null
+        val composerFill = if (isLight) Color.White else Color(0xFF15161A)
+        val composerRim = when {
+            focused && encrypted -> OpenChatPalette.Lock.copy(alpha = 0.35f)
+            focused -> OpenChatPalette.Ink.copy(alpha = 0.22f)
+            isLight -> Color.Black.copy(alpha = 0.07f)
+            else -> Color.White.copy(alpha = 0.08f)
         }
 
         if (plusMenuOpen && supportsMedia && text.isEmpty()) {
-            val menuAccent = if (encrypted) OpenChatPalette.Lock else OpenChatPalette.Signal
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(start = 12.dp, end = 12.dp, bottom = 6.dp),
+                    .padding(start = 14.dp, end = 14.dp, bottom = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -1381,7 +1652,7 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                     Text(
                         stringResource(R.string.media_photo),
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Medium,
                         color = OpenChatPalette.Ink,
                     )
                 }
@@ -1391,19 +1662,18 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                             plusMenuOpen = false
                             ChatRepository.setPttOpen(conversation, true)
                         },
-                        borderAccent = menuAccent,
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
                     ) {
                         Icon(
                             WalkieTalkieIcon,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
-                            tint = menuAccent,
+                            tint = OpenChatPalette.Ink,
                         )
                         Text(
                             stringResource(R.string.ptt_menu_item),
                             fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Medium,
                             color = OpenChatPalette.Ink,
                         )
                     }
@@ -1411,46 +1681,137 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
             }
         }
 
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            if (supportsMedia && text.isEmpty()) {
-                FluidGlassCircleButton(
-                    icon = if (plusMenuOpen) Icons.Filled.Close else Icons.Filled.Add,
-                    contentDescription = stringResource(R.string.media_photo),
-                    onClick = { plusMenuOpen = !plusMenuOpen },
-                    size = 44.dp,
-                    iconSize = 21.dp,
-                    iconTint = OpenChatPalette.Ink,
-                )
+        val bridgeStatus by ChatRepository.bridge.collectAsState()
+        val allowBridge by ChatRepository.nearbyAllowBridge.collectAsState()
+        var scopeHintStamp by remember { mutableLongStateOf(0L) }
+        LaunchedEffect(scopeHintStamp) {
+            if (scopeHintStamp > 0L) {
+                delay(3_500L)
+                scopeHintStamp = 0L
             }
-
-            FlatCapsule(
-                modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
-                containerColor = inputFill,
-                borderColor = inputBorder,
-                contentAlignment = Alignment.CenterStart,
+        }
+        if (conversation == Conversation.Mesh.key && bridgeStatus.enabled) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 14.dp, end = 14.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                FluidGlassPillButton(
+                    onClick = {
+                        ChatRepository.setNearbyAllowBridge(!allowBridge)
+                        scopeHintStamp = System.currentTimeMillis()
+                    },
+                    borderAccent = if (allowBridge) OpenChatPalette.Lock else OpenChatPalette.Online,
+                    contentPadding = PaddingValues(horizontal = 11.dp, vertical = 5.dp),
                 ) {
-                    if (encrypted) {
+                    Icon(
+                        imageVector = if (allowBridge) Icons.Outlined.Public else Icons.Outlined.Sensors,
+                        contentDescription = null,
+                        tint = if (allowBridge) OpenChatPalette.Lock else OpenChatPalette.Online,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Text(
+                        stringResource(if (allowBridge) R.string.scope_bridge_on else R.string.scope_ble_only),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OpenChatPalette.Ink,
+                        maxLines = 1,
+                    )
+                }
+                if (scopeHintStamp > 0L) {
+                    Text(
+                        stringResource(if (allowBridge) R.string.scope_hint_bridge else R.string.scope_hint_ble),
+                        fontSize = 11.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+
+        // Unified 1-piece minimalist composer capsule: [ +  input...  🎤 / ↑ ]
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .defaultMinSize(minHeight = 46.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = composerFill,
+            contentColor = OpenChatPalette.Ink,
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp,
+            border = BorderStroke(0.5.dp, composerRim),
+        ) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (supportsMedia && text.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .pressScale(0.92f)
+                            .clip(CircleShape)
+                            .background(
+                                if (plusMenuOpen) OpenChatPalette.Card else Color.Transparent,
+                                CircleShape,
+                            )
+                            .clickable(
+                                role = Role.Button,
+                                onClick = { plusMenuOpen = !plusMenuOpen },
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = if (plusMenuOpen) Icons.Filled.Close else Icons.Filled.Add,
+                            contentDescription = stringResource(R.string.media_photo),
+                            tint = OpenChatPalette.Ink.copy(alpha = 0.80f),
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+
+                Row(
+                    Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 36.dp)
+                        .padding(
+                            start = if (supportsMedia && text.isEmpty()) 2.dp else 10.dp,
+                            end = 2.dp,
+                            top = 6.dp,
+                            bottom = 6.dp,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (encrypted && text.isEmpty()) {
                         Icon(
                             Icons.Outlined.Lock,
                             contentDescription = stringResource(R.string.chip_encrypted),
-                            tint = OpenChatPalette.Lock,
-                            modifier = Modifier.size(15.dp),
+                            tint = OpenChatPalette.Muted.copy(alpha = 0.70f),
+                            modifier = Modifier.size(13.dp),
                         )
                     }
                     BasicTextField(
-                        value = text,
-                        onValueChange = { if (it.length <= 1000) set(it) },
-                        modifier = Modifier.weight(1f).onFocusChanged { focused = it.isFocused },
-                        textStyle = TextStyle(color = OpenChatPalette.Ink, fontSize = 15.5.sp, lineHeight = 22.sp),
+                        value = fieldValue,
+                        onValueChange = { next ->
+                            if (next.text.length <= 1000) {
+                                fieldValue = next
+                                if (next.text.isEmpty()) drafts.remove(conversation) else drafts[conversation] = next.text
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester)
+                            .onFocusChanged { focused = it.isFocused },
+                        textStyle = TextStyle(color = OpenChatPalette.Ink, fontSize = 15.sp, lineHeight = 21.sp),
                         cursorBrush = SolidColor(OpenChatPalette.Ink),
                         maxLines = 5,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -1460,7 +1821,7 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                                 if (text.isEmpty()) {
                                     Text(
                                         placeholder,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.80f),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Normal,
                                         maxLines = 1,
@@ -1472,68 +1833,77 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                         },
                     )
                 }
-            }
 
-            val hasText = text.isNotBlank()
-            AnimatedContent(
-                targetState = hasText || !supportsMedia,
-                transitionSpec = { (fadeIn(tween(120)) + scaleIn(tween(120), initialScale = 0.85f)) togetherWith (fadeOut(tween(90)) + scaleOut(tween(90), targetScale = 0.85f)) },
-                label = "composer-action",
-            ) { showSend ->
-                if (showSend) {
-                    val active = text.isNotBlank()
-                    val accent = if (encrypted) (if (isLight) OpenChatPalette.Lock else Color(0xFF247BFF)) else OpenChatPalette.Signal
-                    FluidGlassCircleButton(
-                        icon = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = resources.getString(R.string.send),
-                        onClick = if (active) send else null,
-                        enabled = active,
-                        size = 44.dp,
-                        iconSize = 19.dp,
-                        iconTint = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                        tintColor = if (active) accent else null,
-                        borderAccent = if (active) accent else null,
-                    )
-                } else {
-                    val hint = stringResource(R.string.media_mic_hint)
-                    fun toggleVoice() {
-                        val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                        if (granted) recording = beginVoice() else micPerm.launch(android.Manifest.permission.RECORD_AUDIO)
-                    }
-                    val micAccent = if (encrypted) OpenChatPalette.Lock else OpenChatPalette.Signal
-                    val micFill = if (encrypted) OpenChatPalette.LockSoft else OpenChatPalette.SignalSoft
-                    Surface(
-                        shape = CircleShape,
-                        color = micFill,
-                        tonalElevation = 0.dp,
-                        shadowElevation = 0.dp,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .pressScale(0.93f)
-                            .clip(CircleShape)
-                            .clearAndSetSemantics {
-                                contentDescription = hint
-                                role = Role.Button
-                                onClick { toggleVoice(); true }
-                            }
-                            .pointerInput(conversation) {
-                                detectTapGestures(onPress = {
-                                    val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                                    if (!granted) { micPerm.launch(android.Manifest.permission.RECORD_AUDIO); return@detectTapGestures }
-                                    recording = beginVoice()
-                                    if (!recording) return@detectTapGestures
-                                    val pressedAt = System.currentTimeMillis()
-                                    if (!tryAwaitRelease()) cancelNoteRecording()
-                                    else if (System.currentTimeMillis() - pressedAt >= 400) stopAndSendVoice()
-                                })
-                            },
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
+                val hasText = text.isNotBlank()
+                AnimatedContent(
+                    targetState = hasText || !supportsMedia,
+                    transitionSpec = { (fadeIn(tween(110)) + scaleIn(tween(110), initialScale = 0.86f)) togetherWith (fadeOut(tween(85)) + scaleOut(tween(85), targetScale = 0.86f)) },
+                    label = "composer-action",
+                ) { showSend ->
+                    if (showSend) {
+                        val active = text.isNotBlank()
+                        val sendBg = when {
+                            !active -> Color.Transparent
+                            isLight -> Color(0xFF111214)
+                            else -> Color(0xFFF1F2F4)
+                        }
+                        val sendFg = when {
+                            !active -> OpenChatPalette.Muted.copy(alpha = 0.45f)
+                            isLight -> Color.White
+                            else -> Color(0xFF111214)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .let { if (active) it.pressScale(0.92f) else it }
+                                .clip(CircleShape)
+                                .background(sendBg, CircleShape)
+                                .let {
+                                    if (active) it.clickable(role = Role.Button, onClick = send) else it
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowUpward,
+                                contentDescription = resources.getString(R.string.send),
+                                tint = sendFg,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    } else {
+                        val hint = stringResource(R.string.media_mic_hint)
+                        fun toggleVoice() {
+                            val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                            if (granted) recording = beginVoice() else micPerm.launch(android.Manifest.permission.RECORD_AUDIO)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .pressScale(0.92f)
+                                .clip(CircleShape)
+                                .clearAndSetSemantics {
+                                    contentDescription = hint
+                                    role = Role.Button
+                                    onClick { toggleVoice(); true }
+                                }
+                                .pointerInput(conversation) {
+                                    detectTapGestures(onPress = {
+                                        val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                        if (!granted) { micPerm.launch(android.Manifest.permission.RECORD_AUDIO); return@detectTapGestures }
+                                        recording = beginVoice()
+                                        if (!recording) return@detectTapGestures
+                                        val pressedAt = System.currentTimeMillis()
+                                        if (!tryAwaitRelease()) cancelNoteRecording()
+                                        else if (System.currentTimeMillis() - pressedAt >= 400) stopAndSendVoice()
+                                    })
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
                             Icon(
                                 Icons.Outlined.Mic,
                                 contentDescription = null,
-                                tint = if (isLight) (if (encrypted) Color(0xFF0E56D8) else Color(0xFFD93F07)) else micAccent,
-                                modifier = Modifier.size(20.dp),
+                                tint = OpenChatPalette.Ink.copy(alpha = 0.80f),
+                                modifier = Modifier.size(19.dp),
                             )
                         }
                     }

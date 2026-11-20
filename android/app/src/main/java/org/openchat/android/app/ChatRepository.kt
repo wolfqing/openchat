@@ -90,6 +90,7 @@ data class MeshStatus(
     val myPeerHex: String = "",
     val fingerprint: String = "",
     val carriedCount: Int = 0, // sealed envelopes held for others (§13.4)
+    val passedTodayCount: Int = 0, // distinct verified mesh peers heard today (memory-only)
     val storageLocked: Boolean = false, // the saved identity exists but could not be opened; nothing runs until it can
 )
 
@@ -114,11 +115,15 @@ data class LiveSpeaker(
 data class GeoStatus(
     val locationGeohash: String? = null, // full-precision cell of the device, if known
     val relaysConnected: Int = 0,
+    val connectedChannels: Set<String> = emptySet(), // joined geohashes with at least one connected relay
     val joined: Set<String> = emptySet(),
+    val bookmarks: Set<String> = emptySet(),
     val participants: Map<String, Int> = emptyMap(),
     val notesCell: String? = null,          // building-level cell whose notes are listed
     val notes: List<LocationNote> = emptyList(),
     val tor: TorState = TorState.STARTING,
+    val torProgress: Int = 0,
+    val torStalled: Boolean = false,
 )
 
 /** UI-facing actions; the running MeshService installs itself here. */
@@ -137,6 +142,7 @@ interface ChatController {
     fun setNickname(name: String)
     fun joinGeo(geohash: String, teleported: Boolean)
     fun leaveGeo(geohash: String)
+    fun toggleGeoBookmark(geohash: String) {}
     fun sendGeo(geohash: String, text: String)
     fun sendGeoPrivate(geohash: String, pubkey: String, text: String)
     /** Creates a group and returns its conversation key, or null for an empty name. */
@@ -145,7 +151,7 @@ interface ChatController {
     fun groupRemove(idHex: String, fingerprint: String)
     fun groupLeave(idHex: String)
     fun sendGroup(idHex: String, text: String)
-    fun postToBoard(text: String, urgent: Boolean, days: Int): Boolean
+    fun postToBoard(text: String, urgent: Boolean, days: Int, geohash: String = ""): Boolean
     fun deleteBoardPost(idHex: String)
     fun setBridge(on: Boolean)
     /** Sends a failed private message again as a new message, replacing the failed one. */
@@ -285,6 +291,11 @@ object ChatRepository {
     val sessionPeers: StateFlow<Set<String>> = _sessionPeers.asStateFlow()
     fun setSessionPeers(peers: Set<String>) { _sessionPeers.value = peers }
 
+    /** Per-send Nearby scope toggle when global Mesh Bridge is enabled (`true` = Nearby + Bridge, `false` = BLE only). */
+    private val _nearbyAllowBridge = MutableStateFlow(true)
+    val nearbyAllowBridge: StateFlow<Boolean> = _nearbyAllowBridge.asStateFlow()
+    fun setNearbyAllowBridge(allow: Boolean) { _nearbyAllowBridge.value = allow }
+
     private val _liveMicLevel = MutableStateFlow(0f)
     val liveMicLevel: StateFlow<Float> = _liveMicLevel.asStateFlow()
     fun setLiveMicLevel(level: Float) { _liveMicLevel.value = level.coerceIn(0f, 1f) }
@@ -311,6 +322,7 @@ object ChatRepository {
         // A running service republishes these as it resets; without one, nobody else would clear them.
         _groups.value = emptyMap(); _bridge.value = BridgeStatus(); _openRequest.value = null
         _pttStates.value = emptyMap(); _pttOpen.value = emptySet(); _sessionPeers.value = emptySet()
+        _nearbyAllowBridge.value = true
         _liveSpeakers.value = emptyMap(); _liveMicLevel.value = 0f; _liveRxLevel.value = 0f
         _messages.value = emptyMap()
         _peers.value = emptyList()
