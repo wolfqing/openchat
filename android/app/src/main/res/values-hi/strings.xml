@@ -373,4 +373,9 @@
     <string name="ptt_handshaking">एन्क्रिप्टेड चैनल जुड़ रहा है…</string>
     <string name="ptt_muted_hint">लाइव वॉकी-टॉकी म्यूट है</string>
     <string name="ptt_muted_enable">आवाज़ चालू करें</string>
+
+    <string name="nearby_peers_title">आस-पास के लोग</string>
+    <string name="nearby_peers_summary">%1$d सीधे · %2$d पहुँच में</string>
+    <string name="nearby_peers_open">आस-पास उपलब्ध लोग देखें</string>
+    <string name="nearby_peers_empty">अभी सीमा में कोई नहीं है।</string>
 </resources>

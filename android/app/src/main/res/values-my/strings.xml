@@ -367,4 +367,9 @@
     <string name="ptt_handshaking">လုံခြုံရေးလိုင်း ချိတ်ဆက်နေသည်…</string>
     <string name="ptt_muted_hint">စကားပြောစက် အသံပိတ်ထားသည်</string>
     <string name="ptt_muted_enable">အသံပြန်ဖွင့်ရန် နှိပ်ပါ</string>
+
+    <string name="nearby_peers_title">အနီးအနားရှိ လူများ</string>
+    <string name="nearby_peers_summary">တိုက်ရိုက် %1$d · ချိတ်ဆက်နိုင် %2$d</string>
+    <string name="nearby_peers_open">အနီးအနားရှိ ချိတ်ဆက်နိုင်သူများကို ကြည့်ရန်</string>
+    <string name="nearby_peers_empty">လက်ရှိ အကွာအဝေးအတွင်း မည်သူမျှ မရှိသေးပါ။</string>
 </resources>

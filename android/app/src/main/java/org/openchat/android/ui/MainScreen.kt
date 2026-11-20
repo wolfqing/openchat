@@ -160,6 +160,7 @@ fun MainScreen(
     var wiped by remember { mutableStateOf<Wiped?>(null) }
     val context = LocalContext.current
     var person by remember { mutableStateOf<PersonRef?>(null) }
+    var showNearbyPeers by remember { mutableStateOf(false) }
     val unread by ChatRepository.unread.collectAsState()
     val mesh by ChatRepository.mesh.collectAsState()
     val peers by ChatRepository.peers.collectAsState()
@@ -177,6 +178,7 @@ fun MainScreen(
         }
         drafts.clear()
         openChat = null
+        showNearbyPeers = false
         tab = Tab.NEARBY
     }
 
@@ -222,6 +224,13 @@ fun MainScreen(
     LaunchedEffect(openRequest) { openRequest?.let { openChat = it; ChatRepository.requestOpen(null) } }
     LaunchedEffect(Unit) { AppUpdater.maybeAutoCheck(context) }
     person?.let { p -> PersonSheet(p, onDismiss = { person = null }, onMessage = { openChat = Conversation.Private(it).key }) }
+    if (showNearbyPeers) {
+        NearbyPeersSheet(
+            onDismiss = { showNearbyPeers = false },
+            onSelectPerson = { showNearbyPeers = false; person = it },
+            onMessage = { hex -> showNearbyPeers = false; openChat = Conversation.Private(hex).key },
+        )
+    }
 
     AnimatedContent(
         targetState = openChat,
@@ -267,6 +276,7 @@ fun MainScreen(
                 onScan = onScan,
                 onOpenChat = { openChat = it },
                 onSelectPerson = { person = it },
+                onShowNearbyPeers = { showNearbyPeers = true },
             )
         }
     }
@@ -294,6 +304,7 @@ private fun ShellScaffold(
     onScan: () -> Unit,
     onOpenChat: (String) -> Unit,
     onSelectPerson: (PersonRef) -> Unit,
+    onShowNearbyPeers: () -> Unit,
 ) {
     val density = LocalDensity.current
     val imeBottomPx = WindowInsets.ime.getBottom(density)
@@ -353,6 +364,7 @@ private fun ShellScaffold(
                                                 Text(
                                                     stringResource(R.string.board_title),
                                                     fontSize = 13.sp,
+                                                    lineHeight = 18.sp,
                                                     fontWeight = FontWeight.SemiBold,
                                                     color = OpenChatPalette.Ink,
                                                     maxLines = 1,
@@ -375,6 +387,7 @@ private fun ShellScaffold(
                                             Text(
                                                 stringResource(R.string.group_new),
                                                 fontSize = 13.sp,
+                                                lineHeight = 18.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                                 color = OpenChatPalette.Ink,
                                                 maxLines = 1,
@@ -396,6 +409,7 @@ private fun ShellScaffold(
                                             Text(
                                                 stringResource(R.string.guide_button),
                                                 fontSize = 13.sp,
+                                                lineHeight = 18.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                                 color = OpenChatPalette.Ink,
                                                 maxLines = 1,
@@ -424,6 +438,7 @@ private fun ShellScaffold(
                                     pttOpen = tab == Tab.NEARBY && nearbyPttOpen,
                                     onTogglePtt = if (tab == Tab.NEARBY) ({ ChatRepository.togglePttOpen(Conversation.Mesh.key) }) else null,
                                     onSpeakerClick = if (tab == Tab.NEARBY) ({ ChatRepository.setPttOpen(Conversation.Mesh.key, true) }) else null,
+                                    onPeersClick = onShowNearbyPeers,
                                 )
                             }
                         }
@@ -555,11 +570,7 @@ private fun CapsuleNavigationBar(
                         Tab.LOCATION -> unread.filterKeys { it.startsWith("geo:") }.values.sum()
                         Tab.ME -> 0
                     }
-                    val fg = when {
-                        isSelected -> OpenChatPalette.Ink
-                        isLight -> Color(0xFF2B3748)
-                        else -> OpenChatPalette.Muted
-                    }
+                    val fg = if (isSelected) OpenChatPalette.Ink else OpenChatPalette.Muted
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -716,7 +727,6 @@ fun PanicTitle(text: AnnotatedString, onPanic: () -> Unit) {
 fun PanicLogo(onPanic: () -> Unit) {
     val tap = rememberPanicTaps(onPanic)
     val desc = stringResource(R.string.panic_logo)
-    val isLight = OpenChatPalette.isLight
     Box(
         modifier = Modifier
             .size(48.dp)
@@ -726,7 +736,7 @@ fun PanicLogo(onPanic: () -> Unit) {
     ) {
         Surface(
             shape = RoundedCornerShape(10.dp),
-            color = if (isLight) Color(0xFFE5ECF4) else Color(0xFF171E21),
+            color = OpenChatPalette.Control,
             tonalElevation = 0.dp,
             shadowElevation = 0.dp,
             modifier = Modifier.size(36.dp).clipToBounds(),

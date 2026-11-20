@@ -7,6 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.openchat.android.app.ChatMessage
 import org.openchat.android.app.DeliveryState
+import org.openchat.android.mesh.MeshPeer
 import java.util.TimeZone
 
 class MeshVisualsTest {
@@ -106,5 +107,27 @@ class MeshVisualsTest {
         ).filterIsInstance<TimelineRow.Message>()
         assertEquals(listOf(true, false, true, true, true, true), rows.map { it.groupStart })
         assertEquals(listOf(false, true, true, true, true, true), rows.map { it.groupEnd })
+    }
+
+    @Test
+    fun sortNearbyPeersExcludesSelfAndOrdersDirectThenHopsThenRecency() {
+        val key = ByteArray(32)
+        fun peer(hex: String, name: String, direct: Boolean, hops: Int?, lastSeen: Long) =
+            MeshPeer(hex, name, key, key, lastSeen, direct, hops)
+
+        val sorted = sortNearbyPeers(
+            peers = listOf(
+                peer("0000", "Self", direct = true, hops = 1, lastSeen = 9_000),
+                peer("aaaa", "Curie", direct = false, hops = 3, lastSeen = 5_000),
+                peer("bbbb", "Lovelace", direct = false, hops = null, lastSeen = 8_000),
+                peer("cccc", "Darwin", direct = false, hops = 2, lastSeen = 4_000),
+                peer("dddd", "ZhangHeng", direct = true, hops = 1, lastSeen = 3_000),
+                peer("eeee", "LiBai", direct = true, hops = 1, lastSeen = 6_000),
+                peer("ffff", "SuShi", direct = false, hops = 2, lastSeen = 7_000),
+            ),
+            myPeerHex = "0000",
+        )
+
+        assertEquals(listOf("eeee", "dddd", "ffff", "cccc", "aaaa", "bbbb"), sorted.map { it.peerIdHex })
     }
 }

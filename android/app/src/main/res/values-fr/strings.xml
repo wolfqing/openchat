@@ -379,4 +379,9 @@
     <string name="ptt_handshaking">Connexion au canal chiffré…</string>
     <string name="ptt_muted_hint">Talkie-walkie en sourdine</string>
     <string name="ptt_muted_enable">Activer le son</string>
+
+    <string name="nearby_peers_title">Personnes à proximité</string>
+    <string name="nearby_peers_summary">%1$d directs · %2$d à portée</string>
+    <string name="nearby_peers_open">Voir les personnes joignables à proximité</string>
+    <string name="nearby_peers_empty">Personne n\'est à portée pour le moment.</string>
 </resources>

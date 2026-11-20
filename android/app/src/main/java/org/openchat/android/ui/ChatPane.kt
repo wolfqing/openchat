@@ -326,11 +326,10 @@ fun ChatPane(
 
 @Composable
 private fun SystemNoticeRow(text: String) {
-    val isLight = OpenChatPalette.isLight
     Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
         Surface(
             shape = RoundedCornerShape(10.dp),
-            color = if (isLight) Color(0xFFE7EDF5) else Color(0xFF14191C),
+            color = OpenChatPalette.ChipPassive,
         ) {
             Text(
                 text,
@@ -421,7 +420,7 @@ private fun PublicPostRow(
 
                 Surface(
                     shape = bubbleShape,
-                    color = if (isLight) Color(0xFFDFECFE) else Color(0xFF15273B),
+                    color = if (isLight) Color.White else Color(0xFF1E1D1B),
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp,
                     modifier = Modifier.widthIn(max = 296.dp),
@@ -677,7 +676,7 @@ private fun EncryptedBubbleRow(
                 color = when {
                     m.mine -> OpenChatPalette.LockSoft
                     isLight -> Color.White
-                    else -> Color(0xFF161D20)
+                    else -> Color(0xFF181816)
                 },
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
@@ -758,13 +757,14 @@ private fun statusLabel(state: DeliveryState): String = stringResource(
 @Composable
 private fun MessageContent(m: ChatMessage, inBubble: Boolean) {
     val isLight = OpenChatPalette.isLight
-    val voiceAccent = if (inBubble && m.mine) OpenChatPalette.Lock else OpenChatPalette.Signal
+    val encryptedMine = inBubble && m.mine && !m.conversation.startsWith("mesh") && !m.conversation.startsWith("geo:")
+    val voiceAccent = if (encryptedMine) OpenChatPalette.Lock else OpenChatPalette.Signal
     when {
         m.attachment != null && m.audio -> {
             if (inBubble) VoiceNote(m.attachment, accentColor = voiceAccent)
             else Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = OpenChatPalette.Card,
+                color = OpenChatPalette.CardSurface,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
                 modifier = Modifier.padding(top = 3.dp),
@@ -777,7 +777,7 @@ private fun MessageContent(m: ChatMessage, inBubble: Boolean) {
                 modifier = if (inBubble) Modifier.padding(horizontal = 13.dp, vertical = 9.dp) else Modifier,
                 fontSize = 15.sp,
                 lineHeight = 22.sp,
-                color = if (inBubble && m.mine && isLight) Color(0xFF091E42) else MaterialTheme.colorScheme.onSurface,
+                color = if (encryptedMine && isLight) Color(0xFF091E42) else MaterialTheme.colorScheme.onSurface,
             )
             Cashu.tokensIn(m.text).take(3).forEach { CashuCard(it, inBubble = inBubble) }
         }
@@ -789,10 +789,9 @@ private fun MessageContent(m: ChatMessage, inBubble: Boolean) {
 private fun CashuCard(token: String, inBubble: Boolean) {
     val ctx = LocalContext.current
     val info = remember(token) { Cashu.decode(token) } ?: return
-    val isLight = OpenChatPalette.isLight
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (isLight) Color(0xFFF2F6FC) else Color(0xFF0E1315),
+        color = OpenChatPalette.Well,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
         modifier = Modifier.padding(
@@ -945,7 +944,7 @@ private fun VoiceNote(path: String, accentColor: Color = OpenChatPalette.Signal)
             }
         }
         val activeBarColor = accentColor
-        val idleBarColor = if (OpenChatPalette.isLight) Color(0xFF0F1722).copy(alpha = 0.18f) else Color.White.copy(alpha = 0.22f)
+        val idleBarColor = if (OpenChatPalette.isLight) Color(0xFF171614).copy(alpha = 0.18f) else Color.White.copy(alpha = 0.22f)
         Canvas(Modifier.width(96.dp).height(22.dp).clearAndSetSemantics { }) {
             val step = size.width / bars.size
             val barW = (step * 0.56f).coerceAtLeast(2f)
@@ -1319,7 +1318,7 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
                 )
                 FlatCapsule(
                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
-                    containerColor = if (isLight) Color.White else Color(0xFF161D20),
+                    containerColor = if (isLight) Color.White else OpenChatPalette.Card,
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     VoiceNote(readyPreview.absolutePath, accentColor = accent)
@@ -1348,8 +1347,8 @@ private fun Composer(conversation: String, placeholder: String, people: List<Pee
 
         val inputFill = when {
             isLight -> Color.White
-            focused || text.isNotEmpty() -> Color(0xFF1C2529)
-            else -> Color(0xFF161D20)
+            focused || text.isNotEmpty() -> OpenChatPalette.CardRaised
+            else -> OpenChatPalette.Card
         }
         val inputBorder = when {
             focused && encrypted -> OpenChatPalette.Lock.copy(alpha = 0.45f)

@@ -1,6 +1,6 @@
 # openchat for Android
 
-Status: **v0.7.11 preview.** Builds and passes its 208 unit tests. v0.7.6 ran
+Status: **v0.7.12 preview.** Builds and passes its 209 unit tests. v0.7.6 ran
 on an Android 14 (`API 34`) emulator before publishing and previews up to
 v0.7.2 ran on an Android 15 emulator (see [CHANGELOG.md](../CHANGELOG.md) per
 release); the mesh has not been tried between real phones, and it is not yet

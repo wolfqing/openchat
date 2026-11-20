@@ -373,4 +373,9 @@
     <string name="ptt_handshaking">Şifreli kanal bağlanıyor…</string>
     <string name="ptt_muted_hint">Canlı telsiz sessize alındı</string>
     <string name="ptt_muted_enable">Sesi Aç</string>
+
+    <string name="nearby_peers_title">Yakındaki kişiler</string>
+    <string name="nearby_peers_summary">%1$d doğrudan · %2$d erişilebilir</string>
+    <string name="nearby_peers_open">Yakındaki erişilebilir kişileri görüntüle</string>
+    <string name="nearby_peers_empty">Şu anda menzilde kimse yok.</string>
 </resources>

@@ -44,6 +44,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -183,8 +184,7 @@ private fun BoardCard(p: BoardItem) {
         color = when {
             p.urgent && isLight -> Color(0xFFFFEFE6)
             p.urgent -> Color(0xFF28140B)
-            isLight -> Color.White
-            else -> Color(0xFF13181B)
+            else -> OpenChatPalette.CardSurface
         },
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -254,6 +254,7 @@ private fun BoardComposerSheet(onDismiss: () -> Unit) {
         containerColor = OpenChatPalette.Surface,
         contentColor = OpenChatPalette.Ink,
     ) {
+        CompositionLocalProvider(LocalOnElevatedSurface provides true) {
         BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
@@ -378,6 +379,7 @@ private fun BoardComposerSheet(onDismiss: () -> Unit) {
                     }
                 }
             }
+        }
         }
     }
 }

@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,13 +72,13 @@ data class OpenChatColors(
 internal val DarkOpenChatColors = OpenChatColors(
     isLight = false,
     screen = Color(0xFF000000),
-    surface = Color(0xFF101414),
-    card = Color(0xFF151B1B),
-    cardRaised = Color(0xFF1C2424),
-    ink = Color(0xFFEDF1EF),
-    muted = Color(0xFF9AA4A3),
-    line = Color(0xFF222929),
-    outline = Color(0xFF384343),
+    surface = Color(0xFF121211),
+    card = Color(0xFF1A1A18),
+    cardRaised = Color(0xFF232220),
+    ink = Color(0xFFF2F0EC),
+    muted = Color(0xFF9D9A93),
+    line = Color(0xFF262522),
+    outline = Color(0xFF3E3C38),
     signal = Color(0xFFFF682B),
     signalSoft = Color(0xFF2E150A),
     onSignal = Color(0xFFFFFFFF),
@@ -88,16 +89,16 @@ internal val DarkOpenChatColors = OpenChatColors(
 
 internal val LightOpenChatColors = OpenChatColors(
     isLight = true,
-    screen = Color(0xFFF1F5FA),
+    screen = Color(0xFFF4F2EC),
     surface = Color(0xFFFFFFFF),
-    card = Color(0xFFE9EEF5),
-    cardRaised = Color(0xFFDFE6F0),
-    ink = Color(0xFF0E1621),
-    muted = Color(0xFF5B6776),
-    line = Color(0xFFDCE3EC),
-    outline = Color(0xFFBCC7D6),
+    card = Color(0xFFEFECE5),
+    cardRaised = Color(0xFFE6E2D9),
+    ink = Color(0xFF171614),
+    muted = Color(0xFF646058),
+    line = Color(0xFFE3DFD6),
+    outline = Color(0xFFC8C2B6),
     signal = Color(0xFFFF5A1F),
-    signalSoft = Color(0xFFFFEBE2),
+    signalSoft = Color(0xFFFFECE4),
     onSignal = Color(0xFFFFFFFF),
     lock = Color(0xFF1A6BFF),
     lockSoft = Color(0xFFDCEBFF),
@@ -107,14 +108,21 @@ internal val LightOpenChatColors = OpenChatColors(
 internal val LocalOpenChatColors = staticCompositionLocalOf { DarkOpenChatColors }
 
 /**
+ * True inside elevated white/card containers (settings cards, bottom sheets, drawers) so
+ * borderless controls placed inside them switch from floating white to warm-stone tonal fills.
+ */
+internal val LocalOnElevatedSurface = compositionLocalOf { false }
+
+/**
  * Semantic tokens from docs/design/ui-direction.md and docs/design/ui-prototype.html,
- * supporting both Radiant Light (daylight legibility) and OLED Dark (blackout battery saving).
+ * supporting both Warm Stone Light (daylight legibility) and OLED Dark (blackout battery saving).
  *
  * Two strict layers:
- * - Content & chrome stay quiet: clean alabaster or pure OLED black ground, crisp high-contrast ink.
+ * - Content & chrome stay warm-neutral and quiet: warm stone paper or pure OLED black ground,
+ *   crisp high-contrast ink, pure white floating chrome on canvas and warm tonal wells inside cards.
  * - Signal orange ([Signal]) belongs strictly to the mesh/network layer (signal band, hops,
  *   delivery path, live PTT, radar, globe crosshair, unread badges, @mentions).
- * - Lock blue ([Lock] / [LockSoft]) marks end-to-end encrypted conversations.
+ * - Lock blue ([Lock] / [LockSoft]) marks end-to-end encrypted conversations exclusively.
  */
 object OpenChatPalette {
     val isLight: Boolean @Composable get() = LocalOpenChatColors.current.isLight
@@ -126,6 +134,31 @@ object OpenChatPalette {
     val Muted: Color @Composable get() = LocalOpenChatColors.current.muted
     val Line: Color @Composable get() = LocalOpenChatColors.current.line
     val Outline: Color @Composable get() = LocalOpenChatColors.current.outline
+
+    /** Elevated card/sheet/drawer background (pure white in light mode, warm charcoal in OLED dark). */
+    val CardSurface: Color
+        @Composable get() = if (isLight) Surface else Color(0xFF141413)
+
+    /**
+     * Borderless fill for interactive pills, status capsules, and circular controls:
+     * pure white floating over the warm-stone canvas in light mode, automatically stepping to
+     * warm-stone tonal fill ([Card]) when placed inside an elevated card, sheet, or drawer.
+     */
+    val Control: Color
+        @Composable get() = when {
+            LocalOnElevatedSurface.current && isLight -> Card
+            LocalOnElevatedSurface.current -> CardRaised
+            isLight -> Surface
+            else -> Card
+        }
+
+    /** Inset tonal well inside cards/sheets (fingerprint grid, relay rows, segmented tracks, list containers). */
+    val Well: Color
+        @Composable get() = if (isLight) Color(0xFFF2F0EA) else Color(0xFF1B1B19)
+
+    /** Passive non-interactive badges & dividers on canvas (day headers, system notices, public chip). */
+    val ChipPassive: Color
+        @Composable get() = if (isLight) Color(0xFFEAE7DF) else Color(0xFF161615)
 
     val Signal: Color @Composable get() = LocalOpenChatColors.current.signal
     val SignalSoft: Color @Composable get() = LocalOpenChatColors.current.signalSoft
@@ -158,7 +191,7 @@ private val OpenChatDarkScheme = darkColorScheme(
     onPrimary = Color.White,
     primaryContainer = DarkOpenChatColors.lockSoft,
     onPrimaryContainer = DarkOpenChatColors.ink,
-    secondary = Color(0xFF28343B),
+    secondary = Color(0xFF2B2A27),
     onSecondary = DarkOpenChatColors.ink,
     secondaryContainer = DarkOpenChatColors.cardRaised,
     onSecondaryContainer = DarkOpenChatColors.ink,
@@ -257,67 +290,55 @@ internal fun Modifier.pressScale(pressedScale: Float = 0.94f): Modifier = compos
 }
 
 /**
- * Atmospheric canvas background from the approved Radiant Light & OLED Dark design:
- * - Radiant Light: `#FFFFFF -> #F4F7FC -> #EBF1F8` vertical daylight gradient with subtle
- *   warm Signal-orange top-left and cool Lock-blue bottom-right ambient radial glows.
- * - OLED Dark: pure `#000000` canvas with ultra-subtle top-left warm and bottom-right cool glows.
+ * Atmospheric canvas background:
+ * - Warm Stone Light: `#F6F4EE -> #F4F2EC -> #EDEAE2` warm daylight paper with a subtle
+ *   top-left warm Signal-orange glow and zero blue wash so pure-white floating pills and
+ *   cards separate crisply without borders.
+ * - OLED Dark: pure `#000000` canvas with an ultra-subtle top-left warm glow.
  */
 internal fun Modifier.openChatCanvas(): Modifier = composed {
     val isLight = OpenChatPalette.isLight
     this.drawWithCache {
         val w = size.width.coerceAtLeast(1f)
         val h = size.height.coerceAtLeast(1f)
-        val topGlowRadius = maxOf(w * 0.90f, h * 0.38f).coerceAtLeast(2f)
-        val bottomGlowRadius = maxOf(w * 0.86f, h * 0.42f).coerceAtLeast(2f)
+        val topGlowRadius = maxOf(w * 0.88f, h * 0.36f).coerceAtLeast(2f)
         if (isLight) {
             val baseBrush = Brush.verticalGradient(
-                0.00f to Color(0xFFFFFFFF),
-                0.52f to Color(0xFFF4F7FC),
-                1.00f to Color(0xFFEBF1F8),
+                0.00f to Color(0xFFF6F4EE),
+                0.55f to Color(0xFFF4F2EC),
+                1.00f to Color(0xFFEDEAE2),
             )
             val topGlow = Brush.radialGradient(
-                colors = listOf(Color(0xFFFF6A30).copy(alpha = 0.105f), Color.Transparent),
-                center = Offset(w * 0.18f, h * 0.08f),
+                colors = listOf(Color(0xFFFF6A30).copy(alpha = 0.045f), Color.Transparent),
+                center = Offset(w * 0.16f, h * 0.07f),
                 radius = topGlowRadius,
-            )
-            val bottomGlow = Brush.radialGradient(
-                colors = listOf(Color(0xFF247AFF).copy(alpha = 0.105f), Color.Transparent),
-                center = Offset(w * 0.88f, h * 0.92f),
-                radius = bottomGlowRadius,
             )
             onDrawBehind {
                 drawRect(brush = baseBrush)
                 drawRect(brush = topGlow)
-                drawRect(brush = bottomGlow)
             }
         } else {
             val topGlow = Brush.radialGradient(
-                colors = listOf(Color(0xFFFF7840).copy(alpha = 0.085f), Color.Transparent),
+                colors = listOf(Color(0xFFFF7840).copy(alpha = 0.065f), Color.Transparent),
                 center = Offset(w * 0.20f, h * 0.06f),
                 radius = topGlowRadius,
-            )
-            val bottomGlow = Brush.radialGradient(
-                colors = listOf(Color(0xFF5298F2).copy(alpha = 0.075f), Color.Transparent),
-                center = Offset(w * 0.85f, h * 0.94f),
-                radius = bottomGlowRadius,
             )
             onDrawBehind {
                 drawRect(color = Color.Black)
                 drawRect(brush = topGlow)
-                drawRect(brush = bottomGlow)
             }
         }
     }
 }
 
-/** 1dp low-contrast separator matching `--line` in the UI prototype. */
+/** 0.75dp low-contrast separator matching `--line` in the UI prototype. */
 @Composable
 internal fun Hairline(modifier: Modifier = Modifier) {
     val isLight = OpenChatPalette.isLight
     HorizontalDivider(
         modifier = modifier,
         thickness = 0.75.dp,
-        color = if (isLight) Color(0xFF0F1722).copy(alpha = 0.07f) else Color.White.copy(alpha = 0.07f),
+        color = if (isLight) Color(0xFF171614).copy(alpha = 0.08f) else Color.White.copy(alpha = 0.07f),
     )
 }
 

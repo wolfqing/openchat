@@ -34,7 +34,6 @@ import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -45,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -92,10 +92,9 @@ fun meshFingerprint(peerHex: String): String? =
 @Composable
 internal fun FingerprintGrid(hex: String, modifier: Modifier = Modifier) {
     val chunks = remember(hex) { hex.chunked(4) }
-    val isLight = OpenChatPalette.isLight
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (isLight) Color(0xFFF1F5FA) else Color(0xFF0C1012),
+        color = OpenChatPalette.Well,
         modifier = modifier.fillMaxWidth(),
     ) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -150,6 +149,7 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
         containerColor = OpenChatPalette.Surface,
         contentColor = OpenChatPalette.Ink,
     ) {
+        CompositionLocalProvider(LocalOnElevatedSurface provides true) {
         BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
@@ -329,6 +329,7 @@ fun PersonSheet(person: PersonRef, onDismiss: () -> Unit, onMessage: (String) ->
                 Spacer(Modifier.height(6.dp))
             }
         }
+        }
     }
 }
 
@@ -345,6 +346,7 @@ fun MyQrDialog(onDismiss: () -> Unit) {
         containerColor = OpenChatPalette.Surface,
         contentColor = OpenChatPalette.Ink,
     ) {
+        CompositionLocalProvider(LocalOnElevatedSurface provides true) {
         BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
@@ -388,10 +390,11 @@ fun MyQrDialog(onDismiss: () -> Unit) {
                         textAlign = TextAlign.Center,
                     )
                 }
-                FilledTonalButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    Text(stringResource(R.string.close))
+                TonalActionButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                    Text(stringResource(R.string.close), fontWeight = FontWeight.Medium)
                 }
             }
+        }
         }
     }
 }
@@ -410,16 +413,17 @@ internal fun SettingsGroupCard(
     borderColor: Color? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val isLight = OpenChatPalette.isLight
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (isLight) Color.White else Color(0xFF13181B),
+        color = OpenChatPalette.CardSurface,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
         border = borderColor?.let { BorderStroke(1.dp, it) },
         modifier = modifier.fillMaxWidth(),
     ) {
-        Column(content = content)
+        CompositionLocalProvider(LocalOnElevatedSurface provides true) {
+            Column(content = content)
+        }
     }
 }
 
@@ -596,14 +600,13 @@ fun RelaySection() {
     val social by Social.state.collectAsState()
     var draft by remember { mutableStateOf("") }
     var bad by remember { mutableStateOf(false) }
-    val isLight = OpenChatPalette.isLight
     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.relays_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
         Text(stringResource(R.string.relays_body), fontSize = 13.sp, lineHeight = 18.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         social.relays.forEach { r ->
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = if (isLight) Color(0xFFF1F5FA) else Color(0xFF0C1012),
+                color = OpenChatPalette.Well,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(Modifier.padding(start = 12.dp, end = 4.dp, top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {

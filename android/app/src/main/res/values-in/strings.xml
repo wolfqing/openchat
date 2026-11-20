@@ -367,4 +367,9 @@
     <string name="ptt_handshaking">Menghubungkan saluran terenkripsi…</string>
     <string name="ptt_muted_hint">Walkie-talkie dibisukan</string>
     <string name="ptt_muted_enable">Ketuk aktifkan suara</string>
+
+    <string name="nearby_peers_title">Orang di sekitar</string>
+    <string name="nearby_peers_summary">%1$d langsung · %2$d terjangkau</string>
+    <string name="nearby_peers_open">Lihat orang yang terjangkau di sekitar</string>
+    <string name="nearby_peers_empty">Belum ada orang dalam jangkauan saat ini.</string>
 </resources>

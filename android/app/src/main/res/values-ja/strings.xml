@@ -367,4 +367,9 @@
     <string name="ptt_handshaking">暗号化チャネルを接続中…</string>
     <string name="ptt_muted_hint">リアルタイム無線はミュート中です</string>
     <string name="ptt_muted_enable">タップして音声オン</string>
+
+    <string name="nearby_peers_title">近くにいる人</string>
+    <string name="nearby_peers_summary">直接 %1$d · 到達 %2$d</string>
+    <string name="nearby_peers_open">近くの到達可能な人を表示</string>
+    <string name="nearby_peers_empty">現在範囲内に誰もいません。</string>
 </resources>

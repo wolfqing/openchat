@@ -113,10 +113,9 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
         )
 
         // 1. 3D Globe Picker Hero Card
-        val isLight = OpenChatPalette.isLight
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = if (isLight) Color.White else Color(0xFF13181B),
+            color = OpenChatPalette.CardSurface,
             modifier = Modifier.fillMaxWidth().pressScale(0.98f).clip(RoundedCornerShape(16.dp)).clickable { globe = true },
         ) {
             Row(

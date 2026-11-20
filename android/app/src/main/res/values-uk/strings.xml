@@ -393,4 +393,9 @@
     <string name="ptt_handshaking">Встановлення захищеного каналу…</string>
     <string name="ptt_muted_hint">Жива рація без звуку</string>
     <string name="ptt_muted_enable">Увімкнути звук</string>
+
+    <string name="nearby_peers_title">Люди поруч</string>
+    <string name="nearby_peers_summary">%1$d напряму · %2$d в охопленні</string>
+    <string name="nearby_peers_open">Показати доступних людей поруч</string>
+    <string name="nearby_peers_empty">Зараз у радіусі нікого немає.</string>
 </resources>

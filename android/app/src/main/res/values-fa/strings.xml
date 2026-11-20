@@ -373,4 +373,9 @@
     <string name="ptt_handshaking">در حال برقراری کانال رمزگذاری‌شده…</string>
     <string name="ptt_muted_hint">بی‌سیم زنده بی‌صداست</string>
     <string name="ptt_muted_enable">ضربه برای وصل صدا</string>
+
+    <string name="nearby_peers_title">افراد نزدیک</string>
+    <string name="nearby_peers_summary">%1$d مستقیم · %2$d در دسترس</string>
+    <string name="nearby_peers_open">مشاهده افراد نزدیک در دسترس</string>
+    <string name="nearby_peers_empty">در حال حاضر کسی در محدوده نیست.</string>
 </resources>

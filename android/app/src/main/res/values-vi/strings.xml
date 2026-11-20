@@ -367,4 +367,9 @@
     <string name="ptt_handshaking">Đang kết nối kênh mã hóa…</string>
     <string name="ptt_muted_hint">Đã tắt tiếng bộ đàm</string>
     <string name="ptt_muted_enable">Chạm để bật tiếng</string>
+
+    <string name="nearby_peers_title">Người ở gần</string>
+    <string name="nearby_peers_summary">%1$d trực tiếp · %2$d trong tầm với</string>
+    <string name="nearby_peers_open">Xem những người có thể liên hệ ở gần</string>
+    <string name="nearby_peers_empty">Hiện không có ai trong phạm vi.</string>
 </resources>

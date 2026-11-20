@@ -54,6 +54,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -193,6 +194,7 @@ fun PrivateChatScreen(peerHex: String, onBack: () -> Unit, onPanic: () -> Unit) 
                                         Text(
                                             stringResource(R.string.ptt_button),
                                             fontSize = 12.sp,
+                                            lineHeight = 16.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = if (pttOpen) Color.White else OpenChatPalette.Ink,
                                             maxLines = 1,
@@ -313,6 +315,7 @@ fun GroupChatScreen(idHex: String, onBack: () -> Unit, onPanic: () -> Unit) {
                                 Text(
                                     stringResource(R.string.group_members_title),
                                     fontSize = 13.sp,
+                                    lineHeight = 18.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = OpenChatPalette.Ink,
                                     maxLines = 1,
@@ -356,6 +359,7 @@ private fun GroupMembersSheet(g: org.openchat.android.app.GroupInfo, onDismiss: 
         containerColor = OpenChatPalette.Surface,
         contentColor = OpenChatPalette.Ink,
     ) {
+        CompositionLocalProvider(LocalOnElevatedSurface provides true) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -384,10 +388,9 @@ private fun GroupMembersSheet(g: org.openchat.android.app.GroupInfo, onDismiss: 
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                val isLight = OpenChatPalette.isLight
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = if (isLight) Color(0xFFF1F5FA) else Color(0xFF171E21),
+                    color = OpenChatPalette.Well,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column {
@@ -435,7 +438,7 @@ private fun GroupMembersSheet(g: org.openchat.android.app.GroupInfo, onDismiss: 
                     } else {
                         Surface(
                             shape = RoundedCornerShape(14.dp),
-                            color = if (isLight) Color(0xFFF1F5FA) else Color(0xFF171E21),
+                            color = OpenChatPalette.Well,
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Column {
@@ -480,6 +483,7 @@ private fun GroupMembersSheet(g: org.openchat.android.app.GroupInfo, onDismiss: 
                     Text(stringResource(R.string.close), fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
+        }
         }
     }
 }

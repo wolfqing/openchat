@@ -1,5 +1,54 @@
 # Changelog
 
+## Android v0.7.12 (preview) — 2026-11-19
+
+Tappable nearby reachable peers sheet from the top signal capsule, locked
+cross-tab status capsule vertical alignment, and Warm Stone daylight palette
+replacing cool light-blue pills and buttons across every screen. No wire-format
+change. Signed with the release key ([SECURITY.md](SECURITY.md)); installs over
+v0.7.11 and earlier release-signed builds. 209 unit tests. 9.5 MB.
+APK SHA-256 `2878e41e4a3ca7323996fd6a3c50dbabdd3c88d9f02546d2a6e613c4a6bf9b47`.
+
+### Added
+
+- **Nearby reachable peers sheet (`NearbyPeersSheet`, `MeshVisuals`, `MainScreen`).**
+  - Tapping the top `Direct X · Reach Y` signal capsule on Nearby, Private, or
+    Location tabs opens a live `ModalBottomSheet` listing everyone currently
+    reachable over the Bluetooth mesh (when `reach > 0` and no live PTT speaker
+    banner is active), with a subtle trailing chevron affordance.
+  - Peers sort by direct neighbours first, then hop count, then most recently
+    heard (`sortNearbyPeers`), showing emblem + direct/relayed dot, trust/star
+    badges, hop distance and recency; tapping a row opens `PersonSheet` for
+    fingerprint verification/actions, and the trailing 44dp chat button jumps
+    straight into an encrypted private chat.
+  - Localized across all 18 languages (`nearby_peers_*`).
+
+### Changed
+
+- **Warm Stone light palette & floating white chrome (`Theme`, `FluidGlass`, `MainActivity`, all UI screens).**
+  - Replaced the cool light-blue canvas (`#F1F5FA` / `#F4F7FC` + bottom blue
+    glow) and light-blue capsule/button fills (`#E5ECF4` / `#E7EDF5` /
+    `#EDF2F8`) with a Warm Stone paper canvas (`#F4F2EC`), pure-white floating
+    pills/buttons/cards (`#FFFFFF`), and warm-stone tonal fills (`#EFECE5` /
+    `#F2F0EA`) automatically applied inside elevated cards, sheets, and drawers
+    via `LocalOnElevatedSurface`.
+  - Own public-channel bubbles now use crisp paper white instead of light blue,
+    keeping Lock Blue (`#1A6BFF` / `#DCEBFF`) strictly exclusive to end-to-end
+    encrypted private conversations.
+  - Removed blue-gray tints from the bottom Liquid Glass navigation bar,
+    shadows, hairlines, and dark-mode neutral charcoal surfaces (preserving pure
+    `#000000` OLED dark ground).
+
+### Fixed
+
+- **Status capsule vertical alignment across tabs (`MeshVisuals`).**
+  - Locked `NearbyStatusCapsuleRow`, the left status capsule, and the right
+    `Talk` pill to a shared `32dp` minimum height with explicit `16sp` line
+    height (preventing the `Talk` button from inheriting `bodyLarge`'s `24sp`
+    line height and shifting the status capsule ~4dp lower on Nearby than on
+    Private and Location tabs), and unified `SignalPulseDot` to `16dp` across
+    both scanning and connected states.
+
 ## Android v0.7.11 (preview) — 2026-11-19
 
 Borderless tonal surface hierarchy across every screen: removed over 40 `1dp`

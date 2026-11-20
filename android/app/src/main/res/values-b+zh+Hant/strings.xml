@@ -367,4 +367,9 @@
     <string name="ptt_handshaking">正在建立加密頻道…</string>
     <string name="ptt_muted_hint">即時對講已靜音</string>
     <string name="ptt_muted_enable">點此開啟聲音</string>
+
+    <string name="nearby_peers_title">附近可達的人</string>
+    <string name="nearby_peers_summary">%1$d 直連 · %2$d 可達</string>
+    <string name="nearby_peers_open">查看附近可達的人</string>
+    <string name="nearby_peers_empty">目前範圍內暫時沒有人。</string>
 </resources>

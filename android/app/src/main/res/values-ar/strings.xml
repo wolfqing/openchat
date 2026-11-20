@@ -413,4 +413,9 @@
     <string name="ptt_handshaking">جارٍ إنشاء القناة المشفرة…</string>
     <string name="ptt_muted_hint">اللاسلكي المباشر مكتوم</string>
     <string name="ptt_muted_enable">انقر لإلغاء الكتم</string>
+
+    <string name="nearby_peers_title">الأشخاص القريبون</string>
+    <string name="nearby_peers_summary">%1$d مباشر · %2$d ضمن المدى</string>
+    <string name="nearby_peers_open">عرض الأشخاص القريبين المتاحين</string>
+    <string name="nearby_peers_empty">لا يوجد أحد ضمن النطاق حالياً.</string>
 </resources>

@@ -378,4 +378,9 @@
     <string name="ptt_handshaking">正在建立加密信道…</string>
     <string name="ptt_muted_hint">实时对讲已静音</string>
     <string name="ptt_muted_enable">点此开启声音</string>
+
+    <string name="nearby_peers_title">附近可达的人</string>
+    <string name="nearby_peers_summary">%1$d 直连 · %2$d 可达</string>
+    <string name="nearby_peers_open">查看附近可达的人</string>
+    <string name="nearby_peers_empty">当前范围内暂时没有人。</string>
 </resources>

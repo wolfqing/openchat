@@ -375,8 +375,8 @@ fun FluidGlassSurface(
     }
 
     val refractingLive = overlapsSource && composeEffect != null
-    val ambientShadow = if (isLight) Color(0x3B0F203A) else Color(0x6E000000)
-    val spotShadow = if (isLight) Color(0x520F203A) else Color(0x80000000)
+    val ambientShadow = if (isLight) Color(0x28171512) else Color(0x6E000000)
+    val spotShadow = if (isLight) Color(0x3D171512) else Color(0x80000000)
 
     Box(
         modifier = modifier
@@ -484,29 +484,29 @@ private fun Modifier.drawFluidGlassOpticalBody(
         }
         isLight && refractingLive -> {
             Brush.verticalGradient(
-                0.00f to Color.White.copy(alpha = 0.24f),
-                0.65f to Color.White.copy(alpha = 0.16f),
-                1.00f to Color(0xFF2878FF).copy(alpha = 0.10f),
+                0.00f to Color.White.copy(alpha = 0.34f),
+                0.65f to Color.White.copy(alpha = 0.22f),
+                1.00f to Color(0xFFEBE7DF).copy(alpha = 0.16f),
             )
         }
         isLight -> {
             Brush.verticalGradient(
-                0.00f to Color.White.copy(alpha = 0.76f),
-                0.55f to Color(0xFFF3F8FE).copy(alpha = 0.58f),
-                1.00f to Color(0xFFDCE9F8).copy(alpha = 0.66f),
+                0.00f to Color.White.copy(alpha = 0.90f),
+                0.55f to Color(0xFFFAF8F4).copy(alpha = 0.82f),
+                1.00f to Color(0xFFF0EDE6).copy(alpha = 0.86f),
             )
         }
         refractingLive -> {
             Brush.verticalGradient(
-                0.00f to Color(0xFF182227).copy(alpha = 0.36f),
-                0.70f to Color(0xFF10171B).copy(alpha = 0.28f),
-                1.00f to Color(0xFF68B2FF).copy(alpha = 0.12f),
+                0.00f to Color(0xFF1A1A18).copy(alpha = 0.44f),
+                0.70f to Color(0xFF121211).copy(alpha = 0.34f),
+                1.00f to Color.White.copy(alpha = 0.05f),
             )
         }
         else -> {
             Brush.verticalGradient(
-                0.00f to Color(0xFF1A2327).copy(alpha = 0.80f),
-                1.00f to Color(0xFF12181B).copy(alpha = 0.82f),
+                0.00f to Color(0xFF1A1A18).copy(alpha = 0.86f),
+                1.00f to Color(0xFF121211).copy(alpha = 0.88f),
             )
         }
     }
@@ -527,19 +527,19 @@ private fun Modifier.drawFluidGlassOpticalBody(
 
     val rimBrush = if (isLight) {
         val darkPole = if (borderAccent != null) {
-            lerp(borderAccent, Color(0xFF0D1B2C), 0.48f).copy(alpha = 0.22f)
+            lerp(borderAccent, Color(0xFF1C1A17), 0.48f).copy(alpha = 0.20f)
         } else {
-            Color(0xFF14263C).copy(alpha = 0.14f)
+            Color(0xFF1C1A17).copy(alpha = 0.12f)
         }
         val midCap = if (borderAccent != null) {
-            borderAccent.copy(alpha = 0.16f)
+            borderAccent.copy(alpha = 0.15f)
         } else {
-            Color(0xFF435D7C).copy(alpha = 0.08f)
+            Color(0xFF6E695F).copy(alpha = 0.08f)
         }
         val brightTopBottom = if (borderAccent != null) {
             lerp(borderAccent, Color.White, 0.80f).copy(alpha = 0.48f)
         } else {
-            Color.White.copy(alpha = 0.48f)
+            Color.White.copy(alpha = 0.54f)
         }
         Brush.horizontalGradient(
             0.00f to darkPole,
@@ -560,7 +560,7 @@ private fun Modifier.drawFluidGlassOpticalBody(
         val midCap = if (borderAccent != null) {
             borderAccent.copy(alpha = 0.18f)
         } else {
-            Color(0xFF8CC4FF).copy(alpha = 0.07f)
+            Color.White.copy(alpha = 0.07f)
         }
         val brightTopBottom = if (borderAccent != null) {
             lerp(borderAccent, Color.White, 0.58f).copy(alpha = 0.24f)
@@ -591,7 +591,7 @@ private fun Modifier.drawFluidGlassOpticalBody(
     )
 
     val outerHairColor = if (isLight) {
-        (borderAccent?.let { lerp(it, Color(0xFF102036), 0.55f) } ?: Color(0xFF102036)).copy(alpha = 0.06f)
+        (borderAccent?.let { lerp(it, Color(0xFF1C1A17), 0.55f) } ?: Color(0xFF1C1A17)).copy(alpha = 0.06f)
     } else {
         Color.Transparent
     }
@@ -641,8 +641,8 @@ internal fun Modifier.fluidGlassDroplet(isLight: Boolean): Modifier = drawWithCa
 
     val fillBrush = if (isLight) {
         Brush.verticalGradient(
-            0.00f to Color.White.copy(alpha = 0.62f),
-            1.00f to Color.White.copy(alpha = 0.44f),
+            0.00f to Color(0xFFEAE6DE).copy(alpha = 0.86f),
+            1.00f to Color(0xFFE3DFD6).copy(alpha = 0.78f),
         )
     } else {
         Brush.verticalGradient(
@@ -719,8 +719,7 @@ fun FlatCapsule(
     contentAlignment: Alignment = Alignment.Center,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val isLight = OpenChatPalette.isLight
-    val fill = containerColor ?: if (isLight) Color(0xFFE7EDF5) else Color(0xFF151C1F)
+    val fill = containerColor ?: OpenChatPalette.Control
     Surface(
         modifier = modifier,
         shape = CircleShape,
@@ -752,8 +751,7 @@ fun FluidGlassCircleButton(
     enabled: Boolean = true,
     @Suppress("UNUSED_PARAMETER") shadowElevation: Dp = 0.dp,
 ) {
-    val isLight = OpenChatPalette.isLight
-    val fill = tintColor ?: if (isLight) Color(0xFFE5ECF4) else Color(0xFF1A2226)
+    val fill = tintColor ?: OpenChatPalette.Control
     Surface(
         modifier = modifier
             .size(size)
@@ -791,8 +789,7 @@ fun FluidGlassPillButton(
     contentPadding: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 7.dp),
     content: @Composable RowScope.() -> Unit,
 ) {
-    val isLight = OpenChatPalette.isLight
-    val fill = tintColor ?: if (isLight) Color(0xFFE5ECF4) else Color(0xFF1A2226)
+    val fill = tintColor ?: OpenChatPalette.Control
     Surface(
         modifier = modifier
             .let { if (enabled) it.pressScale(0.95f) else it }
@@ -830,8 +827,8 @@ internal fun TonalActionButton(
     val container = when {
         destructive && isLight -> Color(0xFFFEE4E2)
         destructive -> Color(0xFF331512)
-        isLight -> Color(0xFFEDF2F8)
-        else -> Color(0xFF1E272B)
+        isLight -> OpenChatPalette.Card
+        else -> OpenChatPalette.CardRaised
     }
     val fg = if (destructive) {
         if (isLight) Color(0xFFD92D20) else Color(0xFFFF8970)

@@ -386,4 +386,9 @@
     <string name="ptt_handshaking">Connecting encrypted channel…</string>
     <string name="ptt_muted_hint">Live walkie-talkie is muted</string>
     <string name="ptt_muted_enable">Tap to Unmute</string>
+
+    <string name="nearby_peers_title">Nearby people</string>
+    <string name="nearby_peers_summary">%1$d direct · %2$d reachable</string>
+    <string name="nearby_peers_open">View nearby reachable people</string>
+    <string name="nearby_peers_empty">No one is in range right now.</string>
 </resources>

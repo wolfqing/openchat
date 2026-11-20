@@ -393,4 +393,9 @@
     <string name="ptt_handshaking">Установка защищённого канала…</string>
     <string name="ptt_muted_hint">Живая рация без звука</string>
     <string name="ptt_muted_enable">Включить звук</string>
+
+    <string name="nearby_peers_title">Люди рядом</string>
+    <string name="nearby_peers_summary">%1$d напрямую · %2$d в охвате</string>
+    <string name="nearby_peers_open">Показать доступных людей рядом</string>
+    <string name="nearby_peers_empty">Сейчас в радиусе никого нет.</string>
 </resources>

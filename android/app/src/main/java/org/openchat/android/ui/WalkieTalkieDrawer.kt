@@ -34,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -241,12 +242,7 @@ fun WalkieTalkieDrawer(
         else -> stringResource(R.string.ptt_idle_nearby, otherPeers.size)
     }
 
-    val panelBg = if (isLight) Color(0xFFFDFEFF) else Color(0xFF101619)
-    val panelBorder = when (floorState) {
-        is PttFloorState.Transmitting -> accent.copy(alpha = 0.55f)
-        is PttFloorState.Receiving -> BusyAmber.copy(alpha = 0.50f)
-        else -> OpenChatPalette.Line
-    }
+    val panelBg = OpenChatPalette.CardSurface
 
     Surface(
         modifier = modifier
@@ -258,6 +254,7 @@ fun WalkieTalkieDrawer(
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
     ) {
+        CompositionLocalProvider(LocalOnElevatedSurface provides true) {
         Column(
             Modifier
                 .fillMaxSize()
@@ -314,6 +311,7 @@ fun WalkieTalkieDrawer(
                     Text(
                         stringResource(R.string.ptt_keyboard),
                         fontSize = 12.sp,
+                        lineHeight = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = OpenChatPalette.Ink,
                     )
@@ -335,7 +333,7 @@ fun WalkieTalkieDrawer(
             val discFill = when {
                 floorState is PttFloorState.Transmitting -> accent
                 floorState is PttFloorState.Receiving -> BusyAmber.copy(alpha = if (isLight) 0.12f else 0.16f)
-                unavailable != null -> if (isLight) Color(0xFFF1F4F9) else Color(0xFF171E22)
+                unavailable != null -> OpenChatPalette.Well
                 else -> accentSoft
             }
             val discBorder = when {
@@ -567,6 +565,7 @@ fun WalkieTalkieDrawer(
             }
 
             Spacer(Modifier.height(2.dp))
+        }
         }
     }
 }

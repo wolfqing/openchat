@@ -379,4 +379,9 @@
     <string name="ptt_handshaking">Conectando canal cifrado…</string>
     <string name="ptt_muted_hint">Walkie-talkie silenciado</string>
     <string name="ptt_muted_enable">Toca para activar</string>
+
+    <string name="nearby_peers_title">Personas cercanas</string>
+    <string name="nearby_peers_summary">%1$d directos · %2$d al alcance</string>
+    <string name="nearby_peers_open">Ver personas cercanas disponibles</string>
+    <string name="nearby_peers_empty">No hay nadie al alcance en este momento.</string>
 </resources>

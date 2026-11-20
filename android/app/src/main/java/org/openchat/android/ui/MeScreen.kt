@@ -401,7 +401,7 @@ private fun ThemeSection() {
         Text(stringResource(R.string.theme_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
         Surface(
             shape = RoundedCornerShape(12.dp),
-            color = if (isLight) Color(0xFFECF1F7) else Color(0xFF0C1012),
+            color = OpenChatPalette.Well,
             modifier = Modifier.fillMaxWidth(),
         ) {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -424,7 +424,7 @@ private fun ThemeSection() {
                                 .let {
                                     if (selected) {
                                         it.background(
-                                            if (isLight) Color.White else Color(0xFF1F272B),
+                                            if (isLight) Color.White else Color(0xFF2B2A27),
                                             RoundedCornerShape(9.dp),
                                         )
                                     } else {
@@ -549,10 +549,9 @@ private fun UpdateSection() {
                 }
                 is AppUpdater.UpdateState.Available -> {
                     val rel = s.release
-                    val isLight = OpenChatPalette.isLight
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isLight) Color(0xFFF3F6FB) else Color(0xFF192024),
+                        color = OpenChatPalette.Well,
                     ) {
                         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
@@ -593,10 +592,9 @@ private fun UpdateSection() {
                     val total = s.totalBytes.coerceAtLeast(1L)
                     val fraction = (s.bytesRead.toFloat() / total.toFloat()).coerceIn(0f, 1f)
                     val pct = (fraction * 100f).toInt()
-                    val isLight = OpenChatPalette.isLight
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isLight) Color(0xFFF3F6FB) else Color(0xFF192024),
+                        color = OpenChatPalette.Well,
                     ) {
                         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
@@ -636,10 +634,9 @@ private fun UpdateSection() {
                 }
                 is AppUpdater.UpdateState.ReadyToInstall -> {
                     val rel = s.release
-                    val isLight = OpenChatPalette.isLight
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isLight) Color(0xFFF3F6FB) else Color(0xFF192024),
+                        color = OpenChatPalette.Well,
                     ) {
                         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

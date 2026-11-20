@@ -38,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -129,7 +130,7 @@ fun GuideScreen(onBack: () -> Unit, onPanic: () -> Unit) {
                     ) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = if (isLight) Color(0xFFEDF2F8) else Color(0xFF1C2428),
+                            color = OpenChatPalette.Well,
                             tonalElevation = 0.dp,
                             shadowElevation = 0.dp,
                             modifier = Modifier.size(46.dp).clipToBounds(),
@@ -258,7 +259,7 @@ fun GuideScreen(onBack: () -> Unit, onPanic: () -> Unit) {
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isLight) Color(0xFFEDF2F8) else Color(0xFF1C2428),
+                                color = OpenChatPalette.Well,
                                 tonalElevation = 0.dp,
                                 shadowElevation = 0.dp,
                                 modifier = Modifier.size(34.dp),
@@ -323,16 +324,16 @@ private fun GuideSectionHeader(title: String) {
 
 @Composable
 private fun FlatGuideCard(content: @Composable () -> Unit) {
-    val isLight = OpenChatPalette.isLight
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (isLight) Color.White else Color(0xFF13181B),
+        color = OpenChatPalette.CardSurface,
         contentColor = OpenChatPalette.Ink,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
         modifier = Modifier.fillMaxWidth(),
-        content = content,
-    )
+    ) {
+        CompositionLocalProvider(LocalOnElevatedSurface provides true, content = content)
+    }
 }
 
 @Composable

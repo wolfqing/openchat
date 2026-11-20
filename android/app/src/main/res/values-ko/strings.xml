@@ -367,4 +367,9 @@
     <string name="ptt_handshaking">암호화 채널 연결 중…</string>
     <string name="ptt_muted_hint">실시간 무전이 음소거됨</string>
     <string name="ptt_muted_enable">탭하여 소리 켜기</string>
+
+    <string name="nearby_peers_title">주변 사람들</string>
+    <string name="nearby_peers_summary">직접 %1$d · 도달 %2$d</string>
+    <string name="nearby_peers_open">주변에서 연락 가능한 사람 보기</string>
+    <string name="nearby_peers_empty">현재 범위 내에 아무도 없습니다.</string>
 </resources>

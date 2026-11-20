@@ -50,9 +50,10 @@ it; that has not yet been checked against a stock bitchat phone (see
   mesh messenger during an outage are not terminal people. Three taps from
   install to first message, with the phone offline, is the bar.
 - **The mesh is visible.** A signal band tells you how many phones you can
-  reach. Every message says how many hops it crossed. Every private message
-  shows a delivery path: sent, on its way, delivered, read. When nobody is
-  in range you get a radar and three things to do, not an empty list.
+  reach—tap it to list everyone currently in range and jump into a private chat
+  or verify fingerprints. Every message says how many hops it crossed. Every
+  private message shows a delivery path: sent, on its way, delivered, read. When
+  nobody is in range you get a radar and three things to do, not an empty list.
 - **Positioned for infrastructure failure, not politics.** Earthquakes,
   typhoons, carrier outages, festival and stadium congestion, hiking and
   sailing. It is not a censorship-circumvention tool and is not marketed
@@ -65,7 +66,7 @@ it; that has not yet been checked against a stock bitchat phone (see
 
 | | State |
 |---|---|
-| Android app | **v0.7.11 preview.** 208 unit tests, 9.5 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
+| Android app | **v0.7.12 preview.** 209 unit tests, 9.5 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
 | Tried on devices | v0.7.6 was verified on an Android 14 (`API 34`) emulator across onboarding, cold launch, `MeshService` startup, all four tabs and `Board`, previews up to v0.7.2 ran on an Android 15 emulator, and earlier previews ran on one real phone; see [CHANGELOG.md](CHANGELOG.md) per release. **The mesh itself has not been tried between real phones**: Bluetooth range, multi-hop relaying, connection limits and behaviour in the background are untested in the field. The emulator has no Bluetooth |
 | Interop with stock bitchat | **Not yet verified.** Implemented from the [spec](docs/protocol-spec.md), upstream test vectors and envelopes recorded from bitchat builds. Verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
@@ -307,7 +308,7 @@ There is no CLA.
 
 ## Roadmap in one line
 
-Android first, from scratch, against the spec: done through v0.7.11. Next
+Android first, from scratch, against the spec: done through v0.7.12. Next
 is interop verification against stock bitchat phones, then iOS, then one
 real pilot in a disaster-preparedness drill or a crowded venue. Each phase
 has an exit criterion and a kill condition in

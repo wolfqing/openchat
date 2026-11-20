@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
             SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
         }
         enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
-        window.decorView.setBackgroundColor(if (isDark) android.graphics.Color.BLACK else 0xFFF4F7FC.toInt())
+        window.decorView.setBackgroundColor(if (isDark) android.graphics.Color.BLACK else 0xFFF4F2EC.toInt())
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

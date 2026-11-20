@@ -373,4 +373,9 @@
     <string name="ptt_handshaking">Verschlüsselter Kanal verbindet…</string>
     <string name="ptt_muted_hint">Funkgerät ist stummgeschaltet</string>
     <string name="ptt_muted_enable">Ton einschalten</string>
+
+    <string name="nearby_peers_title">Personen in der Nähe</string>
+    <string name="nearby_peers_summary">%1$d direkt · %2$d erreichbar</string>
+    <string name="nearby_peers_open">Erreichbare Personen in der Nähe anzeigen</string>
+    <string name="nearby_peers_empty">Derzeit ist niemand in Reichweite.</string>
 </resources>

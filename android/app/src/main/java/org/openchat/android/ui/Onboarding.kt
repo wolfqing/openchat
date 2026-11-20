@@ -77,7 +77,7 @@ fun LanguagePicker(onLanguage: (AppLanguage.Choice) -> Unit) {
         DropdownMenu(
             expanded = open,
             onDismissRequest = { open = false },
-            containerColor = OpenChatPalette.Card,
+            containerColor = OpenChatPalette.Surface,
         ) {
             AppLanguage.Choice.entries.forEach { c ->
                 DropdownMenuItem(
@@ -135,10 +135,9 @@ fun OnboardingScreen(onStart: () -> Unit, onLanguage: (AppLanguage.Choice) -> Un
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    val isLight = OpenChatPalette.isLight
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isLight) androidx.compose.ui.graphics.Color(0xFFE5ECF4) else androidx.compose.ui.graphics.Color(0xFF171E21),
+                        color = OpenChatPalette.Control,
                         modifier = Modifier.size(if (compact) 40.dp else 44.dp).clipToBounds(),
                     ) {
                         Icon(
@@ -186,10 +185,9 @@ fun OnboardingScreen(onStart: () -> Unit, onLanguage: (AppLanguage.Choice) -> Un
                         lineHeight = if (compact) 21.sp else 24.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    val isLightPill = OpenChatPalette.isLight
                     Surface(
                         shape = CircleShape,
-                        color = if (isLightPill) androidx.compose.ui.graphics.Color(0xFFE5ECF4) else androidx.compose.ui.graphics.Color(0xFF151C1F),
+                        color = OpenChatPalette.ChipPassive,
                     ) {
                         Text(
                             stringResource(R.string.onboard_no_account),
@@ -237,10 +235,9 @@ fun SafetyNote(compact: Boolean = false) {
             .map { it.trim().removePrefix("·").removePrefix("•").trim() }
             .filter { it.isNotEmpty() }
     }
-    val isLight = OpenChatPalette.isLight
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (isLight) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color(0xFF13181B),
+        color = OpenChatPalette.CardSurface,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(

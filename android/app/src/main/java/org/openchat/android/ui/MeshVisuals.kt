@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -68,7 +69,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -141,8 +144,8 @@ fun EmblemView(key: String, size: Dp = 36.dp) {
     val cells = remember(key) { Emblem.cells(key) }
     val color = Emblem.uiColor(key)
     val isLight = OpenChatPalette.isLight
-    val bgEnd = if (isLight) Color.White else Color(0xFF12181A)
-    val strokeColor = if (isLight) Color(0xFF0F1C2E).copy(alpha = 0.10f) else Color.White.copy(alpha = 0.18f)
+    val bgEnd = OpenChatPalette.CardSurface
+    val strokeColor = if (isLight) Color(0xFF171614).copy(alpha = 0.09f) else Color.White.copy(alpha = 0.16f)
     val corner = (size.value * 0.29f).coerceIn(8f, 18f).dp
     Box(
         Modifier
@@ -292,13 +295,13 @@ internal fun SignalPulseDot(live: Boolean) {
     val still = rememberReducedMotion()
     val accent = OpenChatPalette.Signal
     if (!live) {
-        Box(Modifier.size(14.dp).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
+        Box(Modifier.size(16.dp).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
             Box(Modifier.size(9.dp).border(1.5.dp, accent, CircleShape))
         }
         return
     }
     if (still) {
-        Box(Modifier.size(14.dp).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
+        Box(Modifier.size(16.dp).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
             Box(Modifier.size(9.dp).background(accent, CircleShape))
         }
         return
@@ -365,11 +368,15 @@ internal fun LiveEqualizerBars(
     }
 }
 
+private val STATUS_CAPSULE_MIN_HEIGHT = 32.dp
+
 /**
- * Floating signal & Live Walkie-Talkie status row on the Nearby tab:
- * shows Direct / Reach / Last-heard in a compact flat capsule, morphs into a clickable animated
- * walkie-talkie speaker banner when a peer transmits live PTT, and pairs with the primary
- * `[ Walkie-Talkie ]` drawer toggle pill on the right.
+ * Floating signal & Live Walkie-Talkie status row on the main tabs:
+ * shows Direct / Reach / Last-heard in a compact flat capsule (tappable to open the nearby
+ * people sheet when peers are in range), morphs into a clickable animated walkie-talkie speaker
+ * banner when a peer transmits live PTT, and pairs with the `[ Talk ]` drawer toggle pill on the
+ * right of the Nearby tab. Both sides share a locked vertical height so switching tabs never
+ * shifts the capsule's Y position.
  */
 @Composable
 internal fun NearbyStatusCapsuleRow(
@@ -381,15 +388,19 @@ internal fun NearbyStatusCapsuleRow(
     pttOpen: Boolean = false,
     onTogglePtt: (() -> Unit)? = null,
     onSpeakerClick: (() -> Unit)? = null,
+    onPeersClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val now = rememberNow()
     val locale = appLocale()
     val signal = OpenChatPalette.Signal
+    val canOpenPeers = liveSpeakerLabel == null && scanningSince == null && reach > 0 && onPeersClick != null
+    val openPeersDesc = stringResource(R.string.nearby_peers_open)
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 14.dp, end = 14.dp, top = 0.dp, bottom = 6.dp),
+            .padding(start = 14.dp, end = 14.dp, top = 0.dp, bottom = 6.dp)
+            .defaultMinSize(minHeight = STATUS_CAPSULE_MIN_HEIGHT),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -397,11 +408,17 @@ internal fun NearbyStatusCapsuleRow(
             modifier = Modifier
                 .weight(1f, fill = false)
                 .padding(end = if (onTogglePtt != null) 8.dp else 0.dp)
+                .defaultMinSize(minHeight = STATUS_CAPSULE_MIN_HEIGHT)
                 .let {
-                    if (liveSpeakerLabel != null && onSpeakerClick != null) {
-                        it.clip(CircleShape).clickable(onClick = onSpeakerClick)
-                    } else {
-                        it
+                    when {
+                        liveSpeakerLabel != null && onSpeakerClick != null ->
+                            it.pressScale(0.97f).clip(CircleShape).clickable(role = Role.Button, onClick = onSpeakerClick)
+                        canOpenPeers ->
+                            it.pressScale(0.97f)
+                                .clip(CircleShape)
+                                .semantics { contentDescription = openPeersDesc }
+                                .clickable(role = Role.Button, onClick = onPeersClick)
+                        else -> it
                     }
                 },
             containerColor = if (liveSpeakerLabel != null) OpenChatPalette.SignalSoft else null,
@@ -423,6 +440,7 @@ internal fun NearbyStatusCapsuleRow(
                             stringResource(R.string.live_ptt_speaking, speaker),
                             style = TabularMonoStyle,
                             fontSize = 11.5.sp,
+                            lineHeight = 16.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (OpenChatPalette.isLight) Color(0xFFC93B06) else Color.White,
                             maxLines = 1,
@@ -441,34 +459,51 @@ internal fun NearbyStatusCapsuleRow(
                             stringResource(R.string.band_scanning),
                             style = TabularMonoStyle,
                             fontSize = 11.5.sp,
+                            lineHeight = 16.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false),
                         )
-                        Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 11.5.sp)
+                        Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 11.5.sp, lineHeight = 16.sp)
                         Text(
                             stringResource(R.string.band_for, String.format(locale, "%d:%02d", secs / 60, secs % 60)),
                             style = TabularMonoStyle,
                             fontSize = 11.sp,
+                            lineHeight = 16.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                         )
                     }
                 } else {
                     Row(
-                        Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        Modifier.padding(start = 12.dp, end = if (canOpenPeers) 8.dp else 12.dp, top = 6.dp, bottom = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(7.dp),
                     ) {
                         SignalPulseDot(live = true)
                         BandNumber(stringResource(R.string.band_direct), direct, highlight = false)
-                        Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 11.5.sp)
+                        Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 11.5.sp, lineHeight = 16.sp)
                         BandNumber(stringResource(R.string.band_reach), reach, highlight = true)
                         lastHeard?.let {
-                            Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 11.5.sp)
-                            Text(agoText(it, now, locale), color = MaterialTheme.colorScheme.onSurfaceVariant, style = TabularMonoStyle, fontSize = 11.sp, maxLines = 1)
+                            Text("·", color = MaterialTheme.colorScheme.outline, style = TabularMonoStyle, fontSize = 11.5.sp, lineHeight = 16.sp)
+                            Text(
+                                agoText(it, now, locale),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = TabularMonoStyle,
+                                fontSize = 11.sp,
+                                lineHeight = 16.sp,
+                                maxLines = 1,
+                            )
+                        }
+                        if (canOpenPeers) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = OpenChatPalette.Muted,
+                                modifier = Modifier.size(15.dp),
+                            )
                         }
                     }
                 }
@@ -477,6 +512,7 @@ internal fun NearbyStatusCapsuleRow(
         if (onTogglePtt != null) {
             FluidGlassPillButton(
                 onClick = onTogglePtt,
+                modifier = Modifier.defaultMinSize(minHeight = STATUS_CAPSULE_MIN_HEIGHT),
                 tintColor = when {
                     pttOpen -> signal
                     liveSpeakerLabel != null -> OpenChatPalette.SignalSoft
@@ -494,6 +530,7 @@ internal fun NearbyStatusCapsuleRow(
                 Text(
                     stringResource(R.string.ptt_button),
                     fontSize = 12.sp,
+                    lineHeight = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = if (pttOpen) Color.White else OpenChatPalette.Ink,
                     maxLines = 1,
@@ -534,6 +571,7 @@ private fun BandNumber(label: String, n: Int, highlight: Boolean = false) {
             "$n",
             style = TabularMonoStyle,
             fontSize = 11.5.sp,
+            lineHeight = 16.sp,
             fontWeight = FontWeight.SemiBold,
             color = tone,
         )
@@ -541,6 +579,7 @@ private fun BandNumber(label: String, n: Int, highlight: Boolean = false) {
             label.lowercase(appLocale()),
             style = TabularMonoStyle,
             fontSize = 11.5.sp,
+            lineHeight = 16.sp,
             fontWeight = if (highlight) FontWeight.SemiBold else FontWeight.Medium,
             color = tone,
         )
@@ -592,11 +631,15 @@ fun RouteBand(
     val signal = OpenChatPalette.Signal
     Box(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 0.dp, bottom = 6.dp)) {
         FlatCapsule(
-            modifier = if (liveSpeakerLabel != null && onSpeakerClick != null) {
-                Modifier.clip(CircleShape).clickable(onClick = onSpeakerClick)
-            } else {
-                Modifier
-            },
+            modifier = Modifier
+                .defaultMinSize(minHeight = STATUS_CAPSULE_MIN_HEIGHT)
+                .let {
+                    if (liveSpeakerLabel != null && onSpeakerClick != null) {
+                        it.pressScale(0.97f).clip(CircleShape).clickable(role = Role.Button, onClick = onSpeakerClick)
+                    } else {
+                        it
+                    }
+                },
             containerColor = if (liveSpeakerLabel != null) OpenChatPalette.SignalSoft else null,
             contentAlignment = Alignment.CenterStart,
         ) {
@@ -650,7 +693,7 @@ fun AudiencePill(encrypted: Boolean, modifier: Modifier = Modifier, compact: Boo
     val label = stringResource(if (encrypted) R.string.chip_encrypted else R.string.chip_public)
     FlatCapsule(
         modifier = modifier,
-        containerColor = if (encrypted) OpenChatPalette.LockSoft else null,
+        containerColor = if (encrypted) OpenChatPalette.LockSoft else OpenChatPalette.ChipPassive,
     ) {
         Row(
             Modifier.padding(horizontal = if (compact) 8.dp else 10.dp, vertical = if (compact) 5.dp else 4.dp),
@@ -664,7 +707,7 @@ fun AudiencePill(encrypted: Boolean, modifier: Modifier = Modifier, compact: Boo
                 modifier = Modifier.size(13.dp),
             )
             if (!compact) {
-                Text(label, color = fg, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                Text(label, color = fg, fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1)
             }
         }
     }
@@ -699,12 +742,11 @@ fun DeliveryPathDots(state: DeliveryState) {
 @Composable
 fun DayHeader(timestamp: Long, note: String?) {
     val day = dayText(timestamp, System.currentTimeMillis(), appLocale())
-    val isLight = OpenChatPalette.isLight
     Box(Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 20.dp), contentAlignment = Alignment.Center) {
         Text(
             if (note == null) day else "$day · $note",
             modifier = Modifier
-                .background(if (isLight) Color(0xFFE7EDF5) else Color(0xFF14191B), CircleShape)
+                .background(OpenChatPalette.ChipPassive, CircleShape)
                 .padding(horizontal = 12.dp, vertical = 4.dp)
                 .semantics { heading() },
             textAlign = TextAlign.Center,
@@ -814,10 +856,9 @@ fun NobodyNearby(
 
 @Composable
 private fun TipCard(n: Int, title: String, body: String, onClick: (() -> Unit)?) {
-    val isLight = OpenChatPalette.isLight
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (isLight) Color.White else Color(0xFF13181B),
+        color = OpenChatPalette.CardSurface,
         modifier = Modifier.fillMaxWidth().let { if (onClick != null) it.pressScale(0.98f).clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick) else it },
     ) {
         Row(
@@ -869,7 +910,7 @@ private fun Radar(modifier: Modifier) {
     val ring = MaterialTheme.colorScheme.outlineVariant
     val tickColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.60f)
     val accent = OpenChatPalette.Signal
-    val hubBg = if (isLight) Color(0xFFF4F7FC) else Color(0xFF0A0F11)
+    val hubBg = if (isLight) OpenChatPalette.Screen else Color(0xFF0A0A09)
     val dot = MaterialTheme.colorScheme.onSurface
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     val measurer = rememberTextMeasurer()
