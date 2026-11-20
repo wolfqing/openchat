@@ -84,6 +84,7 @@ class MeshService : Service(), ChatController {
     @Volatile private var pttCapture: Pair<LivePttCapture, String>? = null // active PTT burst and its chat
     @Volatile private var pttFocusRequest: AudioFocusRequest? = null
     private lateinit var nostrSeenStore: SealedFile
+    private lateinit var geoJoinedStore: SealedFile
     private val publicLimiter = RateLimiter()
     private val nostrSeen = LinkedHashSet<String>() // message IDs already shown from Nostr, kept across restarts
     // Noise static keys by peer ID, readable from the UI thread (the engine's maps are not).
@@ -163,6 +164,11 @@ class MeshService : Service(), ChatController {
         bridge = Bridge(this, directory, { engine }, { geo }, { task -> handler.post(task) }) { s -> ChatRepository.setBridge(s) }
         geo = GeoChannels(directory, identity.nostrSeed, { engine.identity.nickname }) { from, text ->
             notifyMention(from, text)
+        }
+        geoJoinedStore = SealedFile(this, "geo-joined.bin")
+        geoJoinedStore.readOrNull()?.let { LocationPresets.parseJoined(it) }?.forEach { (g, tp) ->
+            geo.join(g, tp)
+            nostr.addInbox(g, NostrKey.forGeohash(identity.nostrSeed, g))
         }
         liveVoice = LiveVoice(this, handler) { conv -> abortLocalPttOnPreempt(conv) }
         geo.onLive = { ev, g -> handler.post { bridge.onChannelEvent(ev, g) } }
@@ -523,9 +529,22 @@ class MeshService : Service(), ChatController {
         val g = geohash.lowercase()
         geo.join(g, teleported)
         nostr.addInbox(g, NostrKey.forGeohash(engine.identity.nostrSeed, g))
+        persistGeoJoined()
     }
 
-    override fun leaveGeo(geohash: String) { geo.leave(geohash); nostr.removeInbox(geohash) }
+    override fun leaveGeo(geohash: String) {
+        geo.leave(geohash)
+        nostr.removeInbox(geohash)
+        persistGeoJoined()
+    }
+
+    private fun persistGeoJoined() {
+        val snapshot = geo.joinedSnapshot()
+        handler.post {
+            if (snapshot.isEmpty()) geoJoinedStore.delete()
+            else geoJoinedStore.write(LocationPresets.serializeJoined(snapshot))
+        }
+    }
 
     override fun sendGeoPrivate(geohash: String, pubkey: String, text: String) {
         val me = NostrKey.forGeohash(engine.identity.nostrSeed, geohash)
@@ -818,6 +837,7 @@ class MeshService : Service(), ChatController {
             IdentityStore.markMigrated(this@MeshService)
             engine.resetIdentity(fresh)
             geo.reset(fresh.nostrSeed)
+            geoJoinedStore.delete()
             nostr.reset(fresh.nostrSeed)
             nostrSeen.clear(); nostrSeenStore.delete()
             cacheDir.listFiles()?.forEach { it.deleteRecursively() }

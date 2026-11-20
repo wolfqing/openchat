@@ -378,4 +378,29 @@
     <string name="nearby_peers_summary">%1$d सीधे · %2$d पहुँच में</string>
     <string name="nearby_peers_open">आस-पास उपलब्ध लोग देखें</string>
     <string name="nearby_peers_empty">अभी सीमा में कोई नहीं है।</string>
+
+    <string name="topology_title">मेश टोपोलॉजी</string>
+    <string name="topology_button">टोपोलॉजी</string>
+    <string name="topology_reset">व्यू रीसेट करें</string>
+    <string name="topology_legend_known">ज्ञात लिंक</string>
+    <string name="topology_legend_relay">रिले मार्ग</string>
+    <string name="topology_empty_hint">आस-पास के ब्लूटूथ डिवाइस खोजे जा रहे हैं… फ़ोन जुड़ते ही सीधे और मल्टी-हॉप लिंक लाइव दिखेंगे।</string>
+    <string name="topology_inspect">प्रोफ़ाइल</string>
+    <string name="geo_default_badge">स्थानीय क्षेत्र</string>
+    <string name="geo_use_location_hint">शहर, मोहल्ला और ब्लॉक चैनल अनलॉक करें</string>
+    <string name="geo_quick_join">त्वरित जुड़ें</string>
+    <string name="geo_quick_more">अधिक क्षेत्र</string>
+    <string name="geo_quick_less">कम दिखाएं</string>
+    <string name="geo_preset_dr">यूएस ईस्ट · न्यूयॉर्क</string>
+    <string name="geo_preset_9q">यूएस वेस्ट · कैलिफ़ोर्निया</string>
+    <string name="geo_preset_wx">बीजिंग · उत्तर</string>
+    <string name="geo_preset_wt">शंघाई · पूर्व</string>
+    <string name="geo_preset_ws">ग्रेटर बे · दक्षिण</string>
+    <string name="geo_preset_xn">टोक्यो · जापान</string>
+    <string name="geo_preset_gc">लंदन · यूके</string>
+    <string name="geo_preset_u0">पेरिस · पश्चिम यूरोप</string>
+    <string name="geo_preset_wy">सियोल · कोरिया</string>
+    <string name="geo_preset_u3">बर्लिन · मध्य यूरोप</string>
+    <string name="geo_preset_w2">सिंगापुर · द.पू. एशिया</string>
+    <string name="geo_preset_r3">सिडनी · ऑस्ट्रेलिया</string>
 </resources>

@@ -62,6 +62,10 @@ data class MeshPeer(
     val direct: Boolean,
     /** Links crossed by its latest announce: 1 for a neighbour, null when unknown (§30). */
     val hops: Int? = null,
+    /** Peer IDs this peer's latest announce claimed as direct links (for topology & /trace). */
+    val neighbors: Set<String> = emptySet(),
+    /** Direct neighbour through which we last heard this relayed peer's announce (local only). */
+    val heardViaPeerHex: String? = null,
 ) {
     val fingerprint: String get() = org.openchat.android.core.sha256(noisePublicKey).toHex()
 }
@@ -137,6 +141,7 @@ class MeshEngine(
         var bridgeCell: String? = null, // the rendezvous cell a bridge phone advertises (§24.2)
         var neighbors: Set<String> = emptySet(), // peer IDs its announce claims as direct links, for /trace (§25.2)
         var hops: Int? = null, // links its latest live announce crossed (§30)
+        var heardViaPeerHex: String? = null, // local observation: which direct neighbour relayed its latest announce
     )
 
     private class Session(val handshake: HandshakeXX?, val startedAt: Long) {
@@ -367,7 +372,18 @@ class MeshEngine(
         sendNoise(peerHex, NoisePayload(NoisePayloadType.READ_RECEIPT, messageId.toByteArray(Charsets.UTF_8)).encode())
 
     fun peersSnapshot(): List<MeshPeer> = peers.map { (hex, s) ->
-        MeshPeer(hex, s.nickname, s.noiseKey, s.signingKey, s.lastSeen, s.directLinks.isNotEmpty(), if (s.directLinks.isNotEmpty()) 1 else s.hops)
+        val direct = s.directLinks.any { links.containsKey(it) }
+        MeshPeer(
+            peerIdHex = hex,
+            nickname = s.nickname,
+            noisePublicKey = s.noiseKey,
+            signingPublicKey = s.signingKey,
+            lastSeen = s.lastSeen,
+            direct = direct,
+            hops = if (direct) 1 else s.hops,
+            neighbors = s.neighbors,
+            heardViaPeerHex = if (direct) null else s.heardViaPeerHex,
+        )
     }.sortedBy { it.nickname.lowercase() }
 
     /** Heard from recently, directly or through relays: mesh delivery is worth trying. */
@@ -539,13 +555,22 @@ class MeshEngine(
             return true
         }
         val state = existing ?: PeerState(a.nickname, a.noisePublicKey, a.signingPublicKey, now).also { peers[hex] = it }
-        val changed = existing == null || existing.nickname != a.nickname
+        val newNeighbors = a.directNeighbors.map { it.toHex() }.toSet()
+        val newHops = hopsOf(p)
+        val ingressPeer = linkId?.let { links[it]?.peerHex }?.takeIf { it != hex && it != myPeerHex }
+        val newVia = if (p.ttl < Packet.DEFAULT_TTL && ingressPeer != null) ingressPeer else state.heardViaPeerHex
+        val changed = existing == null ||
+            existing.nickname != a.nickname ||
+            existing.neighbors != newNeighbors ||
+            (newHops != null && existing.hops != newHops) ||
+            existing.heardViaPeerHex != newVia
         state.nickname = a.nickname
         state.lastSeen = now
         state.capabilities = a.capabilities ?: 0
         state.bridgeCell = a.bridgeGeohash?.takeIf { it.isNotEmpty() }
-        state.neighbors = a.directNeighbors.map { it.toHex() }.toSet()
-        hopsOf(p)?.let { state.hops = it }
+        state.neighbors = newNeighbors
+        newHops?.let { state.hops = it }
+        state.heardViaPeerHex = newVia
         if ((state.announce?.timestamp ?: 0) <= p.timestamp) state.announce = p
         // An announce at full TTL straight off a link came from that link's device.
         var newlyDirect = false
@@ -557,12 +582,13 @@ class MeshEngine(
                 link.peerHex?.let { old -> peers[old]?.directLinks?.remove(linkId) }
                 link.peerHex = hex
                 state.directLinks.add(linkId)
+                state.heardViaPeerHex = null
                 newlyDirect = true
                 publishPeers()
                 scheduler.schedule(INITIAL_SYNC_DELAY_MS) { if (links[linkId]?.peerHex == hex) requestSyncFrom(hex, linkId) }
             }
         }
-        if (changed) publishPeers()
+        if (changed && !newlyDirect) publishPeers()
         pendingBundles.remove(hex)?.let { handlePrekeyBundle(it) }
         flushIfPossible(hex)
         remember(hex, a.noisePublicKey, a.signingPublicKey, a.nickname, now)

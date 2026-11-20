@@ -378,4 +378,29 @@
     <string name="nearby_peers_summary">%1$d doğrudan · %2$d erişilebilir</string>
     <string name="nearby_peers_open">Yakındaki erişilebilir kişileri görüntüle</string>
     <string name="nearby_peers_empty">Şu anda menzilde kimse yok.</string>
+
+    <string name="topology_title">Mesh topolojisi</string>
+    <string name="topology_button">Topoloji</string>
+    <string name="topology_reset">Görünümü sıfırla</string>
+    <string name="topology_legend_known">Bilinen bağlantı</string>
+    <string name="topology_legend_relay">Aktarım girişi</string>
+    <string name="topology_empty_hint">Yakındaki Bluetooth cihazları taranıyor… Doğrudan ve çok sıçramalı bağlantılar canlı görünür.</string>
+    <string name="topology_inspect">Profil</string>
+    <string name="geo_default_badge">Yerel bölge</string>
+    <string name="geo_use_location_hint">Şehir, mahalle ve sokak kanallarını aç</string>
+    <string name="geo_quick_join">Hızlı katıl</string>
+    <string name="geo_quick_more">Daha fazla bölge</string>
+    <string name="geo_quick_less">Daha az</string>
+    <string name="geo_preset_dr">ABD Doğu · NYC</string>
+    <string name="geo_preset_9q">ABD Batı · Kaliforniya</string>
+    <string name="geo_preset_wx">Pekin · Kuzey</string>
+    <string name="geo_preset_wt">Şanghay · Doğu</string>
+    <string name="geo_preset_ws">Büyük Körfez · Güney</string>
+    <string name="geo_preset_xn">Tokyo · Japonya</string>
+    <string name="geo_preset_gc">Londra · BK</string>
+    <string name="geo_preset_u0">Paris · Batı Avrupa</string>
+    <string name="geo_preset_wy">Seul · Kore</string>
+    <string name="geo_preset_u3">Berlin · Orta Avrupa</string>
+    <string name="geo_preset_w2">Singapur · G.D. Asya</string>
+    <string name="geo_preset_r3">Sidney · Avustralya</string>
 </resources>

@@ -1,5 +1,54 @@
 # Changelog
 
+## Android v0.7.13 (preview) — 2026-11-19
+
+Interactive full-screen Bluetooth mesh topology view, zero-permission local
+region + one-tap quick-join location channels with encrypted persistence, and
+balanced neutral chrome over the restored luminous daylight gradient. No
+wire-format change. Signed with the release key ([SECURITY.md](SECURITY.md));
+installs over v0.7.12 and earlier release-signed builds. 214 unit tests. 9.5 MB.
+APK SHA-256 `43243fafe9ed1a8e3e1993e5ebccd61dbdbba73040549f7788b527e394ee23e5`.
+
+### Added
+
+- **Interactive mesh topology screen (`MeshTopologyScreen`, `NearbyPeersSheet`, `MeshEngine`, `MainScreen`).**
+  - Added a `Topology` pill in the `NearbyPeersSheet` header (accessible from the
+    top signal capsule on Nearby, Private, and Location tabs, including while
+    scanning alone) opening a full-screen pan/zoom radial topology canvas
+    centered on this device.
+  - Exposed peer-announced `neighbors` and locally observed `heardViaPeerHex` on
+    `MeshPeer` without changing the wire format or broadcasting local neighbour
+    lists; edges honestly distinguish direct BLE links (solid green), announced
+    peer links (solid neutral), and locally observed relay ingress (dashed
+    signal orange), and each node draws its 5×5 cryptographic emblem inline.
+  - Tapping any node highlights the shortest path (`shortestTopologyPath`) and
+    opens a docked inspector card with path breadcrumbs, profile sheet shortcut,
+    and one-tap encrypted DM.
+- **Local region recommendation, quick-join regional rooms & persistence (`LocationPresets`, `LocationScreens`, `GeoChannels`, `MeshService`).**
+  - Without requiring location permission, the Location tab now highlights a
+    tap-to-join local 2-char region derived purely offline from the device time
+    zone and locale, alongside a 2-column Quick Join grid of 12 curated regional
+    channels (e.g. `#dr`, `#9q`, `#wx`, `#wt`, `#ws`, `#xn`, `#gc`, `#u0`, plus
+    4 expandable regions).
+  - Joined location channels now persist across restarts in an encrypted
+    `SealedFile` (`geo-joined.bin`) and are destroyed automatically on panic
+    wipe; `GeoChatScreen` displays localized region names alongside known
+    `#geohash` titles, and manual entry strips leading `#`.
+  - Localized all 24 new topology and location-preset strings across all 18
+    languages.
+
+### Changed
+
+- **Restored luminous background gradient with neutral chrome (`Theme`, `FluidGlass`, `ChatPane`, `MainActivity`).**
+  - Restored the airy `#FFFFFF → #F6F7FA → #EFF1F5` daylight canvas gradient
+    with warm Signal-orange top-left and soft Lock-blue bottom-right radial
+    glows (and matching subtle glows on `#000000` OLED dark), pairing it with
+    achromatic light-neutral pills and buttons (`#F1F1F3` / `#F2F2F4`) and clear
+    neutral frosted navigation glass — avoiding both cold light-blue and
+    yellow-beige casts.
+  - Ordered location precision rows from broadest (`Region`) to finest (`Block`)
+    when location is granted so the liveliest rooms sit at the top.
+
 ## Android v0.7.12 (preview) — 2026-11-19
 
 Tappable nearby reachable peers sheet from the top signal capsule, locked

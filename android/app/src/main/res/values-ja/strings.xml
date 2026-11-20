@@ -372,4 +372,29 @@
     <string name="nearby_peers_summary">直接 %1$d · 到達 %2$d</string>
     <string name="nearby_peers_open">近くの到達可能な人を表示</string>
     <string name="nearby_peers_empty">現在範囲内に誰もいません。</string>
+
+    <string name="topology_title">Mesh トポロジー</string>
+    <string name="topology_button">トポロジー</string>
+    <string name="topology_reset">表示をリセット</string>
+    <string name="topology_legend_known">既知リンク</string>
+    <string name="topology_legend_relay">中継元</string>
+    <string name="topology_empty_hint">近くの Bluetooth 端末をスキャン中… 接続されると直接・マルチホップ構成がリアルタイム表示されます。</string>
+    <string name="topology_inspect">プロフィール</string>
+    <string name="geo_default_badge">ローカル地域</string>
+    <string name="geo_use_location_hint">都市・地域・街区チャンネルを利用</string>
+    <string name="geo_quick_join">クイック参加</string>
+    <string name="geo_quick_more">他の地域</string>
+    <string name="geo_quick_less">折りたたむ</string>
+    <string name="geo_preset_dr">米国東部 · ニューヨーク</string>
+    <string name="geo_preset_9q">米国西部 · カリフォルニア</string>
+    <string name="geo_preset_wx">北京 · 華北</string>
+    <string name="geo_preset_wt">上海 · 華東</string>
+    <string name="geo_preset_ws">香港・深圳 · 華南</string>
+    <string name="geo_preset_xn">東京 · 日本</string>
+    <string name="geo_preset_gc">ロンドン · 英国</string>
+    <string name="geo_preset_u0">パリ · 西欧</string>
+    <string name="geo_preset_wy">ソウル · 韓国</string>
+    <string name="geo_preset_u3">ベルリン · 中欧</string>
+    <string name="geo_preset_w2">シンガポール · 東南アジア</string>
+    <string name="geo_preset_r3">シドニー · 豪州</string>
 </resources>

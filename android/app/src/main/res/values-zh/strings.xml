@@ -383,4 +383,29 @@
     <string name="nearby_peers_summary">%1$d 直连 · %2$d 可达</string>
     <string name="nearby_peers_open">查看附近可达的人</string>
     <string name="nearby_peers_empty">当前范围内暂时没有人。</string>
+
+    <string name="topology_title">Mesh 拓扑</string>
+    <string name="topology_button">拓扑</string>
+    <string name="topology_reset">重置视图</string>
+    <string name="topology_legend_known">已知连接</string>
+    <string name="topology_legend_relay">转发入口</string>
+    <string name="topology_empty_hint">正在扫描附近蓝牙节点… 附近出现 openchat 或 bitchat 手机后，将实时绘制直连与多跳拓扑。</string>
+    <string name="topology_inspect">查看名片</string>
+    <string name="geo_default_badge">本地大区</string>
+    <string name="geo_use_location_hint">解锁城市、社区与街区精细频道</string>
+    <string name="geo_quick_join">快速加入</string>
+    <string name="geo_quick_more">更多地区</string>
+    <string name="geo_quick_less">收起</string>
+    <string name="geo_preset_dr">美东 · 纽约</string>
+    <string name="geo_preset_9q">美西 · 加州</string>
+    <string name="geo_preset_wx">北京 · 华北</string>
+    <string name="geo_preset_wt">上海 · 华东</string>
+    <string name="geo_preset_ws">粤港澳 · 华南</string>
+    <string name="geo_preset_xn">东京 · 日本</string>
+    <string name="geo_preset_gc">伦敦 · 英国</string>
+    <string name="geo_preset_u0">巴黎 · 西欧</string>
+    <string name="geo_preset_wy">首尔 · 韩国</string>
+    <string name="geo_preset_u3">柏林 · 中欧</string>
+    <string name="geo_preset_w2">新加坡 · 东南亚</string>
+    <string name="geo_preset_r3">悉尼 · 澳洲</string>
 </resources>

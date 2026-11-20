@@ -420,7 +420,7 @@ private fun PublicPostRow(
 
                 Surface(
                     shape = bubbleShape,
-                    color = if (isLight) Color.White else Color(0xFF1E1D1B),
+                    color = if (isLight) OpenChatPalette.Card else Color(0xFF1D1F24),
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp,
                     modifier = Modifier.widthIn(max = 296.dp),
@@ -676,7 +676,7 @@ private fun EncryptedBubbleRow(
                 color = when {
                     m.mine -> OpenChatPalette.LockSoft
                     isLight -> Color.White
-                    else -> Color(0xFF181816)
+                    else -> Color(0xFF17181C)
                 },
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
@@ -944,7 +944,7 @@ private fun VoiceNote(path: String, accentColor: Color = OpenChatPalette.Signal)
             }
         }
         val activeBarColor = accentColor
-        val idleBarColor = if (OpenChatPalette.isLight) Color(0xFF171614).copy(alpha = 0.18f) else Color.White.copy(alpha = 0.22f)
+        val idleBarColor = if (OpenChatPalette.isLight) Color(0xFF111214).copy(alpha = 0.18f) else Color.White.copy(alpha = 0.22f)
         Canvas(Modifier.width(96.dp).height(22.dp).clearAndSetSemantics { }) {
             val step = size.width / bars.size
             val barW = (step * 0.56f).coerceAtLeast(2f)

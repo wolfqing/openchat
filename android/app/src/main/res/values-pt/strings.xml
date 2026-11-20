@@ -384,4 +384,29 @@
     <string name="nearby_peers_summary">%1$d diretos · %2$d ao alcance</string>
     <string name="nearby_peers_open">Ver pessoas alcançáveis por perto</string>
     <string name="nearby_peers_empty">Ninguém está ao alcance no momento.</string>
+
+    <string name="topology_title">Topologia mesh</string>
+    <string name="topology_button">Topologia</string>
+    <string name="topology_reset">Redefinir visão</string>
+    <string name="topology_legend_known">Link conhecido</string>
+    <string name="topology_legend_relay">Via salto</string>
+    <string name="topology_empty_hint">Procurando dispositivos Bluetooth próximos… Links diretos e multi-salto aparecem ao vivo.</string>
+    <string name="topology_inspect">Perfil</string>
+    <string name="geo_default_badge">Região local</string>
+    <string name="geo_use_location_hint">Desbloquear salas de cidade, bairro e quadra</string>
+    <string name="geo_quick_join">Acesso rápido</string>
+    <string name="geo_quick_more">Mais regiões</string>
+    <string name="geo_quick_less">Mostrar menos</string>
+    <string name="geo_preset_dr">EUA Leste · NYC</string>
+    <string name="geo_preset_9q">EUA Oeste · Califórnia</string>
+    <string name="geo_preset_wx">Pequim · Norte</string>
+    <string name="geo_preset_wt">Xangai · Leste</string>
+    <string name="geo_preset_ws">Grande Baía · Sul</string>
+    <string name="geo_preset_xn">Tóquio · Japão</string>
+    <string name="geo_preset_gc">Londres · Reino Unido</string>
+    <string name="geo_preset_u0">Paris · Europa Ocidental</string>
+    <string name="geo_preset_wy">Seul · Coreia</string>
+    <string name="geo_preset_u3">Berlim · Europa Central</string>
+    <string name="geo_preset_w2">Singapura · Sudeste Asiático</string>
+    <string name="geo_preset_r3">Sydney · Austrália</string>
 </resources>

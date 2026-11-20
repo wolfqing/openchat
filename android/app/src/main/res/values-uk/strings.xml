@@ -398,4 +398,29 @@
     <string name="nearby_peers_summary">%1$d напряму · %2$d в охопленні</string>
     <string name="nearby_peers_open">Показати доступних людей поруч</string>
     <string name="nearby_peers_empty">Зараз у радіусі нікого немає.</string>
+
+    <string name="topology_title">Топологія mesh</string>
+    <string name="topology_button">Топологія</string>
+    <string name="topology_reset">Скинути вигляд</string>
+    <string name="topology_legend_known">Відомий зв\'язок</string>
+    <string name="topology_legend_relay">Через ретранслятор</string>
+    <string name="topology_empty_hint">Пошук Bluetooth-пристроїв поруч… Прямі й багатострибкові зв\'язки з\'являться наживо.</string>
+    <string name="topology_inspect">Профіль</string>
+    <string name="geo_default_badge">Ваш регіон</string>
+    <string name="geo_use_location_hint">Відкрити канали міста, району та кварталу</string>
+    <string name="geo_quick_join">Швидкий вхід</string>
+    <string name="geo_quick_more">Більше регіонів</string>
+    <string name="geo_quick_less">Згорнути</string>
+    <string name="geo_preset_dr">США Схід · Нью-Йорк</string>
+    <string name="geo_preset_9q">США Захід · Каліфорнія</string>
+    <string name="geo_preset_wx">Пекін · Північ</string>
+    <string name="geo_preset_wt">Шанхай · Схід</string>
+    <string name="geo_preset_ws">Гонконг · Південь</string>
+    <string name="geo_preset_xn">Токіо · Японія</string>
+    <string name="geo_preset_gc">Лондон · Британія</string>
+    <string name="geo_preset_u0">Париж · Зах. Європа</string>
+    <string name="geo_preset_wy">Сеул · Корея</string>
+    <string name="geo_preset_u3">Берлін · Центр. Європа</string>
+    <string name="geo_preset_w2">Сінгапур · Пд.-Сх. Азія</string>
+    <string name="geo_preset_r3">Сідней · Австралія</string>
 </resources>

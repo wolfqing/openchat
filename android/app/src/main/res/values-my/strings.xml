@@ -372,4 +372,29 @@
     <string name="nearby_peers_summary">တိုက်ရိုက် %1$d · ချိတ်ဆက်နိုင် %2$d</string>
     <string name="nearby_peers_open">အနီးအနားရှိ ချိတ်ဆက်နိုင်သူများကို ကြည့်ရန်</string>
     <string name="nearby_peers_empty">လက်ရှိ အကွာအဝေးအတွင်း မည်သူမျှ မရှိသေးပါ။</string>
+
+    <string name="topology_title">Mesh ကွန်ရက်ပုံစံ</string>
+    <string name="topology_button">ကွန်ရက်ပုံ</string>
+    <string name="topology_reset">မြင်ကွင်းပြန်စ</string>
+    <string name="topology_legend_known">သိရှိချိတ်ဆက်မှု</string>
+    <string name="topology_legend_relay">တစ်ဆင့်လက်ခံ</string>
+    <string name="topology_empty_hint">အနီးအနားရှိ Bluetooth စက်များကို ရှာဖွေနေသည်… ဖုန်းများချိတ်ဆက်လာပါက တိုက်ရိုက်နှင့် တစ်ဆင့်ခံကွန်ရက်ကို ပြသပါမည်။</string>
+    <string name="topology_inspect">ပရိုဖိုင်</string>
+    <string name="geo_default_badge">ဒေသတွင်း</string>
+    <string name="geo_use_location_hint">မြို့၊ ရပ်ကွက်နှင့် လမ်းချန်နယ်များ ဖွင့်ရန်</string>
+    <string name="geo_quick_join">အမြန်ဝင်ရန်</string>
+    <string name="geo_quick_more">ဒေသများထပ်ပြ</string>
+    <string name="geo_quick_less">လျှော့ပြ</string>
+    <string name="geo_preset_dr">အမေရိကန်အရှေ့ · NYC</string>
+    <string name="geo_preset_9q">အမေရိကန်အနောက် · ကယ်လီဖိုးနီးယား</string>
+    <string name="geo_preset_wx">ပေကျင်း · မြောက်ပိုင်း</string>
+    <string name="geo_preset_wt">ရှန်ဟိုင်း · အရှေ့ပိုင်း</string>
+    <string name="geo_preset_ws">ဟောင်ကောင် · တောင်ပိုင်း</string>
+    <string name="geo_preset_xn">တိုကျို · ဂျပန်</string>
+    <string name="geo_preset_gc">လန်ဒန် · ယူကေ</string>
+    <string name="geo_preset_u0">ပဲရစ် · အနောက်ဥရောပ</string>
+    <string name="geo_preset_wy">ဆိုးလ် · ကိုရီးယား</string>
+    <string name="geo_preset_u3">ဘာလင် · ဗဟိုဥရောပ</string>
+    <string name="geo_preset_w2">စင်ကာပူ · အရှေ့တောင်အာရှ</string>
+    <string name="geo_preset_r3">ဆစ်ဒနီ · ဩစတြေးလျ</string>
 </resources>

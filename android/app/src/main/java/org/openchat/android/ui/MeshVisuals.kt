@@ -145,7 +145,7 @@ fun EmblemView(key: String, size: Dp = 36.dp) {
     val color = Emblem.uiColor(key)
     val isLight = OpenChatPalette.isLight
     val bgEnd = OpenChatPalette.CardSurface
-    val strokeColor = if (isLight) Color(0xFF171614).copy(alpha = 0.09f) else Color.White.copy(alpha = 0.16f)
+    val strokeColor = if (isLight) Color(0xFF111214).copy(alpha = 0.08f) else Color.White.copy(alpha = 0.16f)
     val corner = (size.value * 0.29f).coerceIn(8f, 18f).dp
     Box(
         Modifier
@@ -394,7 +394,7 @@ internal fun NearbyStatusCapsuleRow(
     val now = rememberNow()
     val locale = appLocale()
     val signal = OpenChatPalette.Signal
-    val canOpenPeers = liveSpeakerLabel == null && scanningSince == null && reach > 0 && onPeersClick != null
+    val canOpenPeers = liveSpeakerLabel == null && onPeersClick != null
     val openPeersDesc = stringResource(R.string.nearby_peers_open)
     Row(
         modifier = modifier
@@ -450,7 +450,7 @@ internal fun NearbyStatusCapsuleRow(
                 } else if (scanningSince != null) {
                     val secs = ((now - scanningSince) / 1000).coerceAtLeast(0)
                     Row(
-                        Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        Modifier.padding(start = 12.dp, end = if (canOpenPeers) 8.dp else 12.dp, top = 6.dp, bottom = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(7.dp),
                     ) {
@@ -475,6 +475,14 @@ internal fun NearbyStatusCapsuleRow(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                         )
+                        if (canOpenPeers) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = OpenChatPalette.Muted,
+                                modifier = Modifier.size(15.dp),
+                            )
+                        }
                     }
                 } else {
                     Row(
@@ -910,7 +918,7 @@ private fun Radar(modifier: Modifier) {
     val ring = MaterialTheme.colorScheme.outlineVariant
     val tickColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.60f)
     val accent = OpenChatPalette.Signal
-    val hubBg = if (isLight) OpenChatPalette.Screen else Color(0xFF0A0A09)
+    val hubBg = if (isLight) OpenChatPalette.Screen else Color(0xFF0A0B0D)
     val dot = MaterialTheme.colorScheme.onSurface
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     val measurer = rememberTextMeasurer()

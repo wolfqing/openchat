@@ -37,6 +37,7 @@ class GeoChannels(
 
     val online get() = pool.connectedCount > 0
     fun isJoined(geohash: String) = joined.containsKey(geohash)
+    fun joinedSnapshot(): Map<String, Boolean> = joined.mapValues { it.value.teleported }
 
     /** A signed channel event that came over the radio: shown like one from a relay. */
     fun injectCarried(ev: NostrEvent) = onEvent(CARRIED, ev)

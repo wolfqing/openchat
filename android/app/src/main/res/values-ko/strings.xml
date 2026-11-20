@@ -372,4 +372,29 @@
     <string name="nearby_peers_summary">직접 %1$d · 도달 %2$d</string>
     <string name="nearby_peers_open">주변에서 연락 가능한 사람 보기</string>
     <string name="nearby_peers_empty">현재 범위 내에 아무도 없습니다.</string>
+
+    <string name="topology_title">메시 토폴로지</string>
+    <string name="topology_button">토폴로지</string>
+    <string name="topology_reset">보기 초기화</string>
+    <string name="topology_legend_known">알려진 연결</string>
+    <string name="topology_legend_relay">경유 진입</string>
+    <string name="topology_empty_hint">주변 블루투스 기기를 찾는 중… 연결되면 직접 및 멀티홉 구조가 실시간으로 표시됩니다.</string>
+    <string name="topology_inspect">프로필</string>
+    <string name="geo_default_badge">로컬 지역</string>
+    <string name="geo_use_location_hint">도시·동네·블록 채널 열기</string>
+    <string name="geo_quick_join">빠른 참여</string>
+    <string name="geo_quick_more">더 많은 지역</string>
+    <string name="geo_quick_less">접기</string>
+    <string name="geo_preset_dr">미국 동부 · 뉴욕</string>
+    <string name="geo_preset_9q">미국 서부 · 캘리포니아</string>
+    <string name="geo_preset_wx">베이징 · 화북</string>
+    <string name="geo_preset_wt">상하이 · 화동</string>
+    <string name="geo_preset_ws">홍콩·선전 · 화남</string>
+    <string name="geo_preset_xn">도쿄 · 일본</string>
+    <string name="geo_preset_gc">런던 · 영국</string>
+    <string name="geo_preset_u0">파리 · 서유럽</string>
+    <string name="geo_preset_wy">서울 · 한국</string>
+    <string name="geo_preset_u3">베를린 · 중부 유럽</string>
+    <string name="geo_preset_w2">싱가포르 · 동남아</string>
+    <string name="geo_preset_r3">시드니 · 호주</string>
 </resources>

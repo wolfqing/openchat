@@ -424,7 +424,7 @@ private fun ThemeSection() {
                                 .let {
                                     if (selected) {
                                         it.background(
-                                            if (isLight) Color.White else Color(0xFF2B2A27),
+                                            if (isLight) Color.White else Color(0xFF292B31),
                                             RoundedCornerShape(9.dp),
                                         )
                                     } else {

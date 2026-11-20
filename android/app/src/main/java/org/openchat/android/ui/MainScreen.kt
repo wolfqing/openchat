@@ -229,6 +229,7 @@ fun MainScreen(
             onDismiss = { showNearbyPeers = false },
             onSelectPerson = { showNearbyPeers = false; person = it },
             onMessage = { hex -> showNearbyPeers = false; openChat = Conversation.Private(hex).key },
+            onOpenTopology = { showNearbyPeers = false; openChat = TOPOLOGY },
         )
     }
 
@@ -255,6 +256,7 @@ fun MainScreen(
             route != null && route.startsWith("dm:") -> PrivateChatScreen(route.removePrefix("dm:"), onBack = { openChat = null }, onPanic = onPanic)
             route == BOARD -> BoardScreen(onBack = { openChat = null }, onPanic = onPanic)
             route == GUIDE -> GuideScreen(onBack = { openChat = null }, onPanic = onPanic)
+            route == TOPOLOGY -> MeshTopologyScreen(onBack = { openChat = null }, onPanic = onPanic, onOpenPrivate = { openChat = it })
             route != null && route.startsWith("geo:") -> GeoChatScreen(route.removePrefix("geo:"), onBack = { openChat = null }, onPanic = onPanic)
             else -> ShellScaffold(
                 tab = tab,

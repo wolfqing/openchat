@@ -372,4 +372,29 @@
     <string name="nearby_peers_summary">%1$d langsung · %2$d terjangkau</string>
     <string name="nearby_peers_open">Lihat orang yang terjangkau di sekitar</string>
     <string name="nearby_peers_empty">Belum ada orang dalam jangkauan saat ini.</string>
+
+    <string name="topology_title">Topologi mesh</string>
+    <string name="topology_button">Topologi</string>
+    <string name="topology_reset">Reset tampilan</string>
+    <string name="topology_legend_known">Tautan dikenal</string>
+    <string name="topology_legend_relay">Lewat relai</string>
+    <string name="topology_empty_hint">Memindai perangkat Bluetooth di sekitar… Tautan langsung dan multi-hop tampil secara langsung.</string>
+    <string name="topology_inspect">Profil</string>
+    <string name="geo_default_badge">Wilayah lokal</string>
+    <string name="geo_use_location_hint">Buka kanal kota, lingkungan &amp; blok</string>
+    <string name="geo_quick_join">Gabung cepat</string>
+    <string name="geo_quick_more">Wilayah lain</string>
+    <string name="geo_quick_less">Tampilkan sedikit</string>
+    <string name="geo_preset_dr">AS Timur · NYC</string>
+    <string name="geo_preset_9q">AS Barat · California</string>
+    <string name="geo_preset_wx">Beijing · Utara</string>
+    <string name="geo_preset_wt">Shanghai · Timur</string>
+    <string name="geo_preset_ws">Greater Bay · Selatan</string>
+    <string name="geo_preset_xn">Tokyo · Jepang</string>
+    <string name="geo_preset_gc">London · Inggris</string>
+    <string name="geo_preset_u0">Paris · Eropa Barat</string>
+    <string name="geo_preset_wy">Seoul · Korea</string>
+    <string name="geo_preset_u3">Berlin · Eropa Tengah</string>
+    <string name="geo_preset_w2">Singapura · Asia Tenggara</string>
+    <string name="geo_preset_r3">Sydney · Australia</string>
 </resources>

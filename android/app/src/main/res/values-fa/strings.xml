@@ -378,4 +378,29 @@
     <string name="nearby_peers_summary">%1$d مستقیم · %2$d در دسترس</string>
     <string name="nearby_peers_open">مشاهده افراد نزدیک در دسترس</string>
     <string name="nearby_peers_empty">در حال حاضر کسی در محدوده نیست.</string>
+
+    <string name="topology_title">توپولوژی مش</string>
+    <string name="topology_button">توپولوژی</string>
+    <string name="topology_reset">بازنشانی نما</string>
+    <string name="topology_legend_known">پیوند شناخته‌شده</string>
+    <string name="topology_legend_relay">از طریق رله</string>
+    <string name="topology_empty_hint">در حال جستجوی دستگاه‌های بلوتوث نزدیک… پیوندهای مستقیم و چندپرش به‌صورت زنده نمایش داده می‌شوند.</string>
+    <string name="topology_inspect">پروفایل</string>
+    <string name="geo_default_badge">منطقه محلی</string>
+    <string name="geo_use_location_hint">باز کردن کانال‌های شهر، محله و بلوک</string>
+    <string name="geo_quick_join">ورود سریع</string>
+    <string name="geo_quick_more">مناطق بیشتر</string>
+    <string name="geo_quick_less">نمایش کمتر</string>
+    <string name="geo_preset_dr">شرق آمریکا · نیویورک</string>
+    <string name="geo_preset_9q">غرب آمریکا · کالیفرنیا</string>
+    <string name="geo_preset_wx">پکن · شمال چین</string>
+    <string name="geo_preset_wt">شانگهای · شرق چین</string>
+    <string name="geo_preset_ws">هنگ‌کنگ · جنوب چین</string>
+    <string name="geo_preset_xn">توکیو · ژاپن</string>
+    <string name="geo_preset_gc">لندن · بریتانیا</string>
+    <string name="geo_preset_u0">پاریس · غرب اروپا</string>
+    <string name="geo_preset_wy">سئول · کره</string>
+    <string name="geo_preset_u3">برلین · اروپای مرکزی</string>
+    <string name="geo_preset_w2">سنگاپور · جنوب شرق آسیا</string>
+    <string name="geo_preset_r3">سیدنی · استرالیا</string>
 </resources>

@@ -375,8 +375,8 @@ fun FluidGlassSurface(
     }
 
     val refractingLive = overlapsSource && composeEffect != null
-    val ambientShadow = if (isLight) Color(0x28171512) else Color(0x6E000000)
-    val spotShadow = if (isLight) Color(0x3D171512) else Color(0x80000000)
+    val ambientShadow = if (isLight) Color(0x28111318) else Color(0x6E000000)
+    val spotShadow = if (isLight) Color(0x3D111318) else Color(0x80000000)
 
     Box(
         modifier = modifier
@@ -484,29 +484,29 @@ private fun Modifier.drawFluidGlassOpticalBody(
         }
         isLight && refractingLive -> {
             Brush.verticalGradient(
-                0.00f to Color.White.copy(alpha = 0.34f),
-                0.65f to Color.White.copy(alpha = 0.22f),
-                1.00f to Color(0xFFEBE7DF).copy(alpha = 0.16f),
+                0.00f to Color.White.copy(alpha = 0.30f),
+                0.65f to Color.White.copy(alpha = 0.18f),
+                1.00f to Color.White.copy(alpha = 0.10f),
             )
         }
         isLight -> {
             Brush.verticalGradient(
-                0.00f to Color.White.copy(alpha = 0.90f),
-                0.55f to Color(0xFFFAF8F4).copy(alpha = 0.82f),
-                1.00f to Color(0xFFF0EDE6).copy(alpha = 0.86f),
+                0.00f to Color.White.copy(alpha = 0.88f),
+                0.55f to Color(0xFFF8F8FA).copy(alpha = 0.80f),
+                1.00f to Color(0xFFF0F1F4).copy(alpha = 0.84f),
             )
         }
         refractingLive -> {
             Brush.verticalGradient(
-                0.00f to Color(0xFF1A1A18).copy(alpha = 0.44f),
-                0.70f to Color(0xFF121211).copy(alpha = 0.34f),
-                1.00f to Color.White.copy(alpha = 0.05f),
+                0.00f to Color(0xFF1A1B1F).copy(alpha = 0.40f),
+                0.70f to Color(0xFF121316).copy(alpha = 0.30f),
+                1.00f to Color.White.copy(alpha = 0.06f),
             )
         }
         else -> {
             Brush.verticalGradient(
-                0.00f to Color(0xFF1A1A18).copy(alpha = 0.86f),
-                1.00f to Color(0xFF121211).copy(alpha = 0.88f),
+                0.00f to Color(0xFF1B1C20).copy(alpha = 0.84f),
+                1.00f to Color(0xFF121316).copy(alpha = 0.86f),
             )
         }
     }
@@ -527,19 +527,19 @@ private fun Modifier.drawFluidGlassOpticalBody(
 
     val rimBrush = if (isLight) {
         val darkPole = if (borderAccent != null) {
-            lerp(borderAccent, Color(0xFF1C1A17), 0.48f).copy(alpha = 0.20f)
+            lerp(borderAccent, Color(0xFF14161A), 0.48f).copy(alpha = 0.20f)
         } else {
-            Color(0xFF1C1A17).copy(alpha = 0.12f)
+            Color(0xFF14161A).copy(alpha = 0.13f)
         }
         val midCap = if (borderAccent != null) {
             borderAccent.copy(alpha = 0.15f)
         } else {
-            Color(0xFF6E695F).copy(alpha = 0.08f)
+            Color(0xFF636873).copy(alpha = 0.08f)
         }
         val brightTopBottom = if (borderAccent != null) {
             lerp(borderAccent, Color.White, 0.80f).copy(alpha = 0.48f)
         } else {
-            Color.White.copy(alpha = 0.54f)
+            Color.White.copy(alpha = 0.56f)
         }
         Brush.horizontalGradient(
             0.00f to darkPole,
@@ -591,7 +591,7 @@ private fun Modifier.drawFluidGlassOpticalBody(
     )
 
     val outerHairColor = if (isLight) {
-        (borderAccent?.let { lerp(it, Color(0xFF1C1A17), 0.55f) } ?: Color(0xFF1C1A17)).copy(alpha = 0.06f)
+        (borderAccent?.let { lerp(it, Color(0xFF14161A), 0.55f) } ?: Color(0xFF14161A)).copy(alpha = 0.06f)
     } else {
         Color.Transparent
     }
@@ -641,8 +641,8 @@ internal fun Modifier.fluidGlassDroplet(isLight: Boolean): Modifier = drawWithCa
 
     val fillBrush = if (isLight) {
         Brush.verticalGradient(
-            0.00f to Color(0xFFEAE6DE).copy(alpha = 0.86f),
-            1.00f to Color(0xFFE3DFD6).copy(alpha = 0.78f),
+            0.00f to Color(0xFF111214).copy(alpha = 0.075f),
+            1.00f to Color(0xFF111214).copy(alpha = 0.055f),
         )
     } else {
         Brush.verticalGradient(

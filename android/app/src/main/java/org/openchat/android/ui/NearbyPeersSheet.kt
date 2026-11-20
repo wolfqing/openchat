@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -17,7 +18,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -68,6 +71,7 @@ internal fun NearbyPeersSheet(
     onDismiss: () -> Unit,
     onSelectPerson: (PersonRef.Mesh) -> Unit,
     onMessage: (String) -> Unit,
+    onOpenTopology: () -> Unit,
 ) {
     val peers by ChatRepository.peers.collectAsState()
     val mesh by ChatRepository.mesh.collectAsState()
@@ -94,23 +98,52 @@ internal fun NearbyPeersSheet(
                     .padding(horizontal = 20.dp, vertical = 6.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        stringResource(R.string.nearby_peers_title),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = OpenChatPalette.Ink,
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(7.dp),
-                    ) {
-                        SignalPulseDot(live = sorted.isNotEmpty())
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
-                            stringResource(R.string.nearby_peers_summary, directCount, sorted.size),
-                            style = TabularMonoStyle,
-                            fontSize = 12.sp,
-                            color = OpenChatPalette.Muted,
+                            stringResource(R.string.nearby_peers_title),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = OpenChatPalette.Ink,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(7.dp),
+                        ) {
+                            SignalPulseDot(live = sorted.isNotEmpty())
+                            Text(
+                                stringResource(R.string.nearby_peers_summary, directCount, sorted.size),
+                                style = TabularMonoStyle,
+                                fontSize = 12.sp,
+                                color = OpenChatPalette.Muted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                    FluidGlassPillButton(
+                        onClick = onOpenTopology,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
+                    ) {
+                        Icon(
+                            Icons.Outlined.Hub,
+                            contentDescription = null,
+                            tint = OpenChatPalette.Signal,
+                            modifier = Modifier.size(15.dp),
+                        )
+                        Text(
+                            stringResource(R.string.topology_button),
+                            fontSize = 12.5.sp,
+                            lineHeight = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OpenChatPalette.Ink,
+                            maxLines = 1,
                         )
                     }
                 }

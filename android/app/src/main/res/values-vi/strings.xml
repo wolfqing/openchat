@@ -372,4 +372,29 @@
     <string name="nearby_peers_summary">%1$d trực tiếp · %2$d trong tầm với</string>
     <string name="nearby_peers_open">Xem những người có thể liên hệ ở gần</string>
     <string name="nearby_peers_empty">Hiện không có ai trong phạm vi.</string>
+
+    <string name="topology_title">Sơ đồ mesh</string>
+    <string name="topology_button">Sơ đồ</string>
+    <string name="topology_reset">Đặt lại góc nhìn</string>
+    <string name="topology_legend_known">Liên kết đã biết</string>
+    <string name="topology_legend_relay">Qua chuyển tiếp</string>
+    <string name="topology_empty_hint">Đang quét thiết bị Bluetooth ở gần… Các liên kết trực tiếp và đa chặng sẽ hiện trực tiếp khi kết nối.</string>
+    <string name="topology_inspect">Hồ sơ</string>
+    <string name="geo_default_badge">Khu vực gần bạn</string>
+    <string name="geo_use_location_hint">Mở khóa kênh thành phố, khu phố &amp; dãy nhà</string>
+    <string name="geo_quick_join">Vào nhanh</string>
+    <string name="geo_quick_more">Thêm khu vực</string>
+    <string name="geo_quick_less">Thu gọn</string>
+    <string name="geo_preset_dr">Đông Mỹ · NYC</string>
+    <string name="geo_preset_9q">Tây Mỹ · California</string>
+    <string name="geo_preset_wx">Bắc Kinh · Hoa Bắc</string>
+    <string name="geo_preset_wt">Thượng Hải · Hoa Đông</string>
+    <string name="geo_preset_ws">Vùng Vịnh Lớn · Hoa Nam</string>
+    <string name="geo_preset_xn">Tokyo · Nhật Bản</string>
+    <string name="geo_preset_gc">London · Anh</string>
+    <string name="geo_preset_u0">Paris · Tây Âu</string>
+    <string name="geo_preset_wy">Seoul · Hàn Quốc</string>
+    <string name="geo_preset_u3">Berlin · Trung Âu</string>
+    <string name="geo_preset_w2">Singapore · Đông Nam Á</string>
+    <string name="geo_preset_r3">Sydney · Úc</string>
 </resources>

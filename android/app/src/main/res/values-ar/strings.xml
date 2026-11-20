@@ -418,4 +418,29 @@
     <string name="nearby_peers_summary">%1$d مباشر · %2$d ضمن المدى</string>
     <string name="nearby_peers_open">عرض الأشخاص القريبين المتاحين</string>
     <string name="nearby_peers_empty">لا يوجد أحد ضمن النطاق حالياً.</string>
+
+    <string name="topology_title">طوبولوجيا الشبكة</string>
+    <string name="topology_button">الطوبولوجيا</string>
+    <string name="topology_reset">إعادة ضبط العرض</string>
+    <string name="topology_legend_known">رابط معروف</string>
+    <string name="topology_legend_relay">عبر مُرحّل</string>
+    <string name="topology_empty_hint">جارٍ البحث عن أجهزة بلوتوث قريبة… ستظهر الروابط المباشرة ومتعددة القفزات فور اتصال الهواتف.</string>
+    <string name="topology_inspect">الملف</string>
+    <string name="geo_default_badge">المنطقة المحلية</string>
+    <string name="geo_use_location_hint">افتح غرف المدينة والحي والشارع</string>
+    <string name="geo_quick_join">انضمام سريع</string>
+    <string name="geo_quick_more">مناطق أخرى</string>
+    <string name="geo_quick_less">عرض أقل</string>
+    <string name="geo_preset_dr">شرق أمريكا · نيويورك</string>
+    <string name="geo_preset_9q">غرب أمريكا · كاليفورنيا</string>
+    <string name="geo_preset_wx">بكين · شمال الصين</string>
+    <string name="geo_preset_wt">شنغهاي · شرق الصين</string>
+    <string name="geo_preset_ws">هونغ كونغ · جنوب الصين</string>
+    <string name="geo_preset_xn">طوكيو · اليابان</string>
+    <string name="geo_preset_gc">لندن · بريطانيا</string>
+    <string name="geo_preset_u0">باريس · غرب أوروبا</string>
+    <string name="geo_preset_wy">سيول · كوريا</string>
+    <string name="geo_preset_u3">برلين · وسط أوروبا</string>
+    <string name="geo_preset_w2">سنغافورة · جنوب شرق آسيا</string>
+    <string name="geo_preset_r3">سيدني · أستراليا</string>
 </resources>

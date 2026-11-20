@@ -391,4 +391,29 @@
     <string name="nearby_peers_summary">%1$d direct · %2$d reachable</string>
     <string name="nearby_peers_open">View nearby reachable people</string>
     <string name="nearby_peers_empty">No one is in range right now.</string>
+
+    <string name="topology_title">Mesh topology</string>
+    <string name="topology_button">Topology</string>
+    <string name="topology_reset">Reset view</string>
+    <string name="topology_legend_known">Known link</string>
+    <string name="topology_legend_relay">Heard via</string>
+    <string name="topology_empty_hint">Scanning for nearby Bluetooth devices… Direct and multi-hop links appear live as phones connect.</string>
+    <string name="topology_inspect">Profile</string>
+    <string name="geo_default_badge">Local region</string>
+    <string name="geo_use_location_hint">Unlock city, neighborhood &amp; block rooms</string>
+    <string name="geo_quick_join">Quick join</string>
+    <string name="geo_quick_more">More regions</string>
+    <string name="geo_quick_less">Show less</string>
+    <string name="geo_preset_dr">US East · NYC</string>
+    <string name="geo_preset_9q">US West · California</string>
+    <string name="geo_preset_wx">Beijing · North</string>
+    <string name="geo_preset_wt">Shanghai · East</string>
+    <string name="geo_preset_ws">Greater Bay · South</string>
+    <string name="geo_preset_xn">Tokyo · Japan</string>
+    <string name="geo_preset_gc">London · UK</string>
+    <string name="geo_preset_u0">Paris · West EU</string>
+    <string name="geo_preset_wy">Seoul · Korea</string>
+    <string name="geo_preset_u3">Berlin · Central EU</string>
+    <string name="geo_preset_w2">Singapore · SE Asia</string>
+    <string name="geo_preset_r3">Sydney · Australia</string>
 </resources>

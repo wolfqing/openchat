@@ -130,4 +130,55 @@ class MeshVisualsTest {
 
         assertEquals(listOf("eeee", "dddd", "ffff", "cccc", "aaaa", "bbbb"), sorted.map { it.peerIdHex })
     }
+
+    @Test
+    fun topologyGraphPlacesRingsBuildsHonestEdgesAndFindsShortestPath() {
+        val key = ByteArray(32)
+        fun peer(
+            hex: String,
+            name: String,
+            direct: Boolean,
+            hops: Int?,
+            neighbors: Set<String> = emptySet(),
+            heardVia: String? = null,
+        ) = MeshPeer(hex, name, key, key, 10_000L, direct, hops, neighbors, heardVia)
+
+        val graph = buildTopologyGraph(
+            myPeerHex = "self0000",
+            myNickname = "Me",
+            peers = listOf(
+                peer("self0000", "Me", direct = true, hops = 1),
+                peer("dir1", "ZhangHeng", direct = true, hops = 1, neighbors = setOf("hop2a")),
+                peer("dir2", "LiBai", direct = true, hops = 1),
+                peer("hop2a", "SuShi", direct = false, hops = 2, neighbors = setOf("dir1", "hop3")),
+                peer("hop2b", "Curie", direct = false, hops = 2, heardVia = "dir2"),
+                peer("hop3", "Lovelace", direct = false, hops = 3, heardVia = "dir1"),
+                peer("orphan", "Darwin", direct = false, hops = 3),
+            ),
+        )
+
+        val byHex = graph.nodes.associateBy { it.peerHex }
+        assertEquals(7, graph.nodes.size)
+        assertEquals(0, byHex["self0000"]!!.ring)
+        assertEquals(1, byHex["dir1"]!!.ring)
+        assertEquals(1, byHex["dir2"]!!.ring)
+        assertEquals(2, byHex["hop2a"]!!.ring)
+        assertEquals(2, byHex["hop2b"]!!.ring)
+        assertEquals(3, byHex["hop3"]!!.ring)
+        assertEquals(3, graph.maxRing)
+
+        // Direct edges for dir1 & dir2, announced edges dir1-hop2a & hop2a-hop3,
+        // and inferred edge dir2-hop2b (while hop3 already has announced upstream hop2a so no duplicate inferred edge).
+        val directEdges = graph.edges.filter { it.kind == TopologyEdgeKind.DIRECT }
+        val announcedEdges = graph.edges.filter { it.kind == TopologyEdgeKind.ANNOUNCED }
+        val inferredEdges = graph.edges.filter { it.kind == TopologyEdgeKind.INFERRED }
+        assertEquals(2, directEdges.size)
+        assertEquals(2, announcedEdges.size)
+        assertEquals(1, inferredEdges.size)
+        assertEquals(setOf("dir2", "hop2b"), setOf(inferredEdges[0].fromHex, inferredEdges[0].toHex))
+
+        assertEquals(listOf("self0000", "dir1", "hop2a", "hop3"), shortestTopologyPath(graph, "hop3"))
+        assertEquals(listOf("self0000", "dir2", "hop2b"), shortestTopologyPath(graph, "hop2b"))
+        assertEquals(null, shortestTopologyPath(graph, "orphan"))
+    }
 }

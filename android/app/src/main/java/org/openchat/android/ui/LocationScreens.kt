@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
@@ -29,6 +30,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Refresh
@@ -70,10 +72,12 @@ import androidx.compose.ui.unit.sp
 import org.openchat.android.R
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.Conversation
+import org.openchat.android.app.LocationPresets
 import org.openchat.android.app.PeerLabel
 import org.openchat.android.nostr.Geohash
 import org.openchat.android.ui.globe.GlobePickerDialog
 import org.openchat.android.ui.globe.GlobeView
+import java.util.TimeZone
 import kotlin.math.roundToInt
 
 @Composable
@@ -82,16 +86,26 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
     val unread by ChatRepository.unread.collectAsState()
     val bottomClearance = LocalBottomBarClearance.current
     val imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
+    val locale = appLocale()
+    val defaultPreset = remember(locale) { LocationPresets.defaultPreset(locale, TimeZone.getDefault().id) }
     var manual by rememberSaveable { mutableStateOf("") }
     var globe by rememberSaveable { mutableStateOf(false) }
+    var showMorePresets by rememberSaveable { mutableStateOf(false) }
     val here = geo.locationGeohash
 
+    fun openCell(cell: String) {
+        ChatRepository.controller?.joinGeo(cell, teleported = here == null || !here.startsWith(cell))
+        onOpen(cell)
+    }
+
     if (globe) {
-        val start = manual.takeIf { Geohash.isValid(it) && it.length >= 2 } ?: geo.joined.sorted().firstOrNull() ?: here?.take(2)
+        val start = manual.takeIf { Geohash.isValid(it) && it.length >= 2 }
+            ?: geo.joined.sorted().firstOrNull()
+            ?: here?.take(2)
+            ?: defaultPreset.geohash
         GlobePickerDialog(start, onDismiss = { globe = false }, onSelect = { cell ->
             globe = false
-            ChatRepository.controller?.joinGeo(cell, teleported = here == null || !here.startsWith(cell))
-            onOpen(cell)
+            openCell(cell)
         })
     }
 
@@ -105,162 +119,382 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
                 .padding(start = 16.dp, end = 16.dp, top = 10.dp + topClearance, bottom = 18.dp + maxOf(bottomClearance, imeBottom)),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-        Text(
-            stringResource(R.string.geo_intro),
-            fontSize = 13.5.sp,
-            lineHeight = 20.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+            Text(
+                stringResource(R.string.geo_intro),
+                fontSize = 13.5.sp,
+                lineHeight = 20.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
-        // 1. 3D Globe Picker Hero Card
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = OpenChatPalette.CardSurface,
-            modifier = Modifier.fillMaxWidth().pressScale(0.98f).clip(RoundedCornerShape(16.dp)).clickable { globe = true },
-        ) {
-            Row(
-                Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = OpenChatPalette.SignalSoft,
-                    modifier = Modifier.size(38.dp),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Outlined.Public, contentDescription = null, tint = OpenChatPalette.Signal, modifier = Modifier.size(20.dp))
-                    }
-                }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(stringResource(R.string.globe_open), fontWeight = FontWeight.SemiBold, fontSize = 15.5.sp)
-                    Text(stringResource(R.string.globe_hint), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-
-        // 2. Joined Channels Quick-Switch Chips (kept near the top so active channels are one tap away)
-        if (geo.joined.isNotEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.geo_joined), fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    geo.joined.sorted().forEach { g ->
-                        val count = unread[Conversation.Geo(g).key] ?: 0
-                        val online = geo.participants[g] ?: 0
-                        FluidGlassPillButton(
-                            onClick = { onOpen(g) },
-                            borderAccent = if (count > 0) OpenChatPalette.Signal else null,
-                            contentPadding = PaddingValues(horizontal = 13.dp, vertical = 7.dp),
-                        ) {
-                            Text("#$g", style = TabularMonoStyle, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, color = OpenChatPalette.Ink)
-                            if (online > 0) {
-                                Text("· $online", style = TabularMonoStyle, fontSize = 12.sp, color = OpenChatPalette.Online)
+            // 1. Joined Channels Quick-Switch Chips (kept at the top for 1-tap switching)
+            if (geo.joined.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.geo_joined),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Row(
+                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        geo.joined.sorted().forEach { g ->
+                            val count = unread[Conversation.Geo(g).key] ?: 0
+                            val online = geo.participants[g] ?: 0
+                            val preset = LocationPresets.presetFor(g)
+                            FluidGlassPillButton(
+                                onClick = { onOpen(g) },
+                                borderAccent = if (count > 0) OpenChatPalette.Signal else null,
+                                contentPadding = PaddingValues(horizontal = 13.dp, vertical = 7.dp),
+                            ) {
+                                Text(
+                                    "#$g",
+                                    style = TabularMonoStyle,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.5.sp,
+                                    color = OpenChatPalette.Ink,
+                                )
+                                if (preset != null) {
+                                    Text(
+                                        stringResource(preset.labelRes),
+                                        fontSize = 12.5.sp,
+                                        color = OpenChatPalette.Muted,
+                                        maxLines = 1,
+                                    )
+                                }
+                                if (online > 0) {
+                                    Text("· $online", style = TabularMonoStyle, fontSize = 12.sp, color = OpenChatPalette.Online)
+                                }
+                                UnreadBadge(count)
                             }
-                            UnreadBadge(count)
                         }
                     }
                 }
             }
-        }
 
-        // 3. Approximate Location Levels Card
-        if (here == null) {
-            SettingsGroupCard {
-                Row(
-                    Modifier.fillMaxWidth().clickable(onClick = onRequestLocation).padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Icon(Icons.Outlined.MyLocation, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
-                    Text(stringResource(R.string.geo_use_location), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        } else {
-            SettingsGroupCard {
-                Geohash.Level.entries.forEachIndexed { idx, level ->
-                    if (idx > 0) Hairline(Modifier.padding(start = 16.dp))
-                    val cell = here.take(level.precision)
-                    val n = geo.participants[cell] ?: 0
-                    val span = approxSpanText(GlobeView.cellWidthMeters(cell))
+            // 2. Default Channel (no GPS needed) or Approximate Location Levels
+            if (here == null) {
+                val defaultCell = defaultPreset.geohash
+                val defaultOnline = geo.participants[defaultCell] ?: 0
+                val defaultSpan = approxSpanText(GlobeView.cellWidthMeters(defaultCell))
+                SettingsGroupCard {
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clickable { ChatRepository.controller?.joinGeo(cell, teleported = false); onOpen(cell) }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                            .clickable { openCell(defaultCell) }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(stringResource(levelLabel(level)), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                            Text("#$cell · $span", style = TabularMonoStyle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        if (n > 0) {
-                            Surface(
-                                shape = CircleShape,
-                                color = OpenChatPalette.Online.copy(alpha = 0.14f),
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(7.dp),
                             ) {
                                 Text(
-                                    plural(R.plurals.geo_online, n),
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = OpenChatPalette.Online,
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
+                                    stringResource(defaultPreset.labelRes),
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 15.5.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false),
                                 )
+                                Surface(
+                                    shape = CircleShape,
+                                    color = OpenChatPalette.SignalSoft,
+                                ) {
+                                    Text(
+                                        stringResource(R.string.geo_default_badge),
+                                        fontSize = 10.5.sp,
+                                        lineHeight = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = OpenChatPalette.Signal,
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                    )
+                                }
                             }
+                            Text(
+                                "#$defaultCell · ${stringResource(R.string.geo_level_region)} · $defaultSpan",
+                                style = TabularMonoStyle,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                        if (defaultOnline > 0) {
+                            OnlineCountPill(defaultOnline)
+                        }
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    Hairline(Modifier.padding(start = 16.dp))
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onRequestLocation)
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Icon(
+                            Icons.Outlined.MyLocation,
+                            contentDescription = null,
+                            tint = OpenChatPalette.Signal,
+                            modifier = Modifier.size(19.dp),
+                        )
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                            Text(stringResource(R.string.geo_use_location), fontWeight = FontWeight.Medium, fontSize = 14.5.sp)
+                            Text(
+                                stringResource(R.string.geo_use_location_hint),
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
                     }
                 }
-                Hairline()
+            } else {
+                // Broadest (Region) first so the liveliest room is immediately at the top.
+                val levels = remember { Geohash.Level.entries.reversed() }
+                SettingsGroupCard {
+                    levels.forEachIndexed { idx, level ->
+                        if (idx > 0) Hairline(Modifier.padding(start = 16.dp))
+                        val cell = here.take(level.precision)
+                        val n = geo.participants[cell] ?: 0
+                        val span = approxSpanText(GlobeView.cellWidthMeters(cell))
+                        val preset = if (level == Geohash.Level.REGION) LocationPresets.presetFor(cell) else null
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { ChatRepository.controller?.joinGeo(cell, teleported = false); onOpen(cell) }
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    if (preset != null) "${stringResource(levelLabel(level))} · ${stringResource(preset.labelRes)}" else stringResource(levelLabel(level)),
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 15.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text("#$cell · $span", style = TabularMonoStyle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            if (n > 0) {
+                                OnlineCountPill(n)
+                            }
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                    Hairline()
+                    Row(
+                        Modifier.fillMaxWidth().clickable(onClick = onRequestLocation).padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.geo_refresh), fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+
+            // 3. Quick Join Popular Regional Channels (2-column grid, 1 tap to join & enter)
+            val presets = if (showMorePresets) LocationPresets.ALL else LocationPresets.FEATURED
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
-                    Modifier.fillMaxWidth().clickable(onClick = onRequestLocation).padding(horizontal = 16.dp, vertical = 10.dp),
+                    Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(stringResource(R.string.geo_refresh), fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-
-        // 4. Visit Another Area Card
-        SettingsGroupCard {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.geo_elsewhere), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = manual,
-                        onValueChange = { manual = it.lowercase().filter { c -> c.isLetterOrDigit() }.take(8) },
-                        placeholder = { Text(stringResource(R.string.geo_hint)) },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
+                    Text(
+                        stringResource(R.string.geo_quick_join),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Button(
-                        enabled = Geohash.isValid(manual) && manual.length >= 2,
-                        shape = RoundedCornerShape(12.dp),
-                        onClick = { ChatRepository.controller?.joinGeo(manual, teleported = true); onOpen(manual) },
-                    ) { Text(stringResource(R.string.geo_enter)) }
+                    TextButton(
+                        onClick = { showMorePresets = !showMorePresets },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            stringResource(if (showMorePresets) R.string.geo_quick_less else R.string.geo_quick_more),
+                            fontSize = 12.5.sp,
+                            color = OpenChatPalette.Signal,
+                        )
+                    }
                 }
-                Text(
-                    withInlineVectorBadges(stringResource(R.string.geo_teleport_note)),
-                    inlineContent = rememberLabelInlineIcons(),
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                presets.chunked(2).forEach { pair ->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        pair.forEach { preset ->
+                            val isJoined = preset.geohash in geo.joined
+                            val online = geo.participants[preset.geohash] ?: 0
+                            QuickJoinTile(
+                                preset = preset,
+                                joined = isJoined,
+                                online = online,
+                                onClick = { openCell(preset.geohash) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        if (pair.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+
+            // 4. 3D Globe Picker Hero Card
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = OpenChatPalette.CardSurface,
+                modifier = Modifier.fillMaxWidth().pressScale(0.98f).clip(RoundedCornerShape(16.dp)).clickable { globe = true },
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = OpenChatPalette.SignalSoft,
+                        modifier = Modifier.size(38.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Outlined.Public, contentDescription = null, tint = OpenChatPalette.Signal, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(stringResource(R.string.globe_open), fontWeight = FontWeight.SemiBold, fontSize = 15.5.sp)
+                        Text(stringResource(R.string.globe_hint), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+
+            // 5. Visit Another Area Card (manual #geohash)
+            SettingsGroupCard {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.geo_elsewhere), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = manual,
+                            onValueChange = { manual = LocationPresets.sanitizeInput(it) },
+                            placeholder = { Text(stringResource(R.string.geo_hint)) },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                        )
+                        Button(
+                            enabled = Geohash.isValid(manual) && manual.length >= 2,
+                            shape = RoundedCornerShape(12.dp),
+                            onClick = { openCell(manual) },
+                        ) { Text(stringResource(R.string.geo_enter)) }
+                    }
+                    Text(
+                        withInlineVectorBadges(stringResource(R.string.geo_teleport_note)),
+                        inlineContent = rememberLabelInlineIcons(),
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            // 6. Local 24h Notes Card (only when location is active)
+            if (here != null) {
+                NotesSection(here)
             }
         }
+    }
+}
 
-        // 5. Local 24h Notes Card (only when location is active)
-        if (here != null) {
-            NotesSection(here)
-        }
+@Composable
+private fun OnlineCountPill(count: Int) {
+    Surface(
+        shape = CircleShape,
+        color = OpenChatPalette.Online.copy(alpha = 0.14f),
+    ) {
+        Text(
+            plural(R.plurals.geo_online, count),
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Medium,
+            color = OpenChatPalette.Online,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
+        )
+    }
+}
+
+@Composable
+private fun QuickJoinTile(
+    preset: LocationPresets.GeoPreset,
+    joined: Boolean,
+    online: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = OpenChatPalette.CardSurface,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        modifier = modifier
+            .pressScale(0.97f)
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick),
+    ) {
+        Column(
+            Modifier.padding(horizontal = 13.dp, vertical = 11.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    "#${preset.geohash}",
+                    style = TabularMonoStyle,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.5.sp,
+                    color = if (joined) OpenChatPalette.Signal else OpenChatPalette.Ink,
+                    maxLines = 1,
+                )
+                when {
+                    online > 0 -> Text(
+                        "· $online",
+                        style = TabularMonoStyle,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OpenChatPalette.Online,
+                    )
+                    joined -> Icon(
+                        Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = OpenChatPalette.Signal,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+            }
+            Text(
+                stringResource(preset.labelRes),
+                fontSize = 12.5.sp,
+                color = OpenChatPalette.Muted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -385,8 +619,10 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
                         colors = chromeTopBarColors(),
                         navigationIcon = { GlassBackButton(onBack) },
                         title = {
+                            val preset = remember(geohash) { LocationPresets.presetFor(geohash) }
+                            val titleText = if (preset != null) "#$geohash · ${stringResource(preset.labelRes)}" else "#$geohash"
                             Column {
-                                PanicTitle("#$geohash", onPanic)
+                                PanicTitle(titleText, onPanic)
                                 val n = geo.participants[geohash] ?: 0
                                 Text(
                                     if (geo.relaysConnected == 0) stringResource(R.string.geo_connecting) else plural(R.plurals.geo_recent, n),

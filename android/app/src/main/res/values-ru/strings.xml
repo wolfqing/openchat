@@ -398,4 +398,29 @@
     <string name="nearby_peers_summary">%1$d напрямую · %2$d в охвате</string>
     <string name="nearby_peers_open">Показать доступных людей рядом</string>
     <string name="nearby_peers_empty">Сейчас в радиусе никого нет.</string>
+
+    <string name="topology_title">Топология mesh</string>
+    <string name="topology_button">Топология</string>
+    <string name="topology_reset">Сбросить вид</string>
+    <string name="topology_legend_known">Известная связь</string>
+    <string name="topology_legend_relay">Через ретранслятор</string>
+    <string name="topology_empty_hint">Поиск ближайших Bluetooth-устройств… Прямые и многопрыжковые связи появятся в реальном времени.</string>
+    <string name="topology_inspect">Профиль</string>
+    <string name="geo_default_badge">Ваш регион</string>
+    <string name="geo_use_location_hint">Открыть каналы города, района и квартала</string>
+    <string name="geo_quick_join">Быстрый вход</string>
+    <string name="geo_quick_more">Ещё регионы</string>
+    <string name="geo_quick_less">Свернуть</string>
+    <string name="geo_preset_dr">США Восток · Нью-Йорк</string>
+    <string name="geo_preset_9q">США Запад · Калифорния</string>
+    <string name="geo_preset_wx">Пекин · Север</string>
+    <string name="geo_preset_wt">Шанхай · Восток</string>
+    <string name="geo_preset_ws">Гонконг · Юг</string>
+    <string name="geo_preset_xn">Токио · Япония</string>
+    <string name="geo_preset_gc">Лондон · Британия</string>
+    <string name="geo_preset_u0">Париж · Зап. Европа</string>
+    <string name="geo_preset_wy">Сеул · Корея</string>
+    <string name="geo_preset_u3">Берлин · Центр. Европа</string>
+    <string name="geo_preset_w2">Сингапур · ЮВ Азия</string>
+    <string name="geo_preset_r3">Сидней · Австралия</string>
 </resources>
