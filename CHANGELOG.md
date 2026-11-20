@@ -7,7 +7,7 @@ region + one-tap quick-join location channels with encrypted persistence, and
 balanced neutral chrome over the restored luminous daylight gradient. No
 wire-format change. Signed with the release key ([SECURITY.md](SECURITY.md));
 installs over v0.7.12 and earlier release-signed builds. 214 unit tests. 9.5 MB.
-APK SHA-256 `43243fafe9ed1a8e3e1993e5ebccd61dbdbba73040549f7788b527e394ee23e5`.
+APK SHA-256 `6307c9784ba8e141037a843685bec86dabb7aece6086f851d13f255fe5abe0de`.
 
 ### Added
 
@@ -46,6 +46,8 @@ APK SHA-256 `43243fafe9ed1a8e3e1993e5ebccd61dbdbba73040549f7788b527e394ee23e5`.
     achromatic light-neutral pills and buttons (`#F1F1F3` / `#F2F2F4`) and clear
     neutral frosted navigation glass — avoiding both cold light-blue and
     yellow-beige casts.
+  - Removed the square background tile behind the top-left OpenChat wordmark
+    (`PanicLogo`, `Onboarding`), leaving only the clean Signal-orange lettering.
   - Ordered location precision rows from broadest (`Region`) to finest (`Block`)
     when location is granted so the liveliest rooms sit at the top.
 

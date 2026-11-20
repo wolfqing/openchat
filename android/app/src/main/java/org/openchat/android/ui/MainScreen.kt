@@ -46,7 +46,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material.icons.Icons
@@ -71,7 +70,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -724,7 +722,7 @@ fun PanicTitle(text: AnnotatedString, onPanic: () -> Unit) {
     )
 }
 
-/** The app mark in the top-left corner: flat rounded OpenChat vector logo inside a 48dp triple-tap target. */
+/** The app mark in the top-left corner: borderless OpenChat vector wordmark inside a 48dp triple-tap target. */
 @Composable
 fun PanicLogo(onPanic: () -> Unit) {
     val tap = rememberPanicTaps(onPanic)
@@ -732,24 +730,17 @@ fun PanicLogo(onPanic: () -> Unit) {
     Box(
         modifier = Modifier
             .size(48.dp)
+            .clipToBounds()
             .semantics { contentDescription = desc }
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = tap),
         contentAlignment = Alignment.Center,
     ) {
-        Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = OpenChatPalette.Control,
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp,
-            modifier = Modifier.size(36.dp).clipToBounds(),
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_launcher_foreground),
-                contentDescription = null,
-                tint = OpenChatPalette.Signal,
-                modifier = Modifier.fillMaxSize().scale(1.42f),
-            )
-        }
+        Icon(
+            painter = painterResource(R.drawable.ic_launcher_foreground),
+            contentDescription = null,
+            tint = OpenChatPalette.Signal,
+            modifier = Modifier.size(38.dp).scale(1.42f),
+        )
     }
 }
 

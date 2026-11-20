@@ -135,16 +135,15 @@ fun OnboardingScreen(onStart: () -> Unit, onLanguage: (AppLanguage.Choice) -> Un
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = OpenChatPalette.Control,
+                    Box(
                         modifier = Modifier.size(if (compact) 40.dp else 44.dp).clipToBounds(),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_launcher_foreground),
                             contentDescription = null,
                             tint = OpenChatPalette.Signal,
-                            modifier = Modifier.fillMaxSize().scale(1.35f),
+                            modifier = Modifier.fillMaxSize().scale(1.38f),
                         )
                     }
                     Row(
