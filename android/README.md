@@ -1,6 +1,6 @@
 # openchat for Android
 
-Status: **v0.7.14 preview.** Builds and passes its 223 unit tests. v0.7.6 ran
+Status: **v0.7.15 preview.** Builds and passes its 231 unit tests. v0.7.6 ran
 on an Android 14 (`API 34`) emulator before publishing and previews up to
 v0.7.2 ran on an Android 15 emulator (see [CHANGELOG.md](../CHANGELOG.md) per
 release); the mesh has not been tried between real phones, and it is not yet
@@ -38,7 +38,9 @@ bitchat-android source was never read.
 | `/pay` and Cashu token cards, no mint contact (spec §28) | `core/Cashu.kt`, `app/Commands.kt` |
 | Half-duplex Live Walkie-Talkie drawer, single-speaker floor lock, radio chirp/Roger tones, pure-live playback (spec §29) | `core/VoiceBurst.kt`, `app/PttFloorCoordinator.kt`, `app/PttTones.kt`, `app/LiveVoice.kt`, `ui/WalkieTalkieDrawer.kt`, `ui/MeshVisuals.kt` |
 | The mesh made visible: signal band, hop counts, emblems, delivery path, radar (spec §30) | `ui/MeshVisuals.kt`, `ui/ChatPane.kt` |
-| Radiant Light and OLED Dark themes, AGSL Liquid Glass floating chrome, flat matte bubbles and vector icons | `app/AppTheme.kt`, `ui/FluidGlass.kt`, `ui/Theme.kt`, `ui/MainScreen.kt` |
+| Warm Titanium Light and OLED Etched Obsidian Dark themes, AGSL Liquid Glass floating dock, etched encrypted bubbles, knurled circular PTT and vector icons | `app/AppTheme.kt`, `ui/FluidGlass.kt`, `ui/Theme.kt`, `ui/MainScreen.kt` |
+| Always-on screen capture protection (`FLAG_SECURE` + Android 13+ recents hiding) across every activity, dialog, sheet, and QR scanner | `OpenChatApp.kt`, `ui/MainActivity.kt`, `ui/globe/GlobePicker.kt` |
+| Privacy-safe Tor/network diagnostic log export and optional manual SOCKS5/HTTP upstream proxy | `app/DiagLog.kt`, `app/Tor.kt`, `ui/MeScreen.kt`, `ui/LocationScreens.kt` |
 | Globe picker for location channels, Natural Earth data packed to 275 KB | `ui/globe/`, `tools/pack_globe.py` |
 | Scan duty cycle: 5 s on, 10 s off (spec §11) | `mesh/ScanDutyCycle.kt` |
 | Proof of work on location-channel events (NIP-13, 8 bits) | `nostr/Pow.kt` |
@@ -83,7 +85,7 @@ published from `./gradlew :app:assembleRelease` (R8-shrunk, ARM only, about
 | `CourierTest` | upstream's golden courier vectors (envelope TLV, recipient tag, signing pre-image), Noise X seal and open |
 | `PrivateEnvelopeTest` | opens two envelopes recorded from bitchat builds, HChaCha20 draft vector, bech32 npubs |
 | `VerificationTest` | verify QR link, canonical signed bytes, expiry, challenge and response |
-| `FilePacketTest`, `NostrEmbeddedTest`, `MentionsTest`, `CommandsTest`, `GeohashTest`, `NetRouteTest` | media TLV and type checks, `bitchat1:` embedding, mentions, commands, geohash neighbours and notes, fail-closed Tor routing |
+| `FilePacketTest`, `NostrEmbeddedTest`, `MentionsTest`, `CommandsTest`, `GeohashTest`, `NetRouteTest`, `TorTest` | media TLV and type checks, `bitchat1:` embedding, mentions, commands, geohash neighbours and notes, fail-closed Tor routing, upstream proxy parsing, managed `torrc` sync and bootstrap progress/detail parsing |
 | `PeerIdRotationTest` | upstream's draft vectors for rotating IDs and recognition tags |
 | `SyncTest` | packet ID, GCS bitstream layout and false-positive rate, newest-first trimming, `requestSync` TLV and type flags |
 | `GroupsTest`, `BoardTest`, `BridgeWireTest`, `PrekeysTest`, `VouchTest`, `CashuTest`, `VoiceBurstTest` | the v0.6 formats: roster and key signing, post lifetimes and takedowns, bridge envelopes, prekey publish and consume, vouch attestations and batches, token parsing, voice burst framing against bitchat's layout |

@@ -67,7 +67,7 @@ it; that has not yet been checked against a stock bitchat phone (see
 
 | | State |
 |---|---|
-| Android app | **v0.7.14 preview.** 223 unit tests, 9.6 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
+| Android app | **v0.7.15 preview.** 231 unit tests, 9.7 MB APK, 18 languages. Changes in [CHANGELOG.md](CHANGELOG.md) |
 | Tried on devices | v0.7.6 was verified on an Android 14 (`API 34`) emulator across onboarding, cold launch, `MeshService` startup, all four tabs and `Board`, previews up to v0.7.2 ran on an Android 15 emulator, and earlier previews ran on one real phone; see [CHANGELOG.md](CHANGELOG.md) per release. **The mesh itself has not been tried between real phones**: Bluetooth range, multi-hop relaying, connection limits and behaviour in the background are untested in the field. The emulator has no Bluetooth |
 | Interop with stock bitchat | **Not yet verified.** Implemented from the [spec](docs/protocol-spec.md), upstream test vectors and envelopes recorded from bitchat builds. Verification against a stock bitchat client is the next milestone |
 | Security audit | **None.** Everything on the wire is upstream's; upstream had one audit (Cure53, 2025-11) with findings still open |
@@ -214,10 +214,19 @@ is drawn on screen.
 - Keeps relaying with the screen off. Scanning follows a duty cycle and
   rests two thirds of the time. Block people on the mesh and per
   location channel. @mentions. Screen-reader support.
-- **Radiant Light and OLED Dark themes** (plus System default), floating
-  Liquid Glass capsule chrome (real-time AGSL Snell optical refraction on
-  Android 13+, graceful blur and Fresnel-rim fallbacks on Android 8–12), flat
-  matte encrypted bubbles, and crisp vector icons throughout.
+- **Always-on screen capture protection.** Every screen, dialog, sheet, and
+  QR scanner enforces `FLAG_SECURE` (plus Android 13+ recents-preview hiding)
+  by default with no bypass toggle, blocking screenshots, screen recording,
+  and task-switcher thumbnails.
+- **Tor upstream proxy & privacy-safe diagnostics.** Supports automatic
+  system proxy detection plus manual SOCKS5/HTTP upstream proxy settings,
+  and one-tap export/copy of Tor and network diagnostic logs (never logging
+  chats, keys, or contacts; cleared immediately on panic wipe).
+- **Warm Titanium Light and OLED Etched Obsidian Dark themes** (plus System
+  default), monochrome titanium/obsidian surfaces with Signal Orange active
+  states, etched private-vault dark bubbles, circular knurled PTT control,
+  floating AGSL Liquid Glass bottom dock (Android 13+ Snell refraction,
+  graceful fallbacks on Android 8–12), and crisp vector icons throughout.
 - **18 languages**, including right-to-left Arabic and Persian. English by
   default; machine drafted, native speakers welcome.
 
@@ -309,7 +318,7 @@ There is no CLA.
 
 ## Roadmap in one line
 
-Android first, from scratch, against the spec: done through v0.7.14. Next
+Android first, from scratch, against the spec: done through v0.7.15. Next
 is interop verification against stock bitchat phones, then iOS, then one
 real pilot in a disaster-preparedness drill or a crowded venue. Each phase
 has an exit criterion and a kill condition in

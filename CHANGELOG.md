@@ -1,5 +1,66 @@
 # Changelog
 
+## Android v0.7.15 (preview) — 2026-11-22
+
+Warm Titanium light & OLED Etched Obsidian dark V2 UI overhaul with preserved
+AGSL Liquid Glass floating dock and Signal Orange active tabs, always-on
+`FLAG_SECURE` screen capture protection across every screen and dialog, Tor
+upstream SOCKS5/HTTP proxy configuration + privacy-safe diagnostic log export
++ clean unrestricted direct bootstrap, and full 18-language coverage for all
+83 new strings. No wire-format change. 231 unit tests. 9.7 MB (9,717,548 bytes,
+R8-shrunk debug-signed preview).
+APK SHA-256 `a9fefdd584bb731c91f7cabccc8432c489f97c6386ce36a42eda89d696962f55`.
+
+### Added
+
+- **Always-on screen capture protection (`OpenChatApp`, `MainActivity`, `GlobePicker`).**
+  - Registered `Application.ActivityLifecycleCallbacks` to apply
+    `WindowManager.LayoutParams.FLAG_SECURE` (and `setRecentsScreenshotEnabled(false)`
+    on Android 13+) across every activity window in the process (`MainActivity`
+    and the ZXing QR `CaptureActivity`), with Compose `AlertDialog`,
+    `ModalBottomSheet`, menus, and `GlobePickerDialog` inheriting or enforcing
+    `SecureOn` by default with no bypass toggle.
+- **Privacy-safe diagnostic log export & Tor upstream proxy (`DiagLog`, `Tor`, `ChatRepository`, `MeshService`, `Panic`, `MeScreen`, `LocationScreens`, `TorTest`).**
+  - Added memory-only `DiagLog` ring buffer recording Tor control-socket events
+    (`NOTICE`, `WARN`, `ERR`, `STATUS_CLIENT`, bootstrap `ORCONN`), network
+    transport/proxy snapshots, and noise-filtered own-PID logcat; never logs
+    chats, keys, or contacts and clears immediately on panic wipe.
+  - Added one-tap **Export log** (via `FileProvider` share sheet) and **Copy**
+    buttons in Me settings and the Tor stalled banner.
+  - Added optional manual upstream proxy (`socks5://host:port`, `http://host:port`,
+    or bare `host:port`) with live control-socket apply and backoff reset, plus
+    8 new unit tests in `TorTest`.
+- **18-language localization parity (`values*/strings.xml`).**
+  - Translated all 83 new V2 UI, Tor proxy, and diagnostic strings across all
+    18 supported locales with zero `lintDebug` missing-translation errors.
+
+### Changed
+
+- **V2 UI overhaul (`Theme`, `FluidGlass`, `MainScreen`, `MeshVisuals`, `WalkieTalkieDrawer`, `ChatPane`, `PrivateChats`, `NearbyPeersSheet`, `LocationScreens`, `MeScreen`, `BoardScreen`).**
+  - Switched to Warm Titanium (`#F3F1EC`) light and Pure OLED (`#000000`) dark
+    architectural palettes, converging status/online highlights into Signal
+    Orange (`#FF551A`) and removing decorative blue/green clutter.
+  - Upgraded private E2E dark bubbles to an etched obsidian vault (`#323846 →
+    #242935` with 45° diagonal hatch and 1dp cold-silver hairline) and light
+    bubbles to cold tungsten (`#43464D`), paired with a unified circular 3D
+    knurled PTT disc.
+  - Preserved the floating AGSL Liquid Glass bottom navigation capsule
+    (`FluidGlassCapsule` + `fluidGlassDroplet`) with all 4 selected tabs
+    (`Nearby`, `Private`, `Location`, `Me`) highlighted in Signal Orange.
+  - Added **Clear local chat history** (keeping identity keys and verified
+    contacts intact) on the Me tab.
+
+### Fixed
+
+- **Unrestricted Tor direct bootstrap & network state permission (`Tor`, `AndroidManifest.xml`).**
+  - Added `android.permission.ACCESS_NETWORK_STATE` so `ConnectivityManager`
+    can observe Wi-Fi/VPN switches and system HTTP proxy changes without
+    silently failing with `SecurityException`.
+  - Removed premature `FascistFirewall` / `ClientUseIPv6 0` throttling and
+    initial-registration `DisableNetwork` flushes so direct Tor bootstraps keep
+    full IPv4 + IPv6 multi-port mirror cycling; legacy managed `torrc` files
+    are cleaned automatically on start and retry.
+
 ## Android v0.7.14 (preview) — 2026-11-20
 
 Grain-free progressive top blur and iOS 27 Liquid Glass optical upgrade with
