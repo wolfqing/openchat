@@ -43,7 +43,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.outlined.Sensors
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -90,6 +93,7 @@ import org.openchat.android.R
 import org.openchat.android.app.ChatMessage
 import org.openchat.android.app.ChatRepository
 import org.openchat.android.app.DeliveryState
+import org.openchat.android.app.LocationPresets
 import org.openchat.android.core.sha256
 import java.util.Locale
 import java.util.TimeZone
@@ -923,145 +927,357 @@ fun NobodyNearby(
     onShareApp: (() -> Unit)?,
     onShowHistory: (() -> Unit)? = null,
     onOpenGuide: (() -> Unit)? = null,
+    onOpenLocation: (() -> Unit)? = null,
+    onOpenBoard: (() -> Unit)? = null,
     topClearance: Dp = 0.dp,
     bottomClearance: Dp = 0.dp,
 ) {
     val mesh by ChatRepository.mesh.collectAsState()
+    val geo by ChatRepository.geo.collectAsState()
+    val locale = appLocale()
+    val defaultPreset = remember(locale) { LocationPresets.defaultPreset(locale, TimeZone.getDefault().id) }
+    val defaultOnline = geo.participants[defaultPreset.geohash] ?: 0
+
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val availHeight = (maxHeight - topClearance - bottomClearance).coerceAtLeast(160.dp)
-        val compact = availHeight < 440.dp
+        val compact = availHeight < 470.dp
         val radarMax = if (compact) {
-            minOf(236.dp, maxWidth * 0.70f)
+            minOf(170.dp, maxWidth * 0.50f)
         } else {
-            minOf(296.dp, maxWidth * 0.80f)
+            minOf(202.dp, maxWidth * 0.56f)
         }
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(
-                    start = 20.dp,
-                    end = 20.dp,
-                    top = topClearance + (if (compact) 6.dp else 10.dp),
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = topClearance + (if (compact) 4.dp else 8.dp),
                     bottom = 16.dp + bottomClearance,
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 10.dp),
         ) {
-            Radar(Modifier.widthIn(max = radarMax).fillMaxWidth().aspectRatio(1f))
-            Text(
-                stringResource(R.string.radar_title),
-                fontSize = if (compact) 18.sp else 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.semantics { heading() },
-            )
-            Text(
-                stringResource(R.string.radar_body),
-                fontSize = if (compact) 13.5.sp else 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                lineHeight = 20.sp,
-                modifier = Modifier.padding(horizontal = 8.dp),
-            )
-            if (mesh.passedTodayCount > 0) {
-                Surface(
-                    shape = CircleShape,
-                    color = OpenChatPalette.CardSurface,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 0.dp,
-                ) {
+            // 1. Asymmetric instrument header: quiet status left, live patrol/seen pill right
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 2.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        stringResource(R.string.radar_passed_today, mesh.passedTodayCount),
-                        style = TabularMonoStyle,
-                        fontSize = 11.5.sp,
+                        stringResource(R.string.radar_quiet_title),
+                        fontSize = if (compact) 18.sp else 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = OpenChatPalette.Ink,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                    Text(
+                        stringResource(R.string.radar_quiet_sub),
+                        fontSize = 12.sp,
                         color = OpenChatPalette.Muted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                    )
+                }
+                Surface(
+                    shape = CircleShape,
+                    color = OpenChatPalette.Surface,
+                    border = BorderStroke(0.5.dp, OpenChatPalette.Line),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp,
+                ) {
+                    Row(
+                        Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        Box(Modifier.size(6.dp).background(OpenChatPalette.Signal, CircleShape))
+                        Text(
+                            if (mesh.passedTodayCount > 0) {
+                                stringResource(R.string.radar_passed_today, mesh.passedTodayCount).substringBefore(" ·")
+                            } else {
+                                stringResource(R.string.radar_scanning_pill)
+                            },
+                            style = TabularMonoStyle,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = OpenChatPalette.Ink,
+                            maxLines = 1,
+                        )
+                    }
+                }
+            }
+
+            // 2. 72-tick precision azimuth radar dial
+            Radar(Modifier.widthIn(max = radarMax).fillMaxWidth().aspectRatio(1f))
+
+            // 3. Status anchor & history shortcut
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    stringResource(R.string.radar_ready_hint),
+                    fontSize = 12.5.sp,
+                    color = OpenChatPalette.Muted,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 18.sp,
+                )
+                if (onShowHistory != null) {
+                    Surface(
+                        shape = CircleShape,
+                        color = OpenChatPalette.Card,
+                        border = BorderStroke(0.5.dp, OpenChatPalette.Line),
+                        modifier = Modifier
+                            .pressScale(0.96f)
+                            .clip(CircleShape)
+                            .clickable(role = Role.Button, onClick = onShowHistory),
+                    ) {
+                        Text(
+                            stringResource(R.string.radar_history),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = OpenChatPalette.Ink,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                        )
+                    }
+                }
+            }
+
+            // 4. Three actionable offline readiness cards
+            if (onShareApp != null) {
+                FeaturedShareApkCard(
+                    title = stringResource(R.string.tip_share_title),
+                    body = stringResource(R.string.tip_share_body),
+                    actionLabel = stringResource(R.string.radar_share_cta),
+                    onClick = onShareApp,
+                )
+            }
+
+            if (onOpenLocation != null) {
+                val cellTag = "${stringResource(defaultPreset.labelRes)} #${defaultPreset.geohash}"
+                ReadinessActionCard(
+                    icon = Icons.Outlined.Public,
+                    title = stringResource(R.string.radar_region_title, cellTag),
+                    body = if (defaultOnline > 0) {
+                        plural(R.plurals.geo_online, defaultOnline)
+                    } else {
+                        stringResource(R.string.radar_region_body)
+                    },
+                    highlightBodyDot = defaultOnline > 0,
+                    actionLabel = stringResource(R.string.radar_region_cta),
+                    onClick = onOpenLocation,
+                )
+            }
+
+            if (onOpenBoard != null) {
+                ReadinessActionCard(
+                    icon = Icons.Outlined.PushPin,
+                    title = stringResource(R.string.radar_board_title),
+                    body = stringResource(R.string.radar_board_body),
+                    highlightBodyDot = false,
+                    actionLabel = stringResource(R.string.radar_board_cta),
+                    onClick = onOpenBoard,
+                )
+            }
+
+            // 5. Subtle low-power patrol footer + guide link
+            Row(
+                Modifier.padding(top = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            ) {
+                Text(
+                    stringResource(R.string.radar_battery_foot),
+                    fontSize = 11.5.sp,
+                    color = OpenChatPalette.Muted.copy(alpha = 0.85f),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (onOpenGuide != null) {
+                    Text(
+                        stringResource(R.string.guide_title),
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OpenChatPalette.Signal,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable(role = Role.Button, onClick = onOpenGuide)
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
                     )
                 }
             }
-            if (onShowHistory != null || onOpenGuide != null) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    onShowHistory?.let {
-                        FluidGlassPillButton(
-                            onClick = it,
-                            contentPadding = PaddingValues(horizontal = 15.dp, vertical = 8.dp),
-                        ) {
-                            Text(
-                                stringResource(R.string.radar_history),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                    }
-                    onOpenGuide?.let {
-                        FluidGlassPillButton(
-                            onClick = it,
-                            contentPadding = PaddingValues(horizontal = 15.dp, vertical = 8.dp),
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Outlined.HelpOutline,
-                                contentDescription = null,
-                                tint = OpenChatPalette.Signal,
-                                modifier = Modifier.size(15.dp),
-                            )
-                            Text(
-                                stringResource(R.string.guide_title),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.height(2.dp))
-            TipCard(1, stringResource(R.string.tip_open_title), stringResource(R.string.tip_open_body), null)
-            TipCard(2, stringResource(R.string.tip_window_title), stringResource(R.string.tip_window_body), null)
-            TipCard(3, stringResource(R.string.tip_share_title), stringResource(R.string.tip_share_body), onShareApp)
         }
     }
 }
 
 @Composable
-private fun TipCard(n: Int, title: String, body: String, onClick: (() -> Unit)?) {
+private fun ReadinessActionCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    body: String,
+    highlightBodyDot: Boolean,
+    actionLabel: String,
+    onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(18.dp)
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = shape,
         color = OpenChatPalette.CardSurface,
-        modifier = Modifier.fillMaxWidth().let { if (onClick != null) it.pressScale(0.98f).clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick) else it },
+        border = BorderStroke(0.5.dp, OpenChatPalette.Line),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressScale(0.98f)
+            .clip(shape)
+            .clickable(role = Role.Button, onClick = onClick),
     ) {
         Row(
-            Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top,
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 13.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
         ) {
             Box(
                 Modifier
-                    .padding(top = 1.dp)
-                    .size(24.dp)
-                    .background(OpenChatPalette.Signal, CircleShape)
-                    .clearAndSetSemantics { },
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(OpenChatPalette.Well),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("$n", color = Color.White, style = TabularMonoStyle, fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = OpenChatPalette.Ink,
+                    modifier = Modifier.size(18.dp),
+                )
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                Text(body, fontSize = 12.5.sp, lineHeight = 18.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = OpenChatPalette.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    if (highlightBodyDot) {
+                        Box(Modifier.size(5.5.dp).background(OpenChatPalette.Signal, CircleShape))
+                    }
+                    Text(
+                        body,
+                        fontSize = 12.sp,
+                        lineHeight = 16.5.sp,
+                        color = if (highlightBodyDot) OpenChatPalette.Signal else OpenChatPalette.Muted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
-            if (onClick != null) {
+            Surface(
+                shape = CircleShape,
+                color = OpenChatPalette.Well,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
+            ) {
+                Text(
+                    actionLabel,
+                    color = OpenChatPalette.Ink,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeaturedShareApkCard(
+    title: String,
+    body: String,
+    actionLabel: String,
+    onClick: () -> Unit,
+) {
+    val isLight = OpenChatPalette.isLight
+    val shape = RoundedCornerShape(20.dp)
+    val bgBrush = if (isLight) {
+        Brush.linearGradient(listOf(Color(0xFFEAE6DE), OpenChatPalette.Surface))
+    } else {
+        Brush.linearGradient(listOf(Color(0xFF1D212A), Color(0xFF12151C)))
+    }
+    val borderColor = if (isLight) Color(0xFF201F1C).copy(alpha = 0.14f) else Color.White.copy(alpha = 0.14f)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .pressScale(0.98f)
+            .clip(shape)
+            .background(bgBrush, shape)
+            .border(0.8.dp, borderColor, shape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 13.dp, vertical = 12.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
+        ) {
+            Box(
+                Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(OpenChatPalette.PrimaryAction),
+                contentAlignment = Alignment.Center,
+            ) {
                 Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    Icons.Outlined.Share,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.CenterVertically).size(20.dp),
+                    tint = OpenChatPalette.OnPrimaryAction,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    title,
+                    fontSize = 14.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = OpenChatPalette.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    body,
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                    color = OpenChatPalette.Muted,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Surface(
+                shape = CircleShape,
+                color = OpenChatPalette.PrimaryAction,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
+            ) {
+                Text(
+                    actionLabel,
+                    color = OpenChatPalette.OnPrimaryAction,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp),
                 )
             }
         }
@@ -1070,7 +1286,7 @@ private fun TipCard(n: Int, title: String, body: String, onClick: (() -> Unit)?)
 
 /**
  * Rings at about 10, 30 and 50+ metres, typical Bluetooth range indoors and out, with a smooth
- * VSync sweep and 360-degree azimuth dial ticks.
+ * VSync sweep and 72 precision 5-degree azimuth dial ticks.
  */
 @Composable
 private fun Radar(modifier: Modifier) {
@@ -1084,8 +1300,11 @@ private fun Radar(modifier: Modifier) {
     }
     val isLight = OpenChatPalette.isLight
     val ring = MaterialTheme.colorScheme.outlineVariant
-    val tickColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.60f)
+    val tickColor = if (isLight) Color(0xFF18140E).copy(alpha = 0.24f) else Color.White.copy(alpha = 0.26f)
+    val minorTickColor = if (isLight) Color(0xFF18140E).copy(alpha = 0.12f) else Color.White.copy(alpha = 0.13f)
     val accent = OpenChatPalette.Signal
+    val dishCenter = if (isLight) OpenChatPalette.Surface else Color(0xFF151922)
+    val dishEdge = if (isLight) Color(0xFFE4E0D8) else Color(0xFF080A0E)
     val hubBg = if (isLight) OpenChatPalette.Screen else Color(0xFF0A0B0D)
     val dot = MaterialTheme.colorScheme.onSurface
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1097,24 +1316,27 @@ private fun Radar(modifier: Modifier) {
             val maxR = size.minDimension / 2 - 4.dp.toPx()
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(accent.copy(alpha = if (isLight) 0.06f else 0.085f), accent.copy(alpha = if (isLight) 0.015f else 0.02f)),
-                    center = c,
-                    radius = maxR.coerceAtLeast(2f),
+                    colors = listOf(dishCenter, dishEdge),
+                    center = Offset(c.x, c.y - maxR * 0.14f),
+                    radius = (maxR * 1.15f).coerceAtLeast(2f),
                 ),
                 radius = maxR,
                 center = c,
             )
-            val radii = listOf(maxR * 0.36f, maxR * 0.68f, maxR)
-            radii.forEach { drawCircle(ring, it, c, style = Stroke(1.15.dp.toPx())) }
-            for (deg in 0 until 360 step 15) {
+            drawCircle(ring, maxR, c, style = Stroke(0.9.dp.toPx()))
+            val radii = listOf(maxR * 0.34f, maxR * 0.64f, maxR * 0.90f)
+            radii.forEach { drawCircle(ring, it, c, style = Stroke(0.9.dp.toPx())) }
+            // 72 precision azimuth ticks (every 5°, major every 30°)
+            for (deg in 0 until 360 step 5) {
                 val rad = deg * (PI / 180.0)
-                val major = deg % 45 == 0
-                val inner = maxR - (if (major) 6.dp.toPx() else 3.dp.toPx())
+                val major = deg % 30 == 0
+                val outer = maxR - 2.dp.toPx()
+                val inner = outer - (if (major) 7.dp.toPx() else 3.6.dp.toPx())
                 drawLine(
-                    color = if (major) tickColor else ring,
+                    color = if (major) tickColor else minorTickColor,
                     start = Offset(c.x + inner * cos(rad).toFloat(), c.y + inner * sin(rad).toFloat()),
-                    end = Offset(c.x + maxR * cos(rad).toFloat(), c.y + maxR * sin(rad).toFloat()),
-                    strokeWidth = if (major) 1.25.dp.toPx() else 0.85.dp.toPx(),
+                    end = Offset(c.x + outer * cos(rad).toFloat(), c.y + outer * sin(rad).toFloat()),
+                    strokeWidth = if (major) 1.2.dp.toPx() else 0.75.dp.toPx(),
                 )
             }
             listOf("10 m", "30 m", "50 m+").forEachIndexed { i, label ->

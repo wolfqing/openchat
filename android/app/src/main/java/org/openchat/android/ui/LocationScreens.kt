@@ -2,7 +2,10 @@ package org.openchat.android.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
@@ -18,6 +21,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -57,6 +61,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -64,10 +69,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -96,7 +106,23 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
     var manual by rememberSaveable { mutableStateOf("") }
     var globe by rememberSaveable { mutableStateOf(false) }
     var showMorePresets by rememberSaveable { mutableStateOf(false) }
+    var activeSegment by rememberSaveable { mutableIntStateOf(0) } // 0 = area channels, 1 = 24h notes
+    var scaleIdx by rememberSaveable { mutableIntStateOf(1) } // 0 = neighborhood, 1 = city, 2 = province, 3 = region
     val here = geo.locationGeohash
+
+    val scaleLevels = remember {
+        listOf(
+            Geohash.Level.NEIGHBORHOOD,
+            Geohash.Level.CITY,
+            Geohash.Level.PROVINCE,
+            Geohash.Level.REGION,
+        )
+    }
+    val selectedLevel = scaleLevels[scaleIdx.coerceIn(0, scaleLevels.lastIndex)]
+    val heroCell = here?.take(selectedLevel.precision) ?: defaultPreset.geohash
+    val heroSpan = approxSpanText(GlobeView.cellWidthMeters(heroCell))
+    val heroPreset = LocationPresets.presetFor(heroCell) ?: if (here == null) defaultPreset else null
+    val heroOnline = geo.participants[heroCell] ?: 0
 
     fun openCell(cell: String) {
         ChatRepository.controller?.joinGeo(cell, teleported = here == null || !here.startsWith(cell))
@@ -121,281 +147,284 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
                 .openChatCanvas()
                 .fluidGlassSource()
                 .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 10.dp + topClearance, bottom = 18.dp + maxOf(bottomClearance, imeBottom)),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp + topClearance, bottom = 18.dp + maxOf(bottomClearance, imeBottom)),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                stringResource(R.string.geo_intro),
-                fontSize = 13.5.sp,
-                lineHeight = 20.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            // 0. 2-Segment Toggle: Area Channels | 24h Place Notes
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = OpenChatPalette.Well,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(3.dp),
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    listOf(
+                        0 to stringResource(R.string.loc_tab_channels),
+                        1 to stringResource(R.string.loc_tab_notes, geo.notes.size),
+                    ).forEach { (idx, label) ->
+                        val active = activeSegment == idx
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(9.dp))
+                                .background(if (active) OpenChatPalette.Surface else Color.Transparent)
+                                .clickable(role = Role.Tab) { activeSegment = idx }
+                                .padding(vertical = 7.dp, horizontal = 8.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                label,
+                                fontSize = 12.5.sp,
+                                fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
+                                color = if (active) OpenChatPalette.Ink else OpenChatPalette.Muted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
 
             if (geo.tor == org.openchat.android.app.TorState.STARTING && geo.torStalled) {
                 TorStalledBanner(onConnectDirect = { ChatRepository.controller?.setTor(false) })
             }
 
-            // 0. Bookmarked Channels (persisted even after leaving a channel)
-            if (geo.bookmarks.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.geo_bookmarks),
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Row(
-                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        geo.bookmarks.forEach { g ->
-                            val count = unread[Conversation.Geo(g).key] ?: 0
-                            val online = geo.participants[g] ?: 0
-                            val preset = LocationPresets.presetFor(g)
-                            FluidGlassPillButton(
-                                onClick = { openCell(g) },
-                                borderAccent = if (count > 0) OpenChatPalette.Signal else null,
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
+            if (activeSegment == 1) {
+                // 24h Place Notes Tab
+                if (here != null) {
+                    NotesSection(here)
+                } else {
+                    SettingsGroupCard {
+                        Column(
+                            Modifier.fillMaxWidth().padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Icon(
+                                Icons.Outlined.MyLocation,
+                                contentDescription = null,
+                                tint = OpenChatPalette.Signal,
+                                modifier = Modifier.size(28.dp),
+                            )
+                            Text(
+                                stringResource(R.string.geo_use_location),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = OpenChatPalette.Ink,
+                            )
+                            Text(
+                                stringResource(R.string.notes_hint),
+                                fontSize = 12.5.sp,
+                                lineHeight = 18.sp,
+                                color = OpenChatPalette.Muted,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            )
+                            Button(
+                                onClick = onRequestLocation,
+                                shape = CircleShape,
                             ) {
-                                Icon(
-                                    Icons.Filled.Star,
-                                    contentDescription = null,
-                                    tint = OpenChatPalette.Signal,
-                                    modifier = Modifier.size(13.dp),
-                                )
-                                Text(
-                                    "#$g",
-                                    style = TabularMonoStyle,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 13.5.sp,
-                                    color = OpenChatPalette.Ink,
-                                )
-                                if (preset != null) {
-                                    Text(
-                                        stringResource(preset.labelRes),
-                                        fontSize = 12.5.sp,
-                                        color = OpenChatPalette.Muted,
-                                        maxLines = 1,
-                                    )
-                                }
-                                if (online > 0) {
-                                    Text("· $online", style = TabularMonoStyle, fontSize = 12.sp, color = OpenChatPalette.Online)
-                                }
-                                UnreadBadge(count)
+                                Text(stringResource(R.string.geo_use_location), fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
                 }
+                return@Column
             }
 
-            // 1. Joined Channels Quick-Switch Chips (kept at the top for 1-tap switching)
-            if (geo.joined.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.geo_joined),
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Row(
-                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        geo.joined.sorted().forEach { g ->
-                            val count = unread[Conversation.Geo(g).key] ?: 0
-                            val online = geo.participants[g] ?: 0
-                            val preset = LocationPresets.presetFor(g)
-                            FluidGlassPillButton(
-                                onClick = { onOpen(g) },
-                                borderAccent = if (count > 0) OpenChatPalette.Signal else null,
-                                contentPadding = PaddingValues(horizontal = 13.dp, vertical = 7.dp),
-                            ) {
-                                Text(
-                                    "#$g",
-                                    style = TabularMonoStyle,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 13.5.sp,
-                                    color = OpenChatPalette.Ink,
-                                )
-                                if (preset != null) {
-                                    Text(
-                                        stringResource(preset.labelRes),
-                                        fontSize = 12.5.sp,
-                                        color = OpenChatPalette.Muted,
-                                        maxLines = 1,
-                                    )
-                                }
-                                if (online > 0) {
-                                    Text("· $online", style = TabularMonoStyle, fontSize = 12.sp, color = OpenChatPalette.Online)
-                                }
-                                UnreadBadge(count)
-                            }
-                        }
-                    }
-                }
-            }
+            // 1. Dark Atmospheric Globe Viewport Hero Card
+            AtmosphericGlobeHeroCard(
+                cell = heroCell,
+                regionLabel = heroPreset?.let { stringResource(it.labelRes) } ?: stringResource(levelLabel(selectedLevel)),
+                spanText = heroSpan,
+                onlineCount = heroOnline,
+                hasGps = here != null,
+                onEnterChannel = { openCell(heroCell) },
+                onOpenGlobe = { globe = true },
+            )
 
-            // 2. Default Channel (no GPS needed) or Approximate Location Levels
-            if (here == null) {
-                val defaultCell = defaultPreset.geohash
-                val defaultOnline = geo.participants[defaultCell] ?: 0
-                val defaultSpan = approxSpanText(GlobeView.cellWidthMeters(defaultCell))
-                SettingsGroupCard {
+            // 2. 4-Step Coverage Scale Rail (approximate, privacy-preserving)
+            SettingsGroupCard {
+                Column(
+                    Modifier.fillMaxWidth().padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
                     Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { openCell(defaultCell) }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(7.dp),
-                            ) {
-                                Text(
-                                    stringResource(defaultPreset.labelRes),
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 15.5.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f, fill = false),
-                                )
-                                Surface(
-                                    shape = CircleShape,
-                                    color = OpenChatPalette.SignalSoft,
+                        Text(
+                            stringResource(R.string.loc_scale_title),
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OpenChatPalette.Ink,
+                        )
+                        Text(
+                            heroSpan,
+                            style = TabularMonoStyle,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OpenChatPalette.Muted,
+                        )
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = OpenChatPalette.Well,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(3.dp),
+                            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        ) {
+                            scaleLevels.forEachIndexed { idx, lvl ->
+                                val active = scaleIdx == idx
+                                Box(
+                                    Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (active) OpenChatPalette.Surface else Color.Transparent)
+                                        .clickable(role = Role.RadioButton) {
+                                            scaleIdx = idx
+                                            if (here == null) onRequestLocation()
+                                        }
+                                        .padding(vertical = 7.dp, horizontal = 4.dp),
+                                    contentAlignment = Alignment.Center,
                                 ) {
                                     Text(
-                                        stringResource(R.string.geo_default_badge),
-                                        fontSize = 10.5.sp,
-                                        lineHeight = 14.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = OpenChatPalette.Signal,
-                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                        stringResource(levelLabel(lvl)),
+                                        fontSize = 12.sp,
+                                        fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
+                                        color = if (active) OpenChatPalette.Signal else OpenChatPalette.Muted,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
                                     )
                                 }
                             }
-                            Text(
-                                "#$defaultCell · ${stringResource(R.string.geo_level_region)} · $defaultSpan",
-                                style = TabularMonoStyle,
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
                         }
-                        if (defaultOnline > 0) {
-                            OnlineCountPill(defaultOnline)
-                        }
-                        Icon(
-                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp),
-                        )
                     }
-                    Hairline(Modifier.padding(start = 16.dp))
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clickable(onClick = onRequestLocation)
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(role = Role.Button, onClick = onRequestLocation)
+                            .padding(vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
                     ) {
                         Icon(
-                            Icons.Outlined.MyLocation,
+                            if (here == null) Icons.Outlined.MyLocation else Icons.Outlined.Refresh,
                             contentDescription = null,
                             tint = OpenChatPalette.Signal,
-                            modifier = Modifier.size(19.dp),
+                            modifier = Modifier.size(15.dp),
                         )
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                            Text(stringResource(R.string.geo_use_location), fontWeight = FontWeight.Medium, fontSize = 14.5.sp)
-                            Text(
-                                stringResource(R.string.geo_use_location_hint),
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        Text(
+                            stringResource(if (here == null) R.string.geo_use_location_hint else R.string.geo_refresh),
+                            fontSize = 12.sp,
+                            color = OpenChatPalette.Muted,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                         Icon(
                             Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp),
+                            tint = OpenChatPalette.Muted,
+                            modifier = Modifier.size(16.dp),
                         )
-                    }
-                }
-            } else {
-                // Broadest (Region) first so the liveliest room is immediately at the top.
-                val levels = remember { Geohash.Level.entries.reversed() }
-                SettingsGroupCard {
-                    levels.forEachIndexed { idx, level ->
-                        if (idx > 0) Hairline(Modifier.padding(start = 16.dp))
-                        val cell = here.take(level.precision)
-                        val n = geo.participants[cell] ?: 0
-                        val span = approxSpanText(GlobeView.cellWidthMeters(cell))
-                        val preset = if (level == Geohash.Level.REGION) LocationPresets.presetFor(cell) else null
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { ChatRepository.controller?.joinGeo(cell, teleported = false); onOpen(cell) }
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(
-                                    if (preset != null) "${stringResource(levelLabel(level))} · ${stringResource(preset.labelRes)}" else stringResource(levelLabel(level)),
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 15.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                Text("#$cell · $span", style = TabularMonoStyle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            if (n > 0) {
-                                OnlineCountPill(n)
-                            }
-                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                        }
-                    }
-                    Hairline()
-                    Row(
-                        Modifier.fillMaxWidth().clickable(onClick = onRequestLocation).padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(stringResource(R.string.geo_refresh), fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
 
-            // 3. Quick Join Popular Regional Channels (2-column grid, 1 tap to join & enter)
+            // 3. Bookmarked & Joined Quick-Switch Pills
+            val quickPills = (geo.bookmarks + geo.joined.sorted()).distinct()
+            if (quickPills.isNotEmpty()) {
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    quickPills.forEach { g ->
+                        val count = unread[Conversation.Geo(g).key] ?: 0
+                        val online = geo.participants[g] ?: 0
+                        val isBookmarked = g in geo.bookmarks
+                        val preset = LocationPresets.presetFor(g)
+                        Surface(
+                            shape = CircleShape,
+                            color = OpenChatPalette.CardSurface,
+                            border = BorderStroke(
+                                0.5.dp,
+                                if (count > 0) OpenChatPalette.Signal else OpenChatPalette.Line,
+                            ),
+                            modifier = Modifier
+                                .pressScale(0.96f)
+                                .clip(CircleShape)
+                                .clickable(role = Role.Button) { openCell(g) },
+                        ) {
+                            Row(
+                                Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            ) {
+                                if (isBookmarked) {
+                                    Icon(
+                                        Icons.Filled.Star,
+                                        contentDescription = null,
+                                        tint = OpenChatPalette.Signal,
+                                        modifier = Modifier.size(12.dp),
+                                    )
+                                }
+                                Text(
+                                    "#$g",
+                                    style = TabularMonoStyle,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 12.5.sp,
+                                    color = OpenChatPalette.Ink,
+                                )
+                                if (preset != null) {
+                                    Text(
+                                        stringResource(preset.labelRes),
+                                        fontSize = 12.sp,
+                                        color = OpenChatPalette.Muted,
+                                        maxLines = 1,
+                                    )
+                                }
+                                if (online > 0) {
+                                    Text("· $online", style = TabularMonoStyle, fontSize = 11.5.sp, color = OpenChatPalette.Signal)
+                                }
+                                UnreadBadge(count)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4. Quick Join Popular Regional Channels (2-column grid)
             val presets = if (showMorePresets) LocationPresets.ALL else LocationPresets.FEATURED
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier.fillMaxWidth().padding(horizontal = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
                         stringResource(R.string.geo_quick_join),
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp,
+                        color = OpenChatPalette.Muted,
                     )
-                    TextButton(
-                        onClick = { showMorePresets = !showMorePresets },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                    ) {
-                        Text(
-                            stringResource(if (showMorePresets) R.string.geo_quick_less else R.string.geo_quick_more),
-                            fontSize = 12.5.sp,
-                            color = OpenChatPalette.Signal,
-                        )
-                    }
+                    Text(
+                        stringResource(if (showMorePresets) R.string.geo_quick_less else R.string.geo_quick_more),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OpenChatPalette.Signal,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable(role = Role.Button) { showMorePresets = !showMorePresets }
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
                 }
                 presets.chunked(2).forEach { pair ->
                     Row(
@@ -421,43 +450,15 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
                 }
             }
 
-            // 4. 3D Globe Picker Hero Card
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = OpenChatPalette.CardSurface,
-                modifier = Modifier.fillMaxWidth().pressScale(0.98f).clip(RoundedCornerShape(16.dp)).clickable { globe = true },
-            ) {
-                Row(
-                    Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = OpenChatPalette.SignalSoft,
-                        modifier = Modifier.size(38.dp),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Outlined.Public, contentDescription = null, tint = OpenChatPalette.Signal, modifier = Modifier.size(20.dp))
-                        }
-                    }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(stringResource(R.string.globe_open), fontWeight = FontWeight.SemiBold, fontSize = 15.5.sp)
-                        Text(stringResource(R.string.globe_hint), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-
-            // 5. Visit Another Area Card (manual #geohash)
+            // 5. Visit Another Area Card (manual #geohash teleport)
             SettingsGroupCard {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.geo_elsewhere), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.geo_elsewhere), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
                             value = manual,
                             onValueChange = { manual = LocationPresets.sanitizeInput(it) },
-                            placeholder = { Text(stringResource(R.string.geo_hint)) },
+                            placeholder = { Text(stringResource(R.string.geo_hint), fontSize = 13.5.sp) },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f),
                             singleLine = true,
@@ -466,39 +467,164 @@ internal fun LocationPane(onRequestLocation: () -> Unit, onOpen: (String) -> Uni
                             enabled = Geohash.isValid(manual) && manual.length >= 2,
                             shape = RoundedCornerShape(12.dp),
                             onClick = { openCell(manual) },
-                        ) { Text(stringResource(R.string.geo_enter)) }
+                        ) { Text(stringResource(R.string.geo_enter), fontWeight = FontWeight.SemiBold) }
                     }
                     Text(
                         withInlineVectorBadges(stringResource(R.string.geo_teleport_note)),
                         inlineContent = rememberLabelInlineIcons(),
-                        fontSize = 12.sp,
-                        lineHeight = 17.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.5.sp,
+                        lineHeight = 16.5.sp,
+                        color = OpenChatPalette.Muted,
                     )
                 }
-            }
-
-            // 6. Local 24h Notes Card (only when location is active)
-            if (here != null) {
-                NotesSection(here)
             }
         }
     }
 }
 
+/** Dark atmospheric instrument hero card displaying the active geohash cell & wireframe globe picker. */
 @Composable
-private fun OnlineCountPill(count: Int) {
-    Surface(
-        shape = CircleShape,
-        color = OpenChatPalette.Online.copy(alpha = 0.14f),
+private fun AtmosphericGlobeHeroCard(
+    cell: String,
+    regionLabel: String,
+    spanText: String,
+    onlineCount: Int,
+    hasGps: Boolean,
+    onEnterChannel: () -> Unit,
+    onOpenGlobe: () -> Unit,
+) {
+    val signal = OpenChatPalette.Signal
+    val shape = RoundedCornerShape(20.dp)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(
+                Brush.linearGradient(
+                    listOf(Color(0xFF1A1D26), Color(0xFF101218)),
+                ),
+            )
+            .clickable(role = Role.Button, onClick = onOpenGlobe)
+            .padding(16.dp),
     ) {
-        Text(
-            plural(R.plurals.geo_online, count),
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Medium,
-            color = OpenChatPalette.Online,
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
-        )
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(
+                Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    stringResource(if (hasGps) R.string.loc_hero_active_cell else R.string.geo_default_badge),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF969FAF),
+                )
+                Text(
+                    "#$cell",
+                    style = TabularMonoStyle,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = signal,
+                    maxLines = 1,
+                )
+                Text(
+                    "$regionLabel · $spanText",
+                    fontSize = 12.5.sp,
+                    color = Color(0xFFDCE1EB),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Row(
+                    Modifier.padding(top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Box(Modifier.size(6.dp).background(signal, CircleShape))
+                    Text(
+                        if (onlineCount > 0) plural(R.plurals.geo_online, onlineCount)
+                        else stringResource(R.string.loc_hero_globe_hint),
+                        fontSize = 11.5.sp,
+                        color = Color(0xFFB5BECE),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                // Procedural atmospheric wireframe globe preview (tap opens 3D GlobePickerDialog)
+                Canvas(
+                    Modifier
+                        .size(76.dp)
+                        .clip(CircleShape)
+                        .clickable(role = Role.Button, onClick = onOpenGlobe),
+                ) {
+                    val c = center
+                    val r = size.minDimension / 2f - 2.dp.toPx()
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            0.00f to signal.copy(alpha = 0.28f),
+                            0.62f to Color(0xFF212634),
+                            1.00f to Color(0xFF0B0D12),
+                            center = Offset(c.x - r * 0.22f, c.y - r * 0.22f),
+                            radius = r * 1.3f,
+                        ),
+                        radius = r,
+                        center = c,
+                    )
+                    drawCircle(signal.copy(alpha = 0.45f), r, c, style = Stroke(1.dp.toPx()))
+                    // Latitude & longitude ellipses
+                    drawOval(
+                        color = Color.White.copy(alpha = 0.14f),
+                        topLeft = Offset(c.x - r * 0.46f, c.y - r),
+                        size = Size(r * 0.92f, r * 2f),
+                        style = Stroke(0.8.dp.toPx()),
+                    )
+                    drawOval(
+                        color = Color.White.copy(alpha = 0.14f),
+                        topLeft = Offset(c.x - r, c.y - r * 0.36f),
+                        size = Size(r * 2f, r * 0.72f),
+                        style = Stroke(0.8.dp.toPx()),
+                    )
+                    // Target cell reticle
+                    val boxW = r * 0.48f
+                    drawRoundRect(
+                        color = signal,
+                        topLeft = Offset(c.x - boxW / 2f, c.y - boxW / 2f),
+                        size = Size(boxW, boxW),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()),
+                        style = Stroke(1.2.dp.toPx()),
+                    )
+                    drawCircle(signal, 2.5.dp.toPx(), c)
+                }
+
+                Surface(
+                    shape = CircleShape,
+                    color = signal,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp,
+                    modifier = Modifier
+                        .pressScale(0.95f)
+                        .clip(CircleShape)
+                        .clickable(role = Role.Button, onClick = onEnterChannel),
+                ) {
+                    Text(
+                        stringResource(R.string.loc_enter_channel),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        maxLines = 1,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -809,45 +935,97 @@ fun GeoChatScreen(geohash: String, onBack: () -> Unit, onPanic: () -> Unit) {
 
 @Composable
 private fun TorStalledBanner(onConnectDirect: () -> Unit) {
+    val ctx = LocalContext.current
+    val geo by ChatRepository.geo.collectAsState()
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = OpenChatPalette.CardSurface,
+        border = BorderStroke(0.5.dp, OpenChatPalette.Line),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(
+        Column(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 11.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                stringResource(R.string.tor_stalled_title),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.5.sp,
+                color = OpenChatPalette.Signal,
+            )
+            Text(
+                stringResource(R.string.tor_stalled_body),
+                fontSize = 12.sp,
+                lineHeight = 17.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (geo.torDetail.isNotEmpty()) {
                 Text(
-                    stringResource(R.string.tor_stalled_title),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 13.5.sp,
-                    color = OpenChatPalette.Signal,
-                )
-                Text(
-                    stringResource(R.string.tor_stalled_body),
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    geo.torDetail,
+                    style = TabularMonoStyle,
+                    fontSize = 11.sp,
+                    color = OpenChatPalette.Muted,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
-            FilledTonalButton(
-                onClick = onConnectDirect,
-                shape = RoundedCornerShape(10.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    stringResource(R.string.tor_use_direct),
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                )
+                Surface(
+                    shape = CircleShape,
+                    color = OpenChatPalette.Well,
+                    modifier = Modifier
+                        .pressScale(0.95f)
+                        .clip(CircleShape)
+                        .clickable(role = Role.Button) { ChatRepository.controller?.retryTor() },
+                ) {
+                    Text(
+                        stringResource(R.string.retry),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OpenChatPalette.Ink,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
+                Surface(
+                    shape = CircleShape,
+                    color = OpenChatPalette.Well,
+                    modifier = Modifier
+                        .pressScale(0.95f)
+                        .clip(CircleShape)
+                        .clickable(role = Role.Button) { org.openchat.android.app.DiagLog.shareReport(ctx) },
+                ) {
+                    Text(
+                        stringResource(R.string.diag_share_btn),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OpenChatPalette.Ink,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
+                Surface(
+                    shape = CircleShape,
+                    color = OpenChatPalette.PrimaryAction,
+                    modifier = Modifier
+                        .pressScale(0.95f)
+                        .clip(CircleShape)
+                        .clickable(role = Role.Button, onClick = onConnectDirect),
+                ) {
+                    Text(
+                        stringResource(R.string.tor_use_direct),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OpenChatPalette.OnPrimaryAction,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
             }
         }
     }

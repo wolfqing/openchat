@@ -11,8 +11,9 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- Nostr location channels -->
+    <!-- Nostr location channels & Tor proxy/network change detection -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- Voice notes (recorded only while the button is held on) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -28,6 +29,7 @@
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
 
     <application
+        android:name=".OpenChatApp"
         android:allowBackup="false"
         android:fullBackupContent="false"
         android:dataExtractionRules="@xml/data_extraction_rules"

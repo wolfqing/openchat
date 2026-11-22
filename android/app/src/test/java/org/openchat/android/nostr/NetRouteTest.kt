@@ -48,13 +48,5 @@ class NetRouteTest {
                 rawSocksPort = 9050,
             ),
         )
-        assertEquals(
-            null,
-            org.openchat.android.app.formatAutoProxyTorrc("127.0.0.1", 9050, null, null),
-        )
-        assertEquals(
-            "# openchat-auto-proxy\nHTTPSProxy 127.0.0.1:7890\n",
-            org.openchat.android.app.formatAutoProxyTorrc("127.0.0.1", 7890, null, null),
-        )
     }
 }

@@ -39,6 +39,8 @@ object Panic {
         Bridge.forget(context)
         AppUpdater.reset(context)
         IdentityStore.resetMeta(context)
+        Tor.clearProxy(context)
+        DiagLog.clear()
         return clean
     }
 

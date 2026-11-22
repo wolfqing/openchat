@@ -718,9 +718,9 @@ private fun Modifier.drawFluidGlassOpticalBody(
         }
         isLight -> {
             Brush.verticalGradient(
-                0.00f to Color.White.copy(alpha = 0.90f),
-                0.55f to Color(0xFFF8F8FA).copy(alpha = 0.80f),
-                1.00f to Color(0xFFF1F2F5).copy(alpha = 0.86f),
+                0.00f to Color(0xFFFAF9F6).copy(alpha = 0.92f),
+                0.55f to Color(0xFFF5F3EE).copy(alpha = 0.84f),
+                1.00f to Color(0xFFEFECE5).copy(alpha = 0.88f),
             )
         }
         refractingLive -> {

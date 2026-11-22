@@ -1,6 +1,9 @@
 package org.openchat.android.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,8 +32,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -54,8 +57,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -122,37 +127,78 @@ fun BoardScreen(onBack: () -> Unit, onPanic: () -> Unit) {
                                     }
                                 },
                                 actions = {
-                                    GlassHeaderActionCluster(
-                                        modifier = Modifier.padding(end = 12.dp),
-                                        items = listOf(
-                                            GlassActionItem(
-                                                icon = Icons.Outlined.Edit,
-                                                contentDescription = stringResource(R.string.board_post),
-                                                onClick = { composing = true },
-                                            ),
-                                        ),
-                                    )
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = OpenChatPalette.PrimaryAction,
+                                        tonalElevation = 0.dp,
+                                        shadowElevation = 0.dp,
+                                        modifier = Modifier
+                                            .padding(end = 14.dp)
+                                            .pressScale(0.95f)
+                                            .clip(CircleShape)
+                                            .clickable(role = Role.Button) { composing = true },
+                                    ) {
+                                        Row(
+                                            Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                        ) {
+                                            Icon(
+                                                Icons.Outlined.Edit,
+                                                contentDescription = null,
+                                                tint = OpenChatPalette.OnPrimaryAction,
+                                                modifier = Modifier.size(14.dp),
+                                            )
+                                            Text(
+                                                stringResource(R.string.radar_board_cta),
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = OpenChatPalette.OnPrimaryAction,
+                                                maxLines = 1,
+                                            )
+                                        }
+                                    }
                                 },
                             )
                             if (hasRegionalPosts || activeRegionCell != null) {
-                                Row(
-                                    Modifier
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = OpenChatPalette.Well,
+                                    tonalElevation = 0.dp,
+                                    shadowElevation = 0.dp,
+                                    modifier = Modifier
                                         .fillMaxWidth()
-                                        .horizontalScroll(rememberScrollState())
-                                        .padding(horizontal = 14.dp, vertical = 2.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
+                                        .padding(horizontal = 16.dp, vertical = 6.dp),
                                 ) {
-                                    listOf(
-                                        0 to stringResource(R.string.board_filter_all),
-                                        1 to stringResource(R.string.board_filter_mesh),
-                                        2 to stringResource(R.string.board_filter_region),
-                                    ).forEach { (mode, label) ->
-                                        FilterChip(
-                                            selected = filterMode == mode,
-                                            onClick = { filterMode = mode },
-                                            label = { Text(label, fontSize = 12.5.sp, maxLines = 1) },
-                                        )
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(3.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                    ) {
+                                        listOf(
+                                            0 to stringResource(R.string.board_filter_all),
+                                            1 to stringResource(R.string.board_filter_mesh),
+                                            2 to (activeRegionCell?.let { "#$it" } ?: stringResource(R.string.board_filter_region)),
+                                        ).forEach { (mode, label) ->
+                                            val active = filterMode == mode
+                                            Box(
+                                                Modifier
+                                                    .weight(1f)
+                                                    .clip(RoundedCornerShape(9.dp))
+                                                    .background(if (active) OpenChatPalette.Surface else Color.Transparent)
+                                                    .clickable(role = Role.Tab) { filterMode = mode }
+                                                    .padding(vertical = 6.dp, horizontal = 6.dp),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Text(
+                                                    label,
+                                                    fontSize = 12.sp,
+                                                    fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
+                                                    color = if (active) OpenChatPalette.Ink else OpenChatPalette.Muted,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -279,7 +325,9 @@ private fun BoardComposerSheet(activeRegionCell: String?, onDismiss: () -> Unit)
     var days by rememberSaveable { mutableIntStateOf(3) }
     var useRegion by rememberSaveable { mutableStateOf(false) }
     val targetGeohash = if (useRegion && activeRegionCell != null) activeRegionCell else ""
-    val fits = text.trim().toByteArray(Charsets.UTF_8).size in 1..Board.MAX_CONTENT
+    val byteCount = text.trim().toByteArray(Charsets.UTF_8).size
+    val overLimit = byteCount > Board.MAX_CONTENT
+    val fits = byteCount in 1..Board.MAX_CONTENT
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val submit = {
         if (ChatRepository.controller?.postToBoard(text, urgent, days, targetGeohash) == true) {
@@ -303,7 +351,6 @@ private fun BoardComposerSheet(activeRegionCell: String?, onDismiss: () -> Unit)
                 .imePadding(),
         ) {
             val compactHeight = maxHeight < 340.dp
-            val ultraShortHeight = maxHeight < 250.dp
             val narrowWidth = maxWidth < 380.dp
             Column(
                 Modifier
@@ -311,28 +358,36 @@ private fun BoardComposerSheet(activeRegionCell: String?, onDismiss: () -> Unit)
                     .padding(horizontal = 20.dp, vertical = if (compactHeight) 4.dp else 8.dp),
                 verticalArrangement = Arrangement.spacedBy(if (compactHeight) 8.dp else 12.dp),
             ) {
+                // Pinned header row: publish CTA stays permanently reachable above any soft keyboard
                 Row(
                     Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(
-                        stringResource(R.string.board_post),
+                        stringResource(R.string.board_title),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
-                    AudiencePill(encrypted = false, compact = narrowWidth || ultraShortHeight)
-                    if (ultraShortHeight) {
-                        Button(
-                            enabled = fits,
-                            onClick = submit,
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                        ) {
-                            Text(stringResource(R.string.board_post), fontWeight = FontWeight.SemiBold, maxLines = 1)
-                        }
+                    Button(
+                        enabled = fits,
+                        onClick = submit,
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (urgent) OpenChatPalette.Signal else OpenChatPalette.PrimaryAction,
+                            contentColor = if (urgent) OpenChatPalette.OnSignal else OpenChatPalette.OnPrimaryAction,
+                        ),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    ) {
+                        Text(
+                            stringResource(R.string.board_post),
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                        )
                     }
                 }
 
@@ -340,20 +395,36 @@ private fun BoardComposerSheet(activeRegionCell: String?, onDismiss: () -> Unit)
                     Modifier
                         .fillMaxWidth()
                         .weight(1f, fill = false)
-                        .verticalScroll(rememberScrollState()),
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = if (compactHeight) 6.dp else 14.dp),
                     verticalArrangement = Arrangement.spacedBy(if (compactHeight) 8.dp else 12.dp),
                 ) {
                     OutlinedTextField(
                         value = text,
                         onValueChange = { text = it.take(600) },
                         placeholder = { Text(stringResource(R.string.board_placeholder)) },
+                        isError = overLimit,
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = if (compactHeight) 72.dp else 96.dp, max = 136.dp),
+                            .heightIn(min = if (compactHeight) 74.dp else 100.dp, max = 148.dp),
                         minLines = if (compactHeight) 2 else 3,
                         maxLines = 5,
                     )
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        AudiencePill(encrypted = false, compact = narrowWidth)
+                        Text(
+                            "$byteCount / ${Board.MAX_CONTENT}B",
+                            fontSize = 11.5.sp,
+                            style = TabularMonoStyle,
+                            fontWeight = if (overLimit) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (overLimit) MaterialTheme.colorScheme.error else OpenChatPalette.Muted,
+                        )
+                    }
                     if (activeRegionCell != null) {
                         Row(
                             Modifier
@@ -423,20 +494,6 @@ private fun BoardComposerSheet(activeRegionCell: String?, onDismiss: () -> Unit)
                                 )
                             }
                         }
-                    }
-                }
-
-                if (!ultraShortHeight) {
-                    Button(
-                        enabled = fits,
-                        onClick = submit,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = if (compactHeight) 6.dp else 12.dp)
-                            .height(if (compactHeight) 44.dp else 48.dp),
-                    ) {
-                        Text(stringResource(R.string.board_post), fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

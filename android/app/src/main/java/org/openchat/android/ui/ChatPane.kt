@@ -59,6 +59,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.AlternateEmail
 import androidx.compose.material.icons.outlined.Block
@@ -71,10 +72,12 @@ import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.outlined.Sensors
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -98,16 +101,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -169,6 +175,8 @@ fun ChatPane(
     onSend: (String) -> Unit,
     onSenderClick: ((ChatMessage) -> Unit)? = null,
     onVisible: (List<ChatMessage>) -> Unit = {},
+    onOpenBoard: (() -> Unit)? = null,
+    topBanner: (@Composable () -> Unit)? = null,
     /**
      * A screen that stands in for the timeline while [cover] holds, even over earlier messages
      * (the radar while nobody is nearby). It gets a way to the timeline when there is one.
@@ -191,6 +199,11 @@ fun ChatPane(
     val rows = remember(list) { withDayBreaks(list) }
     val isPublicFeed = conversation == Conversation.Mesh.key || conversation.startsWith("geo:")
     val private = conversation.startsWith("dm:") || conversation.startsWith("gdm:")
+    val isEncryptedVault = !isPublicFeed
+    val canvasMod = if (isEncryptedVault) Modifier.openChatVaultCanvas() else Modifier.openChatCanvas()
+    val latestMineDmId = remember(list, conversation) {
+        if (conversation.startsWith("dm:")) list.lastOrNull { it.mine && !it.system }?.id else null
+    }
     val note = if (private) stringResource(R.string.dm_day_note) else null
 
     val density = LocalDensity.current
@@ -246,13 +259,13 @@ fun ChatPane(
         onVisible(list)
     }
 
-    Box(Modifier.fillMaxSize().openChatCanvas()) {
+    Box(Modifier.fillMaxSize().then(canvasMod)) {
         // Backdrop timeline layer: when hosted inside MainScreen, scrolls underneath the bottom Liquid Glass tab bar
         FluidGlassSource {
             Box(
                 Modifier
                     .fillMaxSize()
-                    .openChatCanvas()
+                    .then(canvasMod)
                     .fluidGlassSource(),
             ) {
                 if (covered) {
@@ -273,6 +286,7 @@ fun ChatPane(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
                     ) {
+                        topBanner?.invoke()
                         AudiencePill(encrypted = !isPublicFeed)
                         Text(
                             emptyText,
@@ -289,6 +303,16 @@ fun ChatPane(
                         contentPadding = PaddingValues(top = 6.dp + topClearance, bottom = timelineBottomPadding),
                         verticalArrangement = Arrangement.spacedBy(if (isPublicFeed) 0.dp else 2.dp),
                     ) {
+                        if (topBanner != null) {
+                            item(key = "vault-top-banner") {
+                                Box(
+                                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    topBanner()
+                                }
+                            }
+                        }
                         itemsIndexed(rows, key = { _, r -> r.key }) { idx, r ->
                             when (r) {
                                 is TimelineRow.Day -> DayHeader(r.timestamp, note?.takeIf { r.first })
@@ -297,7 +321,13 @@ fun ChatPane(
                                         SystemNoticeRow(r.m.text)
                                     } else if (isPublicFeed) {
                                         val prev = rows.getOrNull(idx - 1)
-                                        val showDivider = prev is TimelineRow.Message && !prev.m.mentionsMe && !prev.m.mine && !r.m.mine
+                                        val showDivider = r.groupStart &&
+                                            prev is TimelineRow.Message &&
+                                            !prev.m.system &&
+                                            !prev.m.mentionsMe &&
+                                            !prev.m.mine &&
+                                            !r.m.mine &&
+                                            !r.m.mentionsMe
                                         PublicPostRow(
                                             row = r,
                                             showTopDivider = showDivider,
@@ -312,6 +342,7 @@ fun ChatPane(
                                     } else {
                                         EncryptedBubbleRow(
                                             row = r,
+                                            isLatestMineDm = r.m.id == latestMineDmId,
                                             onSenderClick = onSenderClick,
                                             onLongPress = { m ->
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -369,6 +400,7 @@ fun ChatPane(
                     people = persons.map { it.label },
                     pendingMention = pendingMention,
                     onConsumeMention = { pendingMention = null },
+                    onOpenBoard = onOpenBoard,
                 ) { text ->
                     if (!Commands.isCommand(text)) onSend(text)
                     else applyCommand(ctx, Commands.run(text, conversation, mesh.myNickname, persons, dmPeer), conversation, onSend)
@@ -476,7 +508,7 @@ private fun PublicPostRow(
 
                 Surface(
                     shape = bubbleShape,
-                    color = if (isLight) Color(0xFFE7E8ED) else Color(0xFF22242A),
+                    color = if (isLight) Color(0xFFE5E1D8) else Color(0xFF1D2028),
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp,
                     modifier = Modifier
@@ -528,13 +560,16 @@ private fun PublicPostRow(
 
     val peerTint = Emblem.uiColor(senderKey.ifEmpty { "self" })
     val hops = m.hops?.takeIf { !m.bridged && m.conversation == Conversation.Mesh.key }
-    val mentionCardBg = if (isLight) Color(0xFFFFF2EC) else Color(0xFF22130C)
-    val peerBubbleShape = RoundedCornerShape(
-        topStart = if (row.groupStart) 5.dp else 8.dp,
-        bottomStart = if (row.groupEnd) 16.dp else 8.dp,
-        topEnd = 16.dp,
-        bottomEnd = 16.dp,
-    )
+    val signalAccent = OpenChatPalette.Signal
+    val mentionGradient = remember(isLight, signalAccent) {
+        Brush.horizontalGradient(
+            listOf(
+                signalAccent.copy(alpha = if (isLight) 0.11f else 0.17f),
+                signalAccent.copy(alpha = if (isLight) 0.03f else 0.04f),
+                Color.Transparent,
+            ),
+        )
+    }
 
     Column(
         Modifier
@@ -542,22 +577,30 @@ private fun PublicPostRow(
             .let {
                 if (m.mentionsMe) {
                     it
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                        .background(mentionCardBg, RoundedCornerShape(14.dp))
+                        .background(mentionGradient)
+                        .drawBehind {
+                            drawRect(
+                                color = signalAccent,
+                                topLeft = Offset.Zero,
+                                size = Size(2.5.dp.toPx(), size.height),
+                            )
+                        }
                 } else {
                     it
                 }
             },
     ) {
-        val sidePad = if (m.mentionsMe) 8.dp else 16.dp
+        if (showTopDivider && !m.mentionsMe) {
+            Hairline(Modifier.padding(start = 56.dp, end = 16.dp))
+        }
         Row(
             Modifier
                 .fillMaxWidth()
                 .padding(
-                    start = sidePad,
-                    end = sidePad,
-                    top = if (row.groupStart) 8.dp else 2.dp,
-                    bottom = if (row.groupEnd) 6.dp else 2.dp,
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = if (row.groupStart) 10.dp else 2.dp,
+                    bottom = if (row.groupEnd) 9.dp else 2.dp,
                 ),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
@@ -610,9 +653,27 @@ private fun PublicPostRow(
                                     else it
                                 },
                         )
-                        val meta = if (hops != null) "${hopsText(hops)} · $time" else time
+                        if (hops != null) {
+                            val relayed = hops > 1
+                            Surface(
+                                shape = CircleShape,
+                                color = if (relayed) OpenChatPalette.SignalSoft else OpenChatPalette.Card,
+                                tonalElevation = 0.dp,
+                                shadowElevation = 0.dp,
+                            ) {
+                                Text(
+                                    hopsText(hops),
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = TabularMonoStyle,
+                                    color = if (relayed) OpenChatPalette.Signal else OpenChatPalette.Muted,
+                                    maxLines = 1,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.5.dp),
+                                )
+                            }
+                        }
                         Text(
-                            meta,
+                            time,
                             fontSize = 11.sp,
                             style = TabularMonoStyle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -621,15 +682,9 @@ private fun PublicPostRow(
                     }
                 }
 
-                Surface(
-                    shape = peerBubbleShape,
-                    color = if (isLight) Color.White else Color(0xFF16171B),
-                    tonalElevation = 0.dp,
-                    shadowElevation = 0.dp,
-                    border = if (m.mentionsMe) BorderStroke(0.75.dp, OpenChatPalette.Signal.copy(alpha = 0.5f)) else null,
+                Box(
                     modifier = Modifier
-                        .widthIn(max = 296.dp)
-                        .clip(peerBubbleShape)
+                        .fillMaxWidth()
                         .let { mod ->
                             if (onLongPress != null) {
                                 mod.combinedClickable(
@@ -641,7 +696,7 @@ private fun PublicPostRow(
                             } else mod
                         },
                 ) {
-                    MessageContent(m, inBubble = true)
+                    MessageContent(m, inBubble = false)
                 }
 
                 if (!row.groupStart && (row.groupEnd || hops != null)) {
@@ -655,7 +710,7 @@ private fun PublicPostRow(
                             fontSize = 11.sp,
                             style = TabularMonoStyle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 2.dp),
+                            modifier = Modifier.padding(top = 1.dp),
                         )
                     }
                 }
@@ -665,13 +720,19 @@ private fun PublicPostRow(
 }
 
 /**
- * Private & group chat row: crisp, flat, matte grouped bubbles with zero drop-shadows or glossy
- * bevels, keeping message text maximally legible while floating chrome handles optical refraction.
+ * Private & group chat row:
+ * - Outgoing encrypted bubbles use [Modifier.obsidianEtchedBubble] (Light: Cold Tungsten `#43464D`,
+ *   OLED Dark: Brightened Obsidian Etched Vault `#2B303C` with 45-degree cryptographic hatch + 1dp
+ *   cold-silver border).
+ * - Incoming encrypted bubbles sit in sculpted warm porcelain (Light) / cold obsidian (Dark).
+ * - The newest outgoing DM expands into [RelayDeliveryTrack] so users immediately understand
+ *   store-and-forward Bluetooth mesh delivery progress.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun EncryptedBubbleRow(
     row: TimelineRow.Message,
+    isLatestMineDm: Boolean = false,
     onSenderClick: ((ChatMessage) -> Unit)?,
     onLongPress: ((ChatMessage) -> Unit)? = null,
 ) {
@@ -746,86 +807,319 @@ private fun EncryptedBubbleRow(
                 )
             }
 
-            // Borderless tonal bubble container (stroke reserved solely for @mention alerts)
             val isLight = OpenChatPalette.isLight
-            Surface(
-                shape = shape,
-                color = when {
-                    m.mine -> OpenChatPalette.LockSoft
-                    isLight -> Color.White
-                    else -> Color(0xFF17181C)
-                },
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp,
-                border = if (m.mentionsMe) BorderStroke(1.dp, OpenChatPalette.Signal) else null,
-                modifier = Modifier
-                    .widthIn(max = 304.dp)
-                    .clip(shape)
-                    .let { mod ->
-                        if (onLongPress != null) {
-                            mod.combinedClickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = {},
-                                onLongClick = { onLongPress(m) },
+            val longClickMod = Modifier.let { mod ->
+                if (onLongPress != null) {
+                    mod.combinedClickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {},
+                        onLongClick = { onLongPress(m) },
+                    )
+                } else mod
+            }
+            if (m.mine) {
+                val strokeWidth = if (m.mentionsMe || !isLight) 1.dp else 0.5.dp
+                val strokeColor = if (m.mentionsMe) OpenChatPalette.Signal else OpenChatPalette.VaultBorder
+                Box(
+                    modifier = Modifier
+                        .widthIn(max = 304.dp)
+                        .obsidianEtchedBubble(shape)
+                        .border(strokeWidth, strokeColor, shape)
+                        .then(longClickMod),
+                ) {
+                    CompositionLocalProvider(LocalContentColor provides OpenChatPalette.OnVaultBubble) {
+                        Column {
+                            MessageContent(m, inBubble = true)
+                            if (m.attachment == null) {
+                                Row(
+                                    Modifier
+                                        .padding(start = 13.dp, end = 12.dp, bottom = 7.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Text(
+                                        "$time / ${stringResource(R.string.vault_envelope_tag)}",
+                                        fontSize = 10.5.sp,
+                                        style = TabularMonoStyle,
+                                        color = OpenChatPalette.OnVaultBubble.copy(alpha = 0.68f),
+                                        maxLines = 1,
+                                    )
+                                    Icon(
+                                        Icons.Filled.Lock,
+                                        contentDescription = null,
+                                        tint = OpenChatPalette.OnVaultBubble.copy(alpha = 0.72f),
+                                        modifier = Modifier.size(10.5.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                val incomingStrokeWidth = if (m.mentionsMe || !isLight) 1.dp else 0.5.dp
+                val incomingStrokeColor = when {
+                    m.mentionsMe -> OpenChatPalette.Signal
+                    isLight -> OpenChatPalette.VaultBorder
+                    else -> Color(0x38CED8EA)
+                }
+                val incomingHops = m.hops?.takeIf { !m.bridged && m.conversation.startsWith("dm:") }
+                Surface(
+                    shape = shape,
+                    color = OpenChatPalette.VaultIncoming,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp,
+                    border = BorderStroke(incomingStrokeWidth, incomingStrokeColor),
+                    modifier = Modifier
+                        .widthIn(max = 304.dp)
+                        .clip(shape)
+                        .then(longClickMod),
+                ) {
+                    Column {
+                        MessageContent(m, inBubble = true)
+                        if (m.attachment == null) {
+                            Text(
+                                if (incomingHops != null) "$time / ${hopsText(incomingHops)}" else time,
+                                fontSize = 10.5.sp,
+                                style = TabularMonoStyle,
+                                color = OpenChatPalette.Muted,
+                                maxLines = 1,
+                                modifier = Modifier.padding(start = 13.dp, end = 13.dp, bottom = 7.dp),
                             )
-                        } else mod
-                    },
-            ) {
-                MessageContent(m, inBubble = true)
+                        }
+                    }
+                }
             }
 
             val failed = m.mine && m.state == DeliveryState.FAILED
             if (row.groupEnd || failed) {
                 if (m.mine && m.conversation.startsWith("dm:")) {
-                    val status = statusLabel(m.state)
-                    val tone = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                    Row(
-                        Modifier.padding(top = 3.dp, end = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(7.dp),
-                    ) {
-                        Text(time, fontSize = 11.sp, style = TabularMonoStyle, color = tone, maxLines = 1, softWrap = false)
-                        Box(Modifier.clearAndSetSemantics { }) { DeliveryPathDots(m.state) }
-                        Text(
-                            status,
-                            fontSize = 11.sp,
-                            style = TabularMonoStyle,
-                            color = if (failed) tone else MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false),
+                    if (isLatestMineDm) {
+                        RelayDeliveryTrack(
+                            time = time,
+                            state = m.state,
+                            canRetry = failed && m.attachment == null,
+                            onRetry = { ChatRepository.controller?.retry(m.conversation, m.id) },
+                            modifier = Modifier.padding(top = 6.dp),
                         )
-                        if (failed && m.attachment == null) {
+                    } else {
+                        val status = statusLabel(m.state)
+                        val tone = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        Row(
+                            Modifier.padding(top = 3.dp, end = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(7.dp),
+                        ) {
+                            Box(Modifier.clearAndSetSemantics { }) { DeliveryPathDots(m.state) }
                             Text(
-                                stringResource(R.string.retry),
+                                status,
                                 fontSize = 11.sp,
                                 style = TabularMonoStyle,
-                                color = OpenChatPalette.Signal,
-                                textDecoration = TextDecoration.Underline,
+                                color = if (failed) tone else MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
-                                softWrap = false,
-                                modifier = Modifier
-                                    .clickable(role = Role.Button) { ChatRepository.controller?.retry(m.conversation, m.id) }
-                                    .defaultMinSize(minHeight = 28.dp)
-                                    .wrapContentHeight(Alignment.CenterVertically)
-                                    .padding(horizontal = 4.dp),
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false),
                             )
+                            if (failed && m.attachment == null) {
+                                Text(
+                                    stringResource(R.string.retry),
+                                    fontSize = 11.sp,
+                                    style = TabularMonoStyle,
+                                    color = OpenChatPalette.Signal,
+                                    textDecoration = TextDecoration.Underline,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier
+                                        .clickable(role = Role.Button) { ChatRepository.controller?.retry(m.conversation, m.id) }
+                                        .defaultMinSize(minHeight = 28.dp)
+                                        .wrapContentHeight(Alignment.CenterVertically)
+                                        .padding(horizontal = 4.dp),
+                                )
+                            }
                         }
                     }
-                } else {
+                } else if (m.attachment != null || m.mine) {
                     val hops = m.hops?.takeIf { !m.mine && !m.bridged && m.conversation.startsWith("dm:") }
                     val status = if (m.mine) statusLabel(m.state) else null
-                    val parts = listOfNotNull(time, status, hops?.let { hopsText(it) })
+                    val parts = listOfNotNull(if (m.attachment != null) time else null, status, hops?.let { hopsText(it) })
+                    if (parts.isNotEmpty()) {
+                        Text(
+                            parts.joinToString(" · "),
+                            fontSize = 11.sp,
+                            style = TabularMonoStyle,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 3.dp, start = 2.dp, end = 2.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Connected 4-node relay delivery stepper shown beneath the latest outgoing private DM so
+ * offline / store-and-forward hops feel legible and trustworthy at a glance.
+ */
+@Composable
+private fun RelayDeliveryTrack(
+    time: String,
+    state: DeliveryState,
+    canRetry: Boolean,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isLight = OpenChatPalette.isLight
+    val filled = deliveryDots(state)
+    val failed = state == DeliveryState.FAILED
+    val relaying = state == DeliveryState.CARRIED || state == DeliveryState.QUEUED || state == DeliveryState.SENDING
+    val status = statusLabel(state)
+    val signal = OpenChatPalette.Signal
+    val lockTone = OpenChatPalette.Lock
+    val errorColor = MaterialTheme.colorScheme.error
+    val trackEmpty = if (isLight) Color(0xFFCBC6BC) else Color(0xFF2D3340)
+    val activeFill = when {
+        failed -> errorColor
+        relaying -> signal
+        else -> lockTone
+    }
+    val cardBg = if (isLight) OpenChatPalette.Surface.copy(alpha = 0.88f) else Color(0xFF10131A)
+    val cardRim = if (isLight) OpenChatPalette.Line else Color(0x2ECED8EA)
+
+    val steps = listOf(
+        stringResource(R.string.relay_step_sent),
+        stringResource(R.string.relay_step_relay),
+        stringResource(R.string.relay_step_delivered),
+        stringResource(R.string.relay_step_read),
+    )
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = cardBg,
+        border = BorderStroke(0.5.dp, cardRim),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        modifier = modifier.widthIn(min = 216.dp, max = 286.dp),
+    ) {
+        Column(
+            Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (relaying) {
+                    SignalPulseDot(live = true)
+                }
+                Text(
+                    status,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    style = TabularMonoStyle,
+                    color = when {
+                        failed -> errorColor
+                        relaying -> signal
+                        else -> OpenChatPalette.Ink
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    time,
+                    fontSize = 10.5.sp,
+                    style = TabularMonoStyle,
+                    color = OpenChatPalette.Muted,
+                    maxLines = 1,
+                )
+                if (canRetry) {
                     Text(
-                        parts.joinToString(" · "),
+                        stringResource(R.string.retry),
                         fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
                         style = TabularMonoStyle,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 3.dp, start = 2.dp, end = 2.dp),
+                        color = signal,
+                        textDecoration = TextDecoration.Underline,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .clickable(role = Role.Button, onClick = onRetry)
+                            .padding(start = 2.dp),
                     )
                 }
             }
+
+            // Connected 4-node horizontal track
+            Canvas(
+                Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .padding(horizontal = 10.dp)
+                    .clearAndSetSemantics { },
+            ) {
+                val r = 3.5.dp.toPx()
+                val cy = size.height / 2f
+                val stepW = if (size.width > 2 * r) (size.width - 2 * r) / 3f else 0f
+                for (i in 0 until 3) {
+                    val x0 = r + i * stepW
+                    val x1 = r + (i + 1) * stepW
+                    val reached = !failed && (i + 1 < filled)
+                    drawLine(
+                        color = if (reached) activeFill else trackEmpty,
+                        start = Offset(x0 + r, cy),
+                        end = Offset(x1 - r, cy),
+                        strokeWidth = 1.5.dp.toPx(),
+                    )
+                }
+                for (i in 0 until 4) {
+                    val cx = r + i * stepW
+                    val c = Offset(cx, cy)
+                    when {
+                        failed && i == 0 -> drawCircle(errorColor, r, c)
+                        failed -> drawCircle(errorColor.copy(alpha = 0.40f), r - 0.75.dp.toPx(), c, style = Stroke(1.3.dp.toPx()))
+                        i < filled -> {
+                            if (relaying && i == filled - 1) {
+                                drawCircle(signal.copy(alpha = 0.24f), r + 2.2.dp.toPx(), c)
+                                drawCircle(signal, r, c)
+                            } else {
+                                drawCircle(activeFill, r, c)
+                            }
+                        }
+                        else -> drawCircle(trackEmpty, r - 0.75.dp.toPx(), c, style = Stroke(1.3.dp.toPx()))
+                    }
+                }
+            }
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                steps.forEachIndexed { idx, label ->
+                    val reached = !failed && idx < filled
+                    val current = !failed && idx == (filled - 1).coerceAtLeast(0)
+                    Text(
+                        label,
+                        fontSize = 10.sp,
+                        fontWeight = if (current) FontWeight.SemiBold else FontWeight.Normal,
+                        color = when {
+                            failed && idx == 0 -> errorColor
+                            relaying && current -> signal
+                            reached -> OpenChatPalette.Ink
+                            else -> OpenChatPalette.Muted.copy(alpha = 0.75f)
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+
+            Text(
+                stringResource(R.string.relay_zk_note),
+                fontSize = 10.5.sp,
+                lineHeight = 15.sp,
+                color = OpenChatPalette.Muted,
+            )
         }
     }
 }
@@ -845,28 +1139,27 @@ private fun statusLabel(state: DeliveryState): String = stringResource(
 
 @Composable
 private fun MessageContent(m: ChatMessage, inBubble: Boolean) {
-    val isLight = OpenChatPalette.isLight
     val encryptedMine = inBubble && m.mine && !m.conversation.startsWith("mesh") && !m.conversation.startsWith("geo:")
-    val voiceAccent = if (encryptedMine) OpenChatPalette.Lock else OpenChatPalette.Signal
+    val voiceAccent = if (encryptedMine) OpenChatPalette.OnVaultBubble else OpenChatPalette.Signal
     when {
         m.attachment != null && m.audio -> {
-            if (inBubble) VoiceNote(m.attachment, accentColor = voiceAccent)
+            if (inBubble) VoiceNote(m.attachment, accentColor = voiceAccent, onDarkBubble = encryptedMine)
             else Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = OpenChatPalette.CardSurface,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
                 modifier = Modifier.padding(top = 3.dp),
-            ) { VoiceNote(m.attachment, accentColor = voiceAccent) }
+            ) { VoiceNote(m.attachment, accentColor = voiceAccent, onDarkBubble = false) }
         }
         m.attachment != null -> PhotoView(m.attachment, covered = !m.mine, inBubble = inBubble)
         else -> Column {
             Text(
-                withMentions(m.text),
+                withMentions(m.text, onDarkBubble = encryptedMine),
                 modifier = if (inBubble) Modifier.padding(horizontal = 13.dp, vertical = 9.dp) else Modifier,
                 fontSize = 15.sp,
                 lineHeight = 22.sp,
-                color = if (encryptedMine && isLight) Color(0xFF091E42) else MaterialTheme.colorScheme.onSurface,
+                color = if (encryptedMine) OpenChatPalette.OnVaultBubble else MaterialTheme.colorScheme.onSurface,
             )
             Cashu.tokensIn(m.text).take(3).forEach { CashuCard(it, inBubble = inBubble) }
         }
@@ -881,6 +1174,7 @@ private fun CashuCard(token: String, inBubble: Boolean) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = OpenChatPalette.Well,
+        contentColor = OpenChatPalette.Ink,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
         modifier = Modifier.padding(
@@ -967,7 +1261,11 @@ private val voiceDurations = LruCache<String, Int>(64)
 
 /** Flat voice note row with deterministic 20-bar waveform and live playback progress. */
 @Composable
-private fun VoiceNote(path: String, accentColor: Color = OpenChatPalette.Signal) {
+private fun VoiceNote(
+    path: String,
+    accentColor: Color = OpenChatPalette.Signal,
+    onDarkBubble: Boolean = false,
+) {
     var player by remember { mutableStateOf<MediaPlayer?>(null) }
     var progress by remember { mutableFloatStateOf(0f) }
     val duration by produceState(voiceDurations.get(path) ?: 0, path) {
@@ -997,10 +1295,12 @@ private fun VoiceNote(path: String, accentColor: Color = OpenChatPalette.Signal)
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         val label = stringResource(if (player != null) R.string.media_stop else R.string.media_play)
+        val buttonBg = if (onDarkBubble) OpenChatPalette.OnVaultBubble else accentColor
+        val buttonFg = if (onDarkBubble) OpenChatPalette.VaultBubbleBottom else Color.White
         Surface(
             shape = CircleShape,
-            color = accentColor,
-            contentColor = Color.White,
+            color = buttonBg,
+            contentColor = buttonFg,
             tonalElevation = 0.dp,
             shadowElevation = 0.dp,
             modifier = Modifier
@@ -1032,8 +1332,12 @@ private fun VoiceNote(path: String, accentColor: Color = OpenChatPalette.Signal)
                 )
             }
         }
-        val activeBarColor = accentColor
-        val idleBarColor = if (OpenChatPalette.isLight) Color(0xFF111214).copy(alpha = 0.18f) else Color.White.copy(alpha = 0.22f)
+        val activeBarColor = if (onDarkBubble) OpenChatPalette.OnVaultBubble else accentColor
+        val idleBarColor = when {
+            onDarkBubble -> OpenChatPalette.OnVaultBubble.copy(alpha = 0.30f)
+            OpenChatPalette.isLight -> Color(0xFF171614).copy(alpha = 0.18f)
+            else -> Color.White.copy(alpha = 0.22f)
+        }
         Canvas(Modifier.width(96.dp).height(22.dp).clearAndSetSemantics { }) {
             val step = size.width / bars.size
             val barW = (step * 0.56f).coerceAtLeast(2f)
@@ -1053,7 +1357,7 @@ private fun VoiceNote(path: String, accentColor: Color = OpenChatPalette.Signal)
             String.format(appLocale(), "%d:%02d", shownMs / 60_000, (shownMs / 1000) % 60),
             fontSize = 12.5.sp,
             style = TabularMonoStyle,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (onDarkBubble) OpenChatPalette.OnVaultBubble.copy(alpha = 0.82f) else MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -1146,12 +1450,20 @@ private fun applyCommand(ctx: android.content.Context, o: Commands.Outcome, conv
 
 /** Message text with every @mention styled as a tinted monospace badge pill. */
 @Composable
-internal fun withMentions(text: String): AnnotatedString {
+internal fun withMentions(text: String, onDarkBubble: Boolean = false): AnnotatedString {
     val ranges = Mentions.ranges(text)
     if (ranges.isEmpty()) return AnnotatedString(text)
     val isLight = OpenChatPalette.isLight
-    val mentionFg = if (isLight) Color(0xFFD43F09) else Color(0xFFFF986E)
-    val mentionBg = if (isLight) Color(0xFFFFE6D8) else Color(0x38FF7840)
+    val mentionFg = when {
+        onDarkBubble -> Color(0xFFFFB088)
+        isLight -> Color(0xFFC84516)
+        else -> Color(0xFFFF986E)
+    }
+    val mentionBg = when {
+        onDarkBubble -> Color(0x3DFF7840)
+        isLight -> Color(0x24E05524)
+        else -> Color(0x38FF7840)
+    }
     return buildAnnotatedString {
         var at = 0
         for (r in ranges) {
@@ -1362,6 +1674,7 @@ private fun Composer(
     people: List<PeerLabel>,
     pendingMention: String? = null,
     onConsumeMention: () -> Unit = {},
+    onOpenBoard: (() -> Unit)? = null,
     onSend: (String) -> Unit,
 ) {
     val ctx = LocalContext.current
@@ -1564,7 +1877,7 @@ private fun Composer(
                     onClick = { stopAndSendVoice() },
                     size = 44.dp,
                     iconSize = 19.dp,
-                    iconTint = Color.White,
+                    iconTint = if (encrypted && !isLight) OpenChatPalette.OnPrimaryAction else Color.White,
                     tintColor = recAccent,
                     borderAccent = recAccent,
                 )
@@ -1593,7 +1906,7 @@ private fun Composer(
                 )
                 FlatCapsule(
                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
-                    containerColor = if (isLight) Color.White else OpenChatPalette.Card,
+                    containerColor = if (isLight) OpenChatPalette.Surface else OpenChatPalette.Card,
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     VoiceNote(readyPreview.absolutePath, accentColor = accent)
@@ -1612,7 +1925,7 @@ private fun Composer(
                     },
                     size = 44.dp,
                     iconSize = 19.dp,
-                    iconTint = Color.White,
+                    iconTint = if (encrypted && !isLight) OpenChatPalette.OnPrimaryAction else Color.White,
                     tintColor = accent,
                     borderAccent = accent,
                 )
@@ -1620,7 +1933,7 @@ private fun Composer(
             return
         }
 
-        val composerFill = if (isLight) Color.White else Color(0xFF15161A)
+        val composerFill = if (isLight) OpenChatPalette.Surface else Color(0xFF14171F)
         val composerRim = when {
             focused && encrypted -> OpenChatPalette.Lock.copy(alpha = 0.35f)
             focused -> OpenChatPalette.Ink.copy(alpha = 0.22f)
@@ -1629,53 +1942,102 @@ private fun Composer(
         }
 
         if (plusMenuOpen && supportsMedia && text.isEmpty()) {
-            Row(
-                Modifier
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = OpenChatPalette.Surface,
+                border = BorderStroke(0.6.dp, OpenChatPalette.Line),
+                tonalElevation = 0.dp,
+                shadowElevation = 6.dp,
+                modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 14.dp, end = 14.dp, bottom = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(start = 12.dp, end = 12.dp, bottom = 6.dp),
             ) {
-                FluidGlassPillButton(
-                    onClick = {
-                        plusMenuOpen = false
-                        pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    },
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                Column(
+                    Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(
-                        Icons.Outlined.Image,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = OpenChatPalette.Ink,
-                    )
-                    Text(
-                        stringResource(R.string.media_photo),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = OpenChatPalette.Ink,
-                    )
-                }
-                if (supportsWalkieTalkie) {
-                    FluidGlassPillButton(
-                        onClick = {
-                            plusMenuOpen = false
-                            ChatRepository.setPttOpen(conversation, true)
-                        },
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Icon(
-                            WalkieTalkieIcon,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = OpenChatPalette.Ink,
-                        )
                         Text(
-                            stringResource(R.string.ptt_menu_item),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
+                            stringResource(R.string.tactical_title),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
                             color = OpenChatPalette.Ink,
                         )
+                        Text(
+                            stringResource(R.string.tactical_hint),
+                            fontSize = 11.sp,
+                            color = OpenChatPalette.Muted,
+                        )
+                    }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        TacticalCommandTile(
+                            title = stringResource(R.string.media_photo),
+                            tag = "IMG",
+                            accentTag = false,
+                            onClick = {
+                                plusMenuOpen = false
+                                pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            },
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (supportsWalkieTalkie) {
+                            TacticalCommandTile(
+                                title = stringResource(R.string.ptt_menu_item),
+                                tag = "PTT",
+                                accentTag = true,
+                                onClick = {
+                                    plusMenuOpen = false
+                                    ChatRepository.setPttOpen(conversation, true)
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        TacticalCommandTile(
+                            title = stringResource(R.string.tactical_trace),
+                            tag = "/trace",
+                            accentTag = false,
+                            onClick = {
+                                plusMenuOpen = false
+                                set("/trace ")
+                                runCatching { focusRequester.requestFocus() }
+                            },
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (onOpenBoard != null) {
+                            TacticalCommandTile(
+                                title = stringResource(R.string.tactical_board),
+                                tag = stringResource(R.string.top_board_short),
+                                accentTag = false,
+                                onClick = {
+                                    plusMenuOpen = false
+                                    onOpenBoard()
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                        } else {
+                            TacticalCommandTile(
+                                title = stringResource(R.string.tactical_who),
+                                tag = "/who",
+                                accentTag = false,
+                                onClick = {
+                                    plusMenuOpen = false
+                                    onSend("/who")
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
                     }
                 }
             }
@@ -1842,16 +2204,8 @@ private fun Composer(
                 ) { showSend ->
                     if (showSend) {
                         val active = text.isNotBlank()
-                        val sendBg = when {
-                            !active -> Color.Transparent
-                            isLight -> Color(0xFF111214)
-                            else -> Color(0xFFF1F2F4)
-                        }
-                        val sendFg = when {
-                            !active -> OpenChatPalette.Muted.copy(alpha = 0.45f)
-                            isLight -> Color.White
-                            else -> Color(0xFF111214)
-                        }
+                        val sendBg = if (!active) Color.Transparent else OpenChatPalette.PrimaryAction
+                        val sendFg = if (!active) OpenChatPalette.Muted.copy(alpha = 0.45f) else OpenChatPalette.OnPrimaryAction
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
@@ -1908,6 +2262,62 @@ private fun Composer(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TacticalCommandTile(
+    title: String,
+    tag: String,
+    accentTag: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    Surface(
+        shape = shape,
+        color = OpenChatPalette.Well,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        modifier = modifier
+            .pressScale(0.96f)
+            .clip(shape)
+            .clickable(role = Role.Button, onClick = onClick),
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 11.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                title,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = OpenChatPalette.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(6.dp))
+            Surface(
+                shape = CircleShape,
+                color = if (accentTag) OpenChatPalette.SignalSoft else OpenChatPalette.Surface,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
+            ) {
+                Text(
+                    tag,
+                    style = TabularMonoStyle,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (accentTag) OpenChatPalette.Signal else OpenChatPalette.Muted,
+                    maxLines = 1,
+                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                )
             }
         }
     }

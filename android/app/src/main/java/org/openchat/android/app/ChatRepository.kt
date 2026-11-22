@@ -124,6 +124,8 @@ data class GeoStatus(
     val tor: TorState = TorState.STARTING,
     val torProgress: Int = 0,
     val torStalled: Boolean = false,
+    val torProxy: String = "",
+    val torDetail: String = "",
 )
 
 /** UI-facing actions; the running MeshService installs itself here. */
@@ -174,6 +176,8 @@ interface ChatController {
     /** Immediately aborts any active local PTT transmission (`Canceled` packet). */
     fun cancelPtt() {}
     fun setTor(on: Boolean)
+    fun retryTor() {}
+    fun setTorProxy(spec: String) {}
     fun refreshLocation()
     fun panic()
 }
@@ -240,6 +244,12 @@ object ChatRepository {
     }
 
     fun clear(conversation: String) = _messages.update { it - conversation }
+
+    /** Clears all local in-memory chat timelines while keeping identity keys, friends, and peers intact. */
+    fun clearAllMessages() {
+        _messages.value = emptyMap()
+        _unread.value = emptyMap()
+    }
 
     fun remove(conversation: String, id: String) = _messages.update { all ->
         all[conversation]?.let { list -> all + (conversation to list.filter { it.id != id }) } ?: all

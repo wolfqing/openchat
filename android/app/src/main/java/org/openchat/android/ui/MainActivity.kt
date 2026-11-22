@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import org.openchat.android.applyScreenCaptureProtection
 import org.openchat.android.app.ApkShare
 import org.openchat.android.app.AppLanguage
 import org.openchat.android.app.AppTheme
@@ -64,6 +65,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyScreenCaptureProtection(this)
         AppTheme.load(this)
         LiveVoicePrefs.sync(this)
         val systemDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==

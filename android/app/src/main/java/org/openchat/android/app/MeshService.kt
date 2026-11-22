@@ -146,9 +146,10 @@ class MeshService : Service(), ChatController {
         stateStore.load()?.let { s -> engine.importState(s); s.known.forEach { (hex, k) -> noiseKeys[hex] = k.noiseKey } }
         publishBoard()
         // Route relay traffic before any relay socket opens (§19).
-        tor = Tor(this) { s, pct, stalled ->
-            ChatRepository.updateGeo { it.copy(tor = s, torProgress = pct, torStalled = stalled) }
+        tor = Tor(this) { s, pct, stalled, detail ->
+            ChatRepository.updateGeo { it.copy(tor = s, torProgress = pct, torStalled = stalled, torDetail = detail) }
         }
+        ChatRepository.updateGeo { it.copy(torProxy = tor.upstreamProxy) }
         tor.apply()
         socialStore = SealedFile(this, "social.bin")
         socialStore.readOrNull()?.let { Social.deserialize(it) }?.let { Social.load(it) }
@@ -789,6 +790,13 @@ class MeshService : Service(), ChatController {
     }
 
     override fun setTor(on: Boolean) = tor.setWanted(on)
+
+    override fun retryTor() = tor.retry()
+
+    override fun setTorProxy(spec: String) {
+        val saved = tor.setUpstreamProxy(spec)
+        ChatRepository.updateGeo { it.copy(torProxy = saved) }
+    }
 
     override fun setBridge(on: Boolean) { handler.post { bridge.setEnabled(on) } }
 

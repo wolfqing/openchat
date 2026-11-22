@@ -148,7 +148,7 @@
     <string name="tor_starting">正在啟動 Tor…連網聊天會等它就緒，不會未經保護就送出。</string>
     <string name="tor_starting_pct">正在啟動 Tor（%1$d%%）…</string>
     <string name="tor_stalled_title">目前網路無法連線至 Tor</string>
-    <string name="tor_stalled_body">為保護隱私，位置頻道正在等待 Tor 就緒。可開啟全域代理後自動恢復，或改用直連（中繼伺服器將能看到你的 IP）。</string>
+    <string name="tor_stalled_body">位置頻道正在等待 Tor 就緒。若需使用 HTTP 或 SOCKS 代理，可在「我」中填寫上游代理。關閉 Tor 後，中繼伺服器可以看到你的 IP。</string>
     <string name="tor_use_direct">改用直連</string>
     <string name="tor_off">已關閉。中繼營運者能看到你的 IP 位址，包括經網際網路傳送的私訊。</string>
     <string name="geo_dm_status">#%1$s · 經網際網路加密送達</string>

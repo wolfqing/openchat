@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,6 +41,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
@@ -60,6 +62,7 @@ import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Flight
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.PushPin
@@ -70,9 +73,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -125,6 +128,7 @@ import org.openchat.android.app.MeshService
 import org.openchat.android.app.MeshStatus
 import org.openchat.android.app.Panic
 import org.openchat.android.app.PeerLabel
+import org.openchat.android.app.TorState
 import org.openchat.android.mesh.MeshPeer
 
 // v0.7.4 tab icon family preserved: outlined when idle, filled when selected, always paired with text labels.
@@ -323,9 +327,14 @@ private fun ShellScaffold(
     }
 
     val otherPeers = remember(peers, mesh.myPeerHex) { peers.filter { it.peerIdHex != mesh.myPeerHex } }
+    val directCount = remember(otherPeers) { otherPeers.count { it.direct } }
     val hasProblem = missingPermissions || mesh.storageLocked || !mesh.bluetoothOn || !mesh.running
-    val alone = otherPeers.isEmpty()
-    val aloneSince = remember(alone, mesh.running) { System.currentTimeMillis() }
+    val unseenBoard by ChatRepository.boardUnseen.collectAsState()
+    val geo by ChatRepository.geo.collectAsState()
+    val ctx = LocalContext.current
+    val versionTag = remember {
+        runCatching { "v${ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName}" }.getOrDefault("")
+    }
 
     FluidGlassHost {
         CompositionLocalProvider(LocalBottomBarClearance provides bottomClearance) {
@@ -337,81 +346,299 @@ private fun ShellScaffold(
                     topBar = {
                         ProgressiveBlurTopBar {
                             Column(
-                                Modifier.windowInsetsPadding(
-                                    WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
-                                ),
+                                Modifier
+                                    .statusBarsPadding()
+                                    .windowInsetsPadding(
+                                        WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
+                                    ),
                             ) {
-                                TopAppBar(
-                                    colors = chromeTopBarColors(),
-                                    navigationIcon = { PanicLogo(onPanic) },
-                                    title = {
-                                        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                                            PanicTitle(stringResource(tab.label), onPanic)
-                                            if (!hasProblem && tab != Tab.ME) {
-                                                InlineMeshStatusSubtitle(
-                                                    direct = otherPeers.count { it.direct },
-                                                    reach = otherPeers.size,
-                                                    lastHeard = otherPeers.maxOfOrNull { it.lastSeen },
-                                                    scanningSince = if (alone) aloneSince else null,
-                                                    liveSpeakerLabel = if (tab == Tab.NEARBY) nearbySpeaker else null,
-                                                    onSpeakerClick = if (tab == Tab.NEARBY) ({ ChatRepository.setPttOpen(Conversation.Mesh.key, true) }) else null,
-                                                    onPeersClick = onShowNearbyPeers,
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .defaultMinSize(minHeight = 52.dp)
+                                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    when (tab) {
+                                        Tab.NEARBY -> {
+                                            PanicTitle(stringResource(R.string.tab_nearby), onPanic, fontSize = 21f)
+                                            if (!hasProblem) {
+                                                // Tappable status pill: live speaker or "3 直连 / 11 可达" or "蓝牙巡航中"
+                                                val isLiveSpeaker = nearbySpeaker != null
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = when {
+                                                        isLiveSpeaker -> OpenChatPalette.SignalSoft
+                                                        otherPeers.isNotEmpty() -> OpenChatPalette.Surface
+                                                        else -> OpenChatPalette.Card
+                                                    },
+                                                    border = BorderStroke(0.5.dp, OpenChatPalette.Line),
+                                                    tonalElevation = 0.dp,
+                                                    shadowElevation = 0.dp,
+                                                    modifier = Modifier
+                                                        .weight(1f, fill = false)
+                                                        .pressScale(0.96f)
+                                                        .clip(CircleShape)
+                                                        .clickable(role = Role.Button) {
+                                                            if (isLiveSpeaker) ChatRepository.setPttOpen(Conversation.Mesh.key, true)
+                                                            else onShowNearbyPeers()
+                                                        },
+                                                ) {
+                                                    Row(
+                                                        Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                                    ) {
+                                                        if (isLiveSpeaker) {
+                                                            LiveEqualizerBars(
+                                                                active = true,
+                                                                color = OpenChatPalette.Signal,
+                                                                modifier = Modifier.size(width = 13.dp, height = 11.dp),
+                                                            )
+                                                            Text(
+                                                                nearbySpeaker.orEmpty(),
+                                                                fontSize = 11.5.sp,
+                                                                fontWeight = FontWeight.SemiBold,
+                                                                color = OpenChatPalette.Signal,
+                                                                maxLines = 1,
+                                                                overflow = TextOverflow.Ellipsis,
+                                                            )
+                                                        } else {
+                                                            Box(
+                                                                Modifier
+                                                                    .size(6.dp)
+                                                                    .background(
+                                                                        if (otherPeers.isNotEmpty()) OpenChatPalette.Signal else OpenChatPalette.Muted.copy(alpha = 0.55f),
+                                                                        CircleShape,
+                                                                    ),
+                                                            )
+                                                            Text(
+                                                                if (otherPeers.isNotEmpty()) {
+                                                                    "$directCount ${stringResource(R.string.band_direct)} / ${otherPeers.size} ${stringResource(R.string.band_reach)}"
+                                                                } else {
+                                                                    stringResource(R.string.radar_scanning_pill)
+                                                                },
+                                                                style = TabularMonoStyle,
+                                                                fontSize = 11.5.sp,
+                                                                fontWeight = FontWeight.Medium,
+                                                                color = OpenChatPalette.Ink,
+                                                                maxLines = 1,
+                                                                overflow = TextOverflow.Ellipsis,
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                                            // Labeled PTT pill button (Braun instrument pill)
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = if (nearbyPttOpen) OpenChatPalette.PrimaryAction else OpenChatPalette.Card,
+                                                border = if (nearbyPttOpen) null else BorderStroke(0.5.dp, OpenChatPalette.Line),
+                                                tonalElevation = 0.dp,
+                                                shadowElevation = 0.dp,
+                                                modifier = Modifier
+                                                    .pressScale(0.95f)
+                                                    .clip(CircleShape)
+                                                    .clickable(role = Role.Button) {
+                                                        ChatRepository.togglePttOpen(Conversation.Mesh.key)
+                                                    },
+                                            ) {
+                                                Row(
+                                                    Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                                ) {
+                                                    if (nearbyPttOpen) {
+                                                        Box(Modifier.size(6.5.dp).background(OpenChatPalette.Signal, CircleShape))
+                                                    } else {
+                                                        Icon(
+                                                            WalkieTalkieIcon,
+                                                            contentDescription = null,
+                                                            tint = if (nearbySpeaker != null) OpenChatPalette.Signal else OpenChatPalette.Ink,
+                                                            modifier = Modifier.size(13.dp),
+                                                        )
+                                                    }
+                                                    Text(
+                                                        stringResource(R.string.ptt_button),
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = if (nearbyPttOpen) OpenChatPalette.OnPrimaryAction else OpenChatPalette.Ink,
+                                                        maxLines = 1,
+                                                    )
+                                                }
+                                            }
+                                            // Labeled Notice Board pill button
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = OpenChatPalette.Card,
+                                                border = BorderStroke(0.5.dp, OpenChatPalette.Line),
+                                                tonalElevation = 0.dp,
+                                                shadowElevation = 0.dp,
+                                                modifier = Modifier
+                                                    .pressScale(0.95f)
+                                                    .clip(CircleShape)
+                                                    .clickable(role = Role.Button, onClick = onOpenBoard),
+                                            ) {
+                                                Row(
+                                                    Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                ) {
+                                                    Text(
+                                                        stringResource(R.string.top_board_short),
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = OpenChatPalette.Ink,
+                                                        maxLines = 1,
+                                                    )
+                                                    if (unseenBoard > 0) {
+                                                        Text(
+                                                            "$unseenBoard",
+                                                            style = TabularMonoStyle,
+                                                            fontSize = 11.5.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = OpenChatPalette.Signal,
+                                                            maxLines = 1,
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        Tab.PRIVATE -> {
+                                            PanicTitle(stringResource(R.string.tab_private), onPanic, fontSize = 21f)
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = OpenChatPalette.LockSoft,
+                                                tonalElevation = 0.dp,
+                                                shadowElevation = 0.dp,
+                                            ) {
+                                                Row(
+                                                    Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                ) {
+                                                    Icon(
+                                                        Icons.Outlined.Lock,
+                                                        contentDescription = null,
+                                                        tint = OpenChatPalette.Lock,
+                                                        modifier = Modifier.size(11.dp),
+                                                    )
+                                                    Text(
+                                                        stringResource(R.string.chip_encrypted),
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = OpenChatPalette.Lock,
+                                                        maxLines = 1,
+                                                    )
+                                                }
+                                            }
+                                            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = OpenChatPalette.Card,
+                                                border = BorderStroke(0.5.dp, OpenChatPalette.Line),
+                                                tonalElevation = 0.dp,
+                                                shadowElevation = 0.dp,
+                                                modifier = Modifier
+                                                    .pressScale(0.95f)
+                                                    .clip(CircleShape)
+                                                    .clickable(role = Role.Button, onClick = onNewGroup),
+                                            ) {
+                                                Text(
+                                                    stringResource(R.string.top_group_new_short),
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = OpenChatPalette.Ink,
+                                                    maxLines = 1,
+                                                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
                                                 )
                                             }
                                         }
-                                    },
-                                    actions = {
-                                        when (tab) {
-                                            Tab.NEARBY -> {
-                                                val unseen by ChatRepository.boardUnseen.collectAsState()
-                                                GlassHeaderActionCluster(
-                                                    modifier = Modifier.padding(end = 12.dp),
-                                                    items = listOf(
-                                                        GlassActionItem(
-                                                            icon = WalkieTalkieIcon,
-                                                            contentDescription = stringResource(R.string.ptt_button),
-                                                            onClick = { ChatRepository.togglePttOpen(Conversation.Mesh.key) },
-                                                            active = nearbyPttOpen,
-                                                            activeTint = OpenChatPalette.Signal,
-                                                            iconTint = if (!nearbyPttOpen && nearbySpeaker != null) OpenChatPalette.Signal else null,
-                                                        ),
-                                                        GlassActionItem(
-                                                            icon = Icons.Outlined.PushPin,
-                                                            contentDescription = stringResource(R.string.board_title),
-                                                            onClick = onOpenBoard,
-                                                            badgeDot = unseen > 0,
-                                                        ),
-                                                    ),
-                                                )
+                                        Tab.LOCATION -> {
+                                            PanicTitle(stringResource(R.string.tab_location), onPanic, fontSize = 21f)
+                                            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = OpenChatPalette.Card,
+                                                border = BorderStroke(0.5.dp, OpenChatPalette.Line),
+                                                tonalElevation = 0.dp,
+                                                shadowElevation = 0.dp,
+                                                modifier = Modifier
+                                                    .clip(CircleShape)
+                                                    .clickable(role = Role.Button) { onTab(Tab.ME) },
+                                            ) {
+                                                Row(
+                                                    Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                                ) {
+                                                    Box(
+                                                        Modifier
+                                                            .size(6.dp)
+                                                            .background(
+                                                                when {
+                                                                    geo.tor == TorState.ON -> OpenChatPalette.Signal
+                                                                    geo.tor == TorState.STARTING && geo.torStalled -> OpenChatPalette.Signal
+                                                                    geo.tor == TorState.STARTING -> OpenChatPalette.Muted
+                                                                    else -> MaterialTheme.colorScheme.error
+                                                                },
+                                                                CircleShape,
+                                                            ),
+                                                    )
+                                                    Text(
+                                                        when {
+                                                            geo.tor == TorState.ON -> "Tor"
+                                                            geo.tor == TorState.STARTING && geo.torStalled -> stringResource(R.string.tor_stalled_short)
+                                                            geo.tor == TorState.STARTING -> "Tor ${geo.torProgress}%"
+                                                            else -> stringResource(R.string.tor_use_direct)
+                                                        },
+                                                        style = TabularMonoStyle,
+                                                        fontSize = 11.5.sp,
+                                                        fontWeight = FontWeight.Medium,
+                                                        color = if (geo.tor == TorState.STARTING && geo.torStalled) OpenChatPalette.Signal else OpenChatPalette.Ink,
+                                                        maxLines = 1,
+                                                    )
+                                                }
                                             }
-                                            Tab.PRIVATE -> {
-                                                GlassHeaderActionCluster(
-                                                    modifier = Modifier.padding(end = 12.dp),
-                                                    items = listOf(
-                                                        GlassActionItem(
-                                                            icon = Icons.Filled.Add,
-                                                            contentDescription = stringResource(R.string.group_new),
-                                                            onClick = onNewGroup,
-                                                        ),
-                                                    ),
-                                                )
-                                            }
-                                            Tab.ME -> {
-                                                GlassHeaderActionCluster(
-                                                    modifier = Modifier.padding(end = 12.dp),
-                                                    items = listOf(
-                                                        GlassActionItem(
-                                                            icon = Icons.AutoMirrored.Outlined.HelpOutline,
-                                                            contentDescription = stringResource(R.string.guide_button),
-                                                            onClick = onOpenGuide,
-                                                        ),
-                                                    ),
-                                                )
-                                            }
-                                            Tab.LOCATION -> Unit
                                         }
-                                    },
-                                )
+                                        Tab.ME -> {
+                                            PanicTitle(stringResource(R.string.me_header_title), onPanic, fontSize = 21f)
+                                            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                                            if (versionTag.isNotEmpty()) {
+                                                Text(
+                                                    versionTag,
+                                                    style = TabularMonoStyle,
+                                                    fontSize = 12.sp,
+                                                    color = OpenChatPalette.Muted,
+                                                    maxLines = 1,
+                                                )
+                                            }
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = OpenChatPalette.Card,
+                                                border = BorderStroke(0.5.dp, OpenChatPalette.Line),
+                                                tonalElevation = 0.dp,
+                                                shadowElevation = 0.dp,
+                                                modifier = Modifier
+                                                    .size(32.dp)
+                                                    .pressScale(0.94f)
+                                                    .clip(CircleShape)
+                                                    .clickable(role = Role.Button, onClick = onOpenGuide),
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Icon(
+                                                        Icons.AutoMirrored.Outlined.HelpOutline,
+                                                        contentDescription = stringResource(R.string.guide_button),
+                                                        tint = OpenChatPalette.Ink,
+                                                        modifier = Modifier.size(16.dp),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                                 if (hasProblem) {
                                     ProblemBanner(
                                         missing = missingPermissions,
@@ -448,9 +675,20 @@ private fun ShellScaffold(
                                     placeholder = stringResource(R.string.nearby_placeholder),
                                     onSend = { ChatRepository.controller?.sendPublic(it) },
                                     onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) onSelectPerson(PersonRef.Mesh(m.senderKey, m.senderName)) },
+                                    onOpenBoard = onOpenBoard,
                                     empty = if (otherPeers.isEmpty() && mesh.running) {
                                         val extraClearance = if (nearbyPttOpen) WALKIE_TALKIE_DRAWER_HEIGHT + 10.dp else 58.dp
-                                        { onShowHistory -> NobodyNearby(onShareApp, onShowHistory, onOpenGuide = onOpenGuide, topClearance = topClearance, bottomClearance = bottomClearance + extraClearance) }
+                                        { onShowHistory ->
+                                            NobodyNearby(
+                                                onShareApp = onShareApp,
+                                                onShowHistory = onShowHistory,
+                                                onOpenGuide = onOpenGuide,
+                                                onOpenLocation = { onTab(Tab.LOCATION) },
+                                                onOpenBoard = onOpenBoard,
+                                                topClearance = topClearance,
+                                                bottomClearance = bottomClearance + extraClearance,
+                                            )
+                                        }
                                     } else null,
                                     cover = otherPeers.isEmpty() && mesh.running,
                                     topClearance = topClearance,
@@ -533,7 +771,7 @@ private fun CapsuleNavigationBar(
                 animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow),
                 label = "nav-droplet-offset",
             )
-            // Sliding ultra-clear water-droplet active pill
+            // Sliding ultra-clear 3D crystal water-droplet active pill
             Box(
                 Modifier
                     .offset(x = indicatorOffset)
@@ -670,7 +908,7 @@ internal fun withInlineVectorBadges(raw: String, checkId: String = INLINE_VERIFI
 
 /** Title that wipes everything on a triple tap, with no confirmation (docs/protocol-spec.md §10). */
 @Composable
-fun PanicTitle(text: String, onPanic: () -> Unit) = PanicTitle(AnnotatedString(text), onPanic)
+fun PanicTitle(text: String, onPanic: () -> Unit, fontSize: Float = 17.5f) = PanicTitle(AnnotatedString(text), onPanic, fontSize)
 
 private const val PANIC_TAP_GAP_MS = 500L
 
@@ -690,15 +928,15 @@ private fun rememberPanicTaps(onPanic: () -> Unit): () -> Unit {
 }
 
 @Composable
-fun PanicTitle(text: AnnotatedString, onPanic: () -> Unit) {
+fun PanicTitle(text: AnnotatedString, onPanic: () -> Unit, fontSize: Float = 17.5f) {
     val tap = rememberPanicTaps(onPanic)
     val inlineIcons = rememberLabelInlineIcons()
     Text(
         text,
         inlineContent = inlineIcons,
-        fontSize = 17.5.sp,
-        lineHeight = 22.sp,
-        fontWeight = FontWeight.SemiBold,
+        fontSize = fontSize.sp,
+        lineHeight = (fontSize + 5f).sp,
+        fontWeight = if (fontSize >= 20f) FontWeight.Bold else FontWeight.SemiBold,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = tap),

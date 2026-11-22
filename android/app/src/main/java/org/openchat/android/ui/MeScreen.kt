@@ -5,8 +5,10 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -92,17 +94,61 @@ internal fun MePane(
     onOpenGuide: (() -> Unit)? = null,
     topClearance: Dp = 0.dp,
 ) {
+    val ctx = LocalContext.current
     val mesh by ChatRepository.mesh.collectAsState()
+    val geo by ChatRepository.geo.collectAsState()
+    val bridge by ChatRepository.bridge.collectAsState()
+    val updateState by AppUpdater.state.collectAsState()
     var nick by rememberSaveable(mesh.myNickname) { mutableStateOf(mesh.myNickname) }
     var editingName by rememberSaveable { mutableStateOf(false) }
     var showQr by remember { mutableStateOf(false) }
+    var showVerifyDrawer by rememberSaveable { mutableStateOf(false) }
     var showFingerprint by rememberSaveable { mutableStateOf(false) }
+    var showMorePrefs by rememberSaveable { mutableStateOf(false) }
+    var confirmClearChats by remember { mutableStateOf(false) }
+    var confirmWipeKeys by remember { mutableStateOf(false) }
     val bottomClearance = LocalBottomBarClearance.current
     val imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
     val haptic = LocalHapticFeedback.current
     val currentLocale = appLocale()
+    val isLight = OpenChatPalette.isLight
 
     if (showQr) MyQrDialog { showQr = false }
+    if (confirmClearChats) {
+        AlertDialog(
+            onDismissRequest = { confirmClearChats = false },
+            containerColor = OpenChatPalette.Surface,
+            title = { Text(stringResource(R.string.me_clear_chats_title)) },
+            text = { Text(stringResource(R.string.me_clear_chats_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmClearChats = false
+                    ChatRepository.clearAllMessages()
+                    drafts.clear()
+                    android.widget.Toast.makeText(ctx, R.string.me_clear_chats_done, android.widget.Toast.LENGTH_SHORT).show()
+                }) { Text(stringResource(R.string.me_clear_chats_cta), fontWeight = FontWeight.SemiBold) }
+            },
+            dismissButton = { TextButton(onClick = { confirmClearChats = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    if (confirmWipeKeys) {
+        AlertDialog(
+            onDismissRequest = { confirmWipeKeys = false },
+            containerColor = OpenChatPalette.Surface,
+            title = { Text(stringResource(R.string.me_wipe_title)) },
+            text = { Text(stringResource(R.string.me_wipe_confirm)) },
+            confirmButton = {
+                TextButton(onClick = { confirmWipeKeys = false; onPanic() }) {
+                    Text(stringResource(R.string.me_wipe_do), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmWipeKeys = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+
+    val shortFp = remember(mesh.fingerprint) {
+        mesh.fingerprint.replace(" ", "").uppercase().take(16).chunked(4).joinToString(" ")
+    }
 
     FluidGlassSource {
         Column(
@@ -112,77 +158,77 @@ internal fun MePane(
                 .fluidGlassSource()
                 .verticalScroll(rememberScrollState())
                 .padding(start = 16.dp, end = 16.dp, top = 8.dp + topClearance, bottom = 18.dp + maxOf(bottomClearance, imeBottom)),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-        // 1. Identity Card (Emblem, Nickname#xxxx, QR shortcut, Fingerprint & Verification)
-        SettingsGroupCard {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                BoxWithConstraints(Modifier.fillMaxWidth()) {
-                    val compactId = maxWidth < 310.dp
+            // CARD 1: Public-Key Identity Passport (Braun-instrument dense card)
+            SettingsGroupCard {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(
                         Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(if (compactId) 10.dp else 14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        EmblemView(mesh.myPeerHex.ifEmpty { "self" }, if (compactId) 44.dp else 54.dp)
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(
-                                labelText(PeerLabel.mesh(mesh.myNickname, mesh.myPeerHex)),
-                                fontSize = if (compactId) 17.sp else 19.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                stringResource(R.string.me_suffix_note),
-                                fontSize = 12.sp,
-                                lineHeight = 16.5.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        IconButton(onClick = { nick = mesh.myNickname; editingName = !editingName }) {
-                            Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.me_name), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        IconButton(onClick = { showQr = true }) {
-                            Icon(Icons.Outlined.QrCode2, contentDescription = stringResource(R.string.verify_my_qr), tint = MaterialTheme.colorScheme.onSurface)
-                        }
-                    }
-                }
-
-                AnimatedVisibility(visible = editingName) {
-                    val rollRandom = {
-                        nick = RandomNicknames.next(nick, currentLocale)
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                        EmblemView(mesh.myPeerHex.ifEmpty { "self" }, 46.dp)
+                        Column(
+                            Modifier
+                                .weight(1f)
+                                .clickable { nick = mesh.myNickname; editingName = !editingName },
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
-                            Text(
-                                stringResource(R.string.me_name),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            FluidGlassPillButton(
-                                onClick = rollRandom,
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 5.dp),
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
                             ) {
-                                Icon(
-                                    Icons.Outlined.Casino,
-                                    contentDescription = null,
-                                    tint = OpenChatPalette.Signal,
-                                    modifier = Modifier.size(15.dp),
-                                )
                                 Text(
-                                    stringResource(R.string.me_name_random),
-                                    fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = OpenChatPalette.Ink,
+                                    labelText(PeerLabel.mesh(mesh.myNickname, mesh.myPeerHex)),
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                )
+                                Icon(
+                                    Icons.Outlined.Edit,
+                                    contentDescription = stringResource(R.string.me_name),
+                                    tint = OpenChatPalette.Muted,
+                                    modifier = Modifier.size(14.dp),
                                 )
                             }
+                            Text(
+                                stringResource(R.string.me_suffix_note),
+                                fontSize = 11.5.sp,
+                                lineHeight = 16.sp,
+                                color = OpenChatPalette.Muted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        Surface(
+                            shape = CircleShape,
+                            color = OpenChatPalette.Well,
+                            tonalElevation = 0.dp,
+                            shadowElevation = 0.dp,
+                            modifier = Modifier
+                                .pressScale(0.95f)
+                                .clip(CircleShape)
+                                .clickable(role = Role.Button) { showVerifyDrawer = !showVerifyDrawer },
+                        ) {
+                            Text(
+                                stringResource(R.string.me_verify_pill),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = OpenChatPalette.Ink,
+                                maxLines = 1,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            )
+                        }
+                    }
+
+                    // Inline nickname editor
+                    AnimatedVisibility(visible = editingName) {
+                        val rollRandom = {
+                            nick = RandomNicknames.next(nick, currentLocale)
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
@@ -196,7 +242,7 @@ internal fun MePane(
                                             Icons.Outlined.Shuffle,
                                             contentDescription = stringResource(R.string.me_name_random),
                                             tint = OpenChatPalette.Signal,
-                                            modifier = Modifier.size(19.dp),
+                                            modifier = Modifier.size(18.dp),
                                         )
                                     }
                                 },
@@ -212,49 +258,48 @@ internal fun MePane(
                             ) { Text(stringResource(R.string.save)) }
                         }
                     }
-                }
 
-                if (mesh.carriedCount > 0) {
-                    Surface(
-                        shape = CircleShape,
-                        color = OpenChatPalette.SignalSoft,
-                    ) {
-                        Text(
-                            stringResource(R.string.me_carrying, mesh.carriedCount),
-                            fontSize = 12.sp,
-                            style = TabularMonoStyle,
-                            color = OpenChatPalette.Signal,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-                        )
+                    // Inline QR verify drawer (show QR + scan QR)
+                    AnimatedVisibility(visible = showVerifyDrawer) {
+                        VerifySection(onShowQr = { showQr = true }, onScan = onScan)
                     }
-                }
 
-                if (mesh.fingerprint.isNotEmpty()) {
-                    val ctx = LocalContext.current
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(
-                            Modifier
+                    // Compact inset security fingerprint strip (tap to expand/copy full grid)
+                    if (shortFp.isNotEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = OpenChatPalette.Well,
+                            tonalElevation = 0.dp,
+                            shadowElevation = 0.dp,
+                            modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { showFingerprint = !showFingerprint }
-                                .padding(vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable { showFingerprint = !showFingerprint },
                         ) {
-                            Text(
-                                stringResource(R.string.me_fp_title),
-                                fontSize = 13.5.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Text(
-                                stringResource(R.string.me_device_id, mesh.myPeerHex),
-                                style = TabularMonoStyle,
-                                fontSize = 11.5.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            Row(
+                                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(
+                                    stringResource(R.string.me_fp_title),
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = OpenChatPalette.Muted,
+                                )
+                                Text(
+                                    shortFp,
+                                    style = TabularMonoStyle,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = OpenChatPalette.Ink,
+                                    maxLines = 1,
+                                )
+                            }
                         }
                         AnimatedVisibility(visible = showFingerprint) {
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(stringResource(R.string.me_fp_body), fontSize = 12.5.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.me_fp_body), fontSize = 12.sp, lineHeight = 17.sp, color = OpenChatPalette.Muted)
                                 FingerprintGrid(
                                     mesh.fingerprint,
                                     modifier = Modifier.clickable {
@@ -267,124 +312,550 @@ internal fun MePane(
                     }
                 }
             }
-            Hairline()
-            VerifySection(onShowQr = { showQr = true }, onScan = onScan)
-        }
 
-        // 1b. Usage Guide Card ("How OpenChat Works")
-        if (onOpenGuide != null) {
+            // CARD 2: Network Routing (Tor / Bridge) + Highlighted Inset Offline APK Share Well + Theme
+            SettingsGroupCard {
+                // 2a. Compact Tor row + stalled recovery & optional local upstream proxy
+                val torOn = geo.tor != org.openchat.android.app.TorState.OFF
+                val torStalled = geo.tor == org.openchat.android.app.TorState.STARTING && geo.torStalled
+                var showProxyEditor by rememberSaveable { mutableStateOf(false) }
+                var proxyDraft by rememberSaveable(geo.torProxy) { mutableStateOf(geo.torProxy) }
+                var proxyBad by remember { mutableStateOf(false) }
+                val torStatus = when {
+                    geo.tor == org.openchat.android.app.TorState.ON -> stringResource(R.string.tor_on)
+                    geo.tor == org.openchat.android.app.TorState.OFF -> stringResource(R.string.tor_off)
+                    torStalled -> stringResource(R.string.tor_stalled_title)
+                    geo.torProgress > 0 -> stringResource(R.string.tor_starting_pct, geo.torProgress)
+                    else -> stringResource(R.string.tor_starting)
+                }
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(stringResource(R.string.tor_title), fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            ) {
+                                Box(
+                                    Modifier
+                                        .size(5.5.dp)
+                                        .background(
+                                            when {
+                                                !torOn -> MaterialTheme.colorScheme.error
+                                                else -> OpenChatPalette.Signal
+                                            },
+                                            CircleShape,
+                                        ),
+                                )
+                                Text(
+                                    torStatus,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (torStalled) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = if (torStalled) OpenChatPalette.Signal else OpenChatPalette.Muted,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                        Switch(checked = torOn, onCheckedChange = { ChatRepository.controller?.setTor(it) })
+                    }
+
+                    if (torOn && (torStalled || geo.torProxy.isNotEmpty() || showProxyEditor)) {
+                        if (torStalled) {
+                            Text(
+                                stringResource(R.string.tor_stalled_body),
+                                fontSize = 11.5.sp,
+                                lineHeight = 16.5.sp,
+                                color = OpenChatPalette.Muted,
+                            )
+                            if (geo.torDetail.isNotEmpty()) {
+                                Text(
+                                    geo.torDetail,
+                                    style = TabularMonoStyle,
+                                    fontSize = 11.sp,
+                                    color = OpenChatPalette.Muted,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                        Row(
+                            Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (torStalled) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = OpenChatPalette.Well,
+                                    modifier = Modifier
+                                        .pressScale(0.95f)
+                                        .clip(CircleShape)
+                                        .clickable(role = Role.Button) { ChatRepository.controller?.retryTor() },
+                                ) {
+                                    Text(
+                                        stringResource(R.string.retry),
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = OpenChatPalette.Ink,
+                                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp),
+                                    )
+                                }
+                            }
+                            Surface(
+                                shape = CircleShape,
+                                color = if (showProxyEditor) OpenChatPalette.PrimaryAction else OpenChatPalette.Well,
+                                modifier = Modifier
+                                    .pressScale(0.95f)
+                                    .clip(CircleShape)
+                                    .clickable(role = Role.Button) {
+                                        showProxyEditor = !showProxyEditor
+                                        proxyBad = false
+                                    },
+                            ) {
+                                Text(
+                                    if (geo.torProxy.isNotEmpty() && !showProxyEditor) "${stringResource(R.string.tor_proxy_btn)} · ${geo.torProxy}"
+                                    else stringResource(R.string.tor_proxy_btn),
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (showProxyEditor) OpenChatPalette.OnPrimaryAction else OpenChatPalette.Ink,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp),
+                                )
+                            }
+                            Surface(
+                                shape = CircleShape,
+                                color = OpenChatPalette.Well,
+                                modifier = Modifier
+                                    .pressScale(0.95f)
+                                    .clip(CircleShape)
+                                    .clickable(role = Role.Button) { org.openchat.android.app.DiagLog.shareReport(ctx) },
+                            ) {
+                                Text(
+                                    stringResource(R.string.diag_share_btn),
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = OpenChatPalette.Ink,
+                                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp),
+                                )
+                            }
+                            if (torStalled) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = OpenChatPalette.PrimaryAction,
+                                    modifier = Modifier
+                                        .pressScale(0.95f)
+                                        .clip(CircleShape)
+                                        .clickable(role = Role.Button) { ChatRepository.controller?.setTor(false) },
+                                ) {
+                                    Text(
+                                        stringResource(R.string.tor_use_direct),
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = OpenChatPalette.OnPrimaryAction,
+                                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp),
+                                    )
+                                }
+                            }
+                        }
+                    } else if (torOn && geo.tor == org.openchat.android.app.TorState.STARTING) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = OpenChatPalette.Well,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable(role = Role.Button) { showProxyEditor = true },
+                            ) {
+                                Text(
+                                    stringResource(R.string.tor_proxy_btn),
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = OpenChatPalette.Muted,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                )
+                            }
+                            Surface(
+                                shape = CircleShape,
+                                color = OpenChatPalette.Well,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable(role = Role.Button) { org.openchat.android.app.DiagLog.shareReport(ctx) },
+                            ) {
+                                Text(
+                                    stringResource(R.string.diag_share_btn),
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = OpenChatPalette.Muted,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                )
+                            }
+                        }
+                    }
+
+                    AnimatedVisibility(visible = torOn && showProxyEditor) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                OutlinedTextField(
+                                    value = proxyDraft,
+                                    onValueChange = { proxyDraft = it.take(120); proxyBad = false },
+                                    placeholder = { Text(stringResource(R.string.tor_proxy_hint), fontSize = 12.sp) },
+                                    singleLine = true,
+                                    isError = proxyBad,
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Button(
+                                    shape = RoundedCornerShape(12.dp),
+                                    onClick = {
+                                        val cleaned = proxyDraft.trim()
+                                        if (cleaned.isNotEmpty() && org.openchat.android.app.parseManualProxySpec(cleaned) == null) {
+                                            proxyBad = true
+                                        } else {
+                                            ChatRepository.controller?.setTorProxy(cleaned)
+                                            showProxyEditor = false
+                                        }
+                                    },
+                                ) {
+                                    Text(
+                                        stringResource(if (proxyDraft.isBlank()) R.string.tor_proxy_clear else R.string.save),
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                            }
+                            if (proxyBad) {
+                                Text(
+                                    stringResource(R.string.tor_proxy_invalid),
+                                    fontSize = 11.5.sp,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Hairline(Modifier.padding(horizontal = 14.dp))
+
+                // 2b. Compact Mesh Bridge row
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(stringResource(R.string.bridge_title), fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp)
+                        val bridgeSub = if (bridge.enabled) {
+                            val cell = bridge.cell
+                            if (cell != null && bridge.online) stringResource(R.string.bridge_online, cell)
+                            else if (cell != null) stringResource(R.string.bridge_offline, cell)
+                            else stringResource(R.string.bridge_need_cell)
+                        } else {
+                            stringResource(R.string.bridge_body)
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        ) {
+                            if (bridge.enabled) {
+                                Box(Modifier.size(5.5.dp).background(OpenChatPalette.Signal, CircleShape))
+                            }
+                            Text(
+                                bridgeSub,
+                                fontSize = 12.sp,
+                                color = OpenChatPalette.Muted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                    Switch(checked = bridge.enabled, onCheckedChange = { ChatRepository.controller?.setBridge(it) })
+                }
+
+                // 2c. Gently highlighted inset Offline APK Share well (matches Braun monochrome spec)
+                Box(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 2.dp, bottom = 12.dp)) {
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (isLight) Color(0xFFEBE7DE) else Color(0xFF1A1F2A),
+                        border = BorderStroke(
+                            0.5.dp,
+                            if (isLight) Color(0x1E18140E) else Color(0x24FFFFFF),
+                        ),
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .pressScale(0.98f)
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable(role = Role.Button, onClick = onShareApp),
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 11.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = OpenChatPalette.Surface,
+                                tonalElevation = 0.dp,
+                                shadowElevation = 0.dp,
+                                modifier = Modifier.size(34.dp),
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Outlined.Share, contentDescription = null, tint = OpenChatPalette.Ink, modifier = Modifier.size(17.dp))
+                                }
+                            }
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                                Text(
+                                    stringResource(R.string.tip_share_title),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.5.sp,
+                                    color = OpenChatPalette.Ink,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    stringResource(R.string.tip_share_body),
+                                    fontSize = 11.5.sp,
+                                    color = OpenChatPalette.Muted,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            Surface(
+                                shape = CircleShape,
+                                color = OpenChatPalette.PrimaryAction,
+                                tonalElevation = 0.dp,
+                                shadowElevation = 0.dp,
+                            ) {
+                                Text(
+                                    stringResource(R.string.me_share_pill),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = OpenChatPalette.OnPrimaryAction,
+                                    maxLines = 1,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Hairline(Modifier.padding(horizontal = 14.dp))
+                ThemeSection()
+            }
+
+            // CARD 3: Two-Tier Safety Isolation (Clear Local History vs Destroy Keys)
             SettingsGroupCard {
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .clickable(role = Role.Button, onClick = onOpenGuide)
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                        .clickable(role = Role.Button) { confirmClearChats = true }
+                        .padding(horizontal = 16.dp, vertical = 13.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = OpenChatPalette.SignalSoft,
-                        tonalElevation = 0.dp,
-                        shadowElevation = 0.dp,
-                        modifier = Modifier.size(38.dp),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.AutoMirrored.Outlined.HelpOutline,
-                                contentDescription = null,
-                                tint = OpenChatPalette.Signal,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                    }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
-                            stringResource(R.string.guide_title),
-                            fontSize = 15.sp,
+                            stringResource(R.string.me_clear_chats_title),
                             fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.5.sp,
                             color = OpenChatPalette.Ink,
                         )
                         Text(
-                            stringResource(R.string.guide_entry_sub),
-                            fontSize = 12.5.sp,
-                            lineHeight = 18.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            stringResource(R.string.me_clear_chats_body),
+                            fontSize = 12.sp,
+                            color = OpenChatPalette.Muted,
                         )
                     }
-                    Icon(
-                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Surface(
+                        shape = CircleShape,
+                        color = OpenChatPalette.Well,
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp,
+                    ) {
+                        Text(
+                            stringResource(R.string.me_clear_chats_cta),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OpenChatPalette.Ink,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    }
+                }
+                Hairline(Modifier.padding(horizontal = 14.dp))
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) { confirmWipeKeys = true }
+                        .padding(horizontal = 16.dp, vertical = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            stringResource(R.string.me_wipe_title),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.5.sp,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                        Text(
+                            stringResource(R.string.me_wipe_body),
+                            fontSize = 12.sp,
+                            color = OpenChatPalette.Muted,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp,
+                    ) {
+                        Text(
+                            stringResource(R.string.me_wipe_cta),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    }
+                }
+            }
+
+            // CARD 4: Collapsible Preferences, App Updates, Relays & Blocked List (keeps main screen razor clean)
+            val hasUpdate = updateState is AppUpdater.UpdateState.Available || updateState is AppUpdater.UpdateState.ReadyToInstall
+            SettingsGroupCard {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) { showMorePrefs = !showMorePrefs }
+                        .padding(horizontal = 16.dp, vertical = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.me_more_settings),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OpenChatPalette.Ink,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (hasUpdate) {
+                        Box(Modifier.size(7.dp).background(OpenChatPalette.Signal, CircleShape))
+                    }
+                    Text(
+                        if (showMorePrefs) "▴" else "▾",
+                        fontSize = 13.sp,
+                        color = OpenChatPalette.Muted,
                     )
                 }
-            }
-        }
-
-        // 2. Offline App Sharing Card
-        SettingsGroupCard {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.me_share_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                Text(stringResource(R.string.me_share_body), fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(2.dp))
-                Button(
-                    onClick = onShareApp,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 44.dp),
-                ) {
-                    Icon(Icons.Outlined.Share, contentDescription = null, modifier = Modifier.size(17.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.me_share_button), fontWeight = FontWeight.SemiBold)
+                AnimatedVisibility(visible = showMorePrefs || hasUpdate) {
+                    Column(Modifier.fillMaxWidth()) {
+                        Hairline()
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Text(stringResource(R.string.me_language), fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, modifier = Modifier.weight(1f))
+                            LanguagePicker(onLanguage)
+                        }
+                        Hairline()
+                        NotificationSection()
+                        Hairline()
+                        LiveVoiceSection()
+                        Hairline()
+                        RelaySection()
+                        Hairline()
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(stringResource(R.string.diag_export_title), fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp)
+                                Text(stringResource(R.string.diag_export_body), fontSize = 11.5.sp, lineHeight = 16.sp, color = OpenChatPalette.Muted)
+                            }
+                            Surface(
+                                shape = CircleShape,
+                                color = OpenChatPalette.Well,
+                                modifier = Modifier
+                                    .pressScale(0.95f)
+                                    .clip(CircleShape)
+                                    .clickable(role = Role.Button) { org.openchat.android.app.DiagLog.copyReport(ctx) },
+                            ) {
+                                Text(
+                                    stringResource(R.string.diag_copy_btn),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = OpenChatPalette.Ink,
+                                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
+                                )
+                            }
+                            Surface(
+                                shape = CircleShape,
+                                color = OpenChatPalette.PrimaryAction,
+                                modifier = Modifier
+                                    .pressScale(0.95f)
+                                    .clip(CircleShape)
+                                    .clickable(role = Role.Button) { org.openchat.android.app.DiagLog.shareReport(ctx) },
+                            ) {
+                                Text(
+                                    stringResource(R.string.diag_share_btn),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = OpenChatPalette.OnPrimaryAction,
+                                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
+                                )
+                            }
+                        }
+                        if (onOpenGuide != null) {
+                            Hairline()
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable(role = Role.Button, onClick = onOpenGuide)
+                                    .padding(horizontal = 16.dp, vertical = 13.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Text(stringResource(R.string.guide_title), fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, modifier = Modifier.weight(1f))
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = OpenChatPalette.Muted)
+                            }
+                        }
+                    }
                 }
             }
-        }
 
-        // 2b. App Updates Card
-        UpdateSection()
-
-        // 3. Appearance, Language, Notifications & Live Voice Card
-        SettingsGroupCard {
-            ThemeSection()
-            Hairline()
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(stringResource(R.string.me_language), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                LanguagePicker(onLanguage)
+            if (showMorePrefs || hasUpdate) {
+                UpdateSection()
+                BlockedList()
             }
-            Hairline()
-            NotificationSection()
-            Hairline()
-            LiveVoiceSection()
-        }
 
-        // 4. Network & Privacy Card (Tor, Bridge, Relays)
-        SettingsGroupCard {
-            TorSection()
-            Hairline()
-            BridgeSection()
-            Hairline()
-            RelaySection()
-        }
-
-        // 5. Blocked List (when non-empty)
-        BlockedList()
-
-        // 6. Safety Note & Erase Everything
-        SafetyNote()
-        WipeSection(onPanic)
-
-        // Footer
-        Column(
-            Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(stringResource(R.string.me_about), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-            Text(appVersion(), fontSize = 11.5.sp, style = TabularMonoStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+            // Minimalist footer
+            Column(
+                Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Text(stringResource(R.string.me_about), fontSize = 11.5.sp, color = OpenChatPalette.Muted, textAlign = TextAlign.Center)
+                Text(appVersion(), fontSize = 11.sp, style = TabularMonoStyle, color = OpenChatPalette.Muted)
+            }
         }
     }
 }
@@ -424,7 +895,7 @@ private fun ThemeSection() {
                                 .let {
                                     if (selected) {
                                         it.background(
-                                            if (isLight) Color.White else Color(0xFF292B31),
+                                            if (isLight) OpenChatPalette.Surface else OpenChatPalette.CardRaised,
                                             RoundedCornerShape(9.dp),
                                         )
                                     } else {
@@ -715,33 +1186,4 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
-}
-
-/**
- * The triple tap on the logo or title is out of reach for screen readers and unsteady hands.
- * This button does the same after a confirmation; the triple tap itself stays unconfirmed (§10).
- */
-@Composable
-private fun WipeSection(onPanic: () -> Unit) {
-    var confirm by remember { mutableStateOf(false) }
-    SettingsGroupCard {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.me_wipe_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.error)
-            Text(stringResource(R.string.me_wipe_body), fontSize = 13.sp, lineHeight = 18.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(2.dp))
-            TonalActionButton(
-                onClick = { confirm = true },
-                destructive = true,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(R.string.me_wipe_button), fontWeight = FontWeight.SemiBold) }
-        }
-    }
-    if (confirm) AlertDialog(
-        onDismissRequest = { confirm = false },
-        containerColor = OpenChatPalette.Surface,
-        title = { Text(stringResource(R.string.me_wipe_title)) },
-        text = { Text(stringResource(R.string.me_wipe_confirm)) },
-        confirmButton = { TextButton(onClick = { confirm = false; onPanic() }) { Text(stringResource(R.string.me_wipe_do), color = MaterialTheme.colorScheme.error) } },
-        dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) } },
-    )
 }
