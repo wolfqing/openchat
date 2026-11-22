@@ -24,9 +24,9 @@
 [安全政策](SECURITY.md) ·
 [English](README.md)
 
-<img src="docs/design/prototype-three-screens.png" alt="三个界面：日光亮色下带悬浮流体折射玻璃栏的附近频道、OLED 纯黑下扁平气泡与四点送达路径的加密私信、以及「附近还没有人」的方位雷达页" width="100%">
+<img src="docs/design/prototype-three-screens-zh.png" alt="v0.7.15 三个界面：Warm Titanium 暖钛浅色下带悬浮 AGSL 液态玻璃底栏的附近频道、OLED 蚀刻黑金库下带 45 度密文斜纹气泡与四步信使接力轨的加密私信、以及 72 刻度方位雷达页" width="100%">
 
-<sub>定义这个 App 的三个界面：日光亮色下带信号带与悬浮流体折射玻璃栏的「附近」、OLED 纯黑下扁平气泡且每条消息都有送达路径的私信、以及附近没人时的方位雷达。由 v0.7.5 设计原型渲染。</sub>
+<sub>定义 openchat v0.7.15 的三个界面：Warm Titanium 暖钛浅色下带遥测条与悬浮液态玻璃底栏的「附近」、OLED 蚀刻黑金库下带 Noise 密文斜纹气泡与四步信使接力轨的加密私信、以及附近无人时的 72 刻度方位雷达。</sub>
 
 </div>
 
@@ -122,15 +122,16 @@ openchat 是**同一张网络上的独立客户端，MIT 许可**。它按 bitch
 
 <table>
 <tr>
-<td align="center"><img src="docs/design/prototype-nearby.png" alt="日光亮色下的附近频道：悬浮流体折射玻璃栏、信号带直连和可达数、每条消息带跳数和身份徽记" width="240"><br><sub><b>附近（日光亮色）。</b>直连 3，可达 11，配悬浮流体折射玻璃导航与输入栏。每个发送者有一个由密钥画出的徽记，每条消息都写着它走了多远。</sub></td>
-<td align="center"><img src="docs/design/prototype-private.png" alt="OLED 纯黑下的加密私信：零阴影扁平气泡与四点送达路径" width="240"><br><sub><b>私信（OLED 纯黑）。</b>扁平哑光气泡配四个送达节点：已发出、在路上、已送达、已读；圆形操作按钮与悬浮光学玻璃栏保持清透克制。</sub></td>
-<td align="center"><img src="docs/design/prototype-empty.png" alt="附近还没有人：带 10、30、50 米圈的方位雷达和三件马上能做的事" width="240"><br><sub><b>附近没人。</b>断网时最常见的状态，所以给它一个真正的页面：一个带方位刻度的雷达和三件有用的事。</sub></td>
+<td align="center"><img src="docs/design/prototype-nearby-zh.png" alt="Warm Titanium 暖钛浅色下的附近频道：悬浮 AGSL 液态玻璃导航栏、多跳遥测条、跳数徽章与身份徽记" width="210"><br><sub><b>附近（暖钛浅色）。</b>3 直连 / 11 可达，呈现多跳覆盖与信使捎带状态，底部保留悬浮液态玻璃折射栏。</sub></td>
+<td align="center"><img src="docs/design/prototype-ptt-zh.png" alt="半双工实时对讲抽屉：信号橙 3D 蜂窝滚花圆形 PTT 按键与实时声波电平" width="210"><br><sub><b>实时对讲。</b>纯蓝牙 1 跳半双工实时语音，配防滑蜂窝滚花圆形 PTT 按键与实时声波电平条。</sub></td>
+<td align="center"><img src="docs/design/prototype-private-zh.png" alt="OLED 蚀刻黑金库下的加密私信：45 度斜纹 Noise 密文气泡与四步零知识信使接力轨" width="210"><br><sub><b>私密（OLED 蚀刻黑金库）。</b>斜纹蚀刻 Noise 密文气泡，配连线式四步零知识信使接力进度轨。</sub></td>
+<td align="center"><img src="docs/design/prototype-empty-zh.png" alt="附近暂时安静：72 刻度方位雷达、今日搜到人数与三项即时离线能力" width="210"><br><sub><b>附近暂时安静。</b>断网空态呈现 72 刻度方位雷达与三项立即可用的离线能力。</sub></td>
 </tr>
 </table>
 
 <p align="center"><img src="docs/design/screenshot-globe-zh.png" alt="地球仪选点：深色地球上有海岸线和城市名，准星下选中的 geohash 格子用橙色勾出，下方是「进入这个频道」按钮" width="240"><br><sub><b>选择位置频道。</b>真实截图：v0.7.2 运行在 Android 15 模拟器上。拖动旋转，捏合缩放，准星下的格子就是频道。</sub></p>
 
-<sub>上面三张由可点击的原型 [docs/design/ui-prototype.html](docs/design/ui-prototype.html) 渲染；设计理由见 [docs/design/ui-direction.md](docs/design/ui-direction.md)。示例昵称都是历史人物。</sub>
+<sub>上面四张按 v0.7.15 暖钛浅色 / OLED 蚀刻黑金库定稿视觉渲染（真机安装包已默认全局开启 <code>FLAG_SECURE</code> 防截屏）；设计理由见 [docs/design/ui-direction.md](docs/design/ui-direction.md)。示例昵称均为历史人物。</sub>
 
 ## 与 bitchat 的关系
 

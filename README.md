@@ -24,9 +24,9 @@ No accounts, no phone numbers, no servers.
 [Security](SECURITY.md) ·
 [中文说明](README.zh-CN.md)
 
-<img src="docs/design/prototype-three-screens.png" alt="Three screens: Nearby in Radiant Light with floating Liquid Glass chrome, an encrypted private chat in OLED Dark with flat matte bubbles and a four-dot delivery path, and the 'nobody nearby yet' azimuth radar" width="100%">
+<img src="docs/design/prototype-three-screens.png" alt="Three v0.7.15 screens: Nearby in Warm Titanium Light with floating AGSL Liquid Glass dock, encrypted Private chat in OLED Etched Obsidian with hatched Noise vault bubbles and a four-step courier relay tracker, and the 72-tick Quiet nearby azimuth radar" width="100%">
 
-<sub>The three screens that define the app: Nearby in Radiant Light with its signal band and floating Liquid Glass chrome, a private chat in OLED Dark with flat matte bubbles and a delivery path on every message, and the radar you see when nobody is in range. Rendered from the v0.7.5 design prototype.</sub>
+<sub>The three screens that define openchat v0.7.15: Nearby in Warm Titanium Light with its telemetry strip and floating Liquid Glass dock, an encrypted private chat in OLED Etched Obsidian with hatched Noise vault bubbles and a live courier relay tracker, and the 72-tick azimuth radar when nobody is in range.</sub>
 
 </div>
 
@@ -237,18 +237,16 @@ The full feature-to-file map and the test suites are in
 
 <table>
 <tr>
-<td align="center"><img src="docs/design/prototype-nearby.png" alt="Nearby channel in Radiant Light: floating Liquid Glass chrome, signal band with direct and reachable counts, messages with hop counts and identity emblems" width="240"><br><sub><b>Nearby (Radiant Light).</b> Direct 3, reach 11, with floating Liquid Glass navigation and composer chrome. Every sender has an emblem drawn from their key; every message says how far it travelled.</sub></td>
-<td align="center"><img src="docs/design/prototype-private.png" alt="Encrypted private chat in OLED Dark with flat matte bubbles and a four-dot delivery path: sent, on its way, delivered, read" width="240"><br><sub><b>Private (OLED Dark).</b> Flat matte bubbles with four dots per message: sent, on its way, delivered, read. Clean circular action buttons and floating optical-glass chrome.</sub></td>
-<td align="center"><img src="docs/design/prototype-empty.png" alt="Nobody nearby yet: an azimuth radar with 10, 30 and 50 metre rings and three concrete things to do" width="240"><br><sub><b>Nobody nearby.</b> The most common state during an outage, so it gets a real screen: an azimuth radar with 10, 30 and 50 m rings and three things that help.</sub></td>
+<td align="center"><img src="docs/design/prototype-nearby.png" alt="Nearby channel in Warm Titanium Light: floating AGSL Liquid Glass dock, telemetry strip, hop counts and identity emblems" width="210"><br><sub><b>Nearby (Warm Titanium).</b> 3 direct, 11 reach, with multi-hop reach &amp; courier telemetry and floating Liquid Glass navigation.</sub></td>
+<td align="center"><img src="docs/design/prototype-ptt.png" alt="Live Walkie-Talkie drawer with circular 3D honeycomb knurled Signal Orange PTT disc and live voice meter" width="210"><br><sub><b>Live Walkie-Talkie.</b> Half-duplex voice over 1-hop BLE with a tactile knurled circular PTT disc and live level meter.</sub></td>
+<td align="center"><img src="docs/design/prototype-private.png" alt="Encrypted private chat in OLED Etched Obsidian with hatched Noise vault bubble and 4-step courier relay tracker" width="210"><br><sub><b>Private (OLED Etched Obsidian).</b> Hatched Noise vault bubbles and a connected 4-step zero-knowledge courier relay tracker.</sub></td>
+<td align="center"><img src="docs/design/prototype-empty.png" alt="Quiet nearby: 72-tick azimuth radar, daily seen counter, and three immediate offline tools" width="210"><br><sub><b>Quiet nearby.</b> A 72-tick azimuth radar with three instant tools when nobody is currently in Bluetooth range.</sub></td>
 </tr>
 </table>
 
 <p align="center"><img src="docs/design/screenshot-globe.png" alt="The globe picker: a dark globe with coastlines and city names, the selected geohash cell outlined in orange under a crosshair, and an 'Enter this channel' button" width="240"><br><sub><b>Choosing a location channel.</b> A real screenshot: v0.7.2 on an Android 15 emulator. Drag to spin, pinch to zoom; the cell under the crosshair is the channel.</sub></p>
 
-<sub>The three above are rendered from the clickable prototype in
-[docs/design/ui-prototype.html](docs/design/ui-prototype.html). The design
-rationale is in [docs/design/ui-direction.md](docs/design/ui-direction.md).
-Sample nicknames are historical figures.</sub>
+<sub>Rendered from the v0.7.15 Warm Titanium / OLED Etched Obsidian design system (always-on <code>FLAG_SECURE</code> blocks OS screenshots on device builds). The design rationale is in [docs/design/ui-direction.md](docs/design/ui-direction.md). Sample nicknames are historical figures.</sub>
 
 ## How it relates to bitchat
 
