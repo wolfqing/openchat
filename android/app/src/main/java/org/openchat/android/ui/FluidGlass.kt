@@ -861,50 +861,50 @@ private fun Modifier.drawFluidGlassOpticalBody(
 }
 
 /**
- * Apple Music iOS 26 style satin translucent neutral-gray active indicator used inside
- * [CapsuleNavigationBar]: sits cleanly recessed inside the luminous Liquid Glass dock (~#D1D1D1
- * in light mode, restrained graphite gray in dark mode) with a subtle specular rim so the active
- * tab reads immediately without looking stark white.
+ * Apple Music iOS 26 style whisper-light translucent neutral-gray active indicator used inside
+ * [CapsuleNavigationBar]: a very pale satin-gray pillow (~#E8E8EA over light glass, subtle
+ * translucent graphite in OLED dark) with a delicate specular rim so the active tab is gently
+ * distinct without looking stark white or heavy gray.
  */
 internal fun Modifier.fluidGlassDroplet(isLight: Boolean): Modifier = drawWithCache {
     val w = size.width.coerceAtLeast(2f)
     val h = size.height.coerceAtLeast(2f)
     val r = minOf(w, h) * 0.5f
     val corner = CornerRadius(r, r)
-    val rimPx = 0.85.dp.toPx()
+    val rimPx = 0.75.dp.toPx()
     val inset = rimPx * 0.5f
     val innerCorner = CornerRadius((r - inset).coerceAtLeast(1f), (r - inset).coerceAtLeast(1f))
 
     val fillBrush = if (isLight) {
         Brush.linearGradient(
-            0.00f to Color(0xFF1C1D21).copy(alpha = 0.105f),
-            0.50f to Color(0xFF1C1D21).copy(alpha = 0.145f),
-            1.00f to Color(0xFF1C1D21).copy(alpha = 0.125f),
+            0.00f to Color(0xFF1C1D21).copy(alpha = 0.050f),
+            0.50f to Color(0xFF1C1D21).copy(alpha = 0.072f),
+            1.00f to Color(0xFF1C1D21).copy(alpha = 0.060f),
             start = Offset(w * 0.15f, 0f),
             end = Offset(w * 0.85f, h),
         )
     } else {
         Brush.linearGradient(
-            0.00f to Color(0xFFB8BDC7).copy(alpha = 0.21f),
-            0.52f to Color(0xFFB8BDC7).copy(alpha = 0.15f),
-            1.00f to Color(0xFFB8BDC7).copy(alpha = 0.18f),
+            0.00f to Color(0xFFC8CDD6).copy(alpha = 0.13f),
+            0.52f to Color(0xFFC8CDD6).copy(alpha = 0.095f),
+            1.00f to Color(0xFFC8CDD6).copy(alpha = 0.11f),
             start = Offset(w * 0.15f, 0f),
             end = Offset(w * 0.85f, h),
         )
     }
     val rimBrush = if (isLight) {
         Brush.linearGradient(
-            0.00f to Color.White.copy(alpha = 0.58f),
-            0.48f to Color(0xFF12151C).copy(alpha = 0.06f),
-            1.00f to Color.White.copy(alpha = 0.34f),
+            0.00f to Color.White.copy(alpha = 0.52f),
+            0.48f to Color(0xFF12151C).copy(alpha = 0.035f),
+            1.00f to Color.White.copy(alpha = 0.30f),
             start = Offset(w * 0.10f, 0f),
             end = Offset(w * 0.90f, h),
         )
     } else {
         Brush.linearGradient(
-            0.00f to Color.White.copy(alpha = 0.28f),
-            0.50f to Color.White.copy(alpha = 0.06f),
-            1.00f to Color.White.copy(alpha = 0.14f),
+            0.00f to Color.White.copy(alpha = 0.22f),
+            0.50f to Color.White.copy(alpha = 0.05f),
+            1.00f to Color.White.copy(alpha = 0.12f),
             start = Offset(w * 0.10f, 0f),
             end = Offset(w * 0.90f, h),
         )

@@ -1,5 +1,24 @@
 # Changelog
 
+## Android v0.7.17 (preview) — 2026-11-23
+
+Lightened the active tab indicator inside the floating Liquid Glass navigation
+bar to a whisper-light pale neutral gray (`~#E8E8EA` over light glass, subtle
+translucent graphite in OLED dark) and harmonized the active `+` button tint to
+match. No wire-format change. 231 unit tests. 9.7 MB (9,730,612 bytes,
+R8-shrunk release-signed preview).
+APK SHA-256 `ac126b03be3926e18f12e725bc6387386e2a9627586dc3e63c392d92ceef4263`.
+
+### Changed
+
+- **Lighter active tab & `+` glass tint (`FluidGlass`, `ChatPane`).**
+  - Dialed `fluidGlassDroplet` active tab fill down from `alpha 0.105–0.145` to
+    a very light satin gray (`alpha 0.050–0.072` in light mode, `0.095–0.13` in
+    OLED dark) with a softer `0.75dp` specular contour so the active tab stays
+    airy and clean over the translucent Liquid Glass bar.
+  - Matched the expanded `+` circular Liquid Glass button tint in `ChatPane` to
+    the same subtle gray scale (`0.065` light / `0.12` dark).
+
 ## Android v0.7.16 (preview) — 2026-11-23
 
 Apple Music-inspired satin gray selected tab indicator and iMessage-inspired

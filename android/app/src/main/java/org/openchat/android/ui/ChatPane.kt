@@ -2149,7 +2149,7 @@ private fun Composer(
                             .size(46.dp)
                             .pressScale(0.92f),
                         tintColor = if (plusMenuOpen) {
-                            if (isLight) Color(0xFF1C1D21).copy(alpha = 0.12f) else Color(0xFFB8BDC7).copy(alpha = 0.20f)
+                            if (isLight) Color(0xFF1C1D21).copy(alpha = 0.065f) else Color(0xFFC8CDD6).copy(alpha = 0.12f)
                         } else null,
                         shadowElevation = 8.dp,
                     ) {
