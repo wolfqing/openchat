@@ -221,10 +221,10 @@ fun ChatPane(
     val navInsetDp = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val bottomBarClearance = LocalBottomBarClearance.current
     val composerBottomOffset = maxOf(
-        imeBottomDp + 6.dp,
-        if (bottomBarClearance > 0.dp) bottomBarClearance + 2.dp else navInsetDp + 8.dp,
+        imeBottomDp + 8.dp,
+        if (bottomBarClearance > 0.dp) bottomBarClearance + 10.dp else navInsetDp + 10.dp,
     )
-    val timelineBottomPadding = composerBottomOffset + if (walkieTalkieOpen) (WALKIE_TALKIE_DRAWER_HEIGHT + 10.dp) else 58.dp
+    val timelineBottomPadding = composerBottomOffset + if (walkieTalkieOpen) (WALKIE_TALKIE_DRAWER_HEIGHT + 10.dp) else 62.dp
 
     DisposableEffect(conversation) {
         ChatRepository.openConversation = conversation
@@ -1665,7 +1665,9 @@ private fun MessageActionSheet(
 }
 
 /**
- * Unified 1-piece composer bar with slash/@mention autocomplete and optional Nearby send-scope pill.
+ * iMessage-inspired 2-piece Liquid Glass composer bar (detached circular `+` glass button +
+ * refracting stadium input capsule) matched to the exact width of [CapsuleNavigationBar],
+ * with slash/@mention autocomplete and optional Nearby send-scope pill.
  */
 @Composable
 private fun Composer(
@@ -1764,501 +1766,551 @@ private fun Composer(
     val encrypted = !conversation.startsWith("mesh") && !conversation.startsWith("geo:")
     val isLight = OpenChatPalette.isLight
 
-    Column(Modifier.fillMaxWidth()) {
-        // Slash-command autocomplete pills
-        if (text.startsWith("/") && !text.contains(' ')) {
-            val cmds = Commands.available(conversation).filter { it.startsWith(text.lowercase()) }
-            if (cmds.isNotEmpty()) {
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    cmds.forEach { c ->
-                        FluidGlassPillButton(
-                            onClick = { set("$c ") },
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        ) {
-                            Text(c, style = TabularMonoStyle, fontSize = 13.sp)
-                        }
-                    }
-                }
-            }
-        }
-        // @mention autocomplete pills
-        val typing = Mentions.typing(text)
-        if (typing != null) {
-            val matches = people.filter { it.toString().lowercase().startsWith(typing.lowercase()) }.take(6)
-            if (matches.isNotEmpty()) {
-                val inlineIcons = rememberLabelInlineIcons()
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    matches.forEach { p ->
-                        val token = if (people.count { it.name.equals(p.name, ignoreCase = true) } > 1) p.toString() else p.name
-                        FluidGlassPillButton(
-                            onClick = { set(text.substring(0, text.lastIndexOf('@')) + "@" + token + " ") },
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        ) {
-                            Text(labelText(p), inlineContent = inlineIcons, fontSize = 13.sp)
-                        }
-                    }
-                }
-            }
-        }
-
-        if (recording) {
-            val now = rememberNow()
-            val secs = ((now - recordStartedAt) / 1000).coerceAtLeast(0)
-            val recAccent = if (encrypted) OpenChatPalette.Lock else OpenChatPalette.Signal
-            val recSoft = if (encrypted) OpenChatPalette.LockSoft else OpenChatPalette.SignalSoft
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FluidGlassCircleButton(
-                    icon = Icons.Filled.Close,
-                    contentDescription = stringResource(R.string.cancel),
-                    onClick = { cancelNoteRecording() },
-                    size = 44.dp,
-                    iconSize = 19.dp,
-                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                FlatCapsule(
-                    modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
-                    containerColor = recSoft,
-                    contentAlignment = Alignment.CenterStart,
-                ) {
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = FLOATING_BAR_HORIZONTAL_PADDING)
+                .widthIn(max = FLOATING_BAR_MAX_WIDTH)
+                .fillMaxWidth(),
+        ) {
+            // Slash-command autocomplete pills
+            if (text.startsWith("/") && !text.contains(' ')) {
+                val cmds = Commands.available(conversation).filter { it.startsWith(text.lowercase()) }
+                if (cmds.isNotEmpty()) {
                     Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(bottom = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        SignalPulseDot(live = true)
-                        LiveEqualizerBars(
-                            active = true,
-                            level = null,
-                            barCount = 6,
-                            color = recAccent,
-                            modifier = Modifier.size(width = 30.dp, height = 16.dp),
+                        cmds.forEach { c ->
+                            FluidGlassPillButton(
+                                onClick = { set("$c ") },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            ) {
+                                Text(c, style = TabularMonoStyle, fontSize = 13.sp)
+                            }
+                        }
+                    }
+                }
+            }
+            // @mention autocomplete pills
+            val typing = Mentions.typing(text)
+            if (typing != null) {
+                val matches = people.filter { it.toString().lowercase().startsWith(typing.lowercase()) }.take(6)
+                if (matches.isNotEmpty()) {
+                    val inlineIcons = rememberLabelInlineIcons()
+                    Row(
+                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        matches.forEach { p ->
+                            val token = if (people.count { it.name.equals(p.name, ignoreCase = true) } > 1) p.toString() else p.name
+                            FluidGlassPillButton(
+                                onClick = { set(text.substring(0, text.lastIndexOf('@')) + "@" + token + " ") },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            ) {
+                                Text(labelText(p), inlineContent = inlineIcons, fontSize = 13.sp)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (recording) {
+                val now = rememberNow()
+                val secs = ((now - recordStartedAt) / 1000).coerceAtLeast(0)
+                val recAccent = if (encrypted) OpenChatPalette.Lock else OpenChatPalette.Signal
+                val recSoft = if (encrypted) OpenChatPalette.LockSoft else OpenChatPalette.SignalSoft
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FluidGlassCapsule(
+                        modifier = Modifier.size(46.dp).pressScale(0.92f),
+                        shadowElevation = 8.dp,
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .clickable(role = Role.Button, onClick = { cancelNoteRecording() }),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.cancel),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                    FluidGlassCapsule(
+                        modifier = Modifier.weight(1f).height(46.dp),
+                        tintColor = recSoft,
+                        borderAccent = recAccent,
+                        shadowElevation = 8.dp,
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            SignalPulseDot(live = true)
+                            LiveEqualizerBars(
+                                active = true,
+                                level = null,
+                                barCount = 6,
+                                color = recAccent,
+                                modifier = Modifier.size(width = 30.dp, height = 16.dp),
+                            )
+                            Text(
+                                stringResource(R.string.media_recording),
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                String.format(appLocale(), "%d:%02d", secs / 60, secs % 60),
+                                style = TabularMonoStyle,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.5.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                    FluidGlassCapsule(
+                        modifier = Modifier.size(46.dp).pressScale(0.92f),
+                        tintColor = recSoft,
+                        borderAccent = recAccent,
+                        shadowElevation = 8.dp,
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .clickable(role = Role.Button, onClick = { stopVoiceToPreview() }),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Stop,
+                                contentDescription = stringResource(R.string.media_stop),
+                                tint = recAccent,
+                                modifier = Modifier.size(19.dp),
+                            )
+                        }
+                    }
+                    FluidGlassCircleButton(
+                        icon = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = stringResource(R.string.send),
+                        onClick = { stopAndSendVoice() },
+                        size = 46.dp,
+                        iconSize = 19.dp,
+                        iconTint = if (encrypted && !isLight) OpenChatPalette.OnPrimaryAction else Color.White,
+                        tintColor = recAccent,
+                        borderAccent = recAccent,
+                    )
+                }
+                return@Column
+            }
+
+            val readyPreview = previewFile
+            if (readyPreview != null) {
+                val accent = if (encrypted) OpenChatPalette.Lock else OpenChatPalette.Signal
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FluidGlassCapsule(
+                        modifier = Modifier.size(46.dp).pressScale(0.92f),
+                        shadowElevation = 8.dp,
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .clickable(
+                                    role = Role.Button,
+                                    onClick = {
+                                        readyPreview.delete()
+                                        previewFile = null
+                                    },
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.DeleteOutline,
+                                contentDescription = stringResource(R.string.cancel),
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                    FluidGlassCapsule(
+                        modifier = Modifier.weight(1f).height(46.dp),
+                        shadowElevation = 8.dp,
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        VoiceNote(readyPreview.absolutePath, accentColor = accent)
+                    }
+                    FluidGlassCircleButton(
+                        icon = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = stringResource(R.string.send),
+                        onClick = {
+                            previewFile = null
+                            scope.launch {
+                                val bytes = withContext(Dispatchers.IO) {
+                                    runCatching { readyPreview.readBytes() }.getOrNull().also { readyPreview.delete() }
+                                }
+                                sendMedia(bytes, "audio/mp4", readyPreview.name)
+                            }
+                        },
+                        size = 46.dp,
+                        iconSize = 19.dp,
+                        iconTint = if (encrypted && !isLight) OpenChatPalette.OnPrimaryAction else Color.White,
+                        tintColor = accent,
+                        borderAccent = accent,
+                    )
+                }
+                return@Column
+            }
+
+            if (plusMenuOpen && supportsMedia) {
+                FluidGlassSurface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    isCapsule = false,
+                    cornerRadius = 20.dp,
+                    tintColor = if (isLight) Color.White.copy(alpha = 0.84f) else Color(0xFF161922).copy(alpha = 0.88f),
+                    shadowElevation = 10.dp,
+                    contentAlignment = Alignment.TopStart,
+                ) {
+                    Column(
+                        Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                stringResource(R.string.tactical_title),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = OpenChatPalette.Ink,
+                            )
+                            Text(
+                                stringResource(R.string.tactical_hint),
+                                fontSize = 11.sp,
+                                color = OpenChatPalette.Muted,
+                            )
+                        }
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            TacticalCommandTile(
+                                title = stringResource(R.string.media_photo),
+                                tag = "IMG",
+                                accentTag = false,
+                                onClick = {
+                                    plusMenuOpen = false
+                                    pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (supportsWalkieTalkie) {
+                                TacticalCommandTile(
+                                    title = stringResource(R.string.ptt_menu_item),
+                                    tag = "PTT",
+                                    accentTag = true,
+                                    onClick = {
+                                        plusMenuOpen = false
+                                        ChatRepository.setPttOpen(conversation, true)
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            TacticalCommandTile(
+                                title = stringResource(R.string.tactical_trace),
+                                tag = "/trace",
+                                accentTag = false,
+                                onClick = {
+                                    plusMenuOpen = false
+                                    set("/trace ")
+                                    runCatching { focusRequester.requestFocus() }
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (onOpenBoard != null) {
+                                TacticalCommandTile(
+                                    title = stringResource(R.string.tactical_board),
+                                    tag = stringResource(R.string.top_board_short),
+                                    accentTag = false,
+                                    onClick = {
+                                        plusMenuOpen = false
+                                        onOpenBoard()
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            } else {
+                                TacticalCommandTile(
+                                    title = stringResource(R.string.tactical_who),
+                                    tag = "/who",
+                                    accentTag = false,
+                                    onClick = {
+                                        plusMenuOpen = false
+                                        onSend("/who")
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            val bridgeStatus by ChatRepository.bridge.collectAsState()
+            val allowBridge by ChatRepository.nearbyAllowBridge.collectAsState()
+            var scopeHintStamp by remember { mutableLongStateOf(0L) }
+            LaunchedEffect(scopeHintStamp) {
+                if (scopeHintStamp > 0L) {
+                    delay(3_500L)
+                    scopeHintStamp = 0L
+                }
+            }
+            if (conversation == Conversation.Mesh.key && bridgeStatus.enabled) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FluidGlassPillButton(
+                        onClick = {
+                            ChatRepository.setNearbyAllowBridge(!allowBridge)
+                            scopeHintStamp = System.currentTimeMillis()
+                        },
+                        borderAccent = if (allowBridge) OpenChatPalette.Lock else OpenChatPalette.Online,
+                        contentPadding = PaddingValues(horizontal = 11.dp, vertical = 5.dp),
+                    ) {
+                        Icon(
+                            imageVector = if (allowBridge) Icons.Outlined.Public else Icons.Outlined.Sensors,
+                            contentDescription = null,
+                            tint = if (allowBridge) OpenChatPalette.Lock else OpenChatPalette.Online,
+                            modifier = Modifier.size(14.dp),
                         )
                         Text(
-                            stringResource(R.string.media_recording),
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            stringResource(if (allowBridge) R.string.scope_bridge_on else R.string.scope_ble_only),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OpenChatPalette.Ink,
+                            maxLines = 1,
+                        )
+                    }
+                    if (scopeHintStamp > 0L) {
+                        Text(
+                            stringResource(if (allowBridge) R.string.scope_hint_bridge else R.string.scope_hint_ble),
+                            fontSize = 11.5.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
                         )
-                        Text(
-                            String.format(appLocale(), "%d:%02d", secs / 60, secs % 60),
-                            style = TabularMonoStyle,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.5.sp,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
                     }
                 }
-                FluidGlassCircleButton(
-                    icon = Icons.Filled.Stop,
-                    contentDescription = stringResource(R.string.media_stop),
-                    onClick = { stopVoiceToPreview() },
-                    size = 44.dp,
-                    iconSize = 19.dp,
-                    iconTint = recAccent,
-                    tintColor = recSoft,
-                    borderAccent = recAccent,
-                )
-                FluidGlassCircleButton(
-                    icon = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = stringResource(R.string.send),
-                    onClick = { stopAndSendVoice() },
-                    size = 44.dp,
-                    iconSize = 19.dp,
-                    iconTint = if (encrypted && !isLight) OpenChatPalette.OnPrimaryAction else Color.White,
-                    tintColor = recAccent,
-                    borderAccent = recAccent,
-                )
             }
-            return
-        }
 
-        val readyPreview = previewFile
-        if (readyPreview != null) {
-            val accent = if (encrypted) OpenChatPalette.Lock else OpenChatPalette.Signal
+            // iMessage-style 2-piece Liquid Glass composer: detached circular [+] + glass input pill
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                FluidGlassCircleButton(
-                    icon = Icons.Outlined.DeleteOutline,
-                    contentDescription = stringResource(R.string.cancel),
-                    onClick = {
-                        readyPreview.delete()
-                        previewFile = null
-                    },
-                    size = 44.dp,
-                    iconSize = 20.dp,
-                    iconTint = MaterialTheme.colorScheme.error,
-                )
-                FlatCapsule(
-                    modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
-                    containerColor = if (isLight) OpenChatPalette.Surface else OpenChatPalette.Card,
+                if (supportsMedia) {
+                    FluidGlassCapsule(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .pressScale(0.92f),
+                        tintColor = if (plusMenuOpen) {
+                            if (isLight) Color(0xFF1C1D21).copy(alpha = 0.12f) else Color(0xFFB8BDC7).copy(alpha = 0.20f)
+                        } else null,
+                        shadowElevation = 8.dp,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .clickable(
+                                    role = Role.Button,
+                                    onClick = { plusMenuOpen = !plusMenuOpen },
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = if (plusMenuOpen) Icons.Filled.Close else Icons.Filled.Add,
+                                contentDescription = stringResource(R.string.media_photo),
+                                tint = OpenChatPalette.Ink.copy(alpha = if (isLight) 0.88f else 0.92f),
+                                modifier = Modifier.size(21.dp),
+                            )
+                        }
+                    }
+                }
+
+                FluidGlassSurface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 46.dp),
+                    shape = RoundedCornerShape(23.dp),
+                    isCapsule = false,
+                    cornerRadius = 23.dp,
+                    refraction = 11.dp,
+                    bevel = 13.dp,
+                    shadowElevation = if (focused) 10.dp else 8.dp,
                     contentAlignment = Alignment.CenterStart,
                 ) {
-                    VoiceNote(readyPreview.absolutePath, accentColor = accent)
-                }
-                FluidGlassCircleButton(
-                    icon = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = stringResource(R.string.send),
-                    onClick = {
-                        previewFile = null
-                        scope.launch {
-                            val bytes = withContext(Dispatchers.IO) {
-                                runCatching { readyPreview.readBytes() }.getOrNull().also { readyPreview.delete() }
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 5.dp, top = 5.dp, bottom = 5.dp),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Row(
+                            Modifier
+                                .weight(1f)
+                                .defaultMinSize(minHeight = 36.dp)
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            if (encrypted && text.isEmpty()) {
+                                Icon(
+                                    Icons.Outlined.Lock,
+                                    contentDescription = stringResource(R.string.chip_encrypted),
+                                    tint = OpenChatPalette.Muted.copy(alpha = 0.65f),
+                                    modifier = Modifier.size(13.dp),
+                                )
                             }
-                            sendMedia(bytes, "audio/mp4", readyPreview.name)
-                        }
-                    },
-                    size = 44.dp,
-                    iconSize = 19.dp,
-                    iconTint = if (encrypted && !isLight) OpenChatPalette.OnPrimaryAction else Color.White,
-                    tintColor = accent,
-                    borderAccent = accent,
-                )
-            }
-            return
-        }
-
-        val composerFill = if (isLight) OpenChatPalette.Surface else Color(0xFF14171F)
-        val composerRim = when {
-            focused && encrypted -> OpenChatPalette.Lock.copy(alpha = 0.35f)
-            focused -> OpenChatPalette.Ink.copy(alpha = 0.22f)
-            isLight -> Color.Black.copy(alpha = 0.07f)
-            else -> Color.White.copy(alpha = 0.08f)
-        }
-
-        if (plusMenuOpen && supportsMedia && text.isEmpty()) {
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = OpenChatPalette.Surface,
-                border = BorderStroke(0.6.dp, OpenChatPalette.Line),
-                tonalElevation = 0.dp,
-                shadowElevation = 6.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 12.dp, end = 12.dp, bottom = 6.dp),
-            ) {
-                Column(
-                    Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            stringResource(R.string.tactical_title),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = OpenChatPalette.Ink,
-                        )
-                        Text(
-                            stringResource(R.string.tactical_hint),
-                            fontSize = 11.sp,
-                            color = OpenChatPalette.Muted,
-                        )
-                    }
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        TacticalCommandTile(
-                            title = stringResource(R.string.media_photo),
-                            tag = "IMG",
-                            accentTag = false,
-                            onClick = {
-                                plusMenuOpen = false
-                                pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                            },
-                            modifier = Modifier.weight(1f),
-                        )
-                        if (supportsWalkieTalkie) {
-                            TacticalCommandTile(
-                                title = stringResource(R.string.ptt_menu_item),
-                                tag = "PTT",
-                                accentTag = true,
-                                onClick = {
-                                    plusMenuOpen = false
-                                    ChatRepository.setPttOpen(conversation, true)
+                            BasicTextField(
+                                value = fieldValue,
+                                onValueChange = { next ->
+                                    if (next.text.length <= 1000) {
+                                        fieldValue = next
+                                        if (next.text.isEmpty()) drafts.remove(conversation) else drafts[conversation] = next.text
+                                    }
                                 },
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .focusRequester(focusRequester)
+                                    .onFocusChanged {
+                                        focused = it.isFocused
+                                        if (it.isFocused) plusMenuOpen = false
+                                    },
+                                textStyle = TextStyle(color = OpenChatPalette.Ink, fontSize = 15.sp, lineHeight = 21.sp),
+                                cursorBrush = SolidColor(OpenChatPalette.Ink),
+                                maxLines = 5,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                                keyboardActions = KeyboardActions(onSend = { send() }),
+                                decorationBox = { inner ->
+                                    Box(contentAlignment = Alignment.CenterStart) {
+                                        if (text.isEmpty()) {
+                                            Text(
+                                                placeholder,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                                                fontSize = 14.5.sp,
+                                                fontWeight = FontWeight.Normal,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                        }
+                                        inner()
+                                    }
+                                },
                             )
                         }
-                    }
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        TacticalCommandTile(
-                            title = stringResource(R.string.tactical_trace),
-                            tag = "/trace",
-                            accentTag = false,
-                            onClick = {
-                                plusMenuOpen = false
-                                set("/trace ")
-                                runCatching { focusRequester.requestFocus() }
-                            },
-                            modifier = Modifier.weight(1f),
-                        )
-                        if (onOpenBoard != null) {
-                            TacticalCommandTile(
-                                title = stringResource(R.string.tactical_board),
-                                tag = stringResource(R.string.top_board_short),
-                                accentTag = false,
-                                onClick = {
-                                    plusMenuOpen = false
-                                    onOpenBoard()
-                                },
-                                modifier = Modifier.weight(1f),
-                            )
-                        } else {
-                            TacticalCommandTile(
-                                title = stringResource(R.string.tactical_who),
-                                tag = "/who",
-                                accentTag = false,
-                                onClick = {
-                                    plusMenuOpen = false
-                                    onSend("/who")
-                                },
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                    }
-                }
-            }
-        }
 
-        val bridgeStatus by ChatRepository.bridge.collectAsState()
-        val allowBridge by ChatRepository.nearbyAllowBridge.collectAsState()
-        var scopeHintStamp by remember { mutableLongStateOf(0L) }
-        LaunchedEffect(scopeHintStamp) {
-            if (scopeHintStamp > 0L) {
-                delay(3_500L)
-                scopeHintStamp = 0L
-            }
-        }
-        if (conversation == Conversation.Mesh.key && bridgeStatus.enabled) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(start = 14.dp, end = 14.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FluidGlassPillButton(
-                    onClick = {
-                        ChatRepository.setNearbyAllowBridge(!allowBridge)
-                        scopeHintStamp = System.currentTimeMillis()
-                    },
-                    borderAccent = if (allowBridge) OpenChatPalette.Lock else OpenChatPalette.Online,
-                    contentPadding = PaddingValues(horizontal = 11.dp, vertical = 5.dp),
-                ) {
-                    Icon(
-                        imageVector = if (allowBridge) Icons.Outlined.Public else Icons.Outlined.Sensors,
-                        contentDescription = null,
-                        tint = if (allowBridge) OpenChatPalette.Lock else OpenChatPalette.Online,
-                        modifier = Modifier.size(14.dp),
-                    )
-                    Text(
-                        stringResource(if (allowBridge) R.string.scope_bridge_on else R.string.scope_ble_only),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = OpenChatPalette.Ink,
-                        maxLines = 1,
-                    )
-                }
-                if (scopeHintStamp > 0L) {
-                    Text(
-                        stringResource(if (allowBridge) R.string.scope_hint_bridge else R.string.scope_hint_ble),
-                        fontSize = 11.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-
-        // Unified 1-piece minimalist composer capsule: [ +  input...  🎤 / ↑ ]
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp)
-                .defaultMinSize(minHeight = 46.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = composerFill,
-            contentColor = OpenChatPalette.Ink,
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp,
-            border = BorderStroke(0.5.dp, composerRim),
-        ) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 5.dp),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                if (supportsMedia && text.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .pressScale(0.92f)
-                            .clip(CircleShape)
-                            .background(
-                                if (plusMenuOpen) OpenChatPalette.Card else Color.Transparent,
-                                CircleShape,
-                            )
-                            .clickable(
-                                role = Role.Button,
-                                onClick = { plusMenuOpen = !plusMenuOpen },
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = if (plusMenuOpen) Icons.Filled.Close else Icons.Filled.Add,
-                            contentDescription = stringResource(R.string.media_photo),
-                            tint = OpenChatPalette.Ink.copy(alpha = 0.80f),
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                }
-
-                Row(
-                    Modifier
-                        .weight(1f)
-                        .defaultMinSize(minHeight = 36.dp)
-                        .padding(
-                            start = if (supportsMedia && text.isEmpty()) 2.dp else 10.dp,
-                            end = 2.dp,
-                            top = 6.dp,
-                            bottom = 6.dp,
-                        ),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    if (encrypted && text.isEmpty()) {
-                        Icon(
-                            Icons.Outlined.Lock,
-                            contentDescription = stringResource(R.string.chip_encrypted),
-                            tint = OpenChatPalette.Muted.copy(alpha = 0.70f),
-                            modifier = Modifier.size(13.dp),
-                        )
-                    }
-                    BasicTextField(
-                        value = fieldValue,
-                        onValueChange = { next ->
-                            if (next.text.length <= 1000) {
-                                fieldValue = next
-                                if (next.text.isEmpty()) drafts.remove(conversation) else drafts[conversation] = next.text
-                            }
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .focusRequester(focusRequester)
-                            .onFocusChanged { focused = it.isFocused },
-                        textStyle = TextStyle(color = OpenChatPalette.Ink, fontSize = 15.sp, lineHeight = 21.sp),
-                        cursorBrush = SolidColor(OpenChatPalette.Ink),
-                        maxLines = 5,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                        keyboardActions = KeyboardActions(onSend = { send() }),
-                        decorationBox = { inner ->
-                            Box(contentAlignment = Alignment.CenterStart) {
-                                if (text.isEmpty()) {
-                                    Text(
-                                        placeholder,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.80f),
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Normal,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
+                        val hasText = text.isNotBlank()
+                        AnimatedContent(
+                            targetState = hasText || !supportsMedia,
+                            transitionSpec = { (fadeIn(tween(110)) + scaleIn(tween(110), initialScale = 0.86f)) togetherWith (fadeOut(tween(85)) + scaleOut(tween(85), targetScale = 0.86f)) },
+                            label = "composer-action",
+                        ) { showSend ->
+                            if (showSend) {
+                                val active = text.isNotBlank()
+                                val sendBg = if (!active) Color.Transparent else OpenChatPalette.PrimaryAction
+                                val sendFg = if (!active) OpenChatPalette.Muted.copy(alpha = 0.45f) else OpenChatPalette.OnPrimaryAction
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .let { if (active) it.pressScale(0.92f) else it }
+                                        .clip(CircleShape)
+                                        .background(sendBg, CircleShape)
+                                        .let {
+                                            if (active) it.clickable(role = Role.Button, onClick = send) else it
+                                        },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.ArrowUpward,
+                                        contentDescription = resources.getString(R.string.send),
+                                        tint = sendFg,
+                                        modifier = Modifier.size(18.dp),
                                     )
                                 }
-                                inner()
-                            }
-                        },
-                    )
-                }
-
-                val hasText = text.isNotBlank()
-                AnimatedContent(
-                    targetState = hasText || !supportsMedia,
-                    transitionSpec = { (fadeIn(tween(110)) + scaleIn(tween(110), initialScale = 0.86f)) togetherWith (fadeOut(tween(85)) + scaleOut(tween(85), targetScale = 0.86f)) },
-                    label = "composer-action",
-                ) { showSend ->
-                    if (showSend) {
-                        val active = text.isNotBlank()
-                        val sendBg = if (!active) Color.Transparent else OpenChatPalette.PrimaryAction
-                        val sendFg = if (!active) OpenChatPalette.Muted.copy(alpha = 0.45f) else OpenChatPalette.OnPrimaryAction
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .let { if (active) it.pressScale(0.92f) else it }
-                                .clip(CircleShape)
-                                .background(sendBg, CircleShape)
-                                .let {
-                                    if (active) it.clickable(role = Role.Button, onClick = send) else it
-                                },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.ArrowUpward,
-                                contentDescription = resources.getString(R.string.send),
-                                tint = sendFg,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    } else {
-                        val hint = stringResource(R.string.media_mic_hint)
-                        fun toggleVoice() {
-                            val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                            if (granted) recording = beginVoice() else micPerm.launch(android.Manifest.permission.RECORD_AUDIO)
-                        }
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .pressScale(0.92f)
-                                .clip(CircleShape)
-                                .clearAndSetSemantics {
-                                    contentDescription = hint
-                                    role = Role.Button
-                                    onClick { toggleVoice(); true }
+                            } else {
+                                val hint = stringResource(R.string.media_mic_hint)
+                                fun toggleVoice() {
+                                    val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                    if (granted) recording = beginVoice() else micPerm.launch(android.Manifest.permission.RECORD_AUDIO)
                                 }
-                                .pointerInput(conversation) {
-                                    detectTapGestures(onPress = {
-                                        val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                                        if (!granted) { micPerm.launch(android.Manifest.permission.RECORD_AUDIO); return@detectTapGestures }
-                                        recording = beginVoice()
-                                        if (!recording) return@detectTapGestures
-                                        val pressedAt = System.currentTimeMillis()
-                                        if (!tryAwaitRelease()) cancelNoteRecording()
-                                        else if (System.currentTimeMillis() - pressedAt >= 400) stopAndSendVoice()
-                                    })
-                                },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.Outlined.Mic,
-                                contentDescription = null,
-                                tint = OpenChatPalette.Ink.copy(alpha = 0.80f),
-                                modifier = Modifier.size(19.dp),
-                            )
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .pressScale(0.92f)
+                                        .clip(CircleShape)
+                                        .clearAndSetSemantics {
+                                            contentDescription = hint
+                                            role = Role.Button
+                                            onClick { toggleVoice(); true }
+                                        }
+                                        .pointerInput(conversation) {
+                                            detectTapGestures(onPress = {
+                                                val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                                if (!granted) { micPerm.launch(android.Manifest.permission.RECORD_AUDIO); return@detectTapGestures }
+                                                recording = beginVoice()
+                                                if (!recording) return@detectTapGestures
+                                                val pressedAt = System.currentTimeMillis()
+                                                if (!tryAwaitRelease()) cancelNoteRecording()
+                                                else if (System.currentTimeMillis() - pressedAt >= 400) stopAndSendVoice()
+                                            })
+                                        },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Mic,
+                                        contentDescription = null,
+                                        tint = OpenChatPalette.Ink.copy(alpha = if (isLight) 0.52f else 0.65f),
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+                            }
                         }
                     }
                 }

@@ -598,8 +598,8 @@ fun FluidGlassSurface(
     }
 
     val refractingLive = overlapsSource && composeEffect != null
-    val ambientShadow = if (isLight) Color(0x28111318) else Color(0x6E000000)
-    val spotShadow = if (isLight) Color(0x3D111318) else Color(0x80000000)
+    val ambientShadow = if (isLight) Color(0x1E111318) else Color(0x6E000000)
+    val spotShadow = if (isLight) Color(0x2E111318) else Color(0x80000000)
 
     Box(
         modifier = modifier
@@ -709,18 +709,18 @@ private fun Modifier.drawFluidGlassOpticalBody(
         }
         isLight && refractingLive -> {
             Brush.linearGradient(
-                0.00f to Color.White.copy(alpha = 0.44f),
-                0.48f to Color.White.copy(alpha = 0.14f),
-                1.00f to Color.White.copy(alpha = 0.24f),
+                0.00f to Color.White.copy(alpha = 0.62f),
+                0.48f to Color.White.copy(alpha = 0.34f),
+                1.00f to Color.White.copy(alpha = 0.46f),
                 start = Offset(w * 0.12f, 0f),
                 end = Offset(w * 0.88f, h),
             )
         }
         isLight -> {
             Brush.verticalGradient(
-                0.00f to Color(0xFFFAF9F6).copy(alpha = 0.92f),
-                0.55f to Color(0xFFF5F3EE).copy(alpha = 0.84f),
-                1.00f to Color(0xFFEFECE5).copy(alpha = 0.88f),
+                0.00f to Color(0xFFFCFCFD).copy(alpha = 0.94f),
+                0.55f to Color(0xFFF6F7F9).copy(alpha = 0.88f),
+                1.00f to Color(0xFFF0F1F4).copy(alpha = 0.92f),
             )
         }
         refractingLive -> {
@@ -756,19 +756,19 @@ private fun Modifier.drawFluidGlassOpticalBody(
 
     val rimBrush = if (isLight) {
         val darkPole = if (borderAccent != null) {
-            lerp(borderAccent, Color(0xFF12151C), 0.45f).copy(alpha = 0.26f)
+            lerp(borderAccent, Color(0xFF12151C), 0.45f).copy(alpha = 0.24f)
         } else {
-            Color(0xFF12151C).copy(alpha = 0.18f)
+            Color(0xFF12151C).copy(alpha = 0.14f)
         }
         val midCap = if (borderAccent != null) {
             borderAccent.copy(alpha = 0.22f)
         } else {
-            Color.White.copy(alpha = 0.42f)
+            Color.White.copy(alpha = 0.48f)
         }
         val brightTopBottom = if (borderAccent != null) {
-            lerp(borderAccent, Color.White, 0.82f).copy(alpha = 0.78f)
+            lerp(borderAccent, Color.White, 0.82f).copy(alpha = 0.80f)
         } else {
-            Color.White.copy(alpha = 0.92f)
+            Color.White.copy(alpha = 0.96f)
         }
         Brush.horizontalGradient(
             0.00f to darkPole,
@@ -861,49 +861,50 @@ private fun Modifier.drawFluidGlassOpticalBody(
 }
 
 /**
- * iOS 27 convex crystal lens indicator used inside [CapsuleNavigationBar]:
- * luminous raised glass cushion with a 155-deg top-left specular lip and subtle contact contour
- * so the active orange icon and label sit on a crisp 3D lens rather than a flat grey tint.
+ * Apple Music iOS 26 style satin translucent neutral-gray active indicator used inside
+ * [CapsuleNavigationBar]: sits cleanly recessed inside the luminous Liquid Glass dock (~#D1D1D1
+ * in light mode, restrained graphite gray in dark mode) with a subtle specular rim so the active
+ * tab reads immediately without looking stark white.
  */
 internal fun Modifier.fluidGlassDroplet(isLight: Boolean): Modifier = drawWithCache {
     val w = size.width.coerceAtLeast(2f)
     val h = size.height.coerceAtLeast(2f)
     val r = minOf(w, h) * 0.5f
     val corner = CornerRadius(r, r)
-    val rimPx = 0.90.dp.toPx()
+    val rimPx = 0.85.dp.toPx()
     val inset = rimPx * 0.5f
     val innerCorner = CornerRadius((r - inset).coerceAtLeast(1f), (r - inset).coerceAtLeast(1f))
 
     val fillBrush = if (isLight) {
         Brush.linearGradient(
-            0.00f to Color.White.copy(alpha = 0.94f),
-            0.56f to Color.White.copy(alpha = 0.72f),
-            1.00f to Color.White.copy(alpha = 0.84f),
+            0.00f to Color(0xFF1C1D21).copy(alpha = 0.105f),
+            0.50f to Color(0xFF1C1D21).copy(alpha = 0.145f),
+            1.00f to Color(0xFF1C1D21).copy(alpha = 0.125f),
             start = Offset(w * 0.15f, 0f),
             end = Offset(w * 0.85f, h),
         )
     } else {
         Brush.linearGradient(
-            0.00f to Color.White.copy(alpha = 0.22f),
-            0.58f to Color.White.copy(alpha = 0.09f),
-            1.00f to Color.White.copy(alpha = 0.14f),
+            0.00f to Color(0xFFB8BDC7).copy(alpha = 0.21f),
+            0.52f to Color(0xFFB8BDC7).copy(alpha = 0.15f),
+            1.00f to Color(0xFFB8BDC7).copy(alpha = 0.18f),
             start = Offset(w * 0.15f, 0f),
             end = Offset(w * 0.85f, h),
         )
     }
     val rimBrush = if (isLight) {
         Brush.linearGradient(
-            0.00f to Color.White,
-            0.45f to Color(0xFF12151C).copy(alpha = 0.06f),
-            1.00f to Color.White.copy(alpha = 0.78f),
+            0.00f to Color.White.copy(alpha = 0.58f),
+            0.48f to Color(0xFF12151C).copy(alpha = 0.06f),
+            1.00f to Color.White.copy(alpha = 0.34f),
             start = Offset(w * 0.10f, 0f),
             end = Offset(w * 0.90f, h),
         )
     } else {
         Brush.linearGradient(
-            0.00f to Color.White.copy(alpha = 0.44f),
-            0.48f to Color.White.copy(alpha = 0.08f),
-            1.00f to Color.White.copy(alpha = 0.22f),
+            0.00f to Color.White.copy(alpha = 0.28f),
+            0.50f to Color.White.copy(alpha = 0.06f),
+            1.00f to Color.White.copy(alpha = 0.14f),
             start = Offset(w * 0.10f, 0f),
             end = Offset(w * 0.90f, h),
         )

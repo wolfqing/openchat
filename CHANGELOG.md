@@ -1,5 +1,35 @@
 # Changelog
 
+## Android v0.7.16 (preview) — 2026-11-23
+
+Apple Music-inspired satin gray selected tab indicator and iMessage-inspired
+2-piece floating Liquid Glass composer bar (detached circular `+` button +
+refracting stadium input capsule) matched to the exact width of the bottom
+navigation capsule across all chat screens. No wire-format change. 231 unit
+tests. 9.7 MB (9,730,520 bytes, R8-shrunk release-signed preview).
+APK SHA-256 `882449e9aeebbff43f7e6ee6a13df2a5c1d8b4a0d8d88f6548e37a8d777951aa`.
+
+### Changed
+
+- **Liquid Glass bottom tab bar (`FluidGlass`, `MainScreen`).**
+  - Replaced the bright white active tab pill inside `CapsuleNavigationBar`
+    with a satin translucent neutral-gray indicator (`#D1D1D1`-class over light
+    glass, restrained graphite gray in OLED dark) with a concentric 4dp inner
+    inset and crisp neutral charcoal idle tab icons/labels, inspired by Apple
+    Music's iOS 26 Liquid Glass tab bar.
+  - Refined light-mode Liquid Glass optical fill, lateral meniscus rim, and
+    ambient drop shadow for cleaner daylight clarity over both blank canvas and
+    scrolling content.
+- **iMessage-style 2-piece Liquid Glass composer (`ChatPane`).**
+  - Split the chat composer into an independent 46dp circular Liquid Glass `+`
+    button and a refracting 46dp-minHeight Liquid Glass stadium input capsule
+    with a subtle trailing mic/send control, aligned to the exact same
+    `16dp` horizontal margin and `352dp` max width (`FLOATING_BAR_MAX_WIDTH`)
+    as the floating bottom tab bar.
+  - Upgraded voice recording, voice preview, and the `+` tactical command
+    popover to matching full-width Liquid Glass surfaces, with auto-dismiss of
+    the `+` popover when focusing the text field.
+
 ## Android v0.7.15 (preview) — 2026-11-22
 
 Warm Titanium light & OLED Etched Obsidian dark V2 UI overhaul with preserved

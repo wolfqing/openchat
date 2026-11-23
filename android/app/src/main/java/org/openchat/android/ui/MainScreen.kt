@@ -142,6 +142,8 @@ private enum class Tab(@StringRes val label: Int, val icon: ImageVector, val sel
 /** What a wipe actually did, for the dialog that follows it. */
 private enum class Wiped { NEW_IDENTITY, STORAGE_ONLY, INCOMPLETE }
 
+internal val FLOATING_BAR_MAX_WIDTH = 352.dp
+internal val FLOATING_BAR_HORIZONTAL_PADDING = 16.dp
 private val FLOATING_NAV_HEIGHT = 62.dp
 private val FLOATING_NAV_MARGIN_BOTTOM = 10.dp
 
@@ -677,7 +679,7 @@ private fun ShellScaffold(
                                     onSenderClick = { m -> if (m.senderKey != mesh.myPeerHex) onSelectPerson(PersonRef.Mesh(m.senderKey, m.senderName)) },
                                     onOpenBoard = onOpenBoard,
                                     empty = if (otherPeers.isEmpty() && mesh.running) {
-                                        val extraClearance = if (nearbyPttOpen) WALKIE_TALKIE_DRAWER_HEIGHT + 10.dp else 58.dp
+                                        val extraClearance = if (nearbyPttOpen) WALKIE_TALKIE_DRAWER_HEIGHT + 10.dp else 66.dp
                                         { onShowHistory ->
                                             NobodyNearby(
                                                 onShareApp = onShareApp,
@@ -724,7 +726,7 @@ private fun ShellScaffold(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .navigationBarsPadding()
-                                .padding(horizontal = 16.dp, vertical = FLOATING_NAV_MARGIN_BOTTOM),
+                                .padding(horizontal = FLOATING_BAR_HORIZONTAL_PADDING, vertical = FLOATING_NAV_MARGIN_BOTTOM),
                         ) {
                             CapsuleNavigationBar(
                                 selected = tab,
@@ -742,7 +744,7 @@ private fun ShellScaffold(
 
 /**
  * Floating optical-refraction Liquid Glass tab capsule preserving v0.7.4's four tabs, icons,
- * and text labels, with a spring-animated water-droplet active pill.
+ * and text labels, with an Apple Music-inspired spring-animated translucent neutral-gray active pill.
  */
 @Composable
 private fun CapsuleNavigationBar(
@@ -755,15 +757,15 @@ private fun CapsuleNavigationBar(
     val haptic = LocalHapticFeedback.current
     FluidGlassCapsule(
         modifier = Modifier
-            .widthIn(max = 352.dp)
+            .widthIn(max = FLOATING_BAR_MAX_WIDTH)
             .fillMaxWidth()
             .height(FLOATING_NAV_HEIGHT),
-        shadowElevation = 12.dp,
+        shadowElevation = 10.dp,
     ) {
         BoxWithConstraints(
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = 5.dp, vertical = 5.dp),
+                .padding(horizontal = 4.dp, vertical = 4.dp),
         ) {
             val itemWidth = maxWidth / Tab.entries.size
             val indicatorOffset by animateDpAsState(
@@ -771,7 +773,7 @@ private fun CapsuleNavigationBar(
                 animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow),
                 label = "nav-droplet-offset",
             )
-            // Sliding ultra-clear 3D crystal water-droplet active pill
+            // Sliding Apple Music-inspired translucent gray active pill
             Box(
                 Modifier
                     .offset(x = indicatorOffset)
@@ -790,7 +792,11 @@ private fun CapsuleNavigationBar(
                         Tab.LOCATION -> unread.filterKeys { it.startsWith("geo:") }.values.sum()
                         Tab.ME -> 0
                     }
-                    val fg = if (isSelected) OpenChatPalette.Signal else OpenChatPalette.Muted
+                    val fg = when {
+                        isSelected -> OpenChatPalette.Signal
+                        isLight -> OpenChatPalette.Ink.copy(alpha = 0.64f)
+                        else -> OpenChatPalette.Muted
+                    }
                     Column(
                         modifier = Modifier
                             .weight(1f)
