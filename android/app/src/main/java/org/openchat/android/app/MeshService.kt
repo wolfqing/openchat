@@ -19,6 +19,9 @@ import android.location.LocationManager
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
@@ -101,6 +104,16 @@ class MeshService : Service(), ChatController {
     private var bleStarted = false
     // Set when onCreate could not bring the service up (permission gone, identity locked): every later callback is a no-op.
     private var disabled = false
+    @Volatile private var networkReachable = true
+    @Volatile private var manualInternetDemand = false
+    private var reachabilityRegistered = false
+    private var lastInternetActive: Boolean? = null
+
+    private val reachabilityCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) = updateReachability()
+        override fun onLost(network: Network) = updateReachability()
+        override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) = updateReachability()
+    }
 
     private val scheduler = object : Scheduler {
         override fun post(task: () -> Unit) { handler.post(task) }
@@ -142,10 +155,11 @@ class MeshService : Service(), ChatController {
         engine = MeshEngine(identity, scheduler, object : org.openchat.android.mesh.LinkWriter {
             override fun write(linkId: String, bytes: ByteArray) = ble.write(linkId, bytes)
             override fun pending(linkId: String) = ble.pending(linkId)
+            override fun close(linkId: String) = ble.close(linkId)
         }, listener)
         stateStore.load()?.let { s -> engine.importState(s); s.known.forEach { (hex, k) -> noiseKeys[hex] = k.noiseKey } }
         publishBoard()
-        // Route relay traffic before any relay socket opens (§19).
+        // Route relay traffic fail-closed (§19); actual Tor bootstrap waits for the lazy internet gate.
         tor = Tor(this) { s, pct, stalled, detail ->
             ChatRepository.updateGeo { it.copy(tor = s, torProgress = pct, torStalled = stalled, torDetail = detail) }
         }
@@ -163,18 +177,27 @@ class MeshService : Service(), ChatController {
             handler.post { onGeoPrivate(g, sender, content, createdAt) }
         }
         nostr.setExtraRelays(Social.state.value.relays)
-        nostr.start()
+        nostr.start(active = false)
         // Installed only now that everything it touches exists.
-        Social.onChanged = { s -> handler.post { socialStore.write(Social.serialize(s)); nostr.setExtraRelays(s.relays); vouching.attemptAll() } }
+        Social.onChanged = { s ->
+            handler.post {
+                socialStore.write(Social.serialize(s))
+                nostr.setExtraRelays(s.relays)
+                vouching.attemptAll()
+                reevaluateInternetActivation()
+            }
+        }
         ble = BleTransport(this, handler) { engine }
         val bundledRelaysCsv = assets.open("relays.csv").bufferedReader().use { it.readText() }
         val (directory, baselineRelays) = RelayDirectoryUpdater.loadInitial(this, bundledRelaysCsv)
         bridge = Bridge(this, directory, { engine }, { geo }, { task -> handler.post(task) }) { s -> ChatRepository.setBridge(s) }
+        bridge.setActive(false)
         geo = GeoChannels(directory, identity.nostrSeed, { engine.identity.nickname }) { from, text ->
             notifyMention(from, text)
         }
+        geo.setActive(false)
         directory.onUpdated = { handler.post { geo.onDirectoryUpdated(); bridge.tick() } }
-        directoryUpdater = RelayDirectoryUpdater(this, directory, baselineRelays).also { it.start() }
+        directoryUpdater = RelayDirectoryUpdater(this, directory, baselineRelays).also { it.start(active = false) }
         geoJoinedStore = SealedFile(this, "geo-joined.bin")
         geoJoinedStore.readOrNull()?.let { LocationPresets.parseJoined(it) }?.forEach { (g, tp) ->
             geo.join(g, tp)
@@ -192,7 +215,10 @@ class MeshService : Service(), ChatController {
         handler.post { groups.load() }
         ChatRepository.controller = this
         registerReceiver(btReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
+        networkReachable = currentNetworkReachable()
+        registerReachabilityWatcher()
         handler.post {
+            reevaluateInternetActivation()
             engine.start()
             startBleIfPossible()
             publishStatus()
@@ -219,6 +245,7 @@ class MeshService : Service(), ChatController {
         cancelPtt()
         ChatRepository.controller = null
         Social.onChanged = null
+        unregisterReachabilityWatcher()
         try { unregisterReceiver(btReceiver) } catch (e: Exception) { }
         handler.post {
             engine.stop()
@@ -566,12 +593,14 @@ class MeshService : Service(), ChatController {
         geo.join(g, teleported)
         nostr.addInbox(g, NostrKey.forGeohash(engine.identity.nostrSeed, g))
         persistGeoJoined()
+        handler.post { reevaluateInternetActivation() }
     }
 
     override fun leaveGeo(geohash: String) {
         geo.leave(geohash)
         nostr.removeInbox(geohash)
         persistGeoJoined()
+        handler.post { reevaluateInternetActivation() }
     }
 
     override fun toggleGeoBookmark(geohash: String) {
@@ -789,16 +818,39 @@ class MeshService : Service(), ChatController {
         try { am.abandonAudioFocusRequest(req) } catch (e: Exception) { }
     }
 
-    override fun setTor(on: Boolean) = tor.setWanted(on)
+    override fun setTor(on: Boolean) {
+        tor.setWanted(on)
+        handler.post { reevaluateInternetActivation() }
+    }
 
-    override fun retryTor() = tor.retry()
+    override fun retryTor() {
+        manualInternetDemand = true
+        handler.post {
+            reevaluateInternetActivation()
+            tor.retry()
+        }
+    }
 
     override fun setTorProxy(spec: String) {
         val saved = tor.setUpstreamProxy(spec)
         ChatRepository.updateGeo { it.copy(torProxy = saved) }
+        if (saved.isNotEmpty()) {
+            manualInternetDemand = true
+            handler.post { reevaluateInternetActivation() }
+        }
     }
 
-    override fun setBridge(on: Boolean) { handler.post { bridge.setEnabled(on) } }
+    override fun requestInternetActivation() {
+        manualInternetDemand = true
+        handler.post { reevaluateInternetActivation() }
+    }
+
+    override fun setBridge(on: Boolean) {
+        handler.post {
+            bridge.setEnabled(on)
+            reevaluateInternetActivation()
+        }
+    }
 
     /** The UI thread asks, the mesh thread answers; never an open-ended wait (see [askMesh]). */
     private fun <T> ask(fallback: T, block: () -> T): T = askMesh({ handler.post(it) }, MESH_ANSWER_MS, fallback, block)
@@ -839,7 +891,10 @@ class MeshService : Service(), ChatController {
     override fun groupLeave(idHex: String) { handler.post { groups.leave(idHex) } }
     override fun sendGroup(idHex: String, text: String) { handler.post { groups.send(idHex, text) } }
 
-    override fun watchNotes(cell: String?) = geo.watchNotes(cell?.take(NOTE_PRECISION))
+    override fun watchNotes(cell: String?) {
+        geo.watchNotes(cell?.take(NOTE_PRECISION))
+        handler.post { reevaluateInternetActivation() }
+    }
 
     @SuppressLint("MissingPermission")
     override fun refreshLocation() {
@@ -853,10 +908,92 @@ class MeshService : Service(), ChatController {
                 .mapNotNull { p -> try { lm.getLastKnownLocation(p) } catch (e: Exception) { null } }
                 .maxByOrNull { it.time }
             use(last)
-            val provider = listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER).firstOrNull { lm.isProviderEnabled(it) } ?: return
-            if (Build.VERSION.SDK_INT >= 30) lm.getCurrentLocation(provider, null, mainExecutor) { use(it) }
-            else @Suppress("DEPRECATION") lm.requestSingleUpdate(provider, { use(it) }, mainLooper)
+            val provider = listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER).firstOrNull { lm.isProviderEnabled(it) }
+            if (provider != null) {
+                if (Build.VERSION.SDK_INT >= 30) lm.getCurrentLocation(provider, null, mainExecutor) { use(it) }
+                else @Suppress("DEPRECATION") lm.requestSingleUpdate(provider, { use(it) }, mainLooper)
+            }
         } catch (e: SecurityException) { }
+        handler.post { reevaluateInternetActivation() }
+    }
+
+    private fun hasLocationPermission(): Boolean =
+        checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    private fun currentNetworkReachable(): Boolean = runCatching {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return true
+        val net = cm.activeNetwork ?: return false
+        val caps = cm.getNetworkCapabilities(net) ?: return false
+        caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }.getOrDefault(true)
+
+    private fun updateReachability() {
+        val reachable = currentNetworkReachable()
+        if (reachable == networkReachable) return
+        networkReachable = reachable
+        handler.post { reevaluateInternetActivation() }
+    }
+
+    private fun registerReachabilityWatcher() {
+        if (reachabilityRegistered) return
+        runCatching {
+            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return
+            cm.registerDefaultNetworkCallback(reachabilityCallback)
+            reachabilityRegistered = true
+        }
+    }
+
+    private fun unregisterReachabilityWatcher() {
+        if (!reachabilityRegistered) return
+        reachabilityRegistered = false
+        runCatching {
+            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return
+            cm.unregisterNetworkCallback(reachabilityCallback)
+        }
+    }
+
+    /**
+     * Lazy internet gate aligned with bitchat `NetworkActivationService`:
+     * starts Tor and Nostr relays only when a network path exists AND an internet feature is active.
+     */
+    private fun reevaluateInternetActivation() {
+        if (disabled) return
+        val input = NetworkActivationInput(
+            networkReachable = networkReachable,
+            hasLocationPermission = hasLocationPermission(),
+            hasMutualFavorites = Social.state.value.favorites.values.any { it.mine && it.theyFavorited },
+            hasJoinedGeoChannels = geo.joinedSnapshot().isNotEmpty(),
+            watchingNotes = geo.isWatchingNotes,
+            bridgeEnabled = bridge.enabled,
+            manualInternetDemand = manualInternetDemand || AppUpdater.autoCheck(this),
+        )
+        val decision = NetworkActivationPolicy.evaluate(input, tor.wanted)
+        val active = decision.activationAllowed
+        if (active != lastInternetActive) {
+            lastInternetActive = active
+            DiagLog.record(
+                "Net",
+                "activationAllowed=$active torDesired=${decision.torDesired} reachable=${input.networkReachable} " +
+                    "loc=${input.hasLocationPermission} fav=${input.hasMutualFavorites} geo=${input.hasJoinedGeoChannels} " +
+                    "notes=${input.watchingNotes} bridge=${input.bridgeEnabled} manual=${input.manualInternetDemand}",
+            )
+        }
+        ChatRepository.updateGeo { it.copy(internetActive = active) }
+        if (!active) {
+            // Disconnect relay sockets BEFORE stopping Tor so nothing can race across the boundary.
+            nostr.setActive(false)
+            geo.setActive(false)
+            bridge.setActive(false)
+            directoryUpdater?.setActive(false)
+            tor.setAutoStartAllowed(false)
+        } else {
+            tor.setAutoStartAllowed(true)
+            nostr.setActive(true)
+            geo.setActive(true)
+            bridge.setActive(true)
+            directoryUpdater?.setActive(true)
+        }
     }
 
     /**
@@ -865,6 +1002,8 @@ class MeshService : Service(), ChatController {
      */
     override fun panic() {
         cancelPtt()
+        manualInternetDemand = false
+        lastInternetActive = null
         ChatRepository.wipe()
         NotificationPrivacy.reset(this)
         Social.wipe()
@@ -872,6 +1011,12 @@ class MeshService : Service(), ChatController {
         val nm = getSystemService(NotificationManager::class.java)
         nm.cancelAll()
         startInForeground()
+        // Stop all internet transports synchronously at the panic boundary (matching bitchat).
+        nostr.setActive(false)
+        geo.setActive(false)
+        bridge.setActive(false)
+        directoryUpdater?.setActive(false)
+        tor.setAutoStartAllowed(false)
         // Tor's guards, state and circuits were chosen under the old identity; relays would see the new
         // keys arrive over the same circuits. Stop it (relay sockets fail closed meanwhile), wipe its
         // directory, and come back on fresh guards after a pause that does not line up with the wipe.
@@ -901,6 +1046,7 @@ class MeshService : Service(), ChatController {
             nostr.reset(fresh.nostrSeed)
             nostrSeen.clear(); nostrSeenStore.delete()
             cacheDir.listFiles()?.forEach { it.deleteRecursively() }
+            reevaluateInternetActivation()
             publishStatus()
         }
     }

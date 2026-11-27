@@ -51,6 +51,8 @@ fun interface LinkWriter {
     fun write(linkId: String, bytes: ByteArray)
     /** Bytes accepted by [write] and not yet on the air; lets the engine pace fragments to the radio. */
     fun pending(linkId: String): Int = 0
+    /** Retires a redundant link (e.g. a stale central duplicate after a peer rotated its BLE address). */
+    fun close(linkId: String) {}
 }
 
 data class MeshPeer(
@@ -125,7 +127,7 @@ class MeshEngine(
     private val listener: MeshListener,
     private val random: Random = Random.Default,
 ) {
-    private class Link(val id: String, var maxWrite: Int) {
+    private class Link(val id: String, var maxWrite: Int, val connectedAt: Long = 0L) {
         val framer = StreamFramer()
         var peerHex: String? = null
     }
@@ -202,6 +204,8 @@ class MeshEngine(
     private var lastSeenUnsavedSince = 0L // when a remembered peer's lastSeen first moved without being saved
     private var lastAnnounce = 0L
     private var nextAnnounceDue = 0L
+    private var lastTrafficAt = 0L
+    private val bridgeDeposited = LinkedHashSet<String>()
     private var running = false
 
     /** Local block list, by Noise static key: messages from these senders are dropped unanswered. */
@@ -271,6 +275,8 @@ class MeshEngine(
         localPrekeys.clear(); prekeyCache.clear(); pendingBundles.clear(); myBundle = null; lastBundleSent = 0
         pendingRelays.values.forEach { it.cancel() }; pendingRelays.clear()
         dedup.clear()
+        bridgeDeposited.clear()
+        lastTrafficAt = 0L
         lastSeenUnsavedSince = 0
         assembler = FragmentAssembler(clock = scheduler::now)
         links.values.forEach { it.peerHex = null; it.framer.reset() }
@@ -289,7 +295,10 @@ class MeshEngine(
     private fun tick() {
         if (!running) return
         val now = scheduler.now()
+        val trafficAnnounceDue = links.isNotEmpty() && lastTrafficAt != 0L &&
+            now - lastTrafficAt <= RECENT_TRAFFIC_ANNOUNCE_MS && now - lastAnnounce >= RECENT_TRAFFIC_ANNOUNCE_MS
         if (now >= nextAnnounceDue) sendAnnounce(force = false)
+        else if (trafficAnnounceDue) sendAnnounce(force = true)
         expirePeers(now)
         expireHandshakes(now)
         rekeyOldSessions(now)
@@ -302,7 +311,7 @@ class MeshEngine(
     // ---------------------------------------------------------------- links
 
     fun onLinkUp(linkId: String, maxWrite: Int) {
-        links[linkId] = Link(linkId, maxWrite)
+        links[linkId] = Link(linkId, maxWrite, connectedAt = scheduler.now())
         sendAnnounce(force = true)
     }
 
@@ -329,7 +338,9 @@ class MeshEngine(
 
     /** Returns the packet timestamp, which the bridge needs for its stable message ID, or 0. */
     fun sendPublic(text: String): Long {
-        val p = sign(Packet(type = MessageType.MESSAGE, senderId = identity.peerId, timestamp = scheduler.now(), payload = text.toByteArray(Charsets.UTF_8)))
+        val now = scheduler.now()
+        lastTrafficAt = now
+        val p = sign(Packet(type = MessageType.MESSAGE, senderId = identity.peerId, timestamp = now, payload = text.toByteArray(Charsets.UTF_8)))
             ?: return 0
         dedup.markIfNew(Deduplicator.key(p))
         storeHistory(p)
@@ -345,6 +356,7 @@ class MeshEngine(
     fun sendPrivate(peerHex: String, text: String): List<String> {
         val ids = ArrayList<String>()
         val now = scheduler.now()
+        lastTrafficAt = now
         val reachable = peers.containsKey(peerHex)
         for (chunk in splitUtf8(text, PrivateMessage.MAX_CONTENT_BYTES)) {
             val id = UUID.randomUUID().toString().uppercase()
@@ -489,6 +501,9 @@ class MeshEngine(
         val senderHex = p.senderId.toHex()
         if (senderHex == myPeerHex) return
         val forMe = !p.isBroadcast && p.recipientId!!.toHex() == myPeerHex
+        if (!p.isRsr && p.type != MessageType.ANNOUNCE && p.type != MessageType.REQUEST_SYNC) {
+            lastTrafficAt = scheduler.now()
+        }
 
         when (p.type) {
             MessageType.ANNOUNCE -> if (!handleAnnounce(p, linkId)) return
@@ -584,6 +599,7 @@ class MeshEngine(
                 state.directLinks.add(linkId)
                 state.heardViaPeerHex = null
                 newlyDirect = true
+                consolidateCentralLinks(state, linkId)
                 publishPeers()
                 scheduler.schedule(INITIAL_SYNC_DELAY_MS) { if (links[linkId]?.peerHex == hex) requestSyncFrom(hex, linkId) }
             }
@@ -616,7 +632,7 @@ class MeshEngine(
         val peer = peers[hex]
         val signingKey = peer?.signingKey ?: known[hex]?.signingKey ?: return false
         if (!verify(p, signingKey)) return false
-        if (!isFresh(p, scheduler.now())) return false
+        if (!isPublicFresh(p, scheduler.now())) return false
         (peer?.noiseKey ?: known[hex]?.noiseKey)?.let { if (isBlocked(it)) return true } // relayed and synced, never shown
         val text = try { String(p.payload, Charsets.UTF_8) } catch (e: Exception) { return false }
         if (peer != null && !p.isRsr) peer.lastSeen = scheduler.now()
@@ -646,9 +662,28 @@ class MeshEngine(
     @Volatile var gateway = false
         private set
 
+    /** Retires older duplicate central links to the same peer (e.g. after BLE privacy-address rotation). */
+    private fun consolidateCentralLinks(state: PeerState, activeLinkId: String) {
+        if (!activeLinkId.startsWith("c:")) return
+        val liveCentrals = state.directLinks.mapNotNull { id ->
+            if (id.startsWith("c:")) links[id] else null
+        }
+        if (liveCentrals.size <= 1) return
+        val keep = liveCentrals.maxWithOrNull(
+            compareBy<Link> { it.connectedAt }.thenBy { if (it.id == activeLinkId) 1 else 0 },
+        ) ?: return
+        for (dup in liveCentrals) {
+            if (dup.id != keep.id) {
+                state.directLinks.remove(dup.id)
+                writer.close(dup.id)
+            }
+        }
+    }
+
     fun setBridgeCell(cell: String?) {
         if (cell == bridgeCell) return
         bridgeCell = cell
+        if (cell == null) bridgeDeposited.clear()
         lastAnnounce = 0
         sendAnnounce(force = true)
     }
@@ -691,7 +726,23 @@ class MeshEngine(
         val key = noiseKeyOf(q.peerHex) ?: return
         val bytes = seal(q, key, scheduler.now(), 1) ?: return
         val env = CourierEnvelope.decode(bytes) ?: return
+        if (bridgeCell != null) bridgeDeposited.add(q.messageId)
         listener.onDrop(bytes, env.recipientTag.toHex(), env.expiry)
+    }
+
+    /**
+     * Periodic bridge courier-drop sweep (matching bitchat's 120 s sweep): parks outbox messages
+     * whose recipient dropped out of mesh reach after the original send raced the 60 s reachability window.
+     */
+    fun retryBridgeDrops() {
+        if (bridgeCell == null || outbox.isEmpty()) return
+        val now = scheduler.now()
+        for (q in outbox.values) {
+            if (q.messageId in bridgeDeposited) continue
+            if (isReachable(q.peerHex)) continue
+            if (now - q.createdAt > CourierEnvelope.LIFETIME_MS) continue
+            drop(q)
+        }
     }
 
     /** Recipient tags worth watching on relays: ours, and those of verified peers in reach (gateway duty). */
@@ -951,8 +1002,11 @@ class MeshEngine(
 
     private fun isFresh(p: Packet, now: Long) = now - p.timestamp <= HISTORY_MAX_AGE_MS && p.timestamp - now <= FUTURE_SKEW_MS
 
+    /** Public messages stay syncable for 6 hours (matching bitchat's `syncPublicMessageMaxAgeSeconds`). */
+    private fun isPublicFresh(p: Packet, now: Long) = now - p.timestamp <= PUBLIC_HISTORY_MAX_AGE_MS && p.timestamp - now <= FUTURE_SKEW_MS
+
     private fun storeHistory(p: Packet) {
-        if (!isFresh(p, scheduler.now())) return
+        if (!isPublicFresh(p, scheduler.now())) return
         val id = PacketId.compute(p).toHex()
         if (history.put(id, p) == null) {
             while (history.size > HISTORY_CAP) history.remove(history.keys.first())
@@ -970,7 +1024,7 @@ class MeshEngine(
         val out = ArrayList<Packet>()
         myAnnounce?.let { out.add(it) }
         peers.values.mapNotNullTo(out) { it.announce }
-        history.values.filterTo(out) { isFresh(it, now) }
+        history.values.filterTo(out) { isPublicFresh(it, now) }
         groupHistory.values.filterTo(out) { isFresh(it, now) }
         out.addAll(board.packets())
         bundlePackets(now).forEach { out.add(it) }
@@ -1020,15 +1074,15 @@ class MeshEngine(
             myAnnounce?.let { if (isFresh(it, now) && missing(it)) replies.add(it) }
             for (peer in peers.values) peer.announce?.let { if (isFresh(it, now) && missing(it)) replies.add(it) }
         }
-        fun offer(stored: Collection<Packet>) {
+        fun offer(stored: Collection<Packet>, fresh: (Packet) -> Boolean) {
             for (m in stored) {
-                if (!isFresh(m, now)) continue
+                if (!fresh(m)) continue
                 if (request.since != null && m.timestamp < request.since) continue
                 if (missing(m)) replies.add(m)
             }
         }
-        if (request.wants(SyncTypes.MESSAGE)) offer(history.values)
-        if (request.wants(SyncTypes.GROUP)) offer(groupHistory.values)
+        if (request.wants(SyncTypes.MESSAGE)) offer(history.values) { isPublicFresh(it, now) }
+        if (request.wants(SyncTypes.GROUP)) offer(groupHistory.values) { isFresh(it, now) }
         // Board posts live for days, past the 900 s window: only their own expiry applies.
         if (request.wants(SyncTypes.BOARD)) for (b in board.packets()) {
             if (request.since != null && b.timestamp < request.since) continue
@@ -1265,6 +1319,7 @@ class MeshEngine(
 
     /** Clears the outbox copy; true when this receipt advances what the listener already heard. */
     private fun settle(messageId: String, level: Int): Boolean {
+        bridgeDeposited.remove(messageId)
         if (outbox.remove(messageId) != null) listener.onStateChanged()
         if ((acked[messageId] ?: 0) >= level) return false
         acked[messageId] = level
@@ -1431,10 +1486,10 @@ class MeshEngine(
 
     private fun prune(now: Long) {
         val expired = outbox.values.filter { now - it.createdAt > CourierEnvelope.LIFETIME_MS }
-        expired.forEach { outbox.remove(it.messageId); listener.onExpired(it.peerHex, it.messageId) }
+        expired.forEach { outbox.remove(it.messageId); bridgeDeposited.remove(it.messageId); listener.onExpired(it.peerHex, it.messageId) }
         var changed = expired.isNotEmpty()
         changed = carried.removeAll { it.envelope.isExpired(now) } || changed
-        changed = history.values.removeAll { !isFresh(it, now) } || changed
+        changed = history.values.removeAll { !isPublicFresh(it, now) } || changed
         groupHistory.values.removeAll { !isFresh(it, now) }
         pendingSync.values.removeAll { now - it > SYNC_REPLY_WINDOW_MS }
         syncReplies.values.removeAll { times -> times.removeAll { now - it > SYNC_REPLY_WINDOW_MS }; times.isEmpty() }
@@ -1488,6 +1543,9 @@ class MeshEngine(
         private const val CAP_PRIVATE_MEDIA = AuthPeerState.CAP_PRIVATE_MEDIA
         private val SYNC_TYPES = SyncTypes.PUBLIC or SyncTypes.GROUP or SyncTypes.BOARD or SyncTypes.PREKEY
         private const val HISTORY_MAX_AGE_MS = 900_000L
+        /** Public broadcast messages stay syncable for 6 hours (matching bitchat interop). */
+        private const val PUBLIC_HISTORY_MAX_AGE_MS = 6 * 3_600_000L
+        private const val RECENT_TRAFFIC_ANNOUNCE_MS = 10_000L
         private const val FUTURE_SKEW_MS = 120_000L
         private const val SYNC_INTERVAL_MS = 15_000L
         private const val BUNDLE_REBROADCAST_MS = 3600_000L

@@ -22,6 +22,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.ParcelUuid
+import android.os.PowerManager
 import android.util.Log
 import java.util.UUID
 
@@ -41,17 +42,17 @@ class BleTransport(
         val CHARACTERISTIC_UUID: UUID = UUID.fromString("A1B2C3D4-E5F6-4A5B-8C9D-0E1F2A3B4C5D")
         val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
         private const val TAG = "BleTransport"
-        private const val MAX_CENTRAL_LINKS = 6
-        private const val RSSI_FLOOR = -90
+        private const val MAX_CENTRAL_LINKS = BleConnectionScheduler.MAX_CENTRAL_LINKS
         private const val DEFAULT_WRITE = 20
         /** Chunks a link may hold back; a frame that would not fit is refused whole, never cut (§1). */
         private const val QUEUE_CAP = 2_000
         /** Consecutive write failures after which the link is given up: the stack has stopped taking data. */
         private const val WRITE_FAILURE_LIMIT = 40
-        private const val CONNECT_TIMEOUT_MS = 15_000L
+        private const val CONNECT_TIMEOUT_MS = BleConnectionScheduler.CONNECT_TIMEOUT_MS
     }
 
     private val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
     private val adapter get() = manager.adapter
 
     private var server: BluetoothGattServer? = null
@@ -74,12 +75,17 @@ class BleTransport(
     private val queues = HashMap<String, LinkQueue>()
     private val connecting = HashSet<String>()
     private val peripheralMtu = HashMap<String, Int>()
-    private val lastAttempt = HashMap<String, Long>()
+    private val discoveredDevices = LinkedHashMap<String, BluetoothDevice>()
+    private val scheduler = BleConnectionScheduler()
 
-    // Scan duty cycle (§11): on for a short window, off for a longer one; see ScanDutyCycle.
+    // Scan duty cycle (aligned with bitchat BLEScanDutyPolicy).
     private var scanning = false
     private var scanFailures = 0
+    private var scanStartedAt = 0L
+    private var lastScanStartAttemptAt = 0L
+    private var lastTrafficAt = 0L
     private val scanTick = Runnable { scanCycle() }
+    private val drainTick = Runnable { drainCandidates() }
 
     val isEnabled get() = adapter?.isEnabled == true
 
@@ -94,6 +100,7 @@ class BleTransport(
     fun stop() {
         running = false
         handler.removeCallbacks(scanTick)
+        handler.removeCallbacks(drainTick)
         stopScanning()
         try { adapter?.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) } catch (e: Exception) { }
         centrals.values.forEach { try { it.disconnect(); it.close() } catch (e: Exception) { } }
@@ -102,8 +109,25 @@ class BleTransport(
         subscribers.keys.toList().forEach { linkDown(peripheralLink(it)) }
         subscribers.clear()
         queues.clear()
+        discoveredDevices.clear()
+        scheduler.reset()
+        scanStartedAt = 0L
+        lastTrafficAt = 0L
         try { server?.close() } catch (e: Exception) { }
         server = null
+    }
+
+    override fun close(linkId: String) {
+        if (!linkId.startsWith("c:")) return
+        val address = linkId.substring(2)
+        connecting.remove(address)
+        centralChars.remove(address)
+        val gatt = centrals.remove(address)
+        if (gatt != null) {
+            try { gatt.disconnect(); gatt.close() } catch (_: Exception) { }
+            linkDown(linkId)
+            drainCandidates()
+        }
     }
 
     private fun centralLink(address: String) = "c:$address"
@@ -176,6 +200,7 @@ class BleTransport(
                     subscribers[device.address] = device
                     engine().onLinkUp(link, queues[link]!!.maxWrite)
                 }
+                lastTrafficAt = System.currentTimeMillis()
                 engine().onBytes(link, value)
             }
         }
@@ -216,20 +241,67 @@ class BleTransport(
 
     private fun scheduleScan(delayMs: Long) {
         handler.removeCallbacks(scanTick)
-        handler.postDelayed(scanTick, delayMs)
+        handler.postDelayed(scanTick, delayMs.coerceAtLeast(0L))
+    }
+
+    private fun scheduleDrain(delayMs: Long) {
+        handler.removeCallbacks(drainTick)
+        handler.postDelayed(drainTick, delayMs.coerceAtLeast(0L))
     }
 
     /**
-     * One step of the duty cycle: scanning stops after its window and rests for the off window;
-     * a rest ends with a new scan unless the central table is full, in which case the rest goes
-     * on. Android allows five scan starts per 30 s; this cycle uses at most two.
+     * One step of the scan cycle (aligned with bitchat `BLEScanDutyPolicy`):
+     * - Continuous while sparse (0–2 links) or during recent mesh traffic, refreshing every 20 min
+     *   to avoid Android's 30-minute continuous-scan downgrade.
+     * - Duty-cycled (5 s on / 10 s off, or 3 s / 15 s when dense; tighter under system power-save).
+     * - Enforces minimum spacing between scan starts to stay well within Android's 5 starts / 30 s cap.
      */
     private fun scanCycle() {
         if (!running) return
+        val now = System.currentTimeMillis()
         val links = centrals.size + subscribers.size
-        if (scanning) { stopScanning(); scheduleScan(ScanDutyCycle.offMs(links)); return }
-        if (!ScanDutyCycle.wanted(centrals.size, connecting.size, MAX_CENTRAL_LINKS)) { scheduleScan(ScanDutyCycle.offMs(links)); return }
-        if (startScanning()) scheduleScan(ScanDutyCycle.onMs(links))
+        scheduler.prune(now)
+        scheduler.updateRssiThreshold(links, centrals.size + connecting.size, now)
+        val hasRecentTraffic = lastTrafficAt != 0L && now - lastTrafficAt <= ScanDutyCycle.RECENT_TRAFFIC_WINDOW_MS
+        val lowPower = powerManager?.isPowerSaveMode == true
+
+        if (!ScanDutyCycle.wanted(centrals.size, connecting.size, MAX_CENTRAL_LINKS)) {
+            stopScanning()
+            scheduleScan(ScanDutyCycle.offMs(links))
+            return
+        }
+
+        when (val plan = ScanDutyCycle.plan(links, hasRecentTraffic, lowPower)) {
+            is ScanDutyCycle.ScanPlan.Continuous -> {
+                if (scanning) {
+                    if (now - scanStartedAt >= ScanDutyCycle.CONTINUOUS_REFRESH_MS) {
+                        stopScanning()
+                        startScanWithRateLimit(now, ScanDutyCycle.CONTINUOUS_RECHECK_MS)
+                    } else {
+                        scheduleScan(ScanDutyCycle.CONTINUOUS_RECHECK_MS)
+                    }
+                } else {
+                    startScanWithRateLimit(now, ScanDutyCycle.CONTINUOUS_RECHECK_MS)
+                }
+            }
+            is ScanDutyCycle.ScanPlan.DutyCycle -> {
+                if (scanning) {
+                    stopScanning()
+                    scheduleScan(plan.offMs)
+                } else {
+                    startScanWithRateLimit(now, plan.onMs)
+                }
+            }
+        }
+    }
+
+    private fun startScanWithRateLimit(now: Long, nextDelayMs: Long) {
+        val elapsed = now - lastScanStartAttemptAt
+        if (lastScanStartAttemptAt != 0L && elapsed < ScanDutyCycle.MIN_SCAN_START_SPACING_MS) {
+            scheduleScan(ScanDutyCycle.MIN_SCAN_START_SPACING_MS - elapsed)
+            return
+        }
+        if (startScanning()) scheduleScan(nextDelayMs)
         else scheduleScan(ScanDutyCycle.retryMs(++scanFailures))
     }
 
@@ -237,9 +309,11 @@ class BleTransport(
         val scanner = adapter?.bluetoothLeScanner ?: return false
         val filter = ScanFilter.Builder().setServiceUuid(ParcelUuid(SERVICE_UUID)).build()
         val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build()
+        lastScanStartAttemptAt = System.currentTimeMillis()
         return try {
             scanner.startScan(listOf(filter), settings, scanCallback)
             scanning = true
+            scanStartedAt = lastScanStartAttemptAt
             true
         } catch (e: Exception) {
             Log.w(TAG, "scan start failed: $e")
@@ -255,10 +329,17 @@ class BleTransport(
 
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
-            handler.post { scanFailures = 0; maybeConnect(result.device, result.rssi) }
+            val connectable = Build.VERSION.SDK_INT < 26 || result.isConnectable
+            handler.post { scanFailures = 0; maybeConnect(result.device, result.rssi, connectable) }
         }
         override fun onBatchScanResults(results: MutableList<ScanResult>) {
-            handler.post { scanFailures = 0; results.forEach { maybeConnect(it.device, it.rssi) } }
+            handler.post {
+                scanFailures = 0
+                results.forEach {
+                    val connectable = Build.VERSION.SDK_INT < 26 || it.isConnectable
+                    maybeConnect(it.device, it.rssi, connectable)
+                }
+            }
         }
         override fun onScanFailed(errorCode: Int) {
             Log.w(TAG, "scan failed $errorCode")
@@ -268,24 +349,89 @@ class BleTransport(
         }
     }
 
-    private fun maybeConnect(device: BluetoothDevice, rssi: Int) {
+    private fun rememberDevice(device: BluetoothDevice) {
+        discoveredDevices[device.address] = device
+        while (discoveredDevices.size > BleConnectionScheduler.CANDIDATE_CAP * 2) {
+            discoveredDevices.remove(discoveredDevices.keys.first())
+        }
+    }
+
+    private fun maybeConnect(device: BluetoothDevice, rssi: Int, isConnectable: Boolean) {
         if (!running) return
         val address = device.address
-        if (centrals.containsKey(address) || connecting.contains(address) || subscribers.containsKey(address)) return
-        if (centrals.size + connecting.size >= MAX_CENTRAL_LINKS || rssi < RSSI_FLOOR) return
+        if (subscribers.containsKey(address)) return
         val now = System.currentTimeMillis()
-        if (now - (lastAttempt[address] ?: 0) < 5_000) return
-        lastAttempt[address] = now
+        val totalLinks = centrals.size + subscribers.size
+        val candidate = BleConnectionScheduler.Candidate(address, rssi, isConnectable, now)
+        when (val decision = scheduler.onDiscovery(
+            candidate = candidate,
+            totalLinks = totalLinks,
+            centralLinksOrConnecting = centrals.size + connecting.size,
+            isConnected = centrals.containsKey(address),
+            isConnecting = connecting.contains(address),
+            nowMs = now,
+        )) {
+            is BleConnectionScheduler.DiscoveryDecision.Ignore -> Unit
+            is BleConnectionScheduler.DiscoveryDecision.Queued -> rememberDevice(device)
+            is BleConnectionScheduler.DiscoveryDecision.ScheduleRetry -> {
+                rememberDevice(device)
+                scheduleDrain(decision.delayMs)
+            }
+            is BleConnectionScheduler.DiscoveryDecision.ConnectNow -> {
+                rememberDevice(device)
+                connectDevice(device, now)
+            }
+        }
+    }
+
+    private fun drainCandidates() {
+        if (!running) return
+        val now = System.currentTimeMillis()
+        val totalLinks = centrals.size + subscribers.size
+        scheduler.updateRssiThreshold(totalLinks, centrals.size + connecting.size, now)
+        when (val next = scheduler.nextCandidate(
+            centralLinksOrConnecting = centrals.size + connecting.size,
+            isAlreadyActive = { addr -> centrals.containsKey(addr) || connecting.contains(addr) || subscribers.containsKey(addr) },
+            nowMs = now,
+        )) {
+            is BleConnectionScheduler.QueueDecision.None -> Unit
+            is BleConnectionScheduler.QueueDecision.RetryAfter -> scheduleDrain(next.delayMs)
+            is BleConnectionScheduler.QueueDecision.Connect -> {
+                val device = discoveredDevices[next.candidate.address]
+                if (device != null) {
+                    connectDevice(device, now)
+                    if (scheduler.candidateCount > 0 && centrals.size + connecting.size < MAX_CENTRAL_LINKS) {
+                        scheduleDrain(BleConnectionScheduler.CONNECT_RATE_LIMIT_MS + 50L)
+                    }
+                } else if (scheduler.candidateCount > 0) {
+                    scheduleDrain(50L)
+                }
+            }
+        }
+    }
+
+    private fun connectDevice(device: BluetoothDevice, now: Long) {
+        val address = device.address
+        if (centrals.containsKey(address) || connecting.contains(address) || subscribers.containsKey(address)) return
+        if (centrals.size + connecting.size >= MAX_CENTRAL_LINKS) return
+        scheduler.recordConnectionAttempt(address, now)
         connecting.add(address)
         val gatt = if (Build.VERSION.SDK_INT >= 23) device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
         else device.connectGatt(context, false, gattCallback)
-        if (gatt == null) connecting.remove(address)
+        if (gatt == null) {
+            connecting.remove(address)
+            scheduler.recordConnectionFailure(address)
+            scheduleDrain(BleConnectionScheduler.CONNECT_RATE_LIMIT_MS)
+            return
+        }
         handler.postDelayed({
             // Still not ready (MTU, discovery or the CCCD write never answered): forget every trace of
-            // the attempt, or the address stays "connected" in our tables and is never tried again.
+            // the attempt, record timeout backoff, and try the next candidate.
             if (connecting.remove(address)) {
+                scheduler.recordConnectionTimeout(address, System.currentTimeMillis())
                 centrals.remove(address); centralChars.remove(address); queues.remove(centralLink(address))
-                try { gatt?.disconnect(); gatt?.close() } catch (e: Exception) { }
+                try { gatt.disconnect(); gatt.close() } catch (e: Exception) { }
+                drainCandidates()
             }
         }, CONNECT_TIMEOUT_MS)
     }
@@ -298,9 +444,22 @@ class BleTransport(
                 if (!gatt.requestMtu(517)) gatt.discoverServices()
             } else {
                 handler.post {
-                    connecting.remove(address)
+                    val now = System.currentTimeMillis()
+                    val wasConnecting = connecting.remove(address)
                     centralChars.remove(address)
-                    if (centrals.remove(address) != null) linkDown(centralLink(address))
+                    val wasConnected = centrals.remove(address) != null
+                    if (wasConnected) {
+                        if (wasConnecting) scheduler.recordConnectionFailure(address)
+                        else scheduler.recordDisconnect(address, now)
+                        linkDown(centralLink(address))
+                    } else if (wasConnecting) {
+                        scheduler.recordConnectionFailure(address)
+                    }
+                    drainCandidates()
+                    val links = centrals.size + subscribers.size
+                    if (running && !scanning && links <= ScanDutyCycle.SPARSE_CONTINUOUS_MAX_LINKS) {
+                        scheduleScan(100L)
+                    }
                 }
                 try { gatt.close() } catch (e: Exception) { }
             }
@@ -334,11 +493,11 @@ class BleTransport(
         override fun onCharacteristicChanged(gatt: BluetoothGatt, ch: BluetoothGattCharacteristic) {
             @Suppress("DEPRECATION") val value = ch.value ?: return
             val copy = value.copyOf()
-            handler.post { engine().onBytes(centralLink(gatt.device.address), copy) }
+            handler.post { lastTrafficAt = System.currentTimeMillis(); engine().onBytes(centralLink(gatt.device.address), copy) }
         }
 
         override fun onCharacteristicChanged(gatt: BluetoothGatt, ch: BluetoothGattCharacteristic, value: ByteArray) {
-            handler.post { engine().onBytes(centralLink(gatt.device.address), value) }
+            handler.post { lastTrafficAt = System.currentTimeMillis(); engine().onBytes(centralLink(gatt.device.address), value) }
         }
 
         override fun onCharacteristicWrite(gatt: BluetoothGatt, ch: BluetoothGattCharacteristic, status: Int) {
@@ -350,10 +509,12 @@ class BleTransport(
     private fun centralReady(gatt: BluetoothGatt, ch: BluetoothGattCharacteristic) {
         val address = gatt.device.address
         if (!connecting.remove(address)) return
+        scheduler.recordConnectionSuccess(address)
         centralChars[address] = ch
         val link = centralLink(address)
         val q = queues.getOrPut(link) { LinkQueue(DEFAULT_WRITE) }
         engine().onLinkUp(link, q.maxWrite)
+        drainCandidates()
     }
 
     private fun linkDown(link: String) {
@@ -366,6 +527,7 @@ class BleTransport(
     /** Called by MeshEngine on the handler thread. Frames larger than the link limit go out in pieces. */
     override fun write(linkId: String, bytes: ByteArray) {
         val q = queues[linkId] ?: return
+        lastTrafficAt = System.currentTimeMillis()
         val step = maxOf(DEFAULT_WRITE, q.maxWrite)
         val pieces = (bytes.size + step - 1) / step
         // Dropping chunks from a full queue would cut a frame in half and leave the far end's framer

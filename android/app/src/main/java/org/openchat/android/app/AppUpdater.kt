@@ -82,12 +82,18 @@ object AppUpdater {
     @Volatile private var activeCall: Call? = null
     @Volatile private var autoCheckedThisRun = false
     @Volatile private var waitingForRouteContext: Context? = null
+    @Volatile private var pendingManualCheckContext: Context? = null
     @Volatile private var pendingInstallFile: File? = null
 
     init {
         NetRoute.onChange {
             // Abort any active transfer if the network route changes underneath us (e.g. Tor toggled on).
             activeCall?.cancel()
+            val manualCtx = pendingManualCheckContext
+            if (manualCtx != null && NetRoute.ready) {
+                pendingManualCheckContext = null
+                startCheck(manualCtx, silent = false)
+            }
             val ctx = waitingForRouteContext
             if (ctx != null && !autoCheckedThisRun && NetRoute.ready && autoCheck(ctx)) {
                 waitingForRouteContext = null
@@ -102,13 +108,19 @@ object AppUpdater {
 
     fun setAutoCheck(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_AUTO_CHECK, enabled).apply()
-        if (enabled) maybeAutoCheck(context.applicationContext) else waitingForRouteContext = null
+        if (enabled) {
+            ChatRepository.controller?.requestInternetActivation()
+            maybeAutoCheck(context.applicationContext)
+        } else {
+            waitingForRouteContext = null
+        }
     }
 
     /** Runs at most once per process launch when the user opted into launch checks. */
     fun maybeAutoCheck(context: Context) {
         val appCtx = context.applicationContext
         if (autoCheckedThisRun || !autoCheck(appCtx)) return
+        ChatRepository.controller?.requestInternetActivation()
         if (NetRoute.ready) {
             autoCheckedThisRun = true
             waitingForRouteContext = null
@@ -119,7 +131,15 @@ object AppUpdater {
     }
 
     fun checkNow(context: Context) {
-        startCheck(context.applicationContext, silent = false)
+        val appCtx = context.applicationContext
+        ChatRepository.controller?.requestInternetActivation()
+        if (NetRoute.client() == null && NetRoute.torWanted) {
+            pendingManualCheckContext = appCtx
+            _state.value = UpdateState.Checking
+            return
+        }
+        pendingManualCheckContext = null
+        startCheck(appCtx, silent = false)
     }
 
     private fun startCheck(appContext: Context, silent: Boolean) {
@@ -325,6 +345,7 @@ object AppUpdater {
     fun cancel() {
         val prev = _state.value
         activeToken++
+        pendingManualCheckContext = null
         activeCall?.cancel()
         activeCall = null
         _state.value = when (prev) {

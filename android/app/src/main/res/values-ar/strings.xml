@@ -160,6 +160,7 @@
     <string name="media_private_unsupported">لم يُرسل: هذا الشخص غير متصل بعد، أو تطبيقه لا يستقبل الصور والرسائل الصوتية المشفرة.</string>
     <string name="tor_title">توجيه حركة الإنترنت عبر Tor</string>
     <string name="tor_on">متصل. لا ترى المرحّلات عنوان IP الخاص بك. البلوتوث غير متأثر.</string>
+    <string name="tor_standby">مُفعّل. يبدأ تلقائياً عند استخدام دردشات الإنترنت أو المفضلين المتبادلين.</string>
     <string name="tor_starting">جارٍ تشغيل Tor… تنتظر محادثات الإنترنت حتى يجهز، فلا يخرج شيء دون حماية.</string>
     <string name="tor_off">متوقف. يمكن لمشغلي المرحّلات رؤية عنوان IP الخاص بك، بما في ذلك للرسائل الخاصة عبر الإنترنت.</string>
     <string name="geo_dm_status">#%1$s · عبر الإنترنت، مشفّر</string>

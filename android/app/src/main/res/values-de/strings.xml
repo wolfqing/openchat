@@ -148,6 +148,7 @@
     <string name="media_private_unsupported">Nicht gesendet: noch nicht verbunden, oder die App kann keine verschlüsselten Fotos und Sprachnachrichten empfangen.</string>
     <string name="tor_title">Internetverkehr über Tor leiten</string>
     <string name="tor_on">Verbunden. Relays sehen deine IP-Adresse nicht. Bluetooth ist nicht betroffen.</string>
+    <string name="tor_standby">Ein. Startet automatisch, sobald Internet-Chats oder gegenseitige Favoriten genutzt werden.</string>
     <string name="tor_starting">Tor startet… Internet-Chats warten, bis es bereit ist, damit nichts ungeschützt rausgeht.</string>
     <string name="tor_off">Aus. Relay-Betreiber sehen deine IP-Adresse, auch bei privaten Nachrichten übers Internet.</string>
     <string name="geo_dm_status">#%1$s · übers Internet, verschlüsselt</string>

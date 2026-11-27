@@ -151,6 +151,7 @@
     <string name="media_private_unsupported">Non envoyé : pas encore connecté, ou son appli ne reçoit pas les photos et vocaux chiffrés.</string>
     <string name="tor_title">Faire passer le trafic internet par Tor</string>
     <string name="tor_on">Connecté. Les relais ne voient pas votre adresse IP. Le Bluetooth n\'est pas concerné.</string>
+    <string name="tor_standby">Activé. Démarre automatiquement lors de l\'utilisation des salons internet ou favoris mutuels.</string>
     <string name="tor_starting">Démarrage de Tor… les discussions par internet attendent qu\'il soit prêt : rien ne sort sans protection.</string>
     <string name="tor_off">Désactivé. Les opérateurs de relais voient votre adresse IP, y compris pour les messages privés par internet.</string>
     <string name="geo_dm_status">#%1$s · par internet, chiffré</string>

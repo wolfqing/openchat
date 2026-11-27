@@ -121,7 +121,8 @@ data class GeoStatus(
     val participants: Map<String, Int> = emptyMap(),
     val notesCell: String? = null,          // building-level cell whose notes are listed
     val notes: List<LocationNote> = emptyList(),
-    val tor: TorState = TorState.STARTING,
+    val internetActive: Boolean = false,
+    val tor: TorState = TorState.STANDBY,
     val torProgress: Int = 0,
     val torStalled: Boolean = false,
     val torProxy: String = "",
@@ -178,6 +179,8 @@ interface ChatController {
     fun setTor(on: Boolean)
     fun retryTor() {}
     fun setTorProxy(spec: String) {}
+    /** Explicitly wakes lazy internet activation (e.g. for an on-demand update check). */
+    fun requestInternetActivation() {}
     fun refreshLocation()
     fun panic()
 }

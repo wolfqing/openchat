@@ -584,6 +584,7 @@ fun TorSection() {
             val statusText = when {
                 geo.tor == TorState.ON -> stringResource(R.string.tor_on)
                 geo.tor == TorState.OFF -> stringResource(R.string.tor_off)
+                geo.tor == TorState.STANDBY -> stringResource(R.string.tor_standby)
                 geo.torStalled -> stringResource(R.string.tor_stalled_body)
                 geo.torProgress > 0 -> stringResource(R.string.tor_starting_pct, geo.torProgress) + " " + stringResource(R.string.tor_starting)
                 else -> stringResource(R.string.tor_starting)

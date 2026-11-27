@@ -45,10 +45,12 @@ class Bridge(
 
     private class Inbound(val eventId: String, val radioHint: String?, val nick: String?, val pubkey: String, val content: String, val at: Long)
 
-    private val pool = RelayPool { _, ev -> post { onRelayEvent(ev) } }
+    private val pool = RelayPool(idleTeardownMs = RelayPool.DEFAULT_IDLE_TEARDOWN_MS) { _, ev -> post { onRelayEvent(ev) } }
     private val prefs get() = context.getSharedPreferences("net", Context.MODE_PRIVATE)
     var enabled = prefs.getBoolean(KEY, false)
         private set
+
+    fun setActive(active: Boolean) = pool.setActive(active)
 
     private var cell: String? = null
     private var subscribed: Set<String> = emptySet()
@@ -68,6 +70,7 @@ class Bridge(
     private var lastPresence = 0L
     private var dropTags: Set<String> = emptySet()
     private var lastDropRefresh = 0L
+    private var lastDropSweep = 0L
     private val dropsSeen = Ids()
     private val pendingDrops = ArrayDeque<NostrEvent>()
     // Location-channel gateway (§24.5).
@@ -126,6 +129,10 @@ class Bridge(
             queuedUp.clear()
         }
         refreshDrops(now)
+        if (online && now - lastDropSweep >= DROP_SWEEP_MS) {
+            lastDropSweep = now
+            engine().retryBridgeDrops()
+        }
         if (online) while (pendingDrops.isNotEmpty()) pool.publish(NostrDirect.RELAYS, pendingDrops.removeFirst())
         participants.values.removeAll { now - it > PARTICIPANT_MS }
         publishStatus()
@@ -407,5 +414,6 @@ class Bridge(
         private const val UP_PER_MINUTE = 10
         private const val PRESENCE_MS = 4 * 60_000L
         private const val PARTICIPANT_MS = 10 * 60_000L
+        private const val DROP_SWEEP_MS = 120_000L
     }
 }

@@ -145,6 +145,7 @@
     <string name="media_private_unsupported">보내지 않음: 아직 연결되지 않았거나 상대 앱이 암호화된 사진·음성을 받을 수 없습니다.</string>
     <string name="tor_title">인터넷 트래픽을 Tor로 전송</string>
     <string name="tor_on">연결됨. 릴레이는 IP 주소를 볼 수 없습니다. 블루투스에는 영향이 없습니다.</string>
+    <string name="tor_standby">켜짐. 인터넷 채팅이나 상호 즐겨찾기를 사용할 때 자동으로 시작됩니다.</string>
     <string name="tor_starting">Tor 시작 중… 준비될 때까지 인터넷 채팅은 기다리므로 보호 없이 나가는 것은 없습니다.</string>
     <string name="tor_off">꺼짐. 릴레이 운영자가 IP 주소를 볼 수 있으며, 인터넷으로 보낸 개인 메시지도 마찬가지입니다.</string>
     <string name="geo_dm_status">#%1$s · 인터넷으로, 암호화</string>

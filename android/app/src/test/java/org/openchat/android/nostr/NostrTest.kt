@@ -190,4 +190,17 @@ class NostrTest {
             NetRoute.set(torWanted = true, socksPort = 0)
         }
     }
+
+    @Test
+    fun relayPoolBackoffUsesJitterAndTenMinuteCooldownAfterTenFailures() {
+        assertEquals(800L, RelayPool.computeBackoffDelayMs(attempt = 1, jitterUnit = 0.0))
+        assertEquals(1_000L, RelayPool.computeBackoffDelayMs(attempt = 1, jitterUnit = 0.5))
+        assertEquals(1_200L, RelayPool.computeBackoffDelayMs(attempt = 1, jitterUnit = 1.0))
+        assertEquals(16_000L, RelayPool.computeBackoffDelayMs(attempt = 5, jitterUnit = 0.5))
+        assertEquals(256_000L, RelayPool.computeBackoffDelayMs(attempt = 9, jitterUnit = 0.5))
+        assertEquals(300_000L, RelayPool.computeBackoffDelayMs(attempt = 10, jitterUnit = 0.5))
+        assertEquals(600_000L, RelayPool.computeBackoffDelayMs(attempt = 11, jitterUnit = 0.5))
+        assertEquals(480_000L, RelayPool.computeBackoffDelayMs(attempt = 11, jitterUnit = 0.0))
+        assertEquals(720_000L, RelayPool.computeBackoffDelayMs(attempt = 11, jitterUnit = 1.0))
+    }
 }

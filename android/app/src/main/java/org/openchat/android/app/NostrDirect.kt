@@ -39,9 +39,14 @@ class NostrDirect(
     private fun wraps(pubkey: String) = JSONObject()
         .put("kinds", JSONArray().put(PrivateEnvelope.KIND_WRAP))
         .put("#p", JSONArray().put(pubkey))
-        .put("since", System.currentTimeMillis() / 1000 - 2 * 86_400) // wraps carry a time ±15 min off
+        .put("since", System.currentTimeMillis() / 1000 - LOOKBACK_SECONDS)
 
-    fun start() = pool.subscribe(SUB, relays, wraps(key.publicKeyHex))
+    fun start(active: Boolean = true) {
+        pool.setActive(active)
+        pool.subscribe(SUB, relays, wraps(key.publicKeyHex))
+    }
+
+    fun setActive(active: Boolean) = pool.setActive(active)
 
     fun setExtraRelays(extra: List<String>) {
         val next = (RELAYS + extra).distinct()
@@ -97,7 +102,8 @@ class NostrDirect(
 
     companion object {
         private const val SUB = "dm"
-        private const val ACK_SPACING_MS = 1_200L
+        private const val LOOKBACK_SECONDS = 86_400L // 24 h, matching bitchat
+        private const val ACK_SPACING_MS = 350L // ~3/s, matching bitchat nostrReadAckInterval
         // The relays bitchat uses for private envelopes.
         val RELAYS = listOf("wss://relay.damus.io", "wss://nos.lol", "wss://relay.primal.net", "wss://offchain.pub")
 

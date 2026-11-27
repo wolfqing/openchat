@@ -157,6 +157,7 @@
     <string name="media_private_unsupported">未发送：对方还没连上，或对方的应用不支持加密照片和语音。</string>
     <string name="tor_title">经 Tor 转发联网流量</string>
     <string name="tor_on">已连接。中继服务器看不到你的 IP 地址。蓝牙不受影响。</string>
+    <string name="tor_standby">已开启。使用联网频道、网桥或互粉私信时自动启动。</string>
     <string name="tor_starting">正在启动 Tor…联网聊天会等它就绪，不会未经保护就发出去。</string>
     <string name="tor_starting_pct">正在启动 Tor（%1$d%%）…</string>
     <string name="tor_stalled_title">当前网络无法连接 Tor</string>

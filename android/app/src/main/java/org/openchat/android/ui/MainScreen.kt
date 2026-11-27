@@ -583,7 +583,7 @@ private fun ShellScaffold(
                                                                 when {
                                                                     geo.tor == TorState.ON -> OpenChatPalette.Signal
                                                                     geo.tor == TorState.STARTING && geo.torStalled -> OpenChatPalette.Signal
-                                                                    geo.tor == TorState.STARTING -> OpenChatPalette.Muted
+                                                                    geo.tor == TorState.STARTING || geo.tor == TorState.STANDBY -> OpenChatPalette.Muted
                                                                     else -> MaterialTheme.colorScheme.error
                                                                 },
                                                                 CircleShape,
@@ -591,7 +591,7 @@ private fun ShellScaffold(
                                                     )
                                                     Text(
                                                         when {
-                                                            geo.tor == TorState.ON -> "Tor"
+                                                            geo.tor == TorState.ON || geo.tor == TorState.STANDBY -> "Tor"
                                                             geo.tor == TorState.STARTING && geo.torStalled -> stringResource(R.string.tor_stalled_short)
                                                             geo.tor == TorState.STARTING -> "Tor ${geo.torProgress}%"
                                                             else -> stringResource(R.string.tor_use_direct)

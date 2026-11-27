@@ -62,7 +62,7 @@ object DiagLog {
         val geo = ChatRepository.geo.value
         val mesh = ChatRepository.mesh.value
         sb.appendLine("--- State ---")
-        sb.appendLine("Tor: state=${geo.tor} progress=${geo.torProgress}% stalled=${geo.torStalled} detail=${geo.torDetail}")
+        sb.appendLine("Tor: state=${geo.tor} internetActive=${geo.internetActive} progress=${geo.torProgress}% stalled=${geo.torStalled} detail=${geo.torDetail}")
         sb.appendLine("TorService: status=${TorStatus.current} staticSocksPort=${TorService.socksPort} httpTunnelPort=${TorService.httpTunnelPort}")
         sb.appendLine("NetRoute: torWanted=${NetRoute.torWanted} socksPort=${NetRoute.socksPort} ready=${NetRoute.ready} gen=${NetRoute.generation}")
         sb.appendLine("ManualProxy: ${geo.torProxy.ifEmpty { "(none)" }}")

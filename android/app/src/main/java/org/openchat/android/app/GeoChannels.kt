@@ -26,7 +26,7 @@ class GeoChannels(
 
     private val joined = ConcurrentHashMap<String, Joined>()
     private val presence = ConcurrentHashMap<String, ConcurrentHashMap<String, Long>>() // geohash -> pubkey -> last seen (s)
-    private val pool = RelayPool(::onEvent).apply { onStatusChange = ::publishStatus }
+    private val pool = RelayPool(idleTeardownMs = RelayPool.DEFAULT_IDLE_TEARDOWN_MS, onEvent = ::onEvent).apply { onStatusChange = ::publishStatus }
     private val limiter = RateLimiter()
     // Mining proof of work takes up to two seconds; never on the caller's thread.
     private val sender = java.util.concurrent.Executors.newSingleThreadExecutor()
@@ -36,6 +36,8 @@ class GeoChannels(
     @Volatile var onOfflineSend: ((NostrEvent, String) -> Unit)? = null
 
     val online get() = pool.connectedCount > 0
+    val isWatchingNotes get() = notesCell != null
+    fun setActive(active: Boolean) = pool.setActive(active)
     fun isJoined(geohash: String) = joined.containsKey(geohash)
     fun joinedSnapshot(): Map<String, Boolean> = joined.mapValues { it.value.teleported }
 

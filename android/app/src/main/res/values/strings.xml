@@ -162,6 +162,7 @@
     <string name="media_private_unsupported">Not sent: this person is not connected yet, or their app can\'t receive encrypted photos and voice notes.</string>
     <string name="tor_title">Route internet traffic through Tor</string>
     <string name="tor_on">Connected. Relays cannot see your IP address. Bluetooth is not affected.</string>
+    <string name="tor_standby">On. Starts automatically when internet chats or mutual favorites are used.</string>
     <string name="tor_starting">Starting Tor… Internet chats wait until it is ready, so nothing goes out unprotected.</string>
     <string name="tor_starting_pct">Starting Tor (%1$d%%)…</string>
     <string name="tor_stalled_title">Tor cannot connect on this network</string>

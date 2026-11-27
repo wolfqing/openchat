@@ -826,4 +826,63 @@ class MeshEngineTest {
         assertEquals(listOf(id), net.recorders["alice"]!!.expired)
         assertEquals(0, alice.outboxState(id))
     }
+
+    @Test
+    fun publicHistorySyncRetainsMessagesForSixHours() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "bob", "carol").forEach { net.node(it).start() }
+        net.connect("alice", "bob"); net.scheduler.advance(10_000)
+        net.engines["alice"]!!.sendPublic("heard two hours ago")
+        net.scheduler.advance(2 * 3_600_000L) // well past the old 15-minute window, within 6 hours
+        assertEquals(1, net.engines["bob"]!!.historyCount)
+        net.connect("bob", "carol"); net.scheduler.advance(40_000)
+        assertEquals(listOf("alice:heard two hours ago"), net.recorders["carol"]!!.publics)
+    }
+
+    @Test
+    fun redundantCentralLinksConsolidateToNewestConnection() {
+        val scheduler = VirtualScheduler()
+        val closed = ArrayList<String>()
+        val rec = Recorder()
+        val alice = MeshEngine(Identity.generate("alice"), scheduler, object : LinkWriter {
+            override fun write(linkId: String, bytes: ByteArray) {}
+            override fun close(linkId: String) { closed += linkId }
+        }, rec, Random(1))
+        val bobId = Identity.generate("bob")
+        alice.start()
+
+        fun bobAnnounce(): ByteArray {
+            val payload = Announcement(bobId.nickname, bobId.noise.publicKey, bobId.signing.publicKey).encode()!!
+            val plain = Packet(type = MessageType.ANNOUNCE, senderId = bobId.peerId, timestamp = scheduler.now(), payload = payload)
+            return PacketCodec.encode(plain.copy(signature = Crypto.ed25519Sign(bobId.signing.privateKey, PacketCodec.signingBytes(plain)!!)))!!
+        }
+
+        alice.onLinkUp("c:OLD", 182)
+        alice.onBytes("c:OLD", bobAnnounce())
+        scheduler.advance(5_000)
+        // Bob rotates BLE address and appears on a newer central link while c:OLD is still open.
+        alice.onLinkUp("c:NEW", 182)
+        alice.onBytes("c:NEW", bobAnnounce())
+        assertEquals(listOf("c:OLD"), closed)
+    }
+
+    @Test
+    fun bridgeDropSweepCatchesMailSentWhilePeerWasStillInReachabilityWindow() {
+        val net = SimNetwork(VirtualScheduler())
+        listOf("alice", "carol").forEach { net.node(it).start() }
+        val alice = net.engines["alice"]!!; val carol = net.engines["carol"]!!
+        alice.setBridgeCell("u4pruy")
+        net.connect("alice", "carol"); net.scheduler.advance(5_000)
+        // Carol disappears, but stays "reachable" for 60 s, so the immediate send tries the mesh and skips dropping.
+        net.disconnect("alice", "carol")
+        alice.sendPrivate(carol.myPeerHex, "raced the disconnect")
+        assertEquals(0, net.recorders["alice"]!!.drops.size)
+        // Once Carol expires from peers, the periodic bridge sweep deposits the envelope once.
+        net.scheduler.advance(70_000)
+        alice.retryBridgeDrops()
+        alice.retryBridgeDrops()
+        assertEquals(1, net.recorders["alice"]!!.drops.size)
+        carol.receiveDrop(net.recorders["alice"]!!.drops.single())
+        assertEquals(listOf("raced the disconnect"), net.recorders["carol"]!!.privates.map { it.second })
+    }
 }

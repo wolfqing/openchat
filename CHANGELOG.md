@@ -1,5 +1,65 @@
 # Changelog
 
+## Android v0.7.18 (preview) — 2026-11-26
+
+Aligned connectivity defaults and transport policies with upstream bitchat (lazy
+internet activation with Tor standby, continuous sparse BLE scanning + dynamic
+RSSI connection scheduling, 6-hour public history sync window, jittered Nostr
+reconnect backoff with failure cooldown and idle relay teardown, redundant
+central link consolidation, and periodic bridge courier-drop sweeps) and
+switched the default app language to follow the system language. No wire-format
+change. 245 unit tests. 9.7 MB (9,737,316 bytes, R8-shrunk release-signed
+preview).
+APK SHA-256 `ad56dbc0e2ae606a041b679bbdd7edec1bb194087a474ef6a0824fdef239e4e5`.
+
+### Added
+
+- **Lazy internet activation gate (`NetworkActivation`, `MeshService`, `Tor`, `RelayDirectoryUpdater`, `AppUpdater`, `MeScreen`, `MainScreen`, `People`, `values*/strings.xml`).**
+  - Added `NetworkActivationPolicy` so Tor, Nostr relays, and relay-directory
+    refreshes only activate when a usable OS network path exists and at least
+    one internet feature is in use (location permission, mutual favorites,
+    joined location channel or watched notes, Mesh Bridge, or an explicit
+    update check / manual Tor proxy retry). Pure BLE/offline sessions run with
+    zero background internet sockets while keeping `NetRoute` strictly
+    fail-closed.
+  - Added `TorState.STANDBY` with localized status copy (`tor_standby`) across
+    all 18 languages and synchronized Tor lifecycle / panic-wipe boundaries so
+    guard-directory erasure cannot race with reactivation.
+- **Dynamic BLE connection scheduler (`BleConnectionScheduler`, `BleTransport`).**
+  - Added a ranked 100-peer candidate queue, global `500 ms` connect pacing,
+    `2 s` per-peer retry spacing, `8 s` connect timeout, distinct recovery
+    windows for connect timeouts (`15 s` ignore + `30 s` weak-link cooldown)
+    versus established disconnects (`3 s` settle), and isolated RSSI relaxation
+    (`-95 dBm`, relaxing to `-100 dBm` after `30 s` isolated; `-90 dBm`
+    connected / `-85 dBm` when saturated).
+
+### Changed
+
+- **BLE scan duty cycle (`ScanDutyCycle`, `BleTransport`).**
+  - Scan continuously while sparse (`0–2` links) or during recent mesh traffic
+    (`10 s` window) with Android 20-minute scan refresh and `≥ 6.5 s`
+    start-spacing safeguards, stepping down to `5 s / 10 s` (`3–5` links),
+    `3 s / 15 s` (`≥ 6` links), and power-save duty cycles when Battery Saver
+    is active.
+- **Mesh sync, link consolidation & bridge sweep (`MeshEngine`, `Bridge`).**
+  - Extended public message history sync retention from 15 minutes to **6 hours**
+    (`PUBLIC_HISTORY_MAX_AGE_MS`) for full interop with bitchat gossip sync.
+  - Added redundant central-link consolidation (`LinkWriter.close`) to retire
+    stale duplicate central links after BLE privacy-address rotation,
+    traffic-aware `10 s` announce cadence, and a `120 s` bridge courier-drop
+    sweep (`retryBridgeDrops`) covering peers that leave during the 60 s
+    reachability window.
+- **Nostr relay pool & DM timings (`RelayPool`, `NostrDirect`, `GeoChannels`, `Bridge`).**
+  - Added ±20% jitter to exponential backoff (`1 s → 300 s`), a `10 min`
+    cooldown after 10 consecutive reconnect failures, a `30 s` idle teardown
+    grace period for geo/bridge relays, a `200`-event per-relay pending send
+    cap, `24 h` DM lookback, and `350 ms` receipt pacing while keeping 15-relay
+    geo failover intact.
+- **Default app language (`AppLanguage`).**
+  - Changed the unset language default from English (`Choice.EN`) to system
+    default (`Choice.SYSTEM`), matching the user's device language on first
+    launch.
+
 ## Android v0.7.17 (preview) — 2026-11-23
 
 Lightened the active tab indicator inside the floating Liquid Glass navigation

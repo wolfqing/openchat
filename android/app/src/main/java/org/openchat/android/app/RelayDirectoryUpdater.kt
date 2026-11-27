@@ -29,24 +29,37 @@ class RelayDirectoryUpdater(
     @Volatile private var activeCall: Call? = null
     @Volatile private var fetching = false
     @Volatile private var stopped = false
+    @Volatile private var active = false
     private var retryAttempts = 0
 
     private val routeListener: () -> Unit = {
         activeCall?.cancel()
-        if (!stopped && NetRoute.ready) {
+        if (!stopped && active && NetRoute.ready) {
             executor.execute { refreshIfStale() }
         }
     }
 
-    fun start() {
+    fun start(active: Boolean = false) {
+        this.active = active
         NetRoute.onChange(routeListener)
-        if (NetRoute.ready) {
+        if (active && NetRoute.ready) {
+            executor.execute { refreshIfStale() }
+        }
+    }
+
+    fun setActive(enabled: Boolean) {
+        if (active == enabled) return
+        active = enabled
+        if (!enabled) {
+            activeCall?.cancel()
+        } else if (!stopped && NetRoute.ready) {
             executor.execute { refreshIfStale() }
         }
     }
 
     fun stop() {
         stopped = true
+        active = false
         NetRoute.removeOnChange(routeListener)
         activeCall?.cancel()
         executor.shutdownNow()
@@ -59,7 +72,7 @@ class RelayDirectoryUpdater(
     }
 
     private fun refreshIfStale(force: Boolean = false) {
-        if (stopped || fetching) return
+        if (stopped || !active || fetching) return
         if (!force && isCacheFresh()) return
         val startGen = NetRoute.generation
         val client = NetRoute.client() ?: return

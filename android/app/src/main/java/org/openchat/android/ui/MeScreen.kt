@@ -324,6 +324,7 @@ internal fun MePane(
                 val torStatus = when {
                     geo.tor == org.openchat.android.app.TorState.ON -> stringResource(R.string.tor_on)
                     geo.tor == org.openchat.android.app.TorState.OFF -> stringResource(R.string.tor_off)
+                    geo.tor == org.openchat.android.app.TorState.STANDBY -> stringResource(R.string.tor_standby)
                     torStalled -> stringResource(R.string.tor_stalled_title)
                     geo.torProgress > 0 -> stringResource(R.string.tor_starting_pct, geo.torProgress)
                     else -> stringResource(R.string.tor_starting)
@@ -346,6 +347,7 @@ internal fun MePane(
                                         .background(
                                             when {
                                                 !torOn -> MaterialTheme.colorScheme.error
+                                                geo.tor == org.openchat.android.app.TorState.STANDBY -> OpenChatPalette.Muted
                                                 else -> OpenChatPalette.Signal
                                             },
                                             CircleShape,
@@ -463,7 +465,7 @@ internal fun MePane(
                                 }
                             }
                         }
-                    } else if (torOn && geo.tor == org.openchat.android.app.TorState.STARTING) {
+                    } else if (torOn && (geo.tor == org.openchat.android.app.TorState.STARTING || geo.tor == org.openchat.android.app.TorState.STANDBY)) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,

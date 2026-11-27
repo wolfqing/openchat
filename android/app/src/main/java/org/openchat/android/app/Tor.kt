@@ -23,14 +23,14 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-enum class TorState { OFF, STARTING, ON }
+enum class TorState { OFF, STANDBY, STARTING, ON }
 
 internal val BOOTSTRAP_PROGRESS_REGEX = Regex("""PROGRESS=(\d{1,3})""")
 private val BOOTSTRAP_TAG_REGEX = Regex("""TAG=([A-Za-z0-9_]+)""")
 private val BOOTSTRAP_REASON_REGEX = Regex("""REASON=([A-Za-z0-9_]+)""")
 private val BOOTSTRAP_WARNING_REGEX = Regex("""WARNING="([^"]+)"""")
 private const val AUTO_PROXY_HEADER = "# openchat-auto-proxy"
-private const val STALL_THRESHOLD_MS = 35_000L
+private const val STALL_THRESHOLD_MS = 45_000L
 
 internal fun parseBootstrapProgress(phaseInfo: String?): Int {
     if (phaseInfo.isNullOrBlank()) return 0
@@ -174,8 +174,11 @@ class Tor(
     private val context: Context,
     private val onState: (state: TorState, progress: Int, stalled: Boolean, detail: String) -> Unit,
 ) {
+    private val lifecycleLock = Any()
     private var bound = false
     private var networkCallbackRegistered = false
+    @Volatile private var autoStartAllowed = false
+    @Volatile private var wiping = false
     @Volatile private var service: TorService? = null
     @Volatile private var probeToken = 0L
     @Volatile private var lastProgressPct = 0
@@ -253,13 +256,21 @@ class Tor(
 
     val upstreamProxy: String get() = prefs().getString(KEY_PROXY, "").orEmpty()
 
+    /** Gates Tor startup on lazy internet activation (aligned with bitchat `TorManager.setAutoStartAllowed`). */
+    fun setAutoStartAllowed(allowed: Boolean) {
+        autoStartAllowed = allowed
+        if (!wiping) apply()
+    }
+
     fun apply() {
-        if (wanted) start() else stop()
+        synchronized(lifecycleLock) {
+            if (wanted && autoStartAllowed && !wiping) start() else stop()
+        }
     }
 
     fun setWanted(on: Boolean) {
         prefs().edit().putBoolean(KEY, on).apply()
-        apply()
+        if (!wiping) apply()
     }
 
     /** Saves an optional upstream proxy (`socks5://127.0.0.1:7890`, `http://...`, or empty to clear) and applies live. */
@@ -269,7 +280,7 @@ class Tor(
         val saved = if (valid) cleaned else upstreamProxy
         if (valid) {
             prefs().edit().putString(KEY_PROXY, saved).apply()
-            if (wanted) retry()
+            if (wanted && autoStartAllowed && !wiping) retry()
         }
         return saved
     }
@@ -280,16 +291,23 @@ class Tor(
      * immediately without restricting ORPorts or IPv6.
      */
     fun retry() {
-        if (!wanted) return
+        if (!wanted || wiping) return
+        if (!autoStartAllowed) {
+            autoStartAllowed = true
+            synchronized(lifecycleLock) { start() }
+            return
+        }
         lastProgressMoveMs = System.currentTimeMillis()
         onState(TorState.STARTING, lastProgressPct, false, "")
         probeExecutor.execute {
             val applied = applyLiveProxyAndFlushBackoff()
             if (!applied) {
                 mainHandler.post {
-                    if (wanted) {
-                        stop()
-                        start()
+                    synchronized(lifecycleLock) {
+                        if (wanted && autoStartAllowed && !wiping) {
+                            stop()
+                            start()
+                        }
                     }
                 }
             } else {
@@ -300,7 +318,7 @@ class Tor(
 
     /** Schedules an off-thread readiness & bootstrap-progress check against TorService's control socket. */
     fun poll() {
-        if (!wanted) return
+        if (!wanted || !autoStartAllowed || wiping) return
         val token = probeToken
         probeExecutor.execute { probeNow(token) }
     }
@@ -409,52 +427,66 @@ class Tor(
      * first contact with a relay is over circuits that share nothing with the old one.
      */
     fun wipeAndRestart(main: Handler, delayMs: Long) {
+        wiping = true
         main.post {
             val wasWanted = wanted
             clearProxy(context)
-            stop()
+            synchronized(lifecycleLock) { stop() }
             main.postDelayed({
                 try { context.getDir("TorService", Context.MODE_PRIVATE).deleteRecursively() } catch (_: Exception) { }
-                if (wasWanted && wanted) start()
+                synchronized(lifecycleLock) {
+                    wiping = false
+                    if (wasWanted && wanted && autoStartAllowed) start() else stop()
+                }
             }, delayMs)
         }
     }
 
     private fun start() {
-        val now = System.currentTimeMillis()
-        if (!bound) {
-            probeToken++
-            lastProgressPct = 0
-            lastProgressMoveMs = now
-            clearStaleControlSocket()
-            lastAppliedProxy = syncSystemProxyTorrc()
-            registerNetworkWatcher()
-            NetRoute.set(true, 0)
-            onState(TorState.STARTING, 0, false, "")
-            val filter = IntentFilter(TorService.ACTION_STATUS).apply { addAction(TorService.ACTION_ERROR) }
-            LocalBroadcastManager.getInstance(context).registerReceiver(statusReceiver, filter)
-            bound = context.bindService(Intent(context, TorService::class.java), connection, Context.BIND_AUTO_CREATE)
-            DiagLog.record("Tor", "start() bound=$bound proxy=$lastAppliedProxy")
+        synchronized(lifecycleLock) {
+            if (wiping) return
+            val now = System.currentTimeMillis()
+            if (!bound) {
+                probeToken++
+                lastProgressPct = 0
+                lastProgressMoveMs = now
+                clearStaleControlSocket()
+                lastAppliedProxy = syncSystemProxyTorrc()
+                registerNetworkWatcher()
+                NetRoute.set(true, 0)
+                onState(TorState.STARTING, 0, false, "")
+                val filter = IntentFilter(TorService.ACTION_STATUS).apply { addAction(TorService.ACTION_ERROR) }
+                LocalBroadcastManager.getInstance(context).registerReceiver(statusReceiver, filter)
+                bound = context.bindService(Intent(context, TorService::class.java), connection, Context.BIND_AUTO_CREATE)
+                DiagLog.record("Tor", "start() bound=$bound proxy=$lastAppliedProxy")
+            }
+            poll()
         }
-        poll()
     }
 
     fun stop() {
-        probeToken++
-        attachedEventConn = null
-        lastLoggedPhase = null
-        service = null
-        fastPollArmed.set(false)
-        unregisterNetworkWatcher()
-        if (bound) {
-            try { context.unbindService(connection) } catch (_: Exception) { }
-            try { LocalBroadcastManager.getInstance(context).unregisterReceiver(statusReceiver) } catch (_: Exception) { }
-            bound = false
+        synchronized(lifecycleLock) {
+            probeToken++
+            attachedEventConn = null
+            lastLoggedPhase = null
+            service = null
+            fastPollArmed.set(false)
+            unregisterNetworkWatcher()
+            if (bound) {
+                try { context.unbindService(connection) } catch (_: Exception) { }
+                try { LocalBroadcastManager.getInstance(context).unregisterReceiver(statusReceiver) } catch (_: Exception) { }
+                bound = false
+            }
+            lastProgressPct = 0
+            DiagLog.record("Tor", "stop() wanted=$wanted autoStart=$autoStartAllowed")
+            NetRoute.set(wanted, 0)
+            val nextState = when {
+                !wanted -> TorState.OFF
+                !autoStartAllowed -> TorState.STANDBY
+                else -> TorState.STARTING
+            }
+            onState(nextState, 0, false, "")
         }
-        lastProgressPct = 0
-        DiagLog.record("Tor", "stop() wanted=$wanted")
-        NetRoute.set(wanted, 0)
-        onState(if (wanted) TorState.STARTING else TorState.OFF, 0, false, "")
     }
 
     fun destroy() {
